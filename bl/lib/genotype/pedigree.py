@@ -39,8 +39,8 @@ def analyze(family):
       founders.append(i)
     else:
       non_founders.append(i)
-      children.get(i.father, set()).add(i)
-      children.get(i.mother, set()).add(i)
+      children.setdefault(i.father, set()).add(i)
+      children.setdefault(i.mother, set()).add(i)
       couples.add((i.father, i.mother))
   # for c in it.combinations(founders):
   #   if (not (c[0].genotyped or c[1].genotyped)
@@ -71,12 +71,12 @@ def compute_bit_complexity(family):
                           couples)
   return 2*len(non_founders) - len(founders) - len(not_gt_couples)
 
-def down_propagate_family(family, children):
-  down_front = map(lambda x: set(children[x.id]), family)
+def down_propagate_front(family, children):
+  down_front = map(lambda x: set(children.get(x, [])), family)
   down_front = set([]).union(*down_front)
   return down_front
 
-def up_propagate_family(family):
+def up_propagate_front(family):
   up_front = map(lambda x: set([x.father, x.mother]), family)
   up_front = set([]).union(*up_front) - set([None])
   return up_front
@@ -84,7 +84,7 @@ def up_propagate_family(family):
 def propagate_family(family, children):
   down_front = down_propagate_front(family, children)
   up_front   = up_propagate_front(family)
-  new_front = up_front + down_front
+  new_front = up_front.union(down_front)
   if len(new_front) == 0:
     return family
   else:
@@ -99,20 +99,22 @@ def grow_family(seeds, children, max_complexity=MAX_COMPLEXITY):
 
   :param seeds: initial group of individuals, it should be a family,
                 possibly composed by a single individual
-  :type  list: list of individuals
+  :type  seeds: set of individuals
   :param max_complexity: the maximal acceptable bit complexity
   :type max_complexity: integer, default %d
-  :rtype: a family
+  :rtype: a set with the resulting family
   """ % MAX_COMPLEXITY
 
   family = seeds
   bc = 0
   while bc <= max_complexity:
-    up_front = up_propagate_front(family)
+    pre_size = len(family)
     down_front = down_propagate_front(family, children)
-    if len(up_front) + len(down_front) == 0:
+    family = family.union(down_front)
+    up_front = up_propagate_front(family)
+    family = family.union(up_front)
+    if len(family) == pre_size:
       return family
-    family = family + up_front + down_front
     # FIXME: to compute bit_complexity at each cycle is rather stupid,
     # since it could be computed incrementally.
     bc = compute_bit_complexity(family)

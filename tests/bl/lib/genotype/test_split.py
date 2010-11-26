@@ -33,21 +33,40 @@ def read_ped_file(pedfile):
 class split(unittest.TestCase):
 
   def compute_bit_complexity(self):
-    os.chdir('data')
-    fin = open('manifest.txt')
+    fin = open(os.path.join('data', 'manifest.txt'))
     for l in fin:
       l = l.strip()
       if len(l) == 0:
         continue
       cb, fname = l.split()
       cb = int(cb)
-      family = read_ped_file(fname)
+      family = read_ped_file(os.path.join('data', fname))
       cbn = ped.compute_bit_complexity(family)
       self.assertEqual(cb, cbn)
+
+  def assertEqualFamilies(self, fam_a, fam_b):
+    self.assertEqual(len(fam_a), len(fam_b))
+    self.assertEqual(set(fam_a), set(fam_b))
+
+  def grow_family(self):
+    fin = open('data/manifest.txt')
+    for l in fin:
+      l = l.strip()
+      if len(l) == 0:
+        continue
+      cb, fname = l.split()
+      cb = int(cb)
+      family = read_ped_file('data/' + fname)
+      cbn = ped.compute_bit_complexity(family)
+      founders, non_founders, couples, children = ped.analyze(family)
+      for i in family:
+        new_family = list(ped.grow_family(set([i]), children, cb))
+        self.assertEqualFamilies(family, new_family)
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(split('compute_bit_complexity'))
+  suite.addTest(split('grow_family'))
   return suite
 
 
