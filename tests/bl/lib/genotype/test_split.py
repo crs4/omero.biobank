@@ -49,24 +49,47 @@ class split(unittest.TestCase):
     self.assertEqual(set(fam_a), set(fam_b))
 
   def grow_family(self):
-    fin = open('data/manifest.txt')
+    fin = open(os.path.join('data', 'manifest.txt'))
     for l in fin:
       l = l.strip()
       if len(l) == 0:
         continue
       cb, fname = l.split()
       cb = int(cb)
-      family = read_ped_file('data/' + fname)
+      family = read_ped_file(os.path.join('data', fname))
       cbn = ped.compute_bit_complexity(family)
       founders, non_founders, couples, children = ped.analyze(family)
       for i in family:
         new_family = list(ped.grow_family(set([i]), children, cb))
         self.assertEqualFamilies(family, new_family)
 
+  def propagate_family(self):
+    fin = open(os.path.join('data', 'manifest.txt'))
+    for l in fin:
+      l = l.strip()
+      if len(l) == 0:
+        continue
+      cb, fname = l.split()
+      cb = int(cb)
+      family = read_ped_file(os.path.join('data', fname))
+      founders, non_founders, couples, children = ped.analyze(family)
+      for i in family:
+        new_family = list(ped.propagate_family(set([i]), children))
+        self.assertEqualFamilies(family, new_family)
+
+  def split_disjoint(self):
+    family = read_ped_file(os.path.join('data', 'ped_soup.ped'))
+    founders, non_founders, couples, children = ped.analyze(family)
+    splits = ped.split_disjoint(family, children)
+    self.assertEqual(sum(map(len, splits)), len(family))
+    self.assertEqual(set(family), set([]).union(*(map(set, splits))))
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(split('compute_bit_complexity'))
   suite.addTest(split('grow_family'))
+  suite.addTest(split('propagate_family'))
+  suite.addTest(split('split_disjoint'))
   return suite
 
 

@@ -81,14 +81,28 @@ def up_propagate_front(family):
   up_front = set([]).union(*up_front) - set([None])
   return up_front
 
-def propagate_family(family, children):
+def propagate_family_helper(family, children):
+  pre_size = len(family)
   down_front = down_propagate_front(family, children)
-  up_front   = up_propagate_front(family)
-  new_front = up_front.union(down_front)
-  if len(new_front) == 0:
-    return family
+  family = family.union(down_front)
+  up_front = up_propagate_front(family)
+  family = family.union(up_front)
+  if len(family) > pre_size:
+    return propagate_family_helper(family, children)
   else:
-    return propagate_family(family + new_front, children)
+    return family
+
+def propagate_family(family, children):
+  return list(propagate_family_helper(set(family), children))
+
+def split_disjoint(family, children):
+  splits = []
+  family = set(family)
+  while len(family) > 0:
+    split = propagate_family_helper(set([family.pop()]), children)
+    family = family - split
+    splits.append(list(split))
+  return splits
 
 MAX_COMPLEXITY=15
 def grow_family(seeds, children, max_complexity=MAX_COMPLEXITY):
