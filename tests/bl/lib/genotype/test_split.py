@@ -79,6 +79,7 @@ class split(unittest.TestCase):
 
   def split_disjoint(self):
     family = read_ped_file(os.path.join('data', 'ped_soup.ped'))
+    self.assertEqual(len(family), 7727)
     founders, non_founders, couples, children = ped.analyze(family)
     splits = ped.split_disjoint(family, children)
     self.assertEqual(sum(map(len, splits)), len(family))
