@@ -1,12 +1,17 @@
-import drivers
+"""
+Interfaces for the application-side view of the object model.
+
+Individual kb drivers should implement these interfaces.
+"""
 
 
-def KBError(Exception):
-  pass
+class KnowledgeBase(object):
+  
+  def __init__(self):
+    raise NotImplementedError
 
 
-def get_kb_class(kb_class):
-  try:
-    return getattr(drivers, kb_class)
-  except AttributeError:
-    raise KBError("No such kb class: %s" % kb_class)
+class Study(object):
+
+  def __init__(self):
+    raise NotImplementedError

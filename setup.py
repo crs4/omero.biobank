@@ -10,5 +10,7 @@ setup(name='bl_vl_genotype',
       packages=['bl',
                 'bl.lib',
                 'bl.lib.genotype',
+                'bl.lib.genotype.kb',
+                'bl.lib.genotype.kb.drivers',
                 ],
       )
