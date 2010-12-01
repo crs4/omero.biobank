@@ -109,10 +109,10 @@ class Proxy(kb.Proxy):
       result = self.__ome_operation("getUpdateService", "saveAndReturnObject",
                                     kb_study.ome_obj)
     except omero.ValidationException:
+      self.__disconnect()
       if kb_study.label is None:
         raise kb.KBError("study label can't be None")
       else:
         raise kb.KBError("a study with label %r already exists" %
                          kb_study.label)
-      self.__disconnect()
     return Study(result)
