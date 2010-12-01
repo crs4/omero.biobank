@@ -35,18 +35,20 @@ class TestProxy(unittest.TestCase):
     self.proxy = kb.Proxy(OME_HOST, OME_USER, OME_PASS)
     self.study = kb.Study("FOO")
 
+  def test_get_study_by_label(self):
+    s = self.proxy.get_study_by_label(self.study.label)
+
   def test_save_study(self):
     self.assertRaises(KBError, self.proxy.save_study, kb.Study())
     s = self.proxy.save_study(self.study)
+    self.proxy.delete(s)
 
-  def test_get_study_by_label(self):
-    pass
 
-    
 def suite():
-  suite = unittest.TestSuite()  
+  suite = unittest.TestSuite()
   suite.addTest(TestStudy('runTest'))
-  suite.addTest(TestProxy('test_save_study'))
+  #suite.addTest(TestProxy('test_get_study_by_label'))
+  #suite.addTest(TestProxy('test_save_study'))
   return suite
 
 

@@ -82,15 +82,17 @@ class Proxy(kb.Proxy):
   def __ome_operation(self, operation, action, *action_args):
     session = self.__connect()
     try:
-      service = getattr(session, operation)()
-    except AttributeError:
-      raise kb.KBError("%r kb operation not supported" % operation)
-    try:
-      result = getattr(service, action)(*action_args)
-    except AttributeError:
-      raise kb.KBError("%r kb action not supported on operation %r" %
-                       (action, operation))    
-    self.__disconnect()
+      try:
+        service = getattr(session, operation)()
+      except AttributeError:
+        raise kb.KBError("%r kb operation not supported" % operation)
+      try:
+        result = getattr(service, action)(*action_args)
+      except AttributeError:
+        raise kb.KBError("%r kb action not supported on operation %r" %
+                         (action, operation))
+    finally:
+      self.__disconnect()
     return result
 
   def get_study_by_label(self, value):
@@ -101,6 +103,7 @@ class Proxy(kb.Proxy):
                                   Study.OME_TABLE, "label", value)    
     return None if result is None else Study(result)
 
+#--- SAVE/DELETE examples, not used for now ------------------------------#
   def save_study(self, kb_study):
     """
     Save and return a study object.
@@ -109,10 +112,22 @@ class Proxy(kb.Proxy):
       result = self.__ome_operation("getUpdateService", "saveAndReturnObject",
                                     kb_study.ome_obj)
     except omero.ValidationException:
-      self.__disconnect()
       if kb_study.label is None:
         raise kb.KBError("study label can't be None")
       else:
         raise kb.KBError("a study with label %r already exists" %
                          kb_study.label)
     return Study(result)
+
+  def delete(self, kb_obj):
+    """
+    Delete a kb object.
+    """
+    try:
+      result = self.__ome_operation("getUpdateService", "deleteObject",
+                                    kb_obj.ome_obj)
+    except omero.ApiUsageException:
+      raise kb.KBError("trying to delete non-persistent object")
+    except omero.ValidationException:
+      raise kb.KBError("object does not exist")
+    return result
