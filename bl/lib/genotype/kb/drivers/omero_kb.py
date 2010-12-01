@@ -4,6 +4,7 @@ import omero
 import omero.model as om
 import omero.rtypes as ort
 import omero_sys_ParametersI as op
+import omero_ServerErrors_ice  # magically adds exceptions to the omero module
 
 import vl.lib.utils as vl_utils
 
@@ -11,6 +12,12 @@ import bl.lib.genotype.kb as kb
 
 
 class OmeroWrapper(object):
+
+  OME_TABLE = None
+
+  @classmethod
+  def get_ome_type(klass):
+    return getattr(om, "%sI" % klass.OME_TABLE)
   
   def __init__(self, ome_obj):
     super(OmeroWrapper, self).__setattr__("ome_obj", ome_obj)
@@ -31,16 +38,23 @@ class OmeroWrapper(object):
 
 class Study(OmeroWrapper, kb.Study):
 
-  def __init__(self, label=None):
-    ome_study = om.StudyI()
-    ome_study.vid = ort.rstring(vl_utils.make_vid())
-    if label is not None:
-      ome_study.label = ort.rstring(label)
-    ome_study.startDate = vl_utils.time2rtime(time.time())
+  OME_TABLE = "Study"
+
+  def __init__(self, from_=None):
+    ome_type = Study.get_ome_type()
+    if isinstance(from_, ome_type):
+      ome_study = from_
+    else:
+      label = from_
+      ome_study = ome_type()
+      ome_study.vid = ort.rstring(vl_utils.make_vid())
+      if label is not None:
+        ome_study.label = ort.rstring(label)
+      ome_study.startDate = vl_utils.time2rtime(time.time())
     super(Study, self).__init__(ome_study)
 
 
-class KnowledgeBase(kb.KnowledgeBase):
+class Proxy(kb.Proxy):
   """
   A knowledge base implemented as a driver for OMERO.
 
@@ -65,26 +79,40 @@ class KnowledgeBase(kb.KnowledgeBase):
   def __disconnect(self):
     self.client.closeSession()
 
-  def get_study_by_label(self, label):
-    """
-    Return the study object labeled 'label' or None if nothing matches 'label'.
-    """
+  def __ome_operation(self, operation, action, *action_args):
     session = self.__connect()
-    qs = session.getQueryService()
-    study = qs.findByString("Study", "label", label)
+    try:
+      service = getattr(session, operation)()
+    except AttributeError:
+      raise kb.KBError("%r kb operation not supported" % operation)
+    try:
+      result = getattr(service, action)(*action_args)
+    except AttributeError:
+      raise kb.KBError("%r kb action not supported on operation %r" %
+                       (action, operation))    
     self.__disconnect()
-    return Study(study)
+    return result
 
-  def create_study(self, label):
+  def get_study_by_label(self, value):
     """
-    Create, save and return a study object labeled 'label'.
+    Return the study object labeled 'value' or None if nothing matches 'value'.
     """
-    session = self.__connect()
-    us = session.getUpdateService()
-    study = om.StudyI()
-    study.setVid(ort.rstring(vl_utils.make_vid()))
-    study.setLabel(ort.rstring(label))
-    study.setStartDate(ort.rtime(vl_utils.time2rtime(time.time())))
-    study = us.saveAndReturnObject(study)
-    self.__disconnect()
-    return self.__get_vid(study)
+    result = self.__ome_operation("getQueryService", "findByString",
+                                  Study.OME_TABLE, "label", value)    
+    return None if result is None else Study(result)
+
+  def save_study(self, kb_study):
+    """
+    Save and return a study object.
+    """
+    try:
+      result = self.__ome_operation("getUpdateService", "saveAndReturnObject",
+                                    kb_study.ome_obj)
+    except omero.ValidationException:
+      if kb_study.label is None:
+        raise kb.KBError("study label can't be None")
+      else:
+        raise kb.KBError("a study with label %r already exists" %
+                         kb_study.label)
+      self.__disconnect()
+    return Study(result)

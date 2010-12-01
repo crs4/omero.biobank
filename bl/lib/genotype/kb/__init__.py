@@ -5,7 +5,11 @@ Individual kb drivers should implement these interfaces.
 """
 
 
-class KnowledgeBase(object):
+class KBError(Exception):
+  pass
+
+
+class Proxy(object):
   
   def __init__(self):
     raise NotImplementedError

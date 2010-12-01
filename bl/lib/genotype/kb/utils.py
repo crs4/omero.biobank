@@ -1,8 +1,5 @@
 import imp
-
-
-def KBError(Exception):
-  pass
+import bl.lib.genotype.kb as kb
 
 
 def get_kb_module(kb_module_name):
@@ -11,6 +8,6 @@ def get_kb_module(kb_module_name):
     module = imp.load_module(kb_module_name, fp, pathname, description)
     return module
   except ImportError:
-    raise KBError("No such kb module: %s" % kb_module_name)
+    raise kb.KBError("No such kb module: %s" % kb_module_name)
   finally:
     fp.close()

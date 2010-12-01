@@ -1,6 +1,12 @@
-import unittest
+import os, unittest
+from bl.lib.genotype.kb import KBError
 import bl.lib.genotype.kb.drivers.omero_kb as kb
 import vl.lib.utils as vl_utils
+
+
+OME_HOST = os.getenv("OME_HOST", "localhost")
+OME_USER = os.getenv("OME_USER", "root")
+OME_PASS = os.getenv("OME_PASS", "omero")
 
 
 class TestStudy(unittest.TestCase):
@@ -23,9 +29,24 @@ class TestStudy(unittest.TestCase):
       self.assertEqual(s.label, self.label)
 
 
+class TestProxy(unittest.TestCase):
+
+  def setUp(self):
+    self.proxy = kb.Proxy(OME_HOST, OME_USER, OME_PASS)
+    self.study = kb.Study("FOO")
+
+  def test_save_study(self):
+    self.assertRaises(KBError, self.proxy.save_study, kb.Study())
+    s = self.proxy.save_study(self.study)
+
+  def test_get_study_by_label(self):
+    pass
+
+    
 def suite():
   suite = unittest.TestSuite()  
   suite.addTest(TestStudy('runTest'))
+  suite.addTest(TestProxy('test_save_study'))
   return suite
 
 
