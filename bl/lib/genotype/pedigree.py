@@ -15,6 +15,8 @@ INDIVIDUAL_DEFINITION_DOC = """
    - I.genotyped a boolean
 """
 
+MAX_COMPLEXITY=19
+
 def analyze(family):
   """
   Analyze pedigree to extract:
@@ -104,7 +106,6 @@ def split_disjoint(family, children):
     splits.append(list(split))
   return splits
 
-MAX_COMPLEXITY=15
 def grow_family(seeds, children, max_complexity=MAX_COMPLEXITY):
   """
   Will grow family, following two ways parental relationships, from
@@ -113,28 +114,30 @@ def grow_family(seeds, children, max_complexity=MAX_COMPLEXITY):
 
   :param seeds: initial group of individuals, it should be a family,
                 possibly composed by a single individual
-  :type  seeds: set of individuals
+  :type  seeds: list of individuals
   :param max_complexity: the maximal acceptable bit complexity
   :type max_complexity: integer, default %d
-  :rtype: a set with the resulting family
+  :rtype: a list with the resulting family
   """ % MAX_COMPLEXITY
 
-  family = seeds
+  family = set(seeds)
   bc = 0
-  while bc <= max_complexity:
-    pre_size = len(family)
+  delta_size = len(family)
+  while delta_size > 0:
     down_front = down_propagate_front(family, children)
-    family = family.union(down_front)
-    up_front = up_propagate_front(family)
-    family = family.union(up_front)
-    if len(family) == pre_size:
-      return family
+    new_fam = family.union(down_front)
+    up_front = up_propagate_front(new_fam)
+    new_fam = new_fam.union(up_front)
     # FIXME: to compute bit_complexity at each cycle is rather stupid,
     # since it could be computed incrementally.
-    bc = compute_bit_complexity(family)
-  return family
+    delta_size = len(new_fam) - len(family)
+    bc = compute_bit_complexity(list(new_fam))
+    if bc > max_complexity:
+      break
+    family = new_fam
+  return list(family)
 
-def split_family(family, max_complexity=19):
+def split_family(family, max_complexity=MAX_COMPLEXITY):
   """
   Split a family pedigree in partially overlapping sub pedigrees with
   bit complexity lower than max_complexity.
@@ -143,28 +146,45 @@ def split_family(family, max_complexity=19):
   imputation of genotype of non-genotyped individuals. It tries to produce
   subgraphs that minimize the required computational load.
 
+  The total number of unique individuals contained in the resulting
+  families will be lower or equal to the number of unique individuals
+  contained in the given family.
+
   :param family: a list of individuals
   :type  family: list
   :param max_complexity: the requested maximal complexity
-  :type max_complexity: integer (default 19)
-  :rtype: list of pedigrees with bit complexity lower than max_complexity
+  :type max_complexity: integer (default %d)
+  :rtype: list of families with bit complexity lower than max_complexity
 
   %s
 
-  """ % INDIVIDUAL_DEFINITION_DOC
-  MAX_COMPLEXITY=19
+  """ % (MAX_COMPLEXITY, INDIVIDUAL_DEFINITION_DOC)
 
-  if compute_bit_complexity(family) < MAX_COMPLEXITY:
+  if compute_bit_complexity(family) < max_complexity:
     return [family]
 
-  children, non_founders, founders, couples = analyze(family)
+  founders, non_founders, couples, children = analyze(family)
   non_founders_not_genotyped = filter(lambda i: not i.genotyped, non_founders)
 
-  distance = {}
-  for c in it.combinations(non_founders_not_genotyped):
-    distance[c] = distance(c[0], c[1])
+  # distance = {}
+  # for c in it.combinations(non_founders_not_genotyped):
+  #   distance[c] = distance(c[0], c[1])
 
-
+  # trivial implementation: sort on number of children
+  def number_of_children(i):
+    return len(children.get(i, []))
+  fams = []
+  while len(non_founders_not_genotyped) > 0:
+    non_founders_not_genotyped = sorted(non_founders_not_genotyped,
+                                        key=number_of_children)
+    i = non_founders_not_genotyped[0]
+    f = grow_family([i], children, max_complexity)
+    cbn1 = compute_bit_complexity(f)
+    non_founders_not_genotyped = list(set(non_founders_not_genotyped) -
+                                      set(f))
+    cbn = compute_bit_complexity(f)
+    fams.append(f)
+  return fams
 
 
 

@@ -7,6 +7,27 @@ This document describes how it is possible to use this package to
 support genomic imputation. 
 
 
+Large scale population studies for dummies
+------------------------------------------
+
+Step 1. The starting point is that there is a reasonably homogeneous
+        population that has been genotyped with multiple genotyping
+        technologies and resolutins. A limited, but significative,
+        number of individuals has been genotyped at the highest
+        resolution. It is assumed that the different genotyping
+        technology markers array are one the refinement of the
+        other. 
+
+Step 2. build haplotypes of individuals at all the available
+        resolution. 
+
+Step 3. use haplotype interpolation to extend to low res haplotypes
+        the higher resolution results and to fix no-call for the high res.
+
+Step 4. use family tree information to extend, using merlin inputation,
+        the genotyping information to non-genotyped individuals
+
+
 From SNP genotyping on Wikipedia
 
 ::
@@ -22,12 +43,13 @@ From SNP genotyping on Wikipedia
    use in quantitative trait loci (QTL) analysis and in association
    studies in place of microsatellites.
 
+
+
+
 On the other hand, genotyping is an experimental procedure and,
 typically, there will be SPN with unclear results. It is, however,
 possible to use further information -- e.g., the pedigree graph -- to
 reconstruct the missing SNP reads.
-
-
 
  1. Collect individuals by study
  2. Select relevant pedigrees
@@ -47,8 +69,8 @@ Collect individual by study
    print 'genotyping stats:'
    snp_array = kb.get_spn_array('AFFYMETRIX_6.0')
    for p in people:
-     if kb.genotyped_on_array(p, snp_array):
-       g = kb.get_genotype(p, snp_array)[0]
+     if p.genotyped_on_array(snp_array):
+       g = p.get_genotype(snp_array)[0]
        if g.missing_calls > eps * len(snp_array):
          broken.append(p)
    founders, non_founders, couples, children = ped.analyze(people)
