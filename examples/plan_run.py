@@ -1,18 +1,11 @@
+import os, sys, math, optparse
 import numpy as np
-import math
-import time, os, sys
-
 
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 import matplotlib.pyplot as plt
 
-
-# imports specific to the plots in this example
-from matplotlib import cm
-from mpl_toolkits.mplot3d.axes3d import get_test_data
-
-
 import bl.lib.genotype.pedigree as ped
+
 
 CHR_INFO = [
   #N  Ngene  Nbases     Nbases seq
@@ -39,7 +32,7 @@ CHR_INFO = [
   [21, 578,   46944323,  34171998],
   [22, 1092,  49528953,  34893953],
   [23, 1846, 154913754, 151058754], # X
-  [24, 454,   57741652,  25121652],  # Y
+  [24, 454,   57741652,  25121652], # Y
   ]
 
 CHR_SIZE={}
@@ -48,13 +41,58 @@ for l in CHR_INFO:
   CHR_SIZE[k] = l[2]
 
 RUN_SIZE_CUTOFF =  4
-RUN_TIME_SCALE  = 10
-RUN_ALPHA       = 0.535
+RUN_TIME_SCALE = 10
+RUN_ALPHA = 0.535
 
-def time_of_run(cb, chr):
+N_CORES = 8
+
+
+def parse_run_data(run_data_fn):
+  data = {}
+  f = open(run_data_fn)
+  for line in f:
+    line = line.strip()
+    if line:
+      chr, bc, t = map(float, line.split())
+      #data[(chr, bc)] = t
+      chr_data = data.setdefault(chr, {})
+      chr_data[bc] = t
+  return data
+
+
+def fit_exp(x, y, offset=0):
+  """
+  Find f(x)=A*exp(K*x)+offset that fits (x, y).
+  """
+  y = y - offset
+  y = np.log(y)
+  K, logA = np.polyfit(x, y, 1)
+  A = math.exp(logA)
+  return lambda x: A*math.exp(K*x)+offset
+
+
+class RunDataFitter(object):
+
+  def __init__(self, run_data):
+    self.run_data = run_data
+    self.fitting_functions = self.__get_fitting_functions()
+
+  def __get_fitting_functions(self):
+    ff = {}
+    for chr, chr_data in self.run_data.iteritems():
+      complexities, timings = map(np.array, zip(*sorted(chr_data.iteritems())))
+      ff[chr] = fit_exp(complexities, timings)
+    return ff
+    
+
+def time_of_run(cb, chr, data_fitter=None):
+  if data_fitter is not None:
+    ff = data_fitter.fitting_functions[chr]
+    return ff(cb)
   cb = max(RUN_SIZE_CUTOFF, cb)
   time_scale = RUN_TIME_SCALE * float(CHR_SIZE[chr])/CHR_SIZE[1]
   return time_scale * math.exp(RUN_ALPHA*cb)
+
 
 class individual(object):
   def __init__(self, iid, sex, father=None, mother=None, genotyped=False):
@@ -63,6 +101,7 @@ class individual(object):
     self.father = father
     self.mother = mother
     self.genotyped = genotyped
+
 
 def read_ped_file(pedfile):
   fin = open(pedfile)
@@ -75,10 +114,10 @@ def read_ped_file(pedfile):
     fam_label, label, father, mother, sex, genotyped = fields
     genotyped = genotyped != '0'
     inds[label] = individual(label, sex, father, mother, genotyped)
-
-  for k in inds.keys():
-    inds[k].father = inds[inds[k].father] if inds.has_key(inds[k].father) else None
-    inds[k].mother = inds[inds[k].mother] if inds.has_key(inds[k].mother) else None
+  fin.close()
+  for label, ind in inds.iteritems():
+    inds[label].father = inds.get(ind.father, None)
+    inds[label].mother = inds.get(ind.mother, None)
   return inds.values()
 
 
@@ -95,28 +134,32 @@ def break_sub_families(family, max_complexity):
       fams.append(f)
   return fams
 
+
 class Cluster(object):
+  
   def __init__(self, n):
-    self.node_horizont = 0 * np.array(range(n))
+    self.node_horizon = 0 * np.array(range(n))
 
   def submit(self, t):
-    inode = np.argmin(self.node_horizont)
-    self.node_horizont[inode] += t
+    inode = np.argmin(self.node_horizon)
+    self.node_horizon[inode] += t
 
-  def horizont(self):
-    inode = np.argmax(self.node_horizont)
-    return self.node_horizont[inode]
+  def horizon(self):
+    inode = np.argmax(self.node_horizon)
+    return self.node_horizon[inode]
 
-def time_of_job(histo, n_nodes):
+
+def time_of_job(histo, n_nodes, data_fitter=None):
   cluster = Cluster(n_nodes)
   cbs = histo.keys()
   cbs.sort(reverse=True)
   for k in cbs:
     for i in range(histo[k]):
       for c in CHR_SIZE.keys():
-        T = time_of_run(k, c)
+        T = time_of_run(k, c, data_fitter)
         cluster.submit(T)
-  return cluster.horizont()
+  return cluster.horizon()
+
 
 def get_optimal_curve(X, Y, Z):
   x_idx = np.arange(len(X), dtype=np.int32)
@@ -126,10 +169,11 @@ def get_optimal_curve(X, Y, Z):
   y_opt = Y[y_idx]
   return x_opt, y_opt, z_opt
 
-def draw_result(complexity, n_nodes, horizont):
+
+def draw_result(complexity, n_nodes, horizon):
   X, Y = np.meshgrid(n_nodes, complexity)
-  Z = np.log10(horizont)
-  #Z = horizont
+  Z = np.log10(horizon)
+  #Z = horizon
   x_opt, y_opt, z_opt = get_optimal_curve(complexity, n_nodes, Z)
   fig = plt.figure()
   ax = fig.add_subplot(1, 1, 1, projection='3d')
@@ -140,29 +184,38 @@ def draw_result(complexity, n_nodes, horizont):
   ax.plot(y_opt, x_opt, z_opt,
           color='r',
           label='optimal number of nodes')
-  # ax = fig.add_subplot(1, 2, 2)
-  # CS = ax.contour(X, Y, Z,
-  #                 cmap=cm.get_cmap('jet'))
-  # ax.clabel(CS, inline=1, fontsize=10)
-  # ax.plot(y_opt, x_opt,
-  #         color='r',
-  #         label='optimal number of nodes')
-  #--
   plt.savefig('plan.png')
   plt.show()
 
+
+def make_parser():
+  parser = optparse.OptionParser(usage="%s [OPTIONS] PED_FILE")
+  #parser.set_description(__doc__.lstrip())
+  parser.add_option("--run-data", type="str", metavar="STRING",
+                    help="file with actual run data in tabular format")
+  return parser
+  
+
 def main(argv):
-  pedfile = argv[1]
+  
+  parser = make_parser()
+  opt, args = parser.parse_args()
+  try:
+    ped_file = args[0]
+  except IndexError:
+    parser.print_help()
+    sys.exit(2)
+  if opt.run_data:
+    run_data = parse_run_data(opt.run_data)
+    data_fitter = RunDataFitter(run_data)
+  else:
+    data_fitter = None
 
-  N_CORES = 8
-
-  family = read_ped_file(pedfile)
+  family = read_ped_file(ped_file)
 
   complexity = range(10, 24)
   n_nodes    = range(5, 400, 5)
-  #complexity = range(10, 15)
-  #n_nodes    = range(5, 50, 5)
-  horizont = np.zeros((len(complexity), len(n_nodes)))
+  horizon = np.zeros((len(complexity), len(n_nodes)))
   for i, max_complexity in enumerate(complexity):
     fams = break_sub_families(family, max_complexity)
     histo = {}
@@ -170,10 +223,14 @@ def main(argv):
       cb = ped.compute_bit_complexity(f)
       histo[cb] = histo.get(cb, 0) + 1
     for j, n in enumerate(n_nodes):
-      print 'doing %d, %d' % (i,j)
-      t = time_of_job(histo, n*N_CORES)
-      horizont[i,j] = t
-  draw_result(np.array(complexity), np.array(n_nodes), horizont)
+      print 'doing %d, %d' % (i, j)
+      t = time_of_job(histo, n*N_CORES, data_fitter)
+      horizon[i,j] = t
+  draw_result(np.array(complexity), np.array(n_nodes), horizon)
 
-# python plan_run.py tests/.../data/ped_soup.py
-main(sys.argv)
+
+## python plan_run.py \
+##   --run-data ../tests/bl/lib/genotype/data/merlin_timings.tsv \
+##   ../tests/bl/lib/genotype/data/ped_soup.ped
+if __name__ == "__main__":
+  main(sys.argv)
