@@ -83,7 +83,7 @@ class RunDataFitter(object):
       complexities, timings = map(np.array, zip(*sorted(chr_data.iteritems())))
       ff[chr] = fit_exp(complexities, timings)
     return ff
-    
+
 
 def time_of_run(cb, chr, data_fitter=None):
   if data_fitter is not None:
@@ -136,7 +136,7 @@ def break_sub_families(family, max_complexity):
 
 
 class Cluster(object):
-  
+
   def __init__(self, n):
     self.node_horizon = 0 * np.array(range(n))
 
@@ -167,17 +167,25 @@ def get_optimal_curve(X, Y, Z):
   z_opt = Z[(x_idx, y_idx)]
   x_opt = X[x_idx]
   y_opt = Y[y_idx]
-  return x_opt, y_opt, z_opt
+  return x_opt, y_opt, z_opt, y_idx
 
 
 def draw_result(complexity, n_nodes, horizon):
   X, Y = np.meshgrid(n_nodes, complexity)
   Z = np.log10(horizon)
   #Z = horizon
-  x_opt, y_opt, z_opt = get_optimal_curve(complexity, n_nodes, Z)
+  x_opt, y_opt, z_opt, j_idx = get_optimal_curve(complexity, n_nodes, Z)
+  colors = np.empty(X.shape, dtype=str)
+  print j_idx
+  for i in range(X.shape[0]):
+    for j in range(X.shape[1]):
+      print 'i=%d,j=%d j_idx[%d]=%d' % (i, j, i, j_idx[i])
+      colors[i,j] = 'b' if j < j_idx[i] else 'r'
+  print colors
   fig = plt.figure()
   ax = fig.add_subplot(1, 1, 1, projection='3d')
-  ax.plot_wireframe(X, Y, Z)
+  ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                  linewidth=0, antialiased=False, facecolors=colors)
   ax.set_xlabel('Cluster Nodes')
   ax.set_ylabel('Max Complexity')
   ax.set_zlabel('Duration[sec] (log10)')
@@ -193,11 +201,15 @@ def make_parser():
   #parser.set_description(__doc__.lstrip())
   parser.add_option("--run-data", type="str", metavar="STRING",
                     help="file with actual run data in tabular format")
+  parser.add_option("--nodes-range", type="str", metavar="MIN:MAX",
+                    help="cluster nodes range")
+  parser.add_option("--complexity-range", type="str", metavar="MIN:MAX",
+                    help="bit complexity range")
   return parser
-  
+
 
 def main(argv):
-  
+
   parser = make_parser()
   opt, args = parser.parse_args()
   try:
@@ -210,11 +222,19 @@ def main(argv):
     data_fitter = RunDataFitter(run_data)
   else:
     data_fitter = None
+  if opt.nodes_range:
+    node_min, node_max = map(int, opt.nodes_range.split(':'))
+  else:
+    node_min, node_max = 5, 400
+  if opt.complexity_range:
+    cb_min, cb_max = map(int, opt.complexity_range.split(':'))
+  else:
+    cb_min, cb_max = 10, 24
 
   family = read_ped_file(ped_file)
 
-  complexity = range(10, 24)
-  n_nodes    = range(5, 400, 5)
+  complexity = range(cb_min, cb_max)
+  n_nodes    = range(node_min, node_max, 5)
   horizon = np.zeros((len(complexity), len(n_nodes)))
   for i, max_complexity in enumerate(complexity):
     fams = break_sub_families(family, max_complexity)
