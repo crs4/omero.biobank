@@ -84,11 +84,17 @@ class RunDataFitter(object):
       ff[chr] = fit_exp(complexities, timings)
     return ff
 
+  def fit(self, chr, cb):
+    try:
+      return self.run_data[chr][cb]
+    except KeyError:
+      ff = self.fitting_functions[chr]
+      return ff(cb)
+
 
 def time_of_run(cb, chr, data_fitter=None):
   if data_fitter is not None:
-    ff = data_fitter.fitting_functions[chr]
-    return ff(cb)
+    return data_fitter.fit(chr, cb)
   cb = max(RUN_SIZE_CUTOFF, cb)
   time_scale = RUN_TIME_SCALE * float(CHR_SIZE[chr])/CHR_SIZE[1]
   return time_scale * math.exp(RUN_ALPHA*cb)

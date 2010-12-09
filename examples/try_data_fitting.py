@@ -12,6 +12,6 @@ for chr, chr_data in data.iteritems():
   complexities, timings = map(np.array, zip(*sorted(chr_data.iteritems())))
   ff = data_fitter.fitting_functions[chr]
   fitted_timings = np.array([ff(c) for c in complexities])
-  plt.plot(complexities, timings, 'ko')
-  plt.plot(complexities, fitted_timings, 'b-')
+  plt.semilogy(complexities, timings, 'ko')
+  plt.semilogy(complexities, fitted_timings, 'b-')
   plt.savefig("chr%d.png" % chr)
