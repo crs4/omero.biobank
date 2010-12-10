@@ -168,7 +168,7 @@ def time_of_job(histo, n_nodes, data_fitter=None):
 
 def get_optimal_curve(X, Y, Z):
   x_idx = np.arange(len(X), dtype=np.int32)
-  y_idx = ((Z[x_idx,0:-1] - Z[x_idx,1:]) > 0).sum(axis=1)
+  y_idx = Z.argmin(1)
   z_opt = Z[(x_idx, y_idx)]
   x_opt = X[x_idx]
   y_opt = Y[y_idx]
