@@ -1,4 +1,4 @@
-import os, sys, math, optparse
+import os, sys, math, optparse, errno
 import numpy as np
 
 from mpl_toolkits.mplot3d.axes3d import Axes3D
@@ -54,7 +54,6 @@ def parse_run_data(run_data_fn):
     line = line.strip()
     if line:
       chr, bc, t = map(float, line.split())
-      #data[(chr, bc)] = t
       chr_data = data.setdefault(chr, {})
       chr_data[bc] = t
   return data
@@ -202,27 +201,7 @@ def draw_result(complexity, n_nodes, horizon):
   plt.show()
 
 
-def make_parser():
-  parser = optparse.OptionParser(usage="%s [OPTIONS] PED_FILE")
-  #parser.set_description(__doc__.lstrip())
-  parser.add_option("--run-data", type="str", metavar="STRING",
-                    help="file with actual run data in tabular format")
-  parser.add_option("--nodes-range", type="str", metavar="MIN:MAX",
-                    help="cluster nodes range")
-  parser.add_option("--complexity-range", type="str", metavar="MIN:MAX",
-                    help="bit complexity range")
-  return parser
-
-
-def main(argv):
-
-  parser = make_parser()
-  opt, args = parser.parse_args()
-  try:
-    ped_file = args[0]
-  except IndexError:
-    parser.print_help()
-    sys.exit(2)
+def calc_fig_data(ped_file, opt):
   if opt.run_data:
     run_data = parse_run_data(opt.run_data)
     data_fitter = RunDataFitter(run_data)
@@ -236,11 +215,9 @@ def main(argv):
     cb_min, cb_max = map(int, opt.complexity_range.split(':'))
   else:
     cb_min, cb_max = 10, 24
-
   family = read_ped_file(ped_file)
-
   complexity = range(cb_min, cb_max)
-  n_nodes    = range(node_min, node_max, 5)
+  n_nodes = range(node_min, node_max, 5)
   horizon = np.zeros((len(complexity), len(n_nodes)))
   for i, max_complexity in enumerate(complexity):
     fams = break_sub_families(family, max_complexity)
@@ -252,7 +229,64 @@ def main(argv):
       print 'doing %d, %d' % (i, j)
       t = time_of_job(histo, n*N_CORES, data_fitter)
       horizon[i,j] = t
-  draw_result(np.array(complexity), np.array(n_nodes), horizon)
+  complexity = np.array(complexity)
+  n_nodes = np.array(n_nodes)
+  return complexity, n_nodes, horizon
+
+
+def dump_data(**kwargs):
+  for fn, arr in kwargs.iteritems():
+    np.save(fn, arr)
+
+
+def load_data(*args):
+  return [np.load("%s.npy" % a) for a in args]
+
+
+def make_parser():
+  parser = optparse.OptionParser(usage="%s [OPTIONS] PED_FILE")
+  #parser.set_description(__doc__.lstrip())
+  parser.add_option("--run-data", type="str", metavar="STRING",
+                    help="file with actual run data in tabular format")
+  parser.add_option("--nodes-range", type="str", metavar="MIN:MAX",
+                    help="cluster nodes range")
+  parser.add_option("--complexity-range", type="str", metavar="MIN:MAX",
+                    help="bit complexity range")
+  parser.add_option("--clear-cache", action="store_true",
+                    help="clear cached data")
+  parser.add_option("--fig-name", type="str", metavar="STRING",
+                    help="figure name (extension determines format)",
+                    default="plan.png")
+  return parser
+
+
+def main(argv):
+
+  parser = make_parser()
+  opt, args = parser.parse_args()
+  try:
+    ped_file = args[0]
+  except IndexError:
+    parser.print_help()
+    sys.exit(2)
+
+  must_calc = True
+  if not opt.clear_cache:
+    try:
+      complexity, n_nodes, horizon = load_data(
+        "complexity", "n_nodes", "horizon")
+    except IOError, e:
+      if e.errno != errno.ENOENT:
+        raise
+    else:
+      must_calc = False
+      print "Using previously cached data, run with --clear-cache to avoid this"
+      
+  if must_calc:
+    complexity, n_nodes, horizon = calc_fig_data(ped_file, opt)
+    dump_data(complexity=complexity, n_nodes=n_nodes, horizon=horizon)
+    
+  draw_result(complexity, n_nodes, horizon)
 
 
 ## python plan_run.py \
