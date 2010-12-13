@@ -184,7 +184,7 @@ def draw_result(complexity, n_nodes, horizon):
   print j_idx
   for i in range(X.shape[0]):
     for j in range(X.shape[1]):
-      print 'i=%d,j=%d j_idx[%d]=%d' % (i, j, i, j_idx[i])
+      #print 'i=%d,j=%d j_idx[%d]=%d' % (i, j, i, j_idx[i])
       colors[i,j] = 'b' if j < j_idx[i] else 'r'
   print colors
   fig = plt.figure()
@@ -194,9 +194,7 @@ def draw_result(complexity, n_nodes, horizon):
   ax.set_xlabel('Cluster Nodes')
   ax.set_ylabel('Max Complexity')
   ax.set_zlabel('Duration[sec] (log10)')
-  ax.plot(y_opt, x_opt, z_opt,
-          color='r',
-          label='optimal number of nodes')
+  #ax.plot(y_opt, x_opt, z_opt, color='k', label='optimal number of nodes')
   plt.savefig('plan.png')
   plt.show()
 
