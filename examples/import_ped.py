@@ -103,13 +103,15 @@ def omero_save(to_be_saved, ome_study, ome_client, ome_user, ome_passwd):
             print ('Saved individual with VID %s' % ort.unwrap(p.omero_obj.vid))
 
 def main(pedfname):
-    client  = omero.client('localhost')
+    client  = omero.client('biobank05')
     ome_user = 'root'
-    ome_passwd = 'omero'
+    ome_passwd = 'romeo'
     study_obj = make_omero_study('PEDAL TEST')
     study_obj = save_obj(study_obj, client, ome_user, ome_passwd)
     family = read_ped_file(pedfname)
     founders, non_founders, couples, children = ped.analyze(family)
+    print 'Total founders count: %d' % len(founders)
+    print 'Total non founders count: %d' % len(non_founders)
     saved = []
     to_be_saved = founders
     while len(to_be_saved) > 0 :
