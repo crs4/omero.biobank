@@ -1,8 +1,5 @@
 """
-Import pedigree info from a PED file to an omero DB.
-
-FIXME: add CLI functionalities from this script to
-examples/import_ped.py, then replace the former with the latter.
+Import pedigree info from a PED file to an omero DB
 """
 
 import logging
@@ -16,82 +13,115 @@ import omero.rtypes as ort
 
 import vl.lib.utils as vl_utils
 
+import bl.lib.genotype.pedigree as ped
 
-STUDY_LABEL = "pedigree_test"  # FIXME: turn this into a parameter
+STUDY_LABEL = "pedigree_test" # FIXME: turn this into a parameter
 M = "MALE"
 F = "FEMALE"
 GENDER_MAP = {"1": M, "m": M, "2": F, "f": F}
 
 
-def make_gender(gender_str):
-  gender = om.GenderI()
-  gender.setValue(ort.rstring(GENDER_MAP[gender_str]))
-  return gender
+class individual(object):
+  def __init__(self, iid, sex, father=None, mother=None, genotyped=False):
+    self.id = iid
+    self.sex = sex
+    self.father = father
+    self.mother = mother
+    self.genotyped = genotyped
+    self.omero_obj = None
 
 
-def save_object(client, user, password, obj):
-  session = client.createSession(user, password)
+def read_ped_file(pedfile):
+  fin = open(pedfile)
+  inds = {}
+  for l in fin:
+    l = l.strip()
+    if len(l) == 0:
+      continue
+    fields = l.split()
+    fam_label, label, father, mother, sex, genotyped = fields
+    genotyped = genotyped != '0'
+    inds[label] = individual(label, sex, father, mother, genotyped)
+  fin.close()
+  for label, ind in inds.iteritems():
+    inds[label].father = inds.get(ind.father, None)
+    inds[label].mother = inds.get(ind.mother, None)
+    assert inds[label].father is None or inds[label].father.sex == '1'
+    assert inds[label].mother is None or inds[label].mother.sex == '2'
+  return inds.values()
+
+def save_obj(ome_obj, client, user, passwd):
+  session = client.createSession(user, passwd)
   try:
     us = session.getUpdateService()
-    result = us.saveAndReturnObject(obj)
+    ome_obj = us.saveAndReturnObject(ome_obj)
   finally:
     client.closeSession()
-  return result
+  return ome_obj
 
+def make_omero_study(study_label):
+  st = om.StudyI()
+  st.vid = ort.rstring(vl_utils.make_vid())
+  st.label = ort.rstring(study_label)
+  st.startDate = vl_utils.time2rtime(time.time())
+  return st
 
-def make_enrollment(ind_obj, study_obj, ind_label):
-  enr_obj = om.EnrollmentI()
-  enr_obj.vid = ort.rstring(vl_utils.make_vid())
-  enr_obj.individual = ind_obj
-  enr_obj.study = study_obj
-  enr_obj.studyCode = ort.rstring(ind_label)
-  enr_obj.dummy = ort.rbool(False)
-  enr_obj.stCodeUK = vl_utils.make_unique_key(study_obj.id, ind_label)
-  enr_obj.stIndUK = vl_utils.make_unique_key(study_obj.id, ind_obj.id)
-  return enr_obj
-
-
-def make_ind_data(ped_file, study_obj, client, user, password):
-  logger = logging.getLogger("make_ind_data")
-  ind_data = {}
-  f = open(ped_file)
-  for line in f:
-    try:
-      fam, ind, father, mother, gender = line.split(None, 5)[:5]
-    except ValueError:
-      continue  # blank or illegal line
-    # NOTE: we assume that individual labels are unique across the whole ped
-    print "saving individual %r" % ind
-    ind_obj = om.IndividualI()
-    ind_obj.vid = ort.rstring(vl_utils.make_vid())
-    ind_obj.gender = make_gender(gender)
-    ind_obj = save_object(client, user, password, ind_obj)
-    logger.debug("saved ind %r with vid %r" % (ind, ort.unwrap(ind_obj.vid)))
-    enrollment_obj = make_enrollment(ind_obj, study_obj, ind)
-    enrollment_obj = save_object(client, user, password, enrollment_obj)
-    logger.debug("saved enrollment for ind %r with vid %r" %
-                 (ind, ort.unwrap(enrollment_obj.vid)))
-    ind_data[ind] = [ind_obj, father, mother]
-  f.close()
-  return ind_data
-
-
-def get_ind(client, user, password, vid):
-  session = client.createSession(user, password)
-  qs = session.getQueryService()
-  ind = qs.findByString("Individual", "vid", vid, None)
-  client.closeSession()
+def make_omero_ind(ind_obj):
+  logger = logging.getLogger("make_omero_ind")
+  ind = omero.model.IndividualI()
+  ind.vid = ort.rstring(vl_utils.make_vid())
+  ind.gender = make_gender(ind_obj.sex)
+  if not ind_obj.father is None:
+    ind.father = ind_obj.father.omero_obj
+    logger.debug('IND %s: Father VID is %s' % (ort.unwrap(ind.vid), ort.unwrap(ind.father.vid)))
+  if not ind_obj.mother is None:
+    ind.mother = ind_obj.mother.omero_obj
+    logger.debug('IND %s: Mother VID is %s' % (ort.unwrap(ind.vid), ort.unwrap(ind.mother.vid)))
   return ind
 
+def make_enrollment(ind_obj, omero_ind_obj, omero_study_obj):
+  enroll = om.EnrollmentI()
+  enroll.vid = ort.rstring(vl_utils.make_vid())
+  enroll.individual = omero_ind_obj
+  enroll.study = omero_study_obj
+  enroll.studyCode = ort.rstring(ind_obj.id)
+  enroll.dummy = ort.rbool(False)
+  enroll.stCodeUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id), ind_obj.id)
+  enroll.stIndUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id), 
+                                            ort.unwrap(omero_ind_obj.id))
+  return enroll
+
+def make_gender(gender_val):
+  gender_obj = om.GenderI()
+  gender_obj.value = ort.rstring(GENDER_MAP[gender_val])
+  return gender_obj
+
+def omero_save(to_be_saved, ome_study, ome_client, ome_user, ome_passwd):
+  logger = logging.getLogger("omero_save")
+  for p in to_be_saved:
+    if p.omero_obj is None:
+      omero_ind = make_omero_ind(p)
+      omero_ind = save_obj(omero_ind, ome_client, ome_user, ome_passwd)
+      enroll_data = make_enrollment(p, omero_ind, ome_study)
+      # Cascade save enroll_data and individual object connected to id
+      enroll_data = save_obj(enroll_data, ome_client, ome_user, ome_passwd)
+      if not (p.father is None or p.father.omero_obj):
+        logger.debug('p.id = %s father.id = %s, father.omero_obj %r' %
+                     (p.id, p.father.id, p.father.omero_obj))
+      if not (p.mother is None or p.mother.omero_obj):
+        logger.debug('p.id = %s mother.id = %s, mother.omero_obj %r' %
+                     (p.id, p.mother.id, p.mother.omero_obj))
+      p.omero_obj = omero_ind
+      logger.debug('Saved individual %s with VID %s' % (p.id, ort.unwrap(p.omero_obj.vid)))
 
 def make_parser():
-  parser = optparse.OptionParser(usage="pedigree_import [OPTIONS] PED_FILE]")
+  parser = optparse.OptionParser(usage="pedigree_import [OPTIONS] PED_FILE")
   parser.set_description(__doc__.lstrip())
   parser.add_option("--hostname", type="str", metavar="STRING",
                     help="omero server hostname [%default]",
                     default="localhost")
   parser.add_option("--user", type="str", metavar="STRING",
-                    help="omero server user name [%default]",
+                    help="omeo server user name [%default]",
                     default="root")
   parser.add_option("--password", type="str", metavar="STRING",
                     help="omero server password [%default]",
@@ -100,52 +130,42 @@ def make_parser():
 
 
 def main(argv):
-
   logger = logging.getLogger("main")
 
   parser = make_parser()
   opt, args = parser.parse_args()
   try:
-      ped_file = args[0]
+    pedfname = args[0]
   except IndexError:
-      parser.print_help()
-      sys.exit(2)
+    parser.print_help()
+    sys.exit(2)
+  
+  client  = omero.client(opt.hostname)
+  ome_user, ome_passwd  = opt.user, opt.password
 
-  client = omero.client(opt.hostname)
-  user, password = opt.user, opt.password
-
-  study_obj = om.StudyI()
-  study_obj.vid = ort.rstring(vl_utils.make_vid())
-  study_obj.label = ort.rstring(STUDY_LABEL)
-  study_obj.startDate = vl_utils.time2rtime(time.time())
-  study_obj = save_object(client, user, password, study_obj)
-
-  ind_data = make_ind_data(ped_file, study_obj, client, user, password)
-  f = open("vid_list.txt", "w")
-  for label, (ind_obj, father, mother) in ind_data.iteritems():
-    print "updating father/mother for individual %r" % label
-    has_father = has_mother = True
-    try:
-      father_obj = ind_data[father][0]
-      ind_obj.father = father_obj
-    except KeyError:
-      has_father = False
-    try:
-      mother_obj = ind_data[mother][0]
-      ind_obj.mother = mother_obj
-    except KeyError:
-      has_mother = False
-    if has_mother or has_father:  # need to re-save
-      ind_obj = save_object(client, user, password, ind_obj)
-      # re-read obj from omero to avoid a cascade saving that could
-      # break the script if grandpa is updated after daddy (daddy's
-      # reference to grandpa would be out-of-sync).
-      ind_data[label][0] = get_ind(client, user, password,
-                                   ort.unwrap(ind_obj.vid))
-      logger.debug("updated ind %r with vid %r" %
-                   (label, ort.unwrap(ind_data[label][0].vid)))
-    f.write("%s\t%s\n" % (label, ort.unwrap(ind_obj.vid)))
-  f.close()
+  study_obj = make_omero_study(STUDY_LABEL)
+  study_obj = save_obj(study_obj, client, ome_user, ome_passwd)
+  
+  family = read_ped_file(pedfname)
+  founders, non_founders, couples, children = ped.analyze(family)
+  logger.debug('Total founders count: %d' % len(founders))
+  logger.debug('Total non founders count: %d' % len(non_founders))
+  saved = []
+  to_be_saved = founders
+  gen_counter = 0
+  while len(to_be_saved) > 0 :
+    logger.debug('Saving generation %d' % gen_counter)
+    omero_save(to_be_saved, study_obj, client, ome_user, ome_passwd)
+    saved.extend(to_be_saved)
+    next_to_be_saved = []
+    for p in saved:
+      assert not p.omero_obj is None
+      logger.debug('Building parental informations for individual %s' % p.id)
+      for c in children.get(p, []):
+        if c.mother.omero_obj and c.father.omero_obj and not c.omero_obj:
+          next_to_be_saved.append(c)
+    to_be_saved = list(set(next_to_be_saved))
+    gen_counter += 1
 
 
 if __name__ == "__main__":
