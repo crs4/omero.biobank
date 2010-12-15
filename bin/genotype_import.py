@@ -40,7 +40,11 @@ def save_object(client, user, password, obj):
 
 
 def get_study(study_label):
-  pass
+  session = client.createSession(user, password)
+  qs = session.getQueryService()
+  study = qs.findByString("Study", "label", study_label)
+  client.closeSession()
+  return study
 
 
 def get_ind(client, user, password, label, study):
@@ -88,7 +92,7 @@ def main(argv):
   merge_gt_output = read_merge_gt_output(merge_gt_out_dir)
   client = omero.client(opt.hostname)
   user, password = opt.user, opt.password
-  #study_obj = get_study(STUDY_LABEL)
+  study_obj = get_study(STUDY_LABEL)
   
   for (ind_label, n_gt, n_nocall,
        ml_vid, ml_path, ml_hash,
@@ -96,7 +100,8 @@ def main(argv):
     ind_label = filter(lambda c: c.isdigit(), ind_label)
     n_gt = int(n_gt)
     n_nocall = int(n_nocall)
-    # FIXME: to be continued
+    ind_obj = get_ind(client, user, password, ind_label, study_obj)
+    
 
 
 if __name__ == "__main__":
