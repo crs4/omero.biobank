@@ -15,6 +15,7 @@ import vl.lib.utils as vl_utils
 
 import bl.lib.genotype.pedigree as ped
 
+
 STUDY_LABEL = "pedigree_test" # FIXME: turn this into a parameter
 M = "MALE"
 F = "FEMALE"
@@ -50,6 +51,7 @@ def read_ped_file(pedfile):
     assert inds[label].mother is None or inds[label].mother.sex == '2'
   return inds.values()
 
+
 def save_obj(ome_obj, client, user, passwd):
   session = client.createSession(user, passwd)
   try:
@@ -59,12 +61,14 @@ def save_obj(ome_obj, client, user, passwd):
     client.closeSession()
   return ome_obj
 
+
 def make_omero_study(study_label):
   st = om.StudyI()
   st.vid = ort.rstring(vl_utils.make_vid())
   st.label = ort.rstring(study_label)
   st.startDate = vl_utils.time2rtime(time.time())
   return st
+
 
 def make_omero_ind(ind_obj):
   logger = logging.getLogger("make_omero_ind")
@@ -73,11 +77,14 @@ def make_omero_ind(ind_obj):
   ind.gender = make_gender(ind_obj.sex)
   if not ind_obj.father is None:
     ind.father = ind_obj.father.omero_obj
-    logger.debug('IND %s: Father VID is %s' % (ort.unwrap(ind.vid), ort.unwrap(ind.father.vid)))
+    logger.debug('IND %s: Father VID is %s' %
+                 (ort.unwrap(ind.vid), ort.unwrap(ind.father.vid)))
   if not ind_obj.mother is None:
     ind.mother = ind_obj.mother.omero_obj
-    logger.debug('IND %s: Mother VID is %s' % (ort.unwrap(ind.vid), ort.unwrap(ind.mother.vid)))
+    logger.debug('IND %s: Mother VID is %s' %
+                 (ort.unwrap(ind.vid), ort.unwrap(ind.mother.vid)))
   return ind
+
 
 def make_enrollment(ind_obj, omero_ind_obj, omero_study_obj):
   enroll = om.EnrollmentI()
@@ -86,15 +93,18 @@ def make_enrollment(ind_obj, omero_ind_obj, omero_study_obj):
   enroll.study = omero_study_obj
   enroll.studyCode = ort.rstring(ind_obj.id)
   enroll.dummy = ort.rbool(False)
-  enroll.stCodeUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id), ind_obj.id)
+  enroll.stCodeUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id),
+                                             ind_obj.id)
   enroll.stIndUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id), 
                                             ort.unwrap(omero_ind_obj.id))
   return enroll
+
 
 def make_gender(gender_val):
   gender_obj = om.GenderI()
   gender_obj.value = ort.rstring(GENDER_MAP[gender_val])
   return gender_obj
+
 
 def omero_save(to_be_saved, ome_study, ome_client, ome_user, ome_passwd):
   logger = logging.getLogger("omero_save")
@@ -112,7 +122,9 @@ def omero_save(to_be_saved, ome_study, ome_client, ome_user, ome_passwd):
         logger.debug('p.id = %s mother.id = %s, mother.omero_obj %r' %
                      (p.id, p.mother.id, p.mother.omero_obj))
       p.omero_obj = omero_ind
-      logger.debug('Saved individual %s with VID %s' % (p.id, ort.unwrap(p.omero_obj.vid)))
+      logger.debug('Saved individual %s with VID %s' %
+                   (p.id, ort.unwrap(p.omero_obj.vid)))
+
 
 def make_parser():
   parser = optparse.OptionParser(usage="pedigree_import [OPTIONS] PED_FILE")
