@@ -1,10 +1,10 @@
 import os, sys, math, optparse, errno
 import numpy as np
 
-from mpl_toolkits.mplot3d.axes3d import Axes3D
-import matplotlib.pyplot as plt
-
 import bl.lib.genotype.pedigree as ped
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 
 CHR_INFO = [
@@ -72,9 +72,10 @@ def fit_exp(x, y, offset=0):
 
 class RunDataFitter(object):
 
-  def __init__(self, run_data):
+  def __init__(self, run_data, fitted_only=False):
     self.run_data = run_data
     self.fitting_functions = self.__get_fitting_functions()
+    self.fitted_only = fitted_only
 
   def __get_fitting_functions(self):
     ff = {}
@@ -84,11 +85,13 @@ class RunDataFitter(object):
     return ff
 
   def fit(self, chr, cb):
-    try:
-      return self.run_data[chr][cb]
-    except KeyError:
-      ff = self.fitting_functions[chr]
-      return ff(cb)
+    ff = self.fitting_functions[chr]
+    if not self.fitted_only:
+      try:
+        return self.run_data[chr][cb]
+      except KeyError:
+        pass
+    return ff(cb)
 
 
 def time_of_run(cb, chr, data_fitter=None):
@@ -175,7 +178,7 @@ def get_optimal_curve(X, Y, Z):
   return x_opt, y_opt, z_opt, y_idx
 
 
-def draw_result(complexity, n_nodes, horizon):
+def draw_result(complexity, n_nodes, horizon, figname="plan.png"):
   X, Y = np.meshgrid(n_nodes, complexity)
   Z = np.log10(horizon)
   #Z = horizon
@@ -191,18 +194,19 @@ def draw_result(complexity, n_nodes, horizon):
   ax = fig.add_subplot(1, 1, 1, projection='3d')
   ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
                   linewidth=0, antialiased=False, facecolors=colors)
-  ax.set_xlabel('Cluster Nodes')
+  xl = ax.set_xlabel('Cluster Nodes')#, bbox=dict(facecolor='red', alpha=0.5))
+  xl.set_position(tuple(x-.5 for x in xl.get_position()))
   ax.set_ylabel('Max Complexity')
   ax.set_zlabel('Duration[sec] (log10)')
   #ax.plot(y_opt, x_opt, z_opt, color='k', label='optimal number of nodes')
-  plt.savefig('plan.png')
+  plt.savefig(figname, dpi=300)
   plt.show()
 
 
 def calc_fig_data(ped_file, opt):
   if opt.run_data:
     run_data = parse_run_data(opt.run_data)
-    data_fitter = RunDataFitter(run_data)
+    data_fitter = RunDataFitter(run_data, opt.fitted_only)
   else:
     data_fitter = None
   if opt.nodes_range:
@@ -252,6 +256,8 @@ def make_parser():
                     help="bit complexity range")
   parser.add_option("--clear-cache", action="store_true",
                     help="clear cached data")
+  parser.add_option("--fitted-only", action="store_true",
+                    help="use only fitted run data")
   parser.add_option("--fig-name", type="str", metavar="STRING",
                     help="figure name (extension determines format)",
                     default="plan.png")
@@ -284,7 +290,7 @@ def main(argv):
     complexity, n_nodes, horizon = calc_fig_data(ped_file, opt)
     dump_data(complexity=complexity, n_nodes=n_nodes, horizon=horizon)
     
-  draw_result(complexity, n_nodes, horizon)
+  draw_result(complexity, n_nodes, horizon, figname=opt.fig_name)
 
 
 ## python plan_run.py \
