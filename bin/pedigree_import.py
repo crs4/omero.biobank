@@ -12,6 +12,7 @@ import omero.model as om
 import omero.rtypes as ort
 
 import vl.lib.utils as vl_utils
+import vl.lib.utils.ome_utils as om_utils
 
 import bl.lib.genotype.pedigree as ped
 
@@ -66,7 +67,7 @@ def make_omero_study(study_label):
   st = om.StudyI()
   st.vid = ort.rstring(vl_utils.make_vid())
   st.label = ort.rstring(study_label)
-  st.startDate = vl_utils.time2rtime(time.time())
+  st.startDate = om_utils.time2rtime(time.time())
   return st
 
 
@@ -93,9 +94,8 @@ def make_enrollment(ind_obj, omero_ind_obj, omero_study_obj):
   enroll.study = omero_study_obj
   enroll.studyCode = ort.rstring(ind_obj.id)
   enroll.dummy = ort.rbool(False)
-  enroll.stCodeUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id),
-                                             ind_obj.id)
-  enroll.stIndUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id), 
+  enroll.stCodeUK = om_utils.make_unique_key(ort.unwrap(omero_study_obj.id), ind_obj.id)
+  enroll.stIndUK = om_utils.make_unique_key(ort.unwrap(omero_study_obj.id), 
                                             ort.unwrap(omero_ind_obj.id))
   return enroll
 
