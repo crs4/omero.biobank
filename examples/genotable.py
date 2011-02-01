@@ -89,6 +89,7 @@ class GDOAffy6_0(tb.IsDescription):
   confidence   = tb.Float32Col(shape=(N,))
 
 def create_gdos(fname, n_recs=200, p_A=0.3):
+  """Just random noise"""
   fh = tb.openFile(fname, mode="w")
   root = fh.root
   for gn in ("GDOs",):
@@ -97,7 +98,6 @@ def create_gdos(fname, n_recs=200, p_A=0.3):
                          GDOAffy6_0,
                          "GDOs Affy6_0")
   sample = table.row
-  w = np.array([p_A**2, (1.0 - p_A)**2]).reshape((2,1))
   probs = np.zeros((2,N), dtype=np.float32)
   for i in range(n_recs):
     sample['vid'] = 'V9482948923%05d' % i
@@ -161,8 +161,6 @@ def hwe(it, counts=None):
   N_AB = N - counts.sum(axis=0)
   N_x = N_AB + 2*counts
   low_freq = N_x.min(axis=0)
-  print 'N_AB =', N_AB[0:10]
-  print 'N_x =',  low_freq[0:10]
   return hwe_vector(low_freq, N_AB, N)
 
 
