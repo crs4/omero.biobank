@@ -12,5 +12,7 @@ setup(name='bl_vl_genotype',
                 'bl.lib.genotype',
                 'bl.lib.genotype.kb',
                 'bl.lib.genotype.kb.drivers',
+                'bl.lib.genotype.kb.drivers.omero',
+                'bl.lib.genotype.kb.drivers.omero.details',
                 ],
       )

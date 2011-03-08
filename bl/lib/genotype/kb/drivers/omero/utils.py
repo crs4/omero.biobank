@@ -1,0 +1,4 @@
+from details.create_and_destroy import delete_table
+from details.create_and_destroy import create_snp_definition_table
+from details.create_and_destroy import create_snp_alignment_table
+from details.create_and_destroy import create_snp_set_table

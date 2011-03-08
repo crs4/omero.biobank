@@ -71,7 +71,7 @@ def make_enrollment(ind_obj, omero_ind_obj, omero_study_obj):
     enroll.studyCode = ort.rstring(ind_obj.id)
     enroll.dummy = ort.rbool(False)
     enroll.stCodeUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id), ind_obj.id)
-    enroll.stIndUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id), 
+    enroll.stIndUK = vl_utils.make_unique_key(ort.unwrap(omero_study_obj.id),
                                               ort.unwrap(omero_ind_obj.id))
     return enroll
 
@@ -103,7 +103,7 @@ def omero_save(to_be_saved, ome_study, ome_client, ome_user, ome_passwd):
             print ('Saved individual with VID %s' % ort.unwrap(p.omero_obj.vid))
 
 def main(pedfname):
-    client  = omero.client('biobank05')
+    client  = omero.client('biobank05.crs4.it')
     ome_user = 'root'
     ome_passwd = 'romeo'
     study_obj = make_omero_study('PEDAL TEST')

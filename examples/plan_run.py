@@ -168,7 +168,6 @@ def time_of_job(histo, n_nodes, data_fitter=None):
         cluster.submit(T)
   return cluster.horizon()
 
-
 def get_optimal_curve(X, Y, Z):
   x_idx = np.arange(len(X), dtype=np.int32)
   y_idx = Z.argmin(1)
@@ -176,7 +175,6 @@ def get_optimal_curve(X, Y, Z):
   x_opt = X[x_idx]
   y_opt = Y[y_idx]
   return x_opt, y_opt, z_opt, y_idx
-
 
 def draw_result(complexity, n_nodes, horizon, figname="plan.png"):
   X, Y = np.meshgrid(n_nodes, complexity)
@@ -201,7 +199,6 @@ def draw_result(complexity, n_nodes, horizon, figname="plan.png"):
   #ax.plot(y_opt, x_opt, z_opt, color='k', label='optimal number of nodes')
   plt.savefig(figname, dpi=300)
   plt.show()
-
 
 def calc_fig_data(ped_file, opt):
   if opt.run_data:
@@ -285,11 +282,11 @@ def main(argv):
     else:
       must_calc = False
       print "Using previously cached data, run with --clear-cache to avoid this"
-      
+
   if must_calc:
     complexity, n_nodes, horizon = calc_fig_data(ped_file, opt)
     dump_data(complexity=complexity, n_nodes=n_nodes, horizon=horizon)
-    
+
   draw_result(complexity, n_nodes, horizon, figname=opt.fig_name)
 
 

@@ -2,7 +2,6 @@
 Example: missing genotype imputation
 ====================================
 
-
 This document describes how it is possible to use this package to
 support genomic imputation. 
 
@@ -10,22 +9,23 @@ support genomic imputation.
 Large scale population studies for dummies
 ------------------------------------------
 
-Step 1. The starting point is that there is a reasonably homogeneous
-        population that has been genotyped with multiple genotyping
-        technologies and resolutins. A limited, but significative,
-        number of individuals has been genotyped at the highest
-        resolution. It is assumed that the different genotyping
-        technology markers array are one the refinement of the
-        other. 
+The following is a list of the typical steps. 
 
-Step 2. build haplotypes of individuals at all the available
-        resolution. 
+1. The starting point is that there is a reasonably homogeneous
+   population that has been genotyped with multiple genotyping
+   technologies and resolutins. A limited, but significative, number
+   of individuals has been genotyped at the highest resolution. It is
+   assumed that the different genotyping technology markers array are
+   one the refinement of the other.
 
-Step 3. use haplotype interpolation to extend to low res haplotypes
-        the higher resolution results and to fix no-call for the high res.
+2. build haplotypes of individuals at all the available
+   resolution. 
 
-Step 4. use family tree information to extend, using merlin inputation,
-        the genotyping information to non-genotyped individuals
+3. use haplotype interpolation to extend to low res haplotypes the
+   higher resolution results and to fix no-call for the high res.
+
+4. use family tree information to extend, using merlin inputation, the
+   genotyping information to non-genotyped individuals
 
 
 From SNP genotyping on Wikipedia
@@ -42,8 +42,6 @@ From SNP genotyping on Wikipedia
    evolutionarily conserved, they have been proposed as markers for
    use in quantitative trait loci (QTL) analysis and in association
    studies in place of microsatellites.
-
-
 
 
 On the other hand, genotyping is an experimental procedure and,
@@ -66,17 +64,22 @@ Collect individual by study
    import bl.lib.genotype.pedigree as ped
 
    people = kb.get_individuals_in_study(study)
+   not_genotyped = []
    print 'genotyping stats:'
    snp_array = kb.get_spn_array('AFFYMETRIX_6.0')
    for p in people:
      if p.genotyped_on_array(snp_array):
        g = p.get_genotype(snp_array)[0]
        if g.missing_calls > eps * len(snp_array):
-         broken.append(p)
+         not_genotyped.append(p)
    founders, non_founders, couples, children = ped.analyze(people)
-   families = ped.split_disjoint(ped.propagate_family(broken, children),
-                                 children)
+   families = ped.split_disjoint(ped.propagate_family(not_genotyped.append, 
+                                                      children), children)
    
+Find optimal cluster size
+-------------------------
+
+
   
 Select relevant pedigrees
 -------------------------

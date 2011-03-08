@@ -68,7 +68,7 @@ import time
 from optparse import OptionParser
 
 
-N=2000000 # Just a reasonable test size.
+N=100000 # Just a reasonable test size.
 class GDOAffy6_0(tb.IsDescription):
   """
 
@@ -85,7 +85,8 @@ class GDOAffy6_0(tb.IsDescription):
   """
   vid          = tb.StringCol(itemsize=16)
   act          = tb.StringCol(itemsize=16)
-  probs        = tb.Float32Col(shape=(2, N))
+  #probs        = tb.Float32Col(shape=(2, N))
+  probs        = tb.StringCol(itemsize=(4*2*N))
   confidence   = tb.Float32Col(shape=(N,))
 
 def create_gdos(fname, n_recs=200, p_A=0.3):
@@ -104,7 +105,7 @@ def create_gdos(fname, n_recs=200, p_A=0.3):
     sample['act'] = 'V9482948923%05d' % i
     probs[0,:] = np.random.normal(p_A**2, 0.01*p_A**2, N)
     probs[1,:] = np.random.normal((1.-p_A)**2, 0.01*(1.0-p_A)**2, N)
-    sample['probs'] = np.clip(probs, 0, 1.0)
+    sample['probs'] = np.clip(probs, 0, 1.0).tostring()
     sample['confidence'] = np.random.random(N)
     sample.append()
   table.flush()
@@ -117,15 +118,17 @@ def count_homozygotes(it):
   """
   setup_done = False
   for i, x in enumerate(it):
+    # this is an hack
+    probs = np.fromstring(x['probs'], dtype=np.float32).reshape(2, N)
     if not setup_done:
-      counts = np.zeros(x['probs'].shape, dtype=np.float32)
+      counts = np.zeros(probs.shape, dtype=np.float32)
       setup_done = True
-    counts += x['probs']
+    counts += probs
   return (i + 1), np.cast[np.int32](counts)
 
 def maf(it, counts=None):
   """
-  Compute the minor allele frequencies
+  Compute minor allele frequencies.
   """
   if not counts:
     N, counts = count_homozygotes(it)
@@ -163,7 +166,6 @@ def hwe(it, counts=None):
   low_freq = N_x.min(axis=0)
   return hwe_vector(low_freq, N_AB, N)
 
-
 def analize_gdos(fname):
   fh = tb.openFile(fname)
   table = fh.root.GDOs.affy6_0
@@ -181,16 +183,19 @@ def analize_gdos(fname):
   print h.min(), h.max()
   print np.histogram(h, bins=20)
 
-
 def main():
   p = OptionParser()
   p.add_option("-c", "--create",
                action="store_true", dest="create", default=False,
                help="create h5 file")
+  p.add_option("-n", "--n-records", type="int", metavar="INT",
+               default=30,
+               help="number of records to be created")
+
   (opts, args) = p.parse_args()
   fname = "gdos.h5"
   if opts.create:
-    create_gdos(fname)
+    create_gdos(fname, opts.n_records)
   analize_gdos(fname)
 
 main()
