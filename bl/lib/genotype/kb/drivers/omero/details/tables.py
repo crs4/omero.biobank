@@ -2,7 +2,30 @@ import omero
 import omero_Tables_ice
 import omero_SharedResources_ice
 import bl.lib.genotype.kb as kb
+import vl.lib.utils as vlu
 import numpy as np
+
+
+def create_snp_gdo_repository_table(session, file_name, N, logger):
+  logger.debug('starting creation %s %s' % (file_name, N))
+  s = session
+  r = s.sharedResources()
+  m = r.repositories()
+  i = m.descriptions[0].id.val
+  t = r.newTable(i, file_name)
+  vid      = omero.grid.StringColumn('vid', 'gdo VID', len(vlu.make_vid()), None)
+  op_vid   = omero.grid.StringColumn('op_vid', 'Last operation that modified this row',
+                                     len(vlu.make_vid()), None)
+  probs    = omero.grid.StringColumn('probs',
+                                     'np.zeros((2,N), dtype=np.float32).tostring()',
+                                     2*N*4, None)
+  confidence = omero.grid.StringColumn('confidence',
+                                       'np.zeros((N,), dtype=np.float32).tostring()',
+                                       N*4, None)
+  t.initialize([vid, op_vid, probs, confidence])
+  logger.debug('done with creation %s %s' % (file_name, N))
+  return t
+
 
 def get_table(session, table_name, logger):
   s = session

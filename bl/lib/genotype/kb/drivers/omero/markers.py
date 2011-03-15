@@ -12,7 +12,7 @@ SNP_SET_TABLE        = 'snp_set.h5'
 
 class Markers(okbd.Proxy):
   """
-  This acts as entry point for all marker related operations.
+  This acts as an entry point for all marker related operations.
 
 
   It expects that some other (sentient?) entity has generated the following tables:
@@ -72,6 +72,7 @@ class Markers(okbd.Proxy):
     TBD
     """
     class add_vid_filter_and_op_vid(object):
+      vids = []
       def __init__(self, stream):
         self.stream = stream
       def __iter__(self):
@@ -80,10 +81,12 @@ class Markers(okbd.Proxy):
         x = self.stream.next()
         x['vid'] = vlu.make_vid()
         x['op_vid'] = op_vid
+        self.vids.append(x['vid'])
         return x
     i_s = add_vid_filter_and_op_vid(records_stream)
     self.__extend_snp_table(SNP_DEFINITION_TABLE, self.__load_batch,
                             i_s, batch_size)
+    return add_vid_filter_and_op_vid.vids
 
   #--
   def extend_snp_alignment_table(self, records_stream, op_vid, batch_size=50000):
@@ -102,17 +105,20 @@ class Markers(okbd.Proxy):
 
   def extend_snp_set_table(self, records_stream, op_vid, batch_size=50000):
     class add_op_vid(object):
+      vid = vlu.make_vid()
       def __init__(self, stream):
         self.stream = stream
       def __iter__(self):
         return self
       def next(self):
         x = self.stream.next()
+        x['vid'] = self.vid
         x['op_vid'] = op_vid
         return x
     i_s = add_op_vid(records_stream)
     self.__extend_snp_table(SNP_SET_TABLE, self.__load_batch,
                             i_s, batch_size)
+    return add_op_vid.vid
   #---------------
 
   def __get_snp_table_rows_selected(self, table, selector, batch_size):

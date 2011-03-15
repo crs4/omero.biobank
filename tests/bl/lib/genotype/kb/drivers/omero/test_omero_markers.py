@@ -54,8 +54,11 @@ class TestMarkers(unittest.TestCase):
             'label':   'foo-%06d' % i,
             'rs_label': 'rs-%06d' % i,
             'mask'    : 'GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT'} for i in range(10)]
-    okb.extend_snp_definition_table(it.islice(mds, len(mds)), op_vid=op_vid)
-    for sel in [None, '(source=="%s")' % source, '(context=="%s")' % context, '(op_vid=="%s")' % op_vid]:
+    vids = okb.extend_snp_definition_table(it.islice(mds, len(mds)), op_vid=op_vid)
+    self.assertEqual(len(vids), len(mds))
+    #--
+    for sel in [None, '(source=="%s")' % source, '(context=="%s")' % context,
+                '(op_vid=="%s")' % op_vid]:
       mrks = okb.get_snp_definition_table_rows(selector=sel)
       self.assertEqual(len(mrks), len(mds))
       dmds = {}
@@ -84,9 +87,7 @@ class TestMarkers(unittest.TestCase):
     for x in mds:
       x['global_pos'] = 10**10 * x['chromosome'] + x['pos']
     okb.extend_snp_alignment_table(it.islice(mds, len(mds)), op_vid=op_vid)
-    for sel in [None,
-                #'(source=="%s")' % source, '(context=="%s")' % context, '(op_vid=="%s")' % op_vid
-                ]:
+    for sel in [None]:
       mrks = okb.get_snp_alignment_table_rows(selector=sel)
       self.assertEqual(len(mrks), len(mds))
       dmds = {}
@@ -104,14 +105,13 @@ class TestMarkers(unittest.TestCase):
     maker   = 'foomatic'
     model   = 'barfoo'
     op_vid  = vlu.make_vid()
-    mds = [{'vid' : set_vid,
-            'maker' : maker,
+    mds = [{'maker' : maker,
             'model' : model,
             'marker_vid' : vlu.make_vid(),
             'marker_indx' : i,
             'allele_flip' : [True, False][np.random.random_integers(0,1)],
             } for i in range(10)]
-    okb.extend_snp_set_table(it.islice(mds, len(mds)), op_vid=op_vid)
+    set_vid = okb.extend_snp_set_table(it.islice(mds, len(mds)), op_vid=op_vid)
     for sel in [None,
                 '(maker=="%s")&(model=="%s")' % (maker, model),
                 '(vid=="%s")' % set_vid,

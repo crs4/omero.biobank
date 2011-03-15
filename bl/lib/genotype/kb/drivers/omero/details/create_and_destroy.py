@@ -21,6 +21,17 @@ def delete_table(server, user, passwd, file_name):
   c.closeSession()
   logger.debug('done with deleting op')
 
+def does_table_exists(server, user, passwd, file_name):
+  logger.debug('starting check on table %s' % file_name)
+  c = omero.client(server)
+  s = c.createSession(user, passwd)
+  qs = s.getQueryService()
+  ofiles = qs.findAllByString('OriginalFile', 'name', file_name, True, None)
+  c.closeSession()
+  logger.debug('done with check on %s' % file_name)
+  return len(ofiles) > 0
+
+
 def create_snp_definition_table(server, user, passwd, file_name):
   logger.debug('starting creation %s %s %s %s' % (server, user, passwd, file_name))
   c = omero.client(server)
@@ -88,4 +99,5 @@ def create_snp_set_table(server, user, passwd, file_name):
   c.closeSession()
   logger.debug('done with creation %s %s %s %s' % (server, user, passwd, file_name))
   return t
+
 
