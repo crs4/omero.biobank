@@ -40,6 +40,8 @@ class TestGdos(unittest.TestCase):
       okbu.delete_table(OME_HOST, OME_USER, OME_PASS, tn)
 
   def define_new_genotyping_technology(self):
+    N_CALLS = 10
+    N_GENOTYPES = 10
     okb.open(OME_HOST, OME_USER, OME_PASS)
     #-- define markers
     source, context  = ['src-%d' % int(time.time()), 'cxt-%d' % int(time.time())]
@@ -48,7 +50,7 @@ class TestGdos(unittest.TestCase):
             'context': context,
             'label':   'foo-%06d' % i,
             'rs_label': 'rs-%06d' % i,
-            'mask'    : 'GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT'} for i in range(10)]
+            'mask'    : 'GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT'} for i in range(N_CALLS)]
     okb.extend_snp_definition_table(it.islice(mds, len(mds)), op_vid=op_vid)
     #-- define markers set
     mrks = okb.get_snp_definition_table_rows('(op_vid=="%s")' % op_vid)
@@ -64,13 +66,23 @@ class TestGdos(unittest.TestCase):
             } for i, m in enumerate(mrks)]
     set_vid = okb.extend_snp_set_table(it.islice(mds, len(mds)), op_vid=set_op_vid)
     #-- define new genotype repository
-    n_genotypes = 10
     okb.create_gdo_repository(set_vid)
-    for i in range(n_genotypes):
-      probs      = np.zeros((2, len(mrks)), dtype=np.float32)
-      confidence = np.zeros((len(mrks),), dtype=np.float32)
+    probs = np.zeros((2,N_CALLS), dtype=np.float32)
+    confs = np.zeros((N_CALLS,),  dtype=np.float32)
+    p_A = 0.3
+    results = {}
+    for i in range(N_GENOTYPES):
+      probs[0,:] = np.random.normal(p_A**2, 0.01*p_A**2, N_CALLS)
+      probs[1,:] = np.random.normal((1.-p_A)**2, 0.01*(1.0-p_A)**2, N_CALLS)
+      confs[:]   = np.random.normal(0.5, 0.01*0.5, N_CALLS)
       op_vid = vlu.make_vid()
-      vid = okb.append_gdo(set_vid, probs, confidence, op_vid)
+      vid = okb.append_gdo(set_vid, probs, confs, op_vid)
+      results[vid] = (probs.copy(), confs.copy())
+
+    for k in results.keys():
+      probs, confs, op_vid = okb.get_gdo(set_vid, k)
+      self.assertTrue(np.all(np.equal(probs, results[k][0])))
+      self.assertTrue(np.all(np.equal(confs, results[k][1])))
     okb.close()
 
 def suite():

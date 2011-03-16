@@ -78,5 +78,9 @@ def append_gdo(set_vid, probs, confidence, op_vid):
   gdo_repo_service = get_gdo_repo_service()
   return gdo_repo_service.append(set_vid, probs, confidence, op_vid)
 
+def get_gdo(set_vid, vid):
+  gdo_repo_service = get_gdo_repo_service()
+  return gdo_repo_service.get(set_vid, vid)
+
 
 

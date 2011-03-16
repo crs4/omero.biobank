@@ -16,6 +16,7 @@ class GdoRepos(okbd.Proxy):
     super(GdoRepos, self).__init__(host, user, passwd)
     self.logger = logging.getLogger('omero_kb::GdoRepos')
     self.logger.debug('created.')
+    self.index = {}
 
 
   def table_name(self, set_vid):
@@ -45,7 +46,35 @@ class GdoRepos(okbd.Proxy):
     t.addData(col_objs)
     self.disconnect()
     self.logger.info('done appending')
+    try:
+      del self.index[table_name]
+    except KeyError, e:
+      pass
     return vid
+
+  def get(self, set_vid, vid):
+    table_name = self.table_name(set_vid)
+    self.logger.info('start get %s from %s' % (vid, set_vid))
+    s = self.connect()
+    #--
+    t = okbd.get_table(s, table_name, self.logger)
+    if not self.index.has_key(table_name):
+      v = t.read([0], 0, t.getNumberOfRows())
+      self.index[table_name] = dict(it.izip(v.columns[0].values, v.rowNumbers))
+    row_id = self.index[table_name][vid]
+    v = t.read(range(0,4), row_id, row_id+1)
+    assert v.rowNumbers[0] == row_id
+    assert v.columns[0].values[0] == vid
+    #--
+    probs = np.fromstring(v.columns[2].values[0], dtype=np.float32)
+    probs.shape = (2, probs.shape[0]/2)
+    confs = np.fromstring(v.columns[3].values[0], dtype=np.float32)
+    op_vid = v.columns[3].values[0]
+    assert confs.shape[0] == probs.shape[1]
+    #--
+    self.disconnect()
+    self.logger.info('done get %s from %s' % (vid, set_vid))
+    return probs, confs, op_vid
 
 
 
