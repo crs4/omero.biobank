@@ -71,54 +71,39 @@ class Markers(okbd.Proxy):
     """
     TBD
     """
-    class add_vid_filter_and_op_vid(object):
-      vids = []
-      def __init__(self, stream):
-        self.stream = stream
-      def __iter__(self):
-        return self
-      def next(self):
-        x = self.stream.next()
+    vids = []
+    def add_vid_filter_and_op_vid(stream, op_vid):
+      for x in stream:
         x['vid'] = vlu.make_vid()
         x['op_vid'] = op_vid
-        self.vids.append(x['vid'])
-        return x
-    i_s = add_vid_filter_and_op_vid(records_stream)
+        vids.append(x['vid'])
+        yield x
+    i_s = add_vid_filter_and_op_vid(records_stream, op_vid)
     self.__extend_snp_table(SNP_DEFINITION_TABLE, self.__load_batch,
                             i_s, batch_size)
-    return add_vid_filter_and_op_vid.vids
+    return vids
 
   #--
   def extend_snp_alignment_table(self, records_stream, op_vid, batch_size=50000):
-    class add_op_vid(object):
-      def __init__(self, stream):
-        self.stream = stream
-      def __iter__(self):
-        return self
-      def next(self):
-        x = self.stream.next()
+    def add_op_vid(stream):
+      for x in stream:
         x['op_vid'] = op_vid
-        return x
+        yield x
     i_s = add_op_vid(records_stream)
     self.__extend_snp_table(SNP_ALIGNMENT_TABLE, self.__load_batch,
                             i_s, batch_size)
 
   def extend_snp_set_table(self, records_stream, op_vid, batch_size=50000):
-    class add_op_vid(object):
-      vid = vlu.make_vid()
-      def __init__(self, stream):
-        self.stream = stream
-      def __iter__(self):
-        return self
-      def next(self):
-        x = self.stream.next()
-        x['vid'] = self.vid
+    set_vid = vlu.make_vid()
+    def add_op_vid(vid, stream):
+      for x in stream:
+        x['vid'] = set_vid
         x['op_vid'] = op_vid
-        return x
-    i_s = add_op_vid(records_stream)
+        yield x
+    i_s = add_op_vid(set_vid, records_stream)
     self.__extend_snp_table(SNP_SET_TABLE, self.__load_batch,
                             i_s, batch_size)
-    return add_op_vid.vid
+    return set_vid
   #---------------
 
   def __get_snp_table_rows_selected(self, table, selector, batch_size):

@@ -29,28 +29,28 @@ def get_marker_service():
     marker_service = Markers(params['host'], params['user'], params['passwd'])
   return marker_service
 
-def extend_snp_definition_table(stream, op_vid):
+def extend_snp_definition_table(stream, op_vid, batch_size=50000):
   """FIXME This is too dangerous for the casual user."""
   marker_service = get_marker_service()
-  return marker_service.extend_snp_definition_table(stream, op_vid)
+  return marker_service.extend_snp_definition_table(stream, op_vid, batch_size)
 
 def get_snp_definition_table_rows(selector, batch_size=50000):
   marker_service = get_marker_service()
   return marker_service.get_snp_definition_table_rows(selector, batch_size)
 
 #------------
-def extend_snp_alignment_table(stream, op_vid):
+def extend_snp_alignment_table(stream, op_vid, batch_size=50000):
   marker_service = get_marker_service()
-  marker_service.extend_snp_alignment_table(stream, op_vid)
+  marker_service.extend_snp_alignment_table(stream, op_vid, batch_size)
 
 def get_snp_alignment_table_rows(selector, batch_size=50000):
   marker_service = get_marker_service()
   return marker_service.get_snp_alignment_table_rows(selector, batch_size)
 
 #------------
-def extend_snp_set_table(stream, op_vid):
+def extend_snp_set_table(stream, op_vid, batch_size):
   marker_service = get_marker_service()
-  return marker_service.extend_snp_set_table(stream, op_vid)
+  return marker_service.extend_snp_set_table(stream, op_vid, batch_size)
 
 def get_snp_set_table_rows(selector, batch_size=50000):
   marker_service = get_marker_service()

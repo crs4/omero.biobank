@@ -20,7 +20,7 @@ class GdoRepos(okbd.Proxy):
 
 
   def table_name(self, set_vid):
-    return '%s.hd5' % set_vid
+    return '%s.h5' % set_vid
 
   def create_repository(self, set_vid, N):
     table_name = self.table_name(set_vid)
