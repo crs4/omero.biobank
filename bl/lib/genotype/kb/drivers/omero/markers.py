@@ -41,17 +41,19 @@ class Markers(okbd.Proxy):
   def __extend_snp_table(self, table_name, batch_loader, records_stream, batch_size=10000):
     self.logger.info('start extending %s' % (table_name))
     s = self.connect()
-    t = okbd.get_table(s, table_name, self.logger)
-    col_objs = t.getHeaders()
-    batch = batch_loader(records_stream, col_objs, batch_size)
-    while batch:
-      t.addData(batch)
-      self.logger.debug('%s: added a batch. Current size:%d, Current time: %f' % (table_name,
-                                                                                  t.getNumberOfRows(),
-                                                                                  time.clock()))
+    try:
+      t = okbd.get_table(s, table_name, self.logger)
+      col_objs = t.getHeaders()
       batch = batch_loader(records_stream, col_objs, batch_size)
-    self.logger.info('done with extending %s: current size:%d' % (table_name, t.getNumberOfRows()))
-    self.disconnect()
+      while batch:
+        t.addData(batch)
+        self.logger.debug('%s: added a batch. Current size:%d, Current time: %f' % (table_name,
+                                                                                    t.getNumberOfRows(),
+                                                                                    time.clock()))
+        batch = batch_loader(records_stream, col_objs, batch_size)
+      self.logger.info('done with extending %s: current size:%d' % (table_name, t.getNumberOfRows()))
+    finally:
+      self.disconnect()
 
   def __load_batch(self, records_stream, col_objs, chunk_size):
     """

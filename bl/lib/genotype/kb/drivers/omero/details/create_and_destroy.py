@@ -13,21 +13,25 @@ def delete_table(server, user, passwd, file_name):
   logger.debug('starting deleting op')
   c = omero.client(server)
   s = c.createSession(user, passwd)
-  qs = s.getQueryService()
-  ofiles = qs.findAllByString('OriginalFile', 'name', file_name, True, None)
-  us = s.getUpdateService()
-  for o in ofiles:
-    us.deleteObject(o)
-  c.closeSession()
+  try:
+    qs = s.getQueryService()
+    ofiles = qs.findAllByString('OriginalFile', 'name', file_name, True, None)
+    us = s.getUpdateService()
+    for o in ofiles:
+      us.deleteObject(o)
+  finally:
+    c.closeSession()
   logger.debug('done with deleting op')
 
 def does_table_exists(server, user, passwd, file_name):
   logger.debug('starting check on table %s' % file_name)
   c = omero.client(server)
   s = c.createSession(user, passwd)
-  qs = s.getQueryService()
-  ofiles = qs.findAllByString('OriginalFile', 'name', file_name, True, None)
-  c.closeSession()
+  try:
+    qs = s.getQueryService()
+    ofiles = qs.findAllByString('OriginalFile', 'name', file_name, True, None)
+  finally:
+    c.closeSession()
   logger.debug('done with check on %s' % file_name)
   return len(ofiles) > 0
 
@@ -35,12 +39,14 @@ def create_table(server, user, passwd, file_name, fields):
   logger.debug('starting creation %s %s %s %s' % (server, user, passwd, file_name))
   c = omero.client(server)
   s = c.createSession(user, passwd)
-  r = s.sharedResources()
-  m = r.repositories()
-  i = m.descriptions[0].id.val
-  t = r.newTable(i, file_name)
-  t.initialize(fields)
-  c.closeSession()
+  try:
+    r = s.sharedResources()
+    m = r.repositories()
+    i = m.descriptions[0].id.val
+    t = r.newTable(i, file_name)
+    t.initialize(fields)
+  finally:
+    c.closeSession()
   logger.debug('done with creation %s %s %s %s' % (server, user, passwd, file_name))
   return t
 
