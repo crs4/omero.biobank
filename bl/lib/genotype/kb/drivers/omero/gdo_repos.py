@@ -52,29 +52,61 @@ class GdoRepos(okbd.Proxy):
       pass
     return vid
 
+  def __cache_indices(self, t, table_name):
+    if not self.index.has_key(table_name):
+      v = t.read([0], 0, t.getNumberOfRows())
+      self.index[table_name] = dict(it.izip(v.columns[0].values, v.rowNumbers))
+
+  def __unwrap_gdo(self, v, k):
+    row_id = v.rowNumbers[k]
+    vid =  v.columns[0].values[k]
+    probs = np.fromstring(v.columns[2].values[k], dtype=np.float32)
+    probs.shape = (2, probs.shape[0]/2)
+    confs = np.fromstring(v.columns[3].values[k], dtype=np.float32)
+    op_vid = v.columns[3].values[k]
+    assert confs.shape[0] == probs.shape[1]
+    self.logger.info('unwrapping [%d]->%s' % (row_id, vid))
+    return {'row_id' : row_id, 'vid'   : vid,
+            'probs'  : probs,  'confs' : confs,
+            'op_vid' : op_vid}
+
   def get(self, set_vid, vid):
     table_name = self.table_name(set_vid)
     self.logger.info('start get %s from %s' % (vid, set_vid))
     s = self.connect()
     #--
     t = okbd.get_table(s, table_name, self.logger)
-    if not self.index.has_key(table_name):
-      v = t.read([0], 0, t.getNumberOfRows())
-      self.index[table_name] = dict(it.izip(v.columns[0].values, v.rowNumbers))
+    self.__cache_indices(t, table_name)
     row_id = self.index[table_name][vid]
     v = t.read(range(0,4), row_id, row_id+1)
-    assert v.rowNumbers[0] == row_id
-    assert v.columns[0].values[0] == vid
-    #--
-    probs = np.fromstring(v.columns[2].values[0], dtype=np.float32)
-    probs.shape = (2, probs.shape[0]/2)
-    confs = np.fromstring(v.columns[3].values[0], dtype=np.float32)
-    op_vid = v.columns[3].values[0]
-    assert confs.shape[0] == probs.shape[1]
+    r = self.__unwrap_gdo(v, 0)
+    assert r['row_id'] == row_id and r['vid'] == vid
     #--
     self.disconnect()
     self.logger.info('done get %s from %s' % (vid, set_vid))
-    return probs, confs, op_vid
+    return r
+
+  def get_gdo_stream(self, set_vid, batch_size=10):
+    """FIXME error control..."""
+    #-
+    def iter_on_gdo(t):
+      i, N = 0, t.getNumberOfRows()
+      self.logger.info('start get_gdo_stream.iter_on_gdo %s[%d]' % (set_vid, N))
+      while i < N:
+        j = min(N, i + batch_size)
+        v = t.read(range(0,4), i, j)
+        for k in range(j - i):
+          yield self.__unwrap_gdo(v, k)
+        i = j
+      self.logger.info('done get_gdo_stream %s' % (set_vid))
+      self.disconnect()
+    #-
+    table_name = self.table_name(set_vid)
+    self.logger.info('start get_gdo_stream on %s' % (set_vid))
+    s = self.connect()
+    #--
+    t = okbd.get_table(s, table_name, self.logger)
+    return iter_on_gdo(t)
 
 
 

@@ -48,7 +48,7 @@ def get_snp_alignment_table_rows(selector, batch_size=50000):
   return marker_service.get_snp_alignment_table_rows(selector, batch_size)
 
 #------------
-def extend_snp_set_table(stream, op_vid, batch_size):
+def extend_snp_set_table(stream, op_vid, batch_size=50000):
   marker_service = get_marker_service()
   return marker_service.extend_snp_set_table(stream, op_vid, batch_size)
 
@@ -81,6 +81,11 @@ def append_gdo(set_vid, probs, confidence, op_vid):
 def get_gdo(set_vid, vid):
   gdo_repo_service = get_gdo_repo_service()
   return gdo_repo_service.get(set_vid, vid)
+
+def get_gdo_stream(set_vid, batch_size=10):
+  gdo_repo_service = get_gdo_repo_service()
+  return gdo_repo_service.get_gdo_stream(set_vid, batch_size)
+
 
 
 

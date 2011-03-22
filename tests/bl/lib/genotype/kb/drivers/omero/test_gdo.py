@@ -64,7 +64,7 @@ class TestGdos(unittest.TestCase):
             'marker_indx' : i,
             'allele_flip' : [True, False][np.random.random_integers(0,1)],
             } for i, m in enumerate(mrks)]
-    set_vid = okb.extend_snp_set_table(it.islice(mds, len(mds)), op_vid=set_op_vid)
+    set_vid = okb.extend_snp_set_table(it.islice(mds, len(mds)), op_vid=set_op_vid, batch_size=1000)
     #-- define new genotype repository
     okb.create_gdo_repository(set_vid)
     probs = np.zeros((2,N_CALLS), dtype=np.float32)
@@ -80,9 +80,16 @@ class TestGdos(unittest.TestCase):
       results[vid] = (probs.copy(), confs.copy())
 
     for k in results.keys():
-      probs, confs, op_vid = okb.get_gdo(set_vid, k)
-      self.assertTrue(np.all(np.equal(probs, results[k][0])))
-      self.assertTrue(np.all(np.equal(confs, results[k][1])))
+      r  = okb.get_gdo(set_vid, k)
+      self.assertTrue(np.all(np.equal(r['probs'], results[k][0])))
+      self.assertTrue(np.all(np.equal(r['confs'], results[k][1])))
+
+    s = okb.get_gdo_stream(set_vid, batch_size=4)
+    for i, r in enumerate(s):
+      k = r['vid']
+      self.assertTrue(np.all(np.equal(r['probs'], results[k][0])))
+      self.assertTrue(np.all(np.equal(r['confs'], results[k][1])))
+    self.assertEqual(i+1, len(results))
     okb.close()
 
 def suite():

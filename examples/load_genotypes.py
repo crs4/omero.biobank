@@ -68,7 +68,7 @@ class PedReader(object):
                                dtype=np.float32))
     c  = np.zeros((nd.shape[1],), dtype=np.float32)
     c[:] = self.conf_value
-    return {'op_vid' : fam_id[1:], 'probs' : nd, 'confidence' : c}
+    return {'op_vid' : fam_id[1:], 'probs' : nd, 'confs' : c}
 
 #------------------------------------------------------------------------------------------
 def create_new_snp_markers_set(kb, maker, model, ped_reader):
@@ -99,7 +99,7 @@ def main():
   set_vid = create_new_snp_markers_set(kb, maker, model, pr)
   #--
   for x in pr:
-    vid = kb.append_gdo(set_vid, x['probs'], x['confidence'], x['op_vid'])
+    vid = kb.append_gdo(set_vid, x['probs'], x['confs'], x['op_vid'])
   #--
   kb.close()
 

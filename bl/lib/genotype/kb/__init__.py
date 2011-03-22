@@ -82,8 +82,12 @@ class KnowledgeBase(object):
   def create_new_gdo_repository(self, set_vid):
     self.driver.create_gdo_repository(set_vid)
 
+  #FIXME this inconsistent with the get_gdo_stream that returns dicts
   def append_gdo(self, set_vid, probs, confidence, op_vid):
     self.driver.append_gdo(set_vid, probs, confidence, op_vid)
+
+  def get_gdo_stream(self, set_vid, batch_size=10):
+    return self.driver.get_gdo_stream(set_vid, batch_size=batch_size)
 
 
 
