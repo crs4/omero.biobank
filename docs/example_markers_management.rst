@@ -138,9 +138,33 @@ Order a set of markers by their coordinates
    mrks_alings.sort(order=['global_pos'])
 
 
-   
-   
-   
+ 
+Actual implementation
+---------------------
+
+In the directory examples it is possible to find a working
+implementation of what was described above:
+
+FIXME: make the definition titles actual links.
+
+``create_snp_tables.py``
+
+     a script that will create all the needed support
+     infrastructure. It will remove anything defined before.
+
+
+``load_markers.py``
+
+     a script that will load the definition of a set of SNP markers.
+
+``load_genotypes.py``
+
+     a script that will load a collection of genotypes
+
+``basic_computations.py``
+
+     a script that will show how to do basic computations on the
+     previously loaded genotypes.
    
 
 

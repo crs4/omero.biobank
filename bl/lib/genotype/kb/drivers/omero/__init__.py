@@ -48,13 +48,21 @@ def get_snp_alignment_table_rows(selector, batch_size=50000):
   return marker_service.get_snp_alignment_table_rows(selector, batch_size)
 
 #------------
-def extend_snp_set_table(stream, op_vid, batch_size=50000):
+def extend_snp_set_def_table(maker, model, op_vid, batch_size=50000):
   marker_service = get_marker_service()
-  return marker_service.extend_snp_set_table(stream, op_vid, batch_size)
+  return marker_service.extend_snp_set_def_table(maker, model, op_vid)
+
+def extend_snp_set_table(set_vid, stream, op_vid, batch_size=50000):
+  marker_service = get_marker_service()
+  return marker_service.extend_snp_set_table(set_vid, stream, op_vid, batch_size)
 
 def get_snp_set_table_rows(selector, batch_size=50000):
   marker_service = get_marker_service()
   return marker_service.get_snp_set_table_rows(selector, batch_size)
+
+def get_snp_set_def_table_rows(selector, batch_size=50000):
+  marker_service = get_marker_service()
+  return marker_service.get_snp_set_def_table_rows(selector, batch_size)
 
 
 #------------------------------------------------------------------------------------

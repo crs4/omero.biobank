@@ -66,6 +66,7 @@ class PedReader(object):
     fam_id, p_id, f_id, m_id, aff = record[0:5]
     nd = np.transpose(np.array([TO_PROB[tuple(x)] for x in record[5:]],
                                dtype=np.float32))
+    print 'nd.shape:',  nd.shape
     c  = np.zeros((nd.shape[1],), dtype=np.float32)
     c[:] = self.conf_value
     return {'op_vid' : fam_id[1:], 'probs' : nd, 'confs' : c}
@@ -75,11 +76,10 @@ def create_new_snp_markers_set(kb, maker, model, ped_reader):
   marker_vids = kb.get_snp_vids(rs_labels=ped_reader.get_marker_names())
   def snp_set_item(vids):
     for i, v in enumerate(vids):
-      r = {'maker': maker, 'model' : model, 'marker_vid' : v, 'marker_indx' : i,
-           'allele_flip' : False}
+      r = {'marker_vid' : v, 'marker_indx' : i, 'allele_flip' : False}
       yield r
   op_vid = kb.make_vid()
-  set_vid = kb.create_new_snp_markers_set(snp_set_item(marker_vids), op_vid)
+  set_vid = kb.create_new_snp_markers_set(maker, model, snp_set_item(marker_vids), op_vid)
   kb.create_new_gdo_repository(set_vid)
   return set_vid
 

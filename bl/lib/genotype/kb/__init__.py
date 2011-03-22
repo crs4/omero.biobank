@@ -74,13 +74,23 @@ class KnowledgeBase(object):
     if masks:
       return [ self.marker_mask_to_vid[m] for m in masks]
 
-  def create_new_snp_markers_set(self, stream, op_vid, batch_size=50000):
+  def create_new_snp_markers_set(self, maker, model, stream, op_vid, batch_size=50000):
     # FIXME: here we should handle actions
     op_vid = vlu.make_vid()
-    return self.driver.extend_snp_set_table(stream, op_vid, batch_size)
+    set_vid = self.driver.extend_snp_set_def_table(maker, model, op_vid)
+    self.driver.extend_snp_set_table(set_vid, stream, op_vid, batch_size)
+    return set_vid
 
   def create_new_gdo_repository(self, set_vid):
     self.driver.create_gdo_repository(set_vid)
+
+  def get_snp_marker_set_vid(self, maker, model):
+    selector = "(maker=='%s')&(model=='%s')" % (maker, model)
+    rows = self.driver.get_snp_set_def_table_rows(selector)
+    if len(rows) == 0:
+      raise ValueError('No marker set for %s.%s' % (maker, model))
+    assert len(rows) <= 1
+    return rows[0][0]
 
   #FIXME this inconsistent with the get_gdo_stream that returns dicts
   def append_gdo(self, set_vid, probs, confidence, op_vid):

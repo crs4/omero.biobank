@@ -8,6 +8,7 @@ import time
 
 SNP_DEFINITION_TABLE = 'snp_definition.h5'
 SNP_ALIGNMENT_TABLE  = 'snp_alignment.h5'
+SNP_SET_DEF_TABLE    = 'snp_set_def.h5'
 SNP_SET_TABLE        = 'snp_set.h5'
 
 class Markers(okbd.Proxy):
@@ -37,7 +38,7 @@ class Markers(okbd.Proxy):
 
   #----------------------
   # FIXME: It could make sense to push the op_vid support directly here.
-  def __extend_snp_table(self, table_name, batch_loader, records_stream, batch_size):
+  def __extend_snp_table(self, table_name, batch_loader, records_stream, batch_size=10000):
     self.logger.info('start extending %s' % (table_name))
     s = self.connect()
     t = okbd.get_table(s, table_name, self.logger)
@@ -79,8 +80,7 @@ class Markers(okbd.Proxy):
         vids.append(x['vid'])
         yield x
     i_s = add_vid_filter_and_op_vid(records_stream, op_vid)
-    self.__extend_snp_table(SNP_DEFINITION_TABLE, self.__load_batch,
-                            i_s, batch_size)
+    self.__extend_snp_table(SNP_DEFINITION_TABLE, self.__load_batch, i_s, batch_size)
     return vids
 
   #--
@@ -93,14 +93,22 @@ class Markers(okbd.Proxy):
     self.__extend_snp_table(SNP_ALIGNMENT_TABLE, self.__load_batch,
                             i_s, batch_size)
 
-  def extend_snp_set_table(self, records_stream, op_vid, batch_size=50000):
+  def extend_snp_set_def_table(self, maker, model, op_vid):
     set_vid = vlu.make_vid()
-    def add_op_vid(vid, stream):
+    def stream():
+      for x in [{'vid':set_vid, 'maker': maker, 'model' : model, 'op_vid':op_vid}]:
+        yield x
+    i_s = stream()
+    self.__extend_snp_table(SNP_SET_DEF_TABLE, self.__load_batch, i_s)
+    return set_vid
+
+  def extend_snp_set_table(self, set_vid, records_stream, op_vid, batch_size=50000):
+    def add_op_vid(stream):
       for x in stream:
         x['vid'] = set_vid
         x['op_vid'] = op_vid
         yield x
-    i_s = add_op_vid(set_vid, records_stream)
+    i_s = add_op_vid(records_stream)
     self.__extend_snp_table(SNP_SET_TABLE, self.__load_batch,
                             i_s, batch_size)
     return set_vid
@@ -158,6 +166,12 @@ class Markers(okbd.Proxy):
     selector = "( ref_genome == 'hg18') & (global_pos >  2909900) & (global_pos < 298129829)"
     """
     return self.__get_snp_table_rows(SNP_ALIGNMENT_TABLE, selector, batch_size)
+
+  def get_snp_set_def_table_rows(self, selector=None, batch_size=50000):
+    """
+    selector = "()"
+    """
+    return self.__get_snp_table_rows(SNP_SET_DEF_TABLE, selector, batch_size)
 
   def get_snp_set_table_rows(self, selector=None, batch_size=50000):
     """

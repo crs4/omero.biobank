@@ -27,6 +27,8 @@ depending on the technology, the GDO could also contain CNV data.
 
 """
 
+import numpy as np
+
 def count_homozygotes(it):
   """
   Count (compute) the number of  N_AA, N_BB homozygotes.

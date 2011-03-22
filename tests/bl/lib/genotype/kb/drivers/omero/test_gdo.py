@@ -20,6 +20,7 @@ BATCH_SIZE=1000
 
 okbm.SNP_DEFINITION_TABLE = 'UNIT_TESTING.' + okbm.SNP_DEFINITION_TABLE
 okbm.SNP_ALIGNMENT_TABLE  = 'UNIT_TESTING.' + okbm.SNP_ALIGNMENT_TABLE
+okbm.SNP_SET_DEF_TABLE    = 'UNIT_TESTING.' + okbm.SNP_SET_DEF_TABLE
 okbm.SNP_SET_TABLE        = 'UNIT_TESTING.' + okbm.SNP_SET_TABLE
 
 class TestGdos(unittest.TestCase):
@@ -29,13 +30,17 @@ class TestGdos(unittest.TestCase):
     okbu.create_snp_definition_table(OME_HOST, OME_USER, OME_PASS,
                                      okbm.SNP_DEFINITION_TABLE)
     #-
+    okbu.delete_table(OME_HOST, OME_USER, OME_PASS, okbm.SNP_SET_DEF_TABLE)
+    okbu.create_snp_set_def_table(OME_HOST, OME_USER, OME_PASS,
+                                  okbm.SNP_SET_DEF_TABLE)
     okbu.delete_table(OME_HOST, OME_USER, OME_PASS, okbm.SNP_SET_TABLE)
     okbu.create_snp_set_table(OME_HOST, OME_USER, OME_PASS,
                               okbm.SNP_SET_TABLE)
 
   def tearDown(self):
     for tn in [okbm.SNP_DEFINITION_TABLE,
-               okbm.SNP_SET_TABLE
+               okbm.SNP_SET_TABLE,
+               okbm.SNP_SET_DEF_TABLE,
                ]:
       okbu.delete_table(OME_HOST, OME_USER, OME_PASS, tn)
 
@@ -58,13 +63,12 @@ class TestGdos(unittest.TestCase):
     maker   = 'foomatic'
     model   = 'barfoo'
     self.assertEqual(len(mds), len(mrks))
-    mds = [{'maker' : maker,
-            'model' : model,
-            'marker_vid' : m['vid'],
+    mds = [{'marker_vid' : m['vid'],
             'marker_indx' : i,
             'allele_flip' : [True, False][np.random.random_integers(0,1)],
             } for i, m in enumerate(mrks)]
-    set_vid = okb.extend_snp_set_table(it.islice(mds, len(mds)), op_vid=set_op_vid, batch_size=1000)
+    set_vid = okb.extend_snp_set_def_table(maker, model, op_vid=set_op_vid, batch_size=1000)
+    okb.extend_snp_set_table(set_vid, it.islice(mds, len(mds)), op_vid=set_op_vid, batch_size=1000)
     #-- define new genotype repository
     okb.create_gdo_repository(set_vid)
     probs = np.zeros((2,N_CALLS), dtype=np.float32)
@@ -75,6 +79,10 @@ class TestGdos(unittest.TestCase):
       probs[0,:] = np.random.normal(p_A**2, 0.01*p_A**2, N_CALLS)
       probs[1,:] = np.random.normal((1.-p_A)**2, 0.01*(1.0-p_A)**2, N_CALLS)
       confs[:]   = np.random.normal(0.5, 0.01*0.5, N_CALLS)
+      if (i%4) == 0:
+        # generate 0-ending probs to test 'short' data strings
+        probs[1,N_CALLS-4:] = 0
+        confs[N_CALLS-4:] = 0
       op_vid = vlu.make_vid()
       vid = okb.append_gdo(set_vid, probs, confs, op_vid)
       results[vid] = (probs.copy(), confs.copy())

@@ -39,10 +39,15 @@ class GdoRepos(okbd.Proxy):
     col_objs = t.getHeaders()
     # FIXME: this is dangerous, it assumes that we know details
     #        on the table implementation...
+    pstr = probs.tostring()
+    cstr = confidence.tostring()
+    assert len(pstr) == 2*len(cstr)
+    assert col_objs[2].size == len(pstr)
+    assert col_objs[3].size == len(cstr)
     col_objs[0].values = [vid]
     col_objs[1].values = [op_vid]
-    col_objs[2].values = [probs.tostring()]
-    col_objs[3].values = [confidence.tostring()]
+    col_objs[2].values = [pstr]
+    col_objs[3].values = [cstr]
     t.addData(col_objs)
     self.disconnect()
     self.logger.info('done appending')
@@ -60,11 +65,17 @@ class GdoRepos(okbd.Proxy):
   def __unwrap_gdo(self, v, k):
     row_id = v.rowNumbers[k]
     vid =  v.columns[0].values[k]
-    probs = np.fromstring(v.columns[2].values[k], dtype=np.float32)
+    op_vid = v.columns[1].values[k]
+    #--
+    probs, confs = v.columns[2].values[k], v.columns[3].values[k]
+    #--
+    probs = probs + chr(0) * (v.columns[2].size - len(probs))
+    probs = np.fromstring(probs, dtype=np.float32)
     probs.shape = (2, probs.shape[0]/2)
-    confs = np.fromstring(v.columns[3].values[k], dtype=np.float32)
-    op_vid = v.columns[3].values[k]
-    assert confs.shape[0] == probs.shape[1]
+    #--
+    confs = confs + chr(0) * (v.columns[3].size - len(confs))
+    confs = np.fromstring(confs, dtype=np.float32)
+    #--
     self.logger.info('unwrapping [%d]->%s' % (row_id, vid))
     return {'row_id' : row_id, 'vid'   : vid,
             'probs'  : probs,  'confs' : confs,

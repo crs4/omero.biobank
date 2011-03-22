@@ -28,6 +28,10 @@ def main():
   okbu.create_snp_alignment_table(OME_HOST, OME_USER, OME_PASS,
                                   okbm.SNP_ALIGNMENT_TABLE)
   #-
+  okbu.delete_table(OME_HOST, OME_USER, OME_PASS, okbm.SNP_SET_DEF_TABLE)
+  okbu.create_snp_set_def_table(OME_HOST, OME_USER, OME_PASS,
+                                okbm.SNP_SET_DEF_TABLE)
+  #-
   okbu.delete_table(OME_HOST, OME_USER, OME_PASS, okbm.SNP_SET_TABLE)
   okbu.create_snp_set_table(OME_HOST, OME_USER, OME_PASS,
                             okbm.SNP_SET_TABLE)
