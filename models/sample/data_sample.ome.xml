@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <type id="ome.model.vl.DataSample" superclass="ome.model.vl.Sample">
+    <properties>
+      <!-- TODO add some "generic" fields -->
+    </properties>
+  </type>
+</types>

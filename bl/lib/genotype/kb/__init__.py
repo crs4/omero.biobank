@@ -101,5 +101,7 @@ class KnowledgeBase(object):
 
 
 
+  def get_gdos(self, individual_id):
+    pass
 
 

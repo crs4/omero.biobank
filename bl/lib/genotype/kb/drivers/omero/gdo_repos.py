@@ -62,7 +62,7 @@ class GdoRepos(okbd.Proxy):
       v = t.read([0], 0, t.getNumberOfRows())
       self.index[table_name] = dict(it.izip(v.columns[0].values, v.rowNumbers))
 
-  def __unwrap_gdo(self, v, k):
+  def __unwrap_gdo(self, set_id, v, k):
     row_id = v.rowNumbers[k]
     vid =  v.columns[0].values[k]
     op_vid = v.columns[1].values[k]
@@ -77,7 +77,7 @@ class GdoRepos(okbd.Proxy):
     confs = np.fromstring(confs, dtype=np.float32)
     #--
     self.logger.info('unwrapping [%d]->%s' % (row_id, vid))
-    return {'row_id' : row_id, 'vid'   : vid,
+    return {'set_id': set_id, 'row_id' : row_id, 'vid' : vid,
             'probs'  : probs,  'confs' : confs,
             'op_vid' : op_vid}
 
@@ -90,8 +90,8 @@ class GdoRepos(okbd.Proxy):
     self.__cache_indices(t, table_name)
     row_id = self.index[table_name][vid]
     v = t.read(range(0,4), row_id, row_id+1)
-    r = self.__unwrap_gdo(v, 0)
-    assert r['row_id'] == row_id and r['vid'] == vid
+    r = self.__unwrap_gdo(set_id, v, 0)
+    assert r['row_id'] == row_id and r['vid'] == vid and r['set_id'] == set_id
     #--
     self.disconnect()
     self.logger.info('done get %s from %s' % (vid, set_vid))

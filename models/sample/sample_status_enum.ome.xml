@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <enum id="ome.model.vl.SampleStatus">
+    <entry name="USABLE"/>
+    <entry name="CORRUPTED"/>
+    <entry name="UNKNOWN"/>
+  </enum>
+</types>

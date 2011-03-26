@@ -130,3 +130,41 @@ def hwe(it, counts=None):
   N_x = N_AB + 2*counts
   low_freq = N_x.min(axis=0)
   return hwe_vector(low_freq, N_AB, N)
+
+def find_shared_support(kb, gdos):
+  """
+  Find the set of markers that are shared by a group of GDOs.
+
+  :param kb: the relevant knowledge base
+  :type  kb: a bl.lib.genotype.kb object
+  :param gdos: a group of GDOs
+  :type  gdos: iterable object that returns GDO
+
+  :rtype: tuple(marker_ids, index_arrays) where marker_ids is the list
+          of shared markers vids, while index_array is a list that
+          contains, for each GDO, an np.array with indexes the selected
+          markers of the GDO support.
+  """
+  set_vids = [g['set_vid']  for g in gdos]
+
+  I = None
+  set_rows = {}
+  for v in set(set_vids):
+    r = kb.get_snp_set_table_rows("(vid=='%s')"%v)
+    set_rows[v] = r
+    if I is None:
+      I = r[1]
+    else:
+      # FIXME: assume_unique=True should work..
+      #I = np.intersect1d(I, r[1], assume_unique=True)
+      I = np.intersect1d(I, r[1])
+  selected = {}
+  for k in set_rows.keys():
+    r = set_rows[k]
+    mrk_to_idx = dict(it.izip(r[1], r[2]))
+    selected[k] = np.array([mrk_to_idx[m] for m in I], dtype=np.int32)
+  return (I, [selected[v] for v in set_vids])
+
+
+
+

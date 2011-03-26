@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <type id="ome.model.vl.Individual">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="gender" type="ome.model.vl.Gender"/>
+      <optional name="father" type="ome.model.vl.Individual"/>
+      <optional name="mother" type="ome.model.vl.Individual"/>
+      <!-- optional name="ancestry" type="ome.model.vl.Ancestry"/ -->
+    </properties>
+  </type>
+</types>

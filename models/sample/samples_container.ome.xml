@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <type id="ome.model.vl.SamplesContainer">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <optional name="labLabel" type="string" unique="true"/>
+      <required name="slots" type="int"/>
+      <required name="barcode" type="string" unique="true"/>
+      <required name="virtualContainer" type="boolean"/>
+    </properties>
+  </type>
+</types>

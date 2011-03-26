@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <type id="ome.model.vl.Enrollment">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="individual" type="ome.model.vl.Individual"/>
+      <required name="study" type="ome.model.vl.Study"/>
+      <!-- StudyCode is the code assigned to an Individual inside each specific study -->
+      <required name="studyCode" type="string"/>
+      <!-- Multi-field unique keys -->
+      <!-- stCodeUK = STUDY-VID_STUDYCODE -->
+      <required name="stCodeUK" type="string" unique="true"/>
+      <!-- stIndUK = STUDY-VID_INDIVIDUAL-ID -->
+      <required name="stIndUK" type="string" unique="true"/>
+    </properties>
+  </type>
+</types>

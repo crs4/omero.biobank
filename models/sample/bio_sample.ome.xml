@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <type id="ome.model.vl.BioSample" superclass="ome.model.vl.Sample">
+    <properties>
+      <optional name="labLabel" type="string" unique="true"/>
+      <required name="barcode" type="string" unique="true"/>
+      <required name="initialVolume" type="float"/>
+      <required name="currentVolume" type="float"/>
+      <required name="status" type="ome.model.vl.SampleStatus"/>
+    </properties>
+  </type>
+</types>

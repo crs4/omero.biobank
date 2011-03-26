@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <type id="ome.model.vl.Study">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="label" type="string" unique="true"/>
+      <optional name="description" type="string"/>
+      <required name="startDate" type="timestamp"/>
+      <optional name="endDate" type="timestamp"/>
+    </properties>
+  </type>
+</types>

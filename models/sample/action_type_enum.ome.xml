@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <!-- ActionType enumeration describes all kind of actions that the
+       system can handle. -->
+  <enum id="ome.model.vl.ActionType">
+    <entry name="IMPORT"/>
+    <entry name="EXTRACTION"/>
+    <entry name="UPDATE"/>
+    <entry name="TRANSFORMATION"/>
+    <entry name="PROCESSING"/>
+    <entry name="ACQUISITION"/>
+  </enum>
+</types>

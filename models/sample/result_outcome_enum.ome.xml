@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <enum id="ome.model.vl.ResultOutcome">
+<!-- FIXME:  this should be COMPLETED -->
+    <entry name="PASSED"/>
+    <entry name="FAILED"/>
+  </enum>
+</types>

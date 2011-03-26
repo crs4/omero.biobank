@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <!-- Gender enumeration -->
+  <enum id="ome.model.vl.Gender">
+    <entry name="MALE"/>
+    <entry name="FEMALE"/>
+  </enum>
+</types>

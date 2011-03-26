@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <type id="ome.model.vl.ActionSetup">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <optional name="notes" type="text"/>
+    </properties>
+  </type>
+</types>
