@@ -52,6 +52,7 @@ class Proxy(ProxyCore):
     return self.gdo_repos.append(set_vid, probs, confidence, op_vid)
 
   def get_gdo(self, set_vid, vid):
+    print 'get_gdo(%s, %s)' % (set_vid, vid)
     return self.gdo_repos.get(set_vid, vid)
 
   def get_gdo_stream(self, set_vid, batch_size=10):

@@ -90,8 +90,8 @@ class GdoRepos(object):
     self.__cache_indices(t, table_name)
     row_id = self.index[table_name][vid]
     v = t.read(range(0,4), row_id, row_id+1)
-    r = self.__unwrap_gdo(set_id, v, 0)
-    assert r['row_id'] == row_id and r['vid'] == vid and r['set_id'] == set_id
+    r = self.__unwrap_gdo(set_vid, v, 0)
+    assert r['row_id'] == row_id and r['vid'] == vid and r['set_id'] == set_vid
     #--
     self.proxy.disconnect()
     self.logger.info('done get %s from %s' % (vid, set_vid))
@@ -107,7 +107,7 @@ class GdoRepos(object):
         j = min(N, i + batch_size)
         v = t.read(range(0,4), i, j)
         for k in range(j - i):
-          yield self.__unwrap_gdo(v, k)
+          yield self.__unwrap_gdo(set_vid, v, k)
         i = j
       self.logger.info('done get_gdo_stream %s' % (set_vid))
       # this closes the connect() below
