@@ -1,0 +1,6 @@
+6 fam-10.ped
+14 fam-20.ped
+20 fam-23.ped
+18 fam-24.ped
+20 fam-25.ped
+
