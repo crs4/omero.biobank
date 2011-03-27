@@ -28,6 +28,7 @@ class GdoRepos(object):
     table_ops.create_snp_gdo_repository_table(s, table_name, N, self.logger)
     self.proxy.disconnect()
     self.logger.info('done creating %s %s' % (table_name, N))
+    return set_vid
 
   def append(self, set_vid, probs, confidence, op_vid):
     table_name = self.table_name(set_vid)

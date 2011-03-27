@@ -13,6 +13,7 @@ class InnerLayer(object):
   def make_vid(self):
     return vlu.make_vid()
 
+  #-- marker def
   def add_snp_marker_definitions(self, stream, op_vid):
     return self.driver.add_snp_marker_definitions(stream, op_vid)
 
@@ -38,18 +39,34 @@ class InnerLayer(object):
     if masks:
       return [ self.marker_mask_to_vid[m] for m in masks]
 
+  #-- marker sets
   def create_snp_markers_set(self, maker, model, stream,
                              op_vid, batch_size=50000):
     set_vid = self.driver.create_snp_markers_set(maker, model, op_vid)
-    self.driver.fill_snp_markers_set(set_vid, stream, op_vid, batch_size)
+    N = self.driver.fill_snp_markers_set(set_vid, stream, op_vid, batch_size)
+    self.driver.create_gdo_repository(set_vid, N)
     return set_vid
 
-  def create_gdo_repository(self, set_vid):
-    #FIXME: this is kind of stupid...
-    mrks = self.driver.get_snp_markers_set('(vid=="%s")' % set_vid)
-    if mrks is None:
-      raise ValueError('Unknown set %s' % set_vid)
-    return self.driver.create_gdo_repository(set_vid, mrks.shape[0])
+  def get_snp_markers_sets(self, selector=None, batch_size=50000):
+    return self.driver.get_snp_markers_sets(selector, batch_size)
+
+  def get_snp_markers_set(self, selector=None, batch_size=50000):
+    return self.driver.get_snp_markers_set(selector, batch_size)
+
+  #-- alignment
+  def add_snp_alignments(self, stream, op_vid, batch_size=50000):
+    return self.driver.add_snp_aligments(stream, op_vid, batch_size)
+
+  def get_snp_alignments(self, selector=None, batch_size=50000):
+    return self.driver.get_snp_alignments(selector, batch_size)
+
+  #-- gdo
+  # def create_gdo_repository(self, set_vid):
+  #   #FIXME: this is kind of stupid...
+  #   mrks = self.driver.get_snp_markers_set('(vid=="%s")' % set_vid)
+  #   if mrks is None:
+  #     raise ValueError('Unknown set %s' % set_vid)
+  #   return self.driver.create_gdo_repository(set_vid, mrks.shape[0])
 
   def get_snp_marker_set_vid(self, maker, model):
     selector = "(maker=='%s')&(model=='%s')" % (maker, model)

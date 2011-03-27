@@ -103,15 +103,17 @@ class Markers(object):
     return set_vid
 
   def extend_snp_set_table(self, set_vid, records_stream, op_vid, batch_size=50000):
-    def add_op_vid(stream):
+    def add_op_vid(stream, N):
       for x in stream:
         x['vid'] = set_vid
         x['op_vid'] = op_vid
+        N[0] += 1
         yield x
-    i_s = add_op_vid(records_stream)
+    N = [0]
+    i_s = add_op_vid(records_stream, N)
     self.__extend_snp_table(SNP_SET_TABLE, self.__load_batch,
                             i_s, batch_size)
-    return set_vid
+    return N[0]
   #---------------
 
   def __get_snp_table_rows_selected(self, table, selector, batch_size):
