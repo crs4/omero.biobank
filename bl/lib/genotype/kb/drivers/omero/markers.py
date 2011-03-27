@@ -1,4 +1,3 @@
-import details as okbd
 import vl.lib.utils as vlu
 
 import itertools as it
@@ -6,43 +5,42 @@ import numpy     as np
 import logging
 import time
 
+import table_ops
+
 SNP_DEFINITION_TABLE = 'snp_definition.h5'
 SNP_ALIGNMENT_TABLE  = 'snp_alignment.h5'
 SNP_SET_DEF_TABLE    = 'snp_set_def.h5'
 SNP_SET_TABLE        = 'snp_set.h5'
 
-class Markers(okbd.Proxy):
+class Markers(object):
   """
   This acts as an entry point for all marker related operations.
 
-
-  It expects that some other (sentient?) entity has generated the following tables:
+  It expects that some other (sentient?) entity had generated the
+  following tables:
 
    #. SNP_DEFINITION_TABLE[%s]
    #. SNP_ALIGNMENT_TABLE[%s]
    #. SNP_SET_TABLE[%s]
 
   As far as this module code is concerned, the only constraint on the
-  underlying omero tables is that SNP_DEFINITION_TABLE should have a ``vid`` column.
+  underlying omero tables is that SNP_DEFINITION_TABLE should have a
+  ``vid`` column.
 
   """ % (SNP_DEFINITION_TABLE, SNP_ALIGNMENT_TABLE, SNP_SET_TABLE)
 
-  def __init__(self, host, user, passwd):
-    super(Markers, self).__init__(host, user, passwd)
+  def __init__(self, proxy):
+    self.proxy = proxy
     self.logger = logging.getLogger('omero_kb::Markers')
     self.logger.debug('created.')
-
-  # def __del__(self):
-  #   super(Markers, self).__del__()
-  #   self.logger.debug('deleted.')
 
   #----------------------
   # FIXME: It could make sense to push the op_vid support directly here.
   def __extend_snp_table(self, table_name, batch_loader, records_stream, batch_size=10000):
     self.logger.info('start extending %s' % (table_name))
-    s = self.connect()
+    s = self.proxy.connect()
     try:
-      t = okbd.get_table(s, table_name, self.logger)
+      t = table_ops.get_table(s, table_name, self.logger)
       col_objs = t.getHeaders()
       batch = batch_loader(records_stream, col_objs, batch_size)
       while batch:
@@ -53,7 +51,7 @@ class Markers(okbd.Proxy):
         batch = batch_loader(records_stream, col_objs, batch_size)
       self.logger.info('done with extending %s: current size:%d' % (table_name, t.getNumberOfRows()))
     finally:
-      self.disconnect()
+      self.proxy.disconnect()
 
   def __load_batch(self, records_stream, col_objs, chunk_size):
     """
@@ -128,7 +126,7 @@ class Markers(okbd.Proxy):
                                                                              len(ids)))
       if ids:
         d = table.readCoordinates(ids)
-        res.append(okbd.convert_to_np(d))
+        res.append(table_ops.convert_to_np(d))
       row_read += batch_size
     return np.concatenate(tuple(res)) if res else []
 
@@ -141,19 +139,19 @@ class Markers(okbd.Proxy):
       self.logger.debug('bulk reading [%d:%d] returned %d records' % (row_read, row_read+batch_size,
                                                                       len(d.columns[0].values)))
       if d:
-        res.append(okbd.convert_to_np(d))
+        res.append(table_ops.convert_to_np(d))
       row_read += batch_size
     return np.concatenate(tuple(res)) if res else []
 
   def __get_snp_table_rows(self, table_name, selector, batch_size):
     self.logger.info('start get from table %s: selector:%s' % (table_name, selector))
-    s = self.connect()
-    t = okbd.get_table(s, table_name, self.logger)
+    s = self.proxy.connect()
+    t = table_ops.get_table(s, table_name, self.logger)
     if selector:
       res = self.__get_snp_table_rows_selected(t, selector, batch_size)
     else:
       res = self.__get_snp_table_rows_bulk(t, batch_size)
-    self.disconnect()
+    self.proxy.disconnect()
     self.logger.info('done with get from table %s: no. rows extracted:%d' % (table_name, len(res)))
     return res
 

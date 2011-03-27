@@ -1,8 +1,5 @@
 import time
 
-import omero
-import omero_ServerErrors_ice  # magically adds exceptions to the omero module
-
 from bl.lib.sample.kb.drivers.omero.proxy_core import ProxyCore
 
 from individual import Individual

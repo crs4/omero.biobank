@@ -1,23 +1,22 @@
-import details as okbd
 import vl.lib.utils as vlu
 
 import itertools as it
 import numpy     as np
 import logging
 import time
+import table_ops
 
-class GdoRepos(okbd.Proxy):
+class GdoRepos(object):
   """
   This acts as an entry point for all SNP Genotype Data Object
   Repositories operations.
 
   """
-  def __init__(self, host, user, passwd):
-    super(GdoRepos, self).__init__(host, user, passwd)
+  def __init__(self, proxy):
+    self.proxy = proxy
     self.logger = logging.getLogger('omero_kb::GdoRepos')
     self.logger.debug('created.')
     self.index = {}
-
 
   def table_name(self, set_vid):
     return '%s.h5' % set_vid
@@ -25,17 +24,17 @@ class GdoRepos(okbd.Proxy):
   def create_repository(self, set_vid, N):
     table_name = self.table_name(set_vid)
     self.logger.info('start creating %s %s' % (table_name, N))
-    s = self.connect()
-    okbd.create_snp_gdo_repository_table(s, table_name, N, self.logger)
-    self.disconnect()
+    s = self.proxy.connect()
+    table_ops.create_snp_gdo_repository_table(s, table_name, N, self.logger)
+    self.proxy.disconnect()
     self.logger.info('done creating %s %s' % (table_name, N))
 
   def append(self, set_vid, probs, confidence, op_vid):
     table_name = self.table_name(set_vid)
     vid = vlu.make_vid()
     self.logger.info('start appending %s to %s [%s]' % (vid, set_vid, op_vid))
-    s = self.connect()
-    t = okbd.get_table(s, table_name, self.logger)
+    s = self.proxy.connect()
+    t = table_ops.get_table(s, table_name, self.logger)
     col_objs = t.getHeaders()
     # FIXME: this is dangerous, it assumes that we know details
     #        on the table implementation...
@@ -49,7 +48,7 @@ class GdoRepos(okbd.Proxy):
     col_objs[2].values = [pstr]
     col_objs[3].values = [cstr]
     t.addData(col_objs)
-    self.disconnect()
+    self.proxy.disconnect()
     self.logger.info('done appending')
     try:
       del self.index[table_name]
@@ -84,16 +83,16 @@ class GdoRepos(okbd.Proxy):
   def get(self, set_vid, vid):
     table_name = self.table_name(set_vid)
     self.logger.info('start get %s from %s' % (vid, set_vid))
-    s = self.connect()
+    s = self.proxy.connect()
     #--
-    t = okbd.get_table(s, table_name, self.logger)
+    t = table_ops.get_table(s, table_name, self.logger)
     self.__cache_indices(t, table_name)
     row_id = self.index[table_name][vid]
     v = t.read(range(0,4), row_id, row_id+1)
     r = self.__unwrap_gdo(set_id, v, 0)
     assert r['row_id'] == row_id and r['vid'] == vid and r['set_id'] == set_id
     #--
-    self.disconnect()
+    self.proxy.disconnect()
     self.logger.info('done get %s from %s' % (vid, set_vid))
     return r
 
@@ -110,13 +109,14 @@ class GdoRepos(okbd.Proxy):
           yield self.__unwrap_gdo(v, k)
         i = j
       self.logger.info('done get_gdo_stream %s' % (set_vid))
-      self.disconnect()
+      # this closes the connect() below
+      self.proxy.disconnect()
     #-
     table_name = self.table_name(set_vid)
     self.logger.info('start get_gdo_stream on %s' % (set_vid))
-    s = self.connect()
+    s = self.proxy.connect()
     #--
-    t = okbd.get_table(s, table_name, self.logger)
+    t = table_ops.get_table(s, table_name, self.logger)
     return iter_on_gdo(t)
 
 
