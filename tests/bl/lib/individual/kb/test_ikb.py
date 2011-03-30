@@ -19,6 +19,9 @@ class TestIKB(unittest.TestCase):
   def setUp(self):
     self.ikb = iKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
     self.skb = sKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
+    self.atype_map   = self.skb.get_action_type_table()
+    self.outcome_map = self.skb.get_result_outcome_table()
+    self.sstatus_map = self.skb.get_sample_status_table()
 
   def tearDown(self):
     self.kill_list.reverse()
@@ -145,7 +148,7 @@ class TestIKB(unittest.TestCase):
     self.kill_list.append(individual)
     #--
     conf, action = self.create_action(action=self.ikb.ActionOnIndividual())
-    sconf = { 'target' : sample}
+    sconf = { 'target' : individual}
     self.configure_object(action, sconf)
     conf.update(sconf)
     return conf, action
