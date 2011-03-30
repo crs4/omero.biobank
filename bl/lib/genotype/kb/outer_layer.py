@@ -15,6 +15,9 @@ class InnerLayer(object):
 
   #-- marker def
   def add_snp_marker_definitions(self, stream, op_vid):
+    """
+    FIXME: no check whatsoever on multiple markers with same ids and masks.
+    """
     return self.driver.add_snp_marker_definitions(stream, op_vid)
 
   def get_snp_marker_definitions(self, selector):

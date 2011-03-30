@@ -12,7 +12,7 @@ class Individual(OmeroWrapper, kb.Individual):
   OME_TABLE = "Individual"
 
   def __init__(self, from_=None):
-    ome_type = Individual.get_ome_type()
+    ome_type = self.get_ome_type()
     if isinstance(from_, ome_type):
       ome_individual = from_
     else:

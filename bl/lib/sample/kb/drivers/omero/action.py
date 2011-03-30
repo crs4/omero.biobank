@@ -7,44 +7,46 @@ import vl.lib.utils.ome_utils as vluo
 
 import bl.lib.sample.kb as kb
 
+
 import time
 
 from study import Study
 
+#----------------------------------------------------------------------
 class ActionSetup(OmeroWrapper, kb.ActionSetup):
 
   OME_TABLE = "ActionSetup"
 
   def __init__(self, from_=None):
-    ome_type = ActionSetup.get_ome_type()
-    if isinstance(from_, ome_type):
+    ome_type = self.get_ome_type()
+    if not from_ is None:
       ome_obj = from_
     else:
       ome_obj = ome_type()
       ome_obj.vid = ort.rstring(vlu.make_vid())
     super(ActionSetup, self).__init__(ome_obj)
-
+#----------------------------------------------------------------------
 class Device(OmeroWrapper, kb.Device):
 
   OME_TABLE = "Device"
 
   def __init__(self, from_=None):
-    ome_type = Device.get_ome_type()
-    if isinstance(from_, ome_type):
+    ome_type = self.get_ome_type()
+    if not from_ is None:
       ome_obj = from_
     else:
       ome_obj = ome_type()
       ome_obj.vid = ort.rstring(vlu.make_vid())
     super(Device, self).__init__(ome_obj)
 
-
+#----------------------------------------------------------------------
 class Action(OmeroWrapper, kb.Action):
 
   OME_TABLE = "Action"
 
   def __init__(self, from_=None):
-    ome_type = Action.get_ome_type()
-    if isinstance(from_, ome_type):
+    ome_type = self.get_ome_type()
+    if not from_ is None:
       ome_action = from_
     else:
       ome_action = ome_type()
@@ -75,10 +77,8 @@ class Action(OmeroWrapper, kb.Action):
       return setattr(self.ome_obj, name, value.ome_obj)
     elif name == 'actionType':
       return setattr(self.ome_obj, name, value)
-    elif hasattr(value, 'ome_obj'):
-      return setattr(self.ome_obj, name, value.ome_obj)
     else:
-      return setattr(self.ome_obj, name, ort.wrap(value))
+      return super(Action, self).__setattr__(name, value)
 
   def __getattr__(self, name):
     if name == 'beginTime':
@@ -94,8 +94,5 @@ class Action(OmeroWrapper, kb.Action):
     elif name == 'actionType':
       return self.ome_obj.actionType
     else:
-      return ort.unwrap(getattr(self.ome_obj, name))
-
-
-
+      return super(Action, self).__getattr__(name)
 

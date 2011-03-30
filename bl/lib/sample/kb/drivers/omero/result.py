@@ -7,21 +7,24 @@ import bl.lib.sample.kb as kb
 import time
 
 from wrapper import OmeroWrapper
-from action         import Action
+from action  import Action
 
 class Result(OmeroWrapper, kb.Result):
 
   OME_TABLE = "Result"
 
+  def __setup__(self, ome_obj):
+    ome_obj.vid = ort.rstring(vlu.make_vid())
+    ome_obj.creationDate = vluo.time2rtime(time.time())
+
   def __init__(self, from_=None):
     ome_type = self.get_ome_type()
-    if isinstance(from_, ome_type):
-      ome_result = from_
+    if not from_ is None:
+      ome_obj = from_
     else:
-      ome_result = ome_type()
-      ome_result.vid = ort.rstring(vlu.make_vid())
-      ome_result.creationDate = vluo.time2rtime(time.time())
-    super(Result, self).__init__(ome_result)
+      ome_obj = ome_type()
+      self.__setup__(ome_obj)
+    super(Result, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):
     if self.creationDate is None:

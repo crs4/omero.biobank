@@ -22,7 +22,7 @@ We are working under the following assumptions:
 """
 
 import bl.lib.pedal.io as io
-from bl.lib.genotype.kb import KnowledgeBase
+from bl.lib.genotype.kb import KnowledgeBase as gKB
 import numpy as np
 
 import os
@@ -73,14 +73,13 @@ class PedReader(object):
 
 #------------------------------------------------------------------------------------------
 def create_new_snp_markers_set(kb, maker, model, ped_reader):
-  marker_vids = kb.get_snp_vids(rs_labels=ped_reader.get_marker_names())
+  marker_vids = gkb.get_snp_vids(rs_labels=ped_reader.get_marker_names())
   def snp_set_item(vids):
     for i, v in enumerate(vids):
       r = {'marker_vid' : v, 'marker_indx' : i, 'allele_flip' : False}
       yield r
   op_vid = kb.make_vid()
-  set_vid = kb.create_new_snp_markers_set(maker, model, snp_set_item(marker_vids), op_vid)
-  kb.create_new_gdo_repository(set_vid)
+  set_vid = kb.create_snp_markers_set(maker, model, snp_set_item(marker_vids), op_vid)
   return set_vid
 
 def main():
@@ -90,17 +89,14 @@ def main():
   OME_USER = os.getenv("OME_USER", "root")
   OME_PASS = os.getenv("OME_PASS", "romeo")
 
-  kb = KnowledgeBase(driver='omero')
-
-  kb.open(OME_HOST, OME_USER, OME_PASS)
+  gkb = gKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
   #--
   maker, model = 'crs4-bl', 'taqman-foo'
   pr = PedReader(pedfile, datfile, conf_value=0.8)
-  set_vid = create_new_snp_markers_set(kb, maker, model, pr)
+  set_vid = create_new_snp_markers_set(gkb, maker, model, pr)
   #--
   for x in pr:
-    vid = kb.append_gdo(set_vid, x['probs'], x['confs'], x['op_vid'])
+    vid = gkb.append_gdo(set_vid, x['probs'], x['confs'], x['op_vid'])
   #--
-  kb.close()
 
 main()

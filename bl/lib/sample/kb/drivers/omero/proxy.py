@@ -7,9 +7,13 @@ from proxy_core import ProxyCore
 from study  import Study
 from device import Device
 from action import Action, ActionSetup, Device
+from action_derived import ActionOnSample, ActionOnSampleSlot, ActionOnContainer
 from result import Result
 from sample import Sample, DataSample, BioSample
+from sample import ContainerSlot, PlateWell
 from sample import BloodSample, DNASample, SerumSample
+from samples_container import SamplesContainer, TiterPlate
+
 
 
 class Proxy(ProxyCore):
@@ -21,8 +25,15 @@ class Proxy(ProxyCore):
   Device      = Device
   Action      = Action
   ActionSetup = ActionSetup
+  ActionOnSample = ActionOnSample
+  ActionOnSampleSlot = ActionOnSampleSlot
+  ActionOnContainer = ActionOnContainer
   Result      = Result
   Sample      = Sample
+  SamplesContainer = SamplesContainer
+  TiterPlate  = TiterPlate
+  ContainerSlot = ContainerSlot
+  PlateWell   = PlateWell
   DataSample  = DataSample
   BioSample   = BioSample
   BloodSample = BloodSample

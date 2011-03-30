@@ -16,11 +16,10 @@ individuals and objects. Specifically, we will:
 
 """
 
+from bl.lib.sample.kb     import KnowledgeBase as sKB
 from bl.lib.individual.kb import KnowledgeBase as iKB
-from bl.lib.result.kb     import KnowledgeBase as rKB
 from bl.lib.genotype.kb   import KnowledgeBase as gKB
 import numpy as np
-
 
 # o = omero.model.OriginalFileI()
 
@@ -55,14 +54,30 @@ def register_individuals(ikb):
 
 def enroll_to_study(ikb, study, individuals):
   for i in individuals:
-    ikb.enroll(study, i)
+    e = ikb.Enrollment()
+    e.study      = study
+    e.individual = i
+    e = ikb.save(e)
 
-def register_blood_samples(dkb, individuals):
+def bio_sample_loader(skb, atype_map, outcome_map, sstatus_map,
+                      study, sample):
+  a = skb.Action()
+  a.actionType = atype_map['ACQUISITION']
+  a.operator = 'Alfred E. Neumann'
+  a.context  = study
+  a = skb.save(a)
+  sample.outcome, sample.action = outcome_map['PASSED'], a
+  sample.labLabel = 'lab-label-%s' % time.time()
+  sample.barcode  = 'lab-barcode-%s' % time.time()
+  sample.initialVolume = 1.0
+  sample.currentVolume = 1.0
+  sample.status = sstatus_map['USABLE']
+
+def register_blood_samples(skb, study, individuals):
   for i in individuals:
-    bs = dkb.BloodSample()
-    # fill details
+    bs = skb.BloodSample()
+    bio_sample_loader(skb, study, i, bs)
     bs = dkb.save(bs)
-    dbk.link(i, bs, op='')
 
 def register_dna_samples(dkb, blood_samples):
   for bs in blood_samples:
@@ -109,18 +124,25 @@ def main():
   OME_USER = os.getenv("OME_USER", "root")
   OME_PASS = os.getenv("OME_PASS", "romeo")
 
+  skb = sKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
   ikb = iKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
   gkb = gKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
-  rkb = rKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
+
+  #--
+  atype_map = skb.get_action_type_table()
+  outcome_map     = skb.get_result_outcome_table()
+  sstatus_map     = skb.get_sample_status_table()
+
   #--
   inds = register_individuals()
-  s = ikb.Study('foo')
+  s = skb.Study('foo')
+  s = skb.save(s)
   enroll_to_study(s, inds)
   #--
-  blood_samples = register_blood_samples(inds)
-  dna_samples = register_dna_samples(blood_samples)
+  blood_samples = register_blood_samples(skb, atype_map, s, inds)
+  dna_samples = register_dna_samples(skb, blood_samples)
   #--
-  plates      = load_microtiter_plates(dna_samples)
+  plates      = load_microtiter_plates(skb, dna_samples)
   cel_results = run_genotyping(plates)
   #--
   run_birdseed(cel_results)

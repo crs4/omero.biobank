@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <!-- The name "Plate" already exists into Omero -->
+  <type id="ome.model.vl.TiterPlate" superclass="ome.model.vl.SamplesContainer">
+    <properties>
+      <required name="rows" type="int"/>
+      <required name="columns" type="int"/>
+    </properties>
+  </type>
+</types>

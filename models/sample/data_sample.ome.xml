@@ -3,7 +3,7 @@
 <types>
   <type id="ome.model.vl.DataSample" superclass="ome.model.vl.Sample">
     <properties>
-      <!-- TODO add some "generic" fields -->
+      <required name="name" type="string" unique="true"/>
     </properties>
   </type>
 </types>

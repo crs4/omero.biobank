@@ -43,6 +43,24 @@ class Action(object):
     raise NotImplementedError
 
 #--
+class ActionOnSample(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
+class ActionOnContainer(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
+class ActionOnSampleSlot(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
 class ActionSetup(object):
 
   def __init__(self):
@@ -67,10 +85,35 @@ class Sample(object):
     raise NotImplementedError
 
 #--
+class ContainerSlot(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
+class SamplesContainer(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
+class TiterPlate(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
+class PlateWell(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
 class DataSample(object):
 
   def __init__(self):
     raise NotImplementedError
+
 
 #--
 class BioSample(object):

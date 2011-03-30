@@ -2,6 +2,7 @@ from wrapper import OmeroWrapper
 import omero.rtypes as ort
 
 from bl.lib.sample.kb.drivers.omero.wrapper import OmeroWrapper
+from bl.lib.sample.kb.drivers.omero.study import Study
 import vl.lib.utils           as vlu
 import vl.lib.utils.ome_utils as vluo
 
@@ -9,7 +10,6 @@ import bl.lib.individual.kb as kb
 
 import time
 
-from bl.lib.sample.kb.drivers.omero.study import Study
 from individual import Individual
 
 class Enrollment(OmeroWrapper, kb.Enrollment):
@@ -17,7 +17,7 @@ class Enrollment(OmeroWrapper, kb.Enrollment):
   OME_TABLE = "Enrollment"
 
   def __init__(self, from_=None):
-    ome_type = Enrollment.get_ome_type()
+    ome_type = self.get_ome_type()
     if isinstance(from_, ome_type):
       ome_enrollment = from_
     else:
