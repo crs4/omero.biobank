@@ -33,24 +33,6 @@ import numpy as np
 INDIVIDUALS = [(0, None, None, 'MALE'), (1, None, None, 'FEMALE'),
                (2, 0, 1, 'MALE'), (3, 0, 1, 'FEMALE')]
 
-def register_individuals(ikb):
-  """
-  Create and register a group of individuals.
-  """
-  gender_table = ikb.get_gender_table()
-  i_map = {}
-  for x in INDIVIDUALS:
-    i_map[x[0]] = ikb.Individual()
-    i_map[x[0]].gender = gender_table(x[3])
-
-  for x in INDIVIDUALS:
-    if not x[1] is None:
-      i_map[x[0]].father = i_map[x[1]]
-    if not x[2] is None:
-      i_map[x[0]].mother = i_map[x[2]]
-    i_map[x[0]] = ikb.save(i_map[x[0]])
-
-  return i_map.values()
 
 def enroll_to_study(ikb, study, individuals):
   for i in individuals:
@@ -119,25 +101,61 @@ def dump_network(dkb, inds):
         print '\tmimetype: %s' % r.mimetype
         print '\tpath: %s'     % r.path
 
+
+class network_builder(object):
+  def __init__(self, host, user, passwd, study_label):
+    self.skb = sKB(driver='omero')(host, user, passwd)
+    self.ikb = iKB(driver='omero')(host, user, passwd)
+    self.gkb = gKB(driver='omero')(host, user, passwd)
+    self.atype_map   = self.skb.get_action_type_table()
+    self.outcome_map = self.skb.get_result_outcome_table()
+    self.sstatus_map = self.skb.get_sample_status_table()
+    self.gender_map = self.ikb.get_gender_table()
+
+    s = self.skb.Study(label=study_label)
+    self.study = self.skb.save(s)
+
+  def register_individuals(self, individuals):
+    """
+    Create and register a group of individuals.
+    """
+    gender_table = ikb.get_gender_table()
+    i_map = {}
+    for x in individuals:
+      i_map[x[0]] = self.ikb.Individual(gender=gender_table[x[3]])
+
+    for x in individuals:
+      if not x[1] is None:
+        i_map[x[0]].father = i_map[x[1]]
+      if not x[2] is None:
+        i_map[x[0]].mother = i_map[x[2]]
+      i_map[x[0]] = ikb.save(i_map[x[0]])
+
+    self.individuals = i_map.values()
+
+
+
+  def enroll_individuals(self, individuals):
+    self.register_individuals(individuals)
+    for i in self.individuals:
+
+
+
+
+
 def main():
   OME_HOST = os.getenv("OME_HOST", "localhost")
   OME_USER = os.getenv("OME_USER", "root")
   OME_PASS = os.getenv("OME_PASS", "romeo")
 
-  skb = sKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
-  ikb = iKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
-  gkb = gKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
+  nb = network_builder(OME_HOST, OME_USER, OME_PASS, study_label='foo')
+  nb.enroll_individuals(INDIVIDUALS)
+  nb.get_blood_samples()
+  nb.extract_dna_samples()
+  nb.get_raw_genotype_data(vendor='affymetrix', model='GenomeWide6.0')
+  nb.call_genotypes()
 
-  #--
-  atype_map = skb.get_action_type_table()
-  outcome_map     = skb.get_result_outcome_table()
-  sstatus_map     = skb.get_sample_status_table()
 
-  #--
-  inds = register_individuals()
-  s = skb.Study('foo')
-  s = skb.save(s)
-  enroll_to_study(s, inds)
   #--
   blood_samples = register_blood_samples(skb, atype_map, s, inds)
   dna_samples = register_dna_samples(skb, blood_samples)

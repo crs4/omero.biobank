@@ -42,3 +42,10 @@ class Enrollment(object):
     raise NotImplementedError
 
 
+
+class ActionOnIndividual(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+

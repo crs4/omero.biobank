@@ -46,7 +46,7 @@ class TestIKB(unittest.TestCase):
     except:
       pass
 
-  def create_individual(self, gender):
+  def create_individual(self, gender='MALE'):
     gmap = self.ikb.get_gender_table()
     conf = {'gender' : gmap[gender]}
     i = self.ikb.Individual(gender=conf['gender'])
@@ -103,11 +103,66 @@ class TestIKB(unittest.TestCase):
     self.check_object(e, conf, self.ikb.Enrollment)
     self.ikb.delete(e)
 
+  def create_device(self, device = None):
+    device = device if device else self.skb.Device()
+    conf = {'vendor' : 'foomaker', 'model' : 'foomodel', 'release' : '0.2'}
+    self.configure_object(device, conf)
+    return conf, device
+
+  def create_action_setup(self, action_setup=None):
+    action_setup = action_setup if action_setup else self.skb.ActionSetup()
+    conf = {'notes' : 'hooo'}
+    action_setup.notes = conf['notes']
+    conf['id'] = action_setup.id
+    return conf, action_setup
+
+  def create_action(self, action=None):
+    action = action if action else self.skb.Action()
+    dev_conf, device = self.create_device()
+    device = self.skb.save(device)
+    self.kill_list.append(device)
+    #--
+    asu_conf, asetup = self.create_action_setup()
+    asetup = self.skb.save(asetup)
+    self.kill_list.append(asetup)
+    #--
+    stu_conf, study = self.create_study()
+    study = self.skb.save(study)
+    self.kill_list.append(study)
+    #--
+    conf = {'setup' : asetup,
+            'device': device,
+            'actionType' : self.atype_map['ACQUISITION'],
+            'operator' : 'Alfred E. Neumann',
+            'context'  : study,
+            'description' : 'description ...'}
+    self.configure_object(action, conf)
+    return conf, action
+
+  def create_action_on_individual(self):
+    conf, individual = self.create_individual()
+    individual = self.ikb.save(individual)
+    self.kill_list.append(individual)
+    #--
+    conf, action = self.create_action(action=self.ikb.ActionOnIndividual())
+    sconf = { 'target' : sample}
+    self.configure_object(action, sconf)
+    conf.update(sconf)
+    return conf, action
+
+  def test_action_on_individual(self):
+    conf, action = self.create_action_on_individual()
+    action = self.ikb.save(action)
+    self.check_object(action, conf, self.ikb.ActionOnIndividual)
+    self.ikb.delete(action)
+
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestIKB('test_orphan'))
   suite.addTest(TestIKB('test_with_parents'))
   suite.addTest(TestIKB('test_enrollment'))
+  suite.addTest(TestIKB('test_action_on_individual'))
   return suite
 
 if __name__ == '__main__':

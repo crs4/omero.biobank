@@ -4,6 +4,7 @@ from bl.lib.sample.kb.drivers.omero.proxy_core import ProxyCore
 
 from individual import Individual
 from enrollment import Enrollment
+from action     import ActionOnIndividual
 
 class Proxy(ProxyCore):
   """
@@ -22,6 +23,7 @@ class Proxy(ProxyCore):
 
   Individual = Individual
   Enrollment = Enrollment
+  ActionOnIndividual = ActionOnIndividual
 
   def get_gender_table(self):
     res = self.ome_operation("getQueryService", "findAll", "Gender", None)
