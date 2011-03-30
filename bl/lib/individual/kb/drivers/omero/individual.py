@@ -11,23 +11,27 @@ class Individual(OmeroWrapper, kb.Individual):
 
   OME_TABLE = "Individual"
 
-  def __init__(self, from_=None):
+  def __setup__(self, ome_obj, gender):
+    ome_obj.vid = ort.rstring(vlu.make_vid())
+    ome_obj.gender = gender
+
+
+  def __init__(self, from_=None, gender=None):
     ome_type = self.get_ome_type()
-    if isinstance(from_, ome_type):
-      ome_individual = from_
+    if not from_ is None:
+      ome_obj = from_
     else:
-      gender = from_
-      ome_individual = ome_type()
-      ome_individual.vid = ort.rstring(vlu.make_vid())
-      if gender is not None:
-        ome_individual.gender = gender
-    super(Individual, self).__init__(ome_individual)
+      if gender is None:
+        raise ValueError('Individual gender cannot be None')
+      ome_obj = ome_type()
+      self.__setup__(ome_obj, gender)
+    super(Individual, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):
     if self.gender is None:
       raise kb.KBError("Individual gender can't be None")
     else:
-      raise kb.KBError("unkwon error")
+      super(Individual, self).__handle_validation_errors__()
 
   def __setattr__(self, name, value):
     if name == 'father':
