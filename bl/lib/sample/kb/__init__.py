@@ -61,6 +61,18 @@ class ActionOnSampleSlot(object):
     raise NotImplementedError
 
 #--
+class ActionOnDataCollection(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
+class ActionOnDataCollectionItem(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
 class ActionSetup(object):
 
   def __init__(self):
@@ -135,6 +147,18 @@ class DNASample(object):
 
 #--
 class SerumSample(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
+class DataCollectionItem(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
+class DataCollection(object):
 
   def __init__(self):
     raise NotImplementedError

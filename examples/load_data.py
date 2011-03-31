@@ -20,6 +20,7 @@ from bl.lib.sample.kb     import KnowledgeBase as sKB
 from bl.lib.individual.kb import KnowledgeBase as iKB
 from bl.lib.genotype.kb   import KnowledgeBase as gKB
 import numpy as np
+import time
 
 # o = omero.model.OriginalFileI()
 
@@ -33,75 +34,6 @@ import numpy as np
 INDIVIDUALS = [(0, None, None, 'MALE'), (1, None, None, 'FEMALE'),
                (2, 0, 1, 'MALE'), (3, 0, 1, 'FEMALE')]
 
-
-def enroll_to_study(ikb, study, individuals):
-  for i in individuals:
-    e = ikb.Enrollment()
-    e.study      = study
-    e.individual = i
-    e = ikb.save(e)
-
-def bio_sample_loader(skb, atype_map, outcome_map, sstatus_map,
-                      study, sample):
-  a = skb.Action()
-  a.actionType = atype_map['ACQUISITION']
-  a.operator = 'Alfred E. Neumann'
-  a.context  = study
-  a = skb.save(a)
-  sample.outcome, sample.action = outcome_map['PASSED'], a
-  sample.labLabel = 'lab-label-%s' % time.time()
-  sample.barcode  = 'lab-barcode-%s' % time.time()
-  sample.initialVolume = 1.0
-  sample.currentVolume = 1.0
-  sample.status = sstatus_map['USABLE']
-
-def register_blood_samples(skb, study, individuals):
-  for i in individuals:
-    bs = skb.BloodSample()
-    bio_sample_loader(skb, study, i, bs)
-    bs = dkb.save(bs)
-
-def register_dna_samples(dkb, blood_samples):
-  for bs in blood_samples:
-    ds = dkb.DnaSample()
-    # fill details
-    ds = dkb.save(ds)
-    dbk.link(bs, ds, op='')
-
-def load_microtiter_plates(dkb, dna_samples):
-  N_WELLS = 96
-  if not dna_samples:
-    return []
-  # fill details
-  plates = []
-  plate = None
-  for i, ds in enumerate(dna_samples):
-    j = i % N_WELLS
-    if j == 0:
-      if plate:
-        plates.append(dkb.save(plate))
-      plate = dkb.Microtiter()
-    plate.fill_well(j, ds)
-  return plates
-
-def run_genotyping(dkb, plates):
-  pass
-
-def run_birdseed(dkb, cel_results):
-  pass
-
-def dump_network(dkb, inds):
-  for i in inds:
-    print 'Individual: %s' % i.vid
-    res = dkb.get_results_for_individual(i.vid)
-    for r in res:
-      print '\tid:%s' % r.vid
-      print '\ttype: %s' % r.type
-      for c in dkb.get_data_containers_for_result(r.vid):
-        print '\tmimetype: %s' % r.mimetype
-        print '\tpath: %s'     % r.path
-
-
 class network_builder(object):
   def __init__(self, host, user, passwd, study_label):
     self.skb = sKB(driver='omero')(host, user, passwd)
@@ -110,10 +42,13 @@ class network_builder(object):
     self.atype_map   = self.skb.get_action_type_table()
     self.outcome_map = self.skb.get_result_outcome_table()
     self.sstatus_map = self.skb.get_sample_status_table()
+    self.dtype_map   = self.skb.get_data_type_table()
     self.gender_map = self.ikb.get_gender_table()
 
     s = self.skb.Study(label=study_label)
     self.study = self.skb.save(s)
+    self.enrollments = []
+    self.individuals = []
 
   def register_individuals(self, individuals):
     """
@@ -121,27 +56,202 @@ class network_builder(object):
     """
     gender_table = ikb.get_gender_table()
     i_map = {}
+    founders = []
     for x in individuals:
-      i_map[x[0]] = self.ikb.Individual(gender=gender_table[x[3]])
+      i = self.ikb.Individual(gender=gender_table[x[3]])
+      if x[1] is None and x[2] is None:
+        founders.append(i)
+
+    for i in founders:
+      i = self.ikb.save(i)
 
     for x in individuals:
+      if x[1] is None and x[2] is None:
+        continue
       if not x[1] is None:
         i_map[x[0]].father = i_map[x[1]]
       if not x[2] is None:
         i_map[x[0]].mother = i_map[x[2]]
       i_map[x[0]] = ikb.save(i_map[x[0]])
 
-    self.individuals = i_map.values()
-
-
+    self.individuals.extend(i_map.values())
 
   def enroll_individuals(self, individuals):
     self.register_individuals(individuals)
-    for i in self.individuals:
+    for k, i in enumerate(self.individuals):
+      e = self.ikb.Enrollment(study=self.study, individual=i,
+                              study_code= '%d' % k)
+      self.enrollment.append(self.ikb.save(e))
 
+  def get_device(self, vendor, model, release):
+    device = self.skb.Device()
+    device.vendor, device.model, device.release = vendor, model, release
+    return self.skb.save(device)
 
+  def get_action_setup(self, notes):
+    asetup = self.skb.ActionSetup()
+    asetup.notes = notes
+    return self.skb.save(asetup)
 
+  def get_action_helper(self, aclass, study, target, device, asetup, atype, operator):
+    desc = "This is a simulation"
+    action = aclass()
+    action.setup, action.device, action.actionType = asetup, device, atype
+    action.operator, action.context, action.description = operator, study, desc
+    action.target = target
+    return self.skb.save(action)
 
+  def get_action_on_individual(self, enrollment, device, asetup, atype, operator):
+    return self.get_action_helper(self.ikb.ActionOnIndividual,
+                                  enrollment.study, enrollment.individual,
+                                  device, asetup, atype, operator)
+
+  def get_action_on_sample(self, sample, device, asetup, atype, operator):
+    return self.get_action_helper(self.ikb.ActionOnSample,
+                                  self.study, sample,
+                                  device, asetup, atype, operator)
+
+  def get_action_on_sample_slot(self, sample_slot, device, asetup, atype, operator):
+    return self.get_action_helper(self.ikb.ActionOnSampleSlot,
+                                  self.study, sample_slot,
+                                  device, asetup, atype, operator)
+
+  def get_action_on_data_collection(self, data_collection, device, asetup, atype, operator):
+    return self.get_action_helper(self.ikb.ActionOnDataCollection,
+                                  self.study, data_collection,
+                                  device, asetup, atype, operator)
+
+  def get_action_on_data_collection_item(self, item, device, asetup, atype, operator):
+    return self.get_action_helper(self.ikb.ActionOnDataCollectionItem,
+                                  self.study, item,
+                                  device, asetup, atype, operator)
+
+  def acquire_blood_sample(self, enrollment, device, asetup, atype, operator, volume):
+    action = self.get_action_on_individual(enrollment, device, asetup, atype, operator)
+    #--
+    status = self.sstatus_map['USABLE']
+    sample = self.skb.BloodSample()
+    sample.action, sample.outcome   = action, self.outcome_map['PASSED']
+    sample.labLabel = '%s-%s' % (enrollment.study.label, enrollment.studyCode)
+    sample.barcode  = sample.id
+    sample.initialVolume = sample.currentVolume = volume
+    return self.skb.save(sample)
+
+  def acquire_blood_samples(self, conf):
+    device = self.get_device(conf['organization'], conf['department'], '0.0')
+    asetup = self.get_action_setup(conf['notes'])
+    atype  = self.atype_map('ACQUISITION')
+
+    for e in self.enrollment:
+      self.acquire_blood_sample(e, device, asetup, atype, conf['operator'], conf['volume'])
+
+  def extract_dna_sample(self, blood_sample, device, asetup, atype, operator):
+    action = self.get_action_on_sample(blood_sample, device, asetup, atype, operator)
+    status = self.sstatus_map['USABLE']
+    #-
+    sample = self.skb.DNASample()
+    sample.action, sample.outcome   = action, self.outcome_map['PASSED']
+    sample.labLabel = '%s-DNA-%s' % (blood_sample.labLabel, time.time())
+    sample.barcode  = sample.id
+    sample.initialVolume = sample.currentVolume = 0.1
+    sample.qp230260 = sample.qp230280 = 0.3
+    return self.skb.save(sample)
+
+  def extract_dna_samples(self):
+    device = self.get_device('ACME corp', 'DNA magic extractor', '0.0')
+    asetup = self.get_action_setup('nothing to declare')
+    atype  = self.atype_map('EXTRACTION')
+
+    for e in self.enrollment:
+      blood_sample = self.skb.get_blood_sample(individual=e.individual)
+      self.extract_dna_sample(blood_sample, device, asetup, atype, 'Wiley E. Coyote')
+
+  def fill_titer_plate(self, rows, columns, stream):
+    plate = self.skb.TiterPlate(rows, columns)
+    plate = self.skb.save(plate)
+    delta_volume = 0.01
+    for r in range(rows):
+      for c in range(columns):
+        try:
+          dna_sample = stream.next()
+        except StopIteration:
+          return False, plate
+        plate_well = self.skb.PlateWell(dna_sample, plate, r, c, delta_volume)
+        dna_sample.volume = dna_sample.volume - delta_volume
+        dna_sample = self.skb.save(dna_sample)
+        plate_well = self.skb.save(plate_well)
+    return True, plate
+
+  def fill_titer_plates(self):
+    device = self.get_device('Affymetrix', 'GenomeWide 6.0', '0.0')
+    asetup = self.get_action_setup('nothing to declare')
+    atype  = self.atype_map('PROCESSING')
+    rows, columns = 16, 16
+
+    def dna_sample_stream():
+      for e in self.enrollment:
+        yield self.skb.get_dna_sample(individual=e.individual)
+
+    stream = dna_sample_stream()
+    while plates_to_fill:
+      plates_to_fill, plate = fill_titer_plate(rows, columns, stream)
+
+  def measure_raw_genotype(self, sample, device, asetup, atype, operator):
+    action = self.get_action_on_sample_slot(sample, device, asetup, atype, operator)
+    #-
+    sample = self.skb.DataSample(name='FIXME-this-is-a-workaround')
+    sample.action  = action
+    sample.outcome = self.outcome_map['PASSED']
+    sample.name = '%s.cel' % sample.id
+    sample.dataType = self.dtype_map['GTRAW']
+    return self.skb.save(sample)
+
+  def measure_raw_genotypes(self):
+    device = self.get_device('Affymetrix', 'GenomeWide 6.0', '0.0')
+    asetup = self.get_action_setup('nothing to declare')
+    atype  = self.atype_map('PROCESSING')
+
+    for p in self.skb.get_titer_plates():
+      for w in self.skb.get_wells_of_plate(p):
+        data_sample = self.measure_raw_genotype(w.sample, device, asetup, atype, 'Wiley E. Coyote')
+        path = 'file://ELS/els5/storage/a/%s' % data_sample.name
+        sha1 = 'a fake sha1 of %s' % data_sample.name
+        mime_type = 'x-application/affymetrix-cel' # FIXME, we need to list the legal mime_types
+        self.skb.register_data_object(data_sample, mime_type, path, sha1)
+
+  def build_data_collection(self):
+    data_collection = self.skb.DataCollection(study=self.study)
+    data_collection = self.skb.save(data_collection)
+    #-
+    for e in self.enrollment:
+      data_sample = self.skb.get_dataset(individual=e.individual, dataType=self.dtype_map['GTRAW'])
+      data_collection.append_item(dataSample=data_sample)
+    #--
+    return data_collection
+
+  def call_genotype(self, item, device, asetup, atype,  operator):
+    action = self.get_action_on_data_collection_item(item, device, asetup, atype, operator)
+    #-
+    sample = self.skb.DataSample(name='FIXME-this-is-a-workaround')
+    sample.action  = action
+    sample.outcome = self.outcome_map['PASSED']
+    sample.name = '%s.gt' % sample.id
+    sample.dataType = self.dtype_map['GTCALL']
+    return self.skb.save(sample)
+
+  def call_genotypes(self):
+    device = self.get_device('CRS4', 'MR-birdseed', '0.0')
+    asetup = self.get_action_setup('nothing to declare')
+    atype  = self.atype_map('PROCESSING')
+    selector = "(vendor == ''Affymetrix')&(model== 'GenomeWide 6.0')"
+    set_vid = self.gkb.get_snp_markers_set(selector=selector)
+
+    data_collection = self.build_data_collection()
+    #-
+    for item in data_collection.items():
+      data_sample = self.call_genotype(item, device, asetup, atype,  'Wiley E. Coyote')
+      (vid, path, sha1, mime_type) = self.gkb.append_gdo(set_vid, probs, confidence, data_sample.action.id)
+      self.skb.register_data_object(data_sample.name, mime_type, path, sha1)
 
 def main():
   OME_HOST = os.getenv("OME_HOST", "localhost")
@@ -150,23 +260,16 @@ def main():
 
   nb = network_builder(OME_HOST, OME_USER, OME_PASS, study_label='foo')
   nb.enroll_individuals(INDIVIDUALS)
-  nb.get_blood_samples()
+
+  nb.acquire_blood_samples({'organization' : 'Azienda Ospedaliera Brotzu',
+                            'department'   : 'Centro trasfusionale',
+                            'notes' : 'no notes',
+                            'operator' : 'Alfred E. Neuman',
+                            'volume' : 100.0})
   nb.extract_dna_samples()
-  nb.get_raw_genotype_data(vendor='affymetrix', model='GenomeWide6.0')
+  nb.fill_titer_plates()
+  nb.measure_raw_genotypes(vendor='affymetrix', model='GenomeWide6.0')
   nb.call_genotypes()
-
-
-  #--
-  blood_samples = register_blood_samples(skb, atype_map, s, inds)
-  dna_samples = register_dna_samples(skb, blood_samples)
-  #--
-  plates      = load_microtiter_plates(skb, dna_samples)
-  cel_results = run_genotyping(plates)
-  #--
-  run_birdseed(cel_results)
-  #--
-  dump_network(dkb, inds)
-
 
 
 

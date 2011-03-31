@@ -8,13 +8,12 @@ import vl.lib.utils.ome_utils as vluo
 import bl.lib.sample.kb as kb
 
 from sample import Sample
-from sample import ContainerSlot
-from samples_container import SamplesContainer
+from sample import ContainerSlot, DataCollectionItem
+from samples_container import SamplesContainer, DataCollection
 from study  import Study
 from action import Action
 
 import time
-
 
 #----------------------------------------------------------------------
 class ActionOnSample(Action, kb.ActionOnSample):
@@ -85,5 +84,53 @@ class ActionOnSampleSlot(Action, kb.ActionOnSampleSlot):
       return ContainerSlot(self.ome_obj.device)
     else:
       return super(ActionOnSampleSlot, self).__getattr__(name)
+
+
+#----------------------------------------------------------------------
+class ActionOnDataCollection(Action, kb.ActionOnDataCollection):
+
+  OME_TABLE = "ActionOnDataCollection"
+
+  def __handle_validation_errors__(self):
+    if self.target is None:
+      raise kb.KBError("ActionOnDataCollection target can't be None")
+    else:
+      super(ActionOnDataCollection, self).__handle_validation_errors__()
+
+  def __setattr__(self, name, value):
+    if name == 'target':
+      return setattr(self.ome_obj, name, value.ome_obj)
+    else:
+      return super(ActionOnDataCollection, self).__setattr__(name, value)
+
+  def __getattr__(self, name):
+    if name == 'target':
+      return DataCollection(self.ome_obj.device)
+    else:
+      return super(ActionOnDataCollection, self).__getattr__(name)
+
+
+#----------------------------------------------------------------------
+class ActionOnDataCollectionItem(Action, kb.ActionOnDataCollectionItem):
+
+  OME_TABLE = "ActionOnDataCollectionItem"
+
+  def __handle_validation_errors__(self):
+    if self.target is None:
+      raise kb.KBError("ActionOnDataCollectionItem target can't be None")
+    else:
+      super(ActionOnDataCollectionItem, self).__handle_validation_errors__()
+
+  def __setattr__(self, name, value):
+    if name == 'target':
+      return setattr(self.ome_obj, name, value.ome_obj)
+    else:
+      return super(ActionOnDataCollectionItem, self).__setattr__(name, value)
+
+  def __getattr__(self, name):
+    if name == 'target':
+      return DataCollectionItem(self.ome_obj.device)
+    else:
+      return super(ActionOnDataCollectionItem, self).__getattr__(name)
 
 

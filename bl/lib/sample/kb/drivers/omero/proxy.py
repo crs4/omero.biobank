@@ -8,13 +8,13 @@ from study  import Study
 from device import Device
 from action import Action, ActionSetup, Device
 from action_derived import ActionOnSample, ActionOnSampleSlot, ActionOnContainer
+from action_derived import ActionOnDataCollection, ActionOnDataCollectionItem
 from result import Result
 from sample import Sample, DataSample, BioSample
 from sample import ContainerSlot, PlateWell
 from sample import BloodSample, DNASample, SerumSample
+from sample import DataCollection, DataCollectionItem
 from samples_container import SamplesContainer, TiterPlate
-
-
 
 class Proxy(ProxyCore):
   """
@@ -28,6 +28,8 @@ class Proxy(ProxyCore):
   ActionOnSample = ActionOnSample
   ActionOnSampleSlot = ActionOnSampleSlot
   ActionOnContainer = ActionOnContainer
+  ActionOnDataCollection = ActionOnDataCollection
+  ActionOnDataCollectionItem = ActionOnDataCollectionItem
   Result      = Result
   Sample      = Sample
   SamplesContainer = SamplesContainer
@@ -35,6 +37,8 @@ class Proxy(ProxyCore):
   ContainerSlot = ContainerSlot
   PlateWell   = PlateWell
   DataSample  = DataSample
+  DataCollection  = DataCollection
+  DataCollectionItem  = DataCollectionItem
   BioSample   = BioSample
   BloodSample = BloodSample
   DNASample   = DNASample
@@ -58,6 +62,10 @@ class Proxy(ProxyCore):
 
   def get_sample_status_table(self):
     res = self.ome_operation("getQueryService", "findAll", "SampleStatus", None)
+    return dict([(x._value._val, x) for x in res])
+
+  def get_data_type_table(self):
+    res = self.ome_operation("getQueryService", "findAll", "DataType", None)
     return dict([(x._value._val, x) for x in res])
 
 

@@ -3,7 +3,8 @@
 <types>
   <type id="ome.model.vl.DataSample" superclass="ome.model.vl.Sample">
     <properties>
-      <required name="name" type="string" unique="true"/>
+      <required name="name"     type="string" unique="true"/>
+      <required name="dataType" type="ome.model.vl.DataType"/>
     </properties>
   </type>
 </types>

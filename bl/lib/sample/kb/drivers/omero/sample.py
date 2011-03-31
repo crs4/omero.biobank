@@ -9,7 +9,7 @@ import bl.lib.sample.kb as kb
 import time
 
 from result import Result
-from samples_container import SamplesContainer, TiterPlate
+from samples_container import SamplesContainer, TiterPlate, DataCollection
 
 #------------------------------------------------------------
 class Sample(Result, kb.Sample):
@@ -115,15 +115,16 @@ class DataSample(Sample, kb.DataSample):
 
   OME_TABLE = "DataSample"
 
-  def __init__(self, from_=None, name=None):
+  def __init__(self, from_=None, name=None, data_type=None):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
-      if name is None:
-        raise ValueError('DataSample name cannot be None')
+      if name is None or data_type is None:
+        raise ValueError('DataSample name and data_type cannot be None')
       ome_obj = ome_type()
       ome_obj.name = ort.rstring(name)
+      ome_obj.dataType = data_type
       self.__setup__(ome_obj)
     super(DataSample, self).__init__(ome_obj)
 
@@ -159,3 +160,38 @@ class SerumSample(BioSample, kb.SerumSample):
 
   OME_TABLE = "SerumSample"
 
+#-----------------------------------------------------------
+class DataCollectionItem(OmeroWrapper, kb.DataCollectionItem):
+
+  OME_TABLE = "DataCollectionItem"
+
+  def __init__(self, from_=None, data_collection=None, data_sample=None):
+    ome_type = self.get_ome_type()
+    if not from_ is None:
+      ome_obj = from_
+    else:
+      if data_sample is None or data_collection is None:
+        raise ValueError('DataCollectionItem  data_sample and data_collection cannot be None')
+      # FIXME
+      ome_obj = ome_type()
+      ome_obj.vid = ort.rstring(vlu.make_vid())
+      ome_obj.dataSample= data_sample.ome_obj
+      ome_obj.dataSet   = data_collection.ome_obj
+      ome_obj.dataCollUK = vluo.make_unique_key(data_collection.id, data_sample.ome_obj)
+    super(DataCollectionItem, self).__init__(ome_obj)
+
+  def __handle_validation_errors__(self):
+    if self.dataSample is None:
+      raise kb.KBError("DataCollectionItem dataSample can't be None")
+    elif self.dataCollection is None:
+      raise kb.KBError("DataCollectionItem dataCollection can't be None")
+    else:
+      raise kb.KBError("unkwon error")
+
+  def __getattr__(self, name):
+    if name == 'dataSample':
+      return DataSample(getattr(self.ome_obj, name))
+    elif name == 'dataCollection':
+      return DataCollection(getattr(self.ome_obj, name))
+    else:
+      return super(DataCollectionItem, self).__getattr__(name)

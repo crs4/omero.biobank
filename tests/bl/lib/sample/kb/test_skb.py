@@ -21,6 +21,7 @@ class TestSKB(unittest.TestCase):
     self.atype_map   = self.skb.get_action_type_table()
     self.outcome_map = self.skb.get_result_outcome_table()
     self.sstatus_map = self.skb.get_sample_status_table()
+    self.dtype_map   = self.skb.get_data_type_table()
 
   def tearDown(self):
     self.kill_list.reverse()
@@ -156,8 +157,10 @@ class TestSKB(unittest.TestCase):
 
   def create_data_sample(self):
     name = 'data-sample-name-%f' % time.time()
-    conf, sample = self.create_sample(sample=self.skb.DataSample(name=name))
+    dtype = self.dtype_map['GTRAW']
+    conf, sample = self.create_sample(sample=self.skb.DataSample(name=name, data_type= dtype))
     conf['name'] = name
+    conf['dataType'] = dtype
     return conf, sample
 
   def test_data_sample(self):
@@ -356,6 +359,43 @@ class TestSKB(unittest.TestCase):
     self.check_object(action, conf, self.skb.ActionOnSampleSlot)
     self.skb.delete(action)
 
+  def create_data_collection(self):
+    conf, study = self.create_study()
+    study = self.skb.save(study)
+    self.kill_list.append(study)
+    conf = {'description' : 'this is a fake description',
+            'study' : study}
+    data_collection = self.skb.DataCollection(study=study)
+    self.configure_object(data_collection, conf)
+    return conf, data_collection
+
+  def test_data_collection(self):
+    conf, data_collection = self.create_data_collection()
+    data_collection = self.skb.save(data_collection)
+    self.check_object(data_collection, conf, self.skb.DataCollection)
+    self.skb.delete(data_collection)
+
+  def create_data_collection_item(self):
+    conf, data_collection = self.create_data_collection()
+    data_collection = self.skb.save(data_collection)
+    self.kill_list.append(data_collection)
+    #-
+    conf, sample = self.create_data_sample()
+    sample = self.skb.save(sample)
+    self.kill_list.append(sample)
+    #-
+    conf = {'dataSample' : sample, 'dataSet' : data_collection}
+    item = self.skb.DataCollectionItem(data_sample=conf['dataSample'],
+                                       data_collection= conf['dataSet'])
+    self.configure_object(item, conf)
+    return conf, item
+
+  def test_data_collection_item(self):
+    conf, data_collection_item = self.create_data_collection_item()
+    data_collection_item = self.skb.save(data_collection_item)
+    self.check_object(data_collection_item, conf, self.skb.DataCollection)
+    self.skb.delete(data_collection_item)
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestSKB('test_study'))
@@ -376,6 +416,8 @@ def suite():
   suite.addTest(TestSKB('test_action_on_sample'))
   suite.addTest(TestSKB('test_action_on_container'))
   suite.addTest(TestSKB('test_action_on_sample_slot'))
+  suite.addTest(TestSKB('test_data_collection'))
+  suite.addTest(TestSKB('test_data_collection_item'))
   return suite
 
 if __name__ == '__main__':
