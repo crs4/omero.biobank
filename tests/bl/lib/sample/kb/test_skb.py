@@ -396,6 +396,38 @@ class TestSKB(unittest.TestCase):
     self.check_object(data_collection_item, conf, self.skb.DataCollection)
     self.skb.delete(data_collection_item)
 
+  def create_action_on_data_collection(self):
+    conf, target = self.create_data_collection()
+    target = self.skb.save(target)
+    self.kill_list.append(target)
+    conf, action = self.create_action(action=self.skb.ActionOnDataCollection())
+    sconf = {'target' : target}
+    self.configure_object(action, sconf)
+    conf.update(sconf)
+    return conf, action
+
+  def test_action_on_data_collection(self):
+    conf, action = self.create_action_on_data_collection()
+    action = self.skb.save(action)
+    self.check_object(action, conf, self.skb.ActionOnDataCollection)
+    self.skb.delete(action)
+
+  def create_action_on_data_collection_item(self):
+    conf, target = self.create_data_collection_item()
+    target = self.skb.save(target)
+    self.kill_list.append(target)
+    conf, action = self.create_action(action=self.skb.ActionOnDataCollectionItem())
+    sconf = {'target' : target}
+    self.configure_object(action, sconf)
+    conf.update(sconf)
+    return conf, action
+
+  def test_action_on_data_collection_item(self):
+    conf, action = self.create_action_on_data_collection()
+    action = self.skb.save(action)
+    self.check_object(action, conf, self.skb.ActionOnDataCollection)
+    self.skb.delete(action)
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestSKB('test_study'))
@@ -416,6 +448,8 @@ def suite():
   suite.addTest(TestSKB('test_action_on_sample'))
   suite.addTest(TestSKB('test_action_on_container'))
   suite.addTest(TestSKB('test_action_on_sample_slot'))
+  suite.addTest(TestSKB('test_action_on_data_collection'))
+  suite.addTest(TestSKB('test_action_on_data_collection_item'))
   suite.addTest(TestSKB('test_data_collection'))
   suite.addTest(TestSKB('test_data_collection_item'))
   return suite
