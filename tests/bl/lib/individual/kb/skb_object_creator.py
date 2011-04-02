@@ -1,0 +1,1 @@
+../../sample/kb/skb_object_creator.py

@@ -7,6 +7,8 @@
       <required name="vendor" type="string"/>
       <required name="model" type="string"/>
       <required name="release" type="string"/>
+      <!-- vendor model release -->
+      <required name="deviceUK" type="string" unique="true"/>
     </properties>
   </type>
 </types>

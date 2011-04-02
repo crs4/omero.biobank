@@ -37,6 +37,12 @@ class Study(object):
     raise NotImplementedError
 
 #--
+class DataObject(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
 class Action(object):
 
   def __init__(self):

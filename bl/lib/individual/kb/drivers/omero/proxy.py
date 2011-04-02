@@ -1,10 +1,12 @@
 import time
 
 from bl.lib.sample.kb.drivers.omero.proxy_core import ProxyCore
+from bl.lib.sample.kb.drivers.omero.sample     import BloodSample
 
 from individual import Individual
 from enrollment import Enrollment
 from action     import ActionOnIndividual
+
 
 class Proxy(ProxyCore):
   """
@@ -28,5 +30,16 @@ class Proxy(ProxyCore):
   def get_gender_table(self):
     res = self.ome_operation("getQueryService", "findAll", "Gender", None)
     return dict([(x._value._val, x) for x in res])
+
+  def get_blood_sample(self, individual):
+    query = """select bs from ActionOnIndividual a, BloodSample as bs
+                      join a.target as t join bs.action as bsa
+               where t.vid = :i_id and a.id = bs.action.id"""
+    pars = self.ome_query_params({'i_id' : self.ome_wrap(individual.id)})
+    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
+    return BloodSample(result) if result else result
+
+  def get_dna_sample(self, individual):
+    pass
 
 

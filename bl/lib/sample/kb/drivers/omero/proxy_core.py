@@ -1,4 +1,6 @@
 import omero
+import omero.rtypes as ort
+import omero_sys_ParametersI as osp
 import omero_ServerErrors_ice  # magically adds exceptions to the omero module
 
 import bl.lib.sample.kb as kb
@@ -18,6 +20,11 @@ class ProxyCore(object):
   FIXME: in the future, low-level omero access should be provided by a
   common set of core libraries.
   """
+  WRAPPING = {'timestamp' : ort.rtime,
+              'string'    : ort.rstring,
+              'float'     : ort.rfloat,
+              'int'       : ort.rint,
+              'boolean'   : ort.rbool}
 
   def __init__(self, host, user, passwd):
     self.user = user
@@ -29,6 +36,15 @@ class ProxyCore(object):
 
   def disconnect(self):
     self.client.closeSession()
+
+  def ome_wrap(self, v, wtype=None):
+    return self.WRAPPING[wtype](v) if wtype else ort.wrap(v)
+
+  def ome_query_params(self, conf):
+    params = osp.ParametersI()
+    for k in conf.keys():
+      params.add(k, conf[k])
+    return params
 
   def ome_operation(self, operation, action, *action_args):
     session = self.connect()

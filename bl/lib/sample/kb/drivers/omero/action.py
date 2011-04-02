@@ -26,20 +26,6 @@ class ActionSetup(OmeroWrapper, kb.ActionSetup):
       ome_obj.vid = ort.rstring(vlu.make_vid())
     super(ActionSetup, self).__init__(ome_obj)
 #----------------------------------------------------------------------
-class Device(OmeroWrapper, kb.Device):
-
-  OME_TABLE = "Device"
-
-  def __init__(self, from_=None):
-    ome_type = self.get_ome_type()
-    if not from_ is None:
-      ome_obj = from_
-    else:
-      ome_obj = ome_type()
-      ome_obj.vid = ort.rstring(vlu.make_vid())
-    super(Device, self).__init__(ome_obj)
-
-#----------------------------------------------------------------------
 class Action(OmeroWrapper, kb.Action):
 
   OME_TABLE = "Action"

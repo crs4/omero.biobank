@@ -1,5 +1,8 @@
 import bl.lib.individual.kb as kb
+import bl.lib.sample.kb as skb
+
 from bl.lib.sample.kb.drivers.omero.action import Action
+from individual import Individual
 
 #----------------------------------------------------------------------
 class ActionOnIndividual(Action, kb.ActionOnIndividual):
@@ -20,7 +23,7 @@ class ActionOnIndividual(Action, kb.ActionOnIndividual):
 
   def __getattr__(self, name):
     if name == 'target':
-      return Sample(self.ome_obj.device)
+      return Individual(self.ome_obj.device)
     else:
       return super(ActionOnIndividual, self).__getattr__(name)
 
