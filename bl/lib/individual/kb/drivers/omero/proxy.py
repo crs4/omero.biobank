@@ -2,6 +2,7 @@ import time
 
 from bl.lib.sample.kb.drivers.omero.proxy_core import ProxyCore
 from bl.lib.sample.kb.drivers.omero.sample     import BloodSample
+from bl.lib.sample.kb.drivers.omero.sample     import DNASample
 
 from individual import Individual
 from enrollment import Enrollment
@@ -40,6 +41,20 @@ class Proxy(ProxyCore):
     return BloodSample(result) if result else result
 
   def get_dna_sample(self, individual):
-    pass
+    query = """select dna
+               from ActionOnIndividual aoi, BloodSample as bs,
+                    ActionOnSample     aos, DNASample as dna
+               join aoi.target as ti
+               join bs.action  as bsa
+               join aos.target as ts
+               join dna.action as da
+               where ti.vid = :i_id
+                     and aoi.id = bs.action.id
+                     and bs.id = ts.id
+                     and aos.id = dna.action.id
+             """
+    pars = self.ome_query_params({'i_id' : self.ome_wrap(individual.id)})
+    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
+    return DNASample(result) if result else result
 
 

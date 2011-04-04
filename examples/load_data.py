@@ -52,7 +52,16 @@ logger.addHandler(ch)
 INDIVIDUALS = [(0, None, None, 'MALE'), (1, None, None, 'FEMALE'),
                (2, 0, 1, 'MALE'), (3, 0, 1, 'FEMALE')]
 
+def debug_decorator(f):
+  def debug_decorator_wrapper(*args, **kv):
+    logger.debug('%s in' % f.__name__)
+    res = f(*args, **kv)
+    logger.debug('%s out' % f.__name__)
+    return res
+  return debug_decorator_wrapper
+
 class network_builder(object):
+
   def __init__(self, host, user, passwd, study_label):
     self.skb = sKB(driver='omero')(host, user, passwd)
     self.ikb = iKB(driver='omero')(host, user, passwd)
@@ -73,8 +82,8 @@ class network_builder(object):
     #
     self.logger = logger
 
+  @debug_decorator
   def register_in_db(self, i_map):
-    self.logger.debug('register in db')
     work_to_do = False
     for k in i_map.keys():
       registered, i, father, mother = i_map[k]
@@ -86,8 +95,8 @@ class network_builder(object):
         work_to_do = True
     return work_to_do
 
+  @debug_decorator
   def update_parents(self, i_map):
-    self.logger.debug('update parents')
     for k in i_map.keys():
       registered, i, father, mother = i_map[k]
       if registered:
@@ -101,6 +110,7 @@ class network_builder(object):
         i.mother = i_map[mother][1]
       i_map[k] = (False, i, None, None)
 
+  @debug_decorator
   def register_individuals(self, i_stream):
     i_map = {}
     for x in i_stream:
@@ -109,11 +119,11 @@ class network_builder(object):
 
     work_to_do = self.register_in_db(i_map)
     while work_to_do:
-      self.logger.debug('registration wave')
       self.update_parents(i_map)
       work_to_do = self.register_in_db(i_map)
     self.individuals = [x[1] for x in i_map.values()]
 
+  @debug_decorator
   def enroll_individuals(self, individuals):
     self.register_individuals(individuals)
     for k, i in enumerate(self.individuals):
@@ -129,11 +139,12 @@ class network_builder(object):
       device = self.skb.save(device)
     return device
 
-  def get_action_setup(self, notes):
-    asetup = self.skb.ActionSetup()
-    asetup.notes = notes
+  def get_action_setup(self, label, conf):
+    asetup = self.skb.ActionSetup(label=label)
+    asetup.conf = conf
     return self.skb.save(asetup)
 
+  @debug_decorator
   def get_action_helper(self, aclass, study, target, device, asetup, atype, operator):
     desc = "This is a simulation"
     action = aclass()
@@ -147,6 +158,7 @@ class network_builder(object):
                                   enrollment.study, enrollment.individual,
                                   device, asetup, atype, operator)
 
+  @debug_decorator
   def get_action_on_sample(self, sample, device, asetup, atype, operator):
     return self.get_action_helper(self.skb.ActionOnSample,
                                   self.study, sample,
@@ -167,7 +179,9 @@ class network_builder(object):
                                   self.study, item,
                                   device, asetup, atype, operator)
 
-  def acquire_blood_sample(self, enrollment, device, asetup, atype, operator, volume):
+  @debug_decorator
+  def acquire_blood_sample(self, enrollment, device, asetup,
+                           atype, operator, volume):
     action = self.get_action_on_individual(enrollment, device, asetup, atype, operator)
     #--
     sample = self.skb.BloodSample()
@@ -178,16 +192,22 @@ class network_builder(object):
     sample.status = self.sstatus_map['USABLE']
     return self.skb.save(sample)
 
+  @debug_decorator
   def acquire_blood_samples(self, conf):
     device = self.get_device(conf['organization'], conf['department'], '0.0')
-    asetup = self.get_action_setup(conf['notes'])
+    asetup = self.get_action_setup('blood-samples-conf-%f' % time.time(),
+                                   conf['action-conf'])
     atype  = self.atype_map['ACQUISITION']
 
     for e in self.enrollments:
       self.acquire_blood_sample(e, device, asetup, atype, conf['operator'], conf['volume'])
+    #-
+    self.logger.debug('acquire_blood_sample out')
 
+  @debug_decorator
   def extract_dna_sample(self, blood_sample, device, asetup, atype, operator):
-    action = self.get_action_on_sample(blood_sample, device, asetup, atype, operator)
+    action = self.get_action_on_sample(blood_sample, device,
+                                       asetup, atype, operator)
     status = self.sstatus_map['USABLE']
     #-
     sample = self.skb.DNASample()
@@ -195,20 +215,26 @@ class network_builder(object):
     sample.labLabel = '%s-DNA-%s' % (blood_sample.labLabel, time.time())
     sample.barcode  = sample.id
     sample.initialVolume = sample.currentVolume = 0.1
+    sample.nanodropConcentration = 40
     sample.qp230260 = sample.qp230280 = 0.3
     sample.status = self.sstatus_map['USABLE']
+    self.logger.debug('sample: %s' % sample.ome_obj)
     return self.skb.save(sample)
 
+  @debug_decorator
   def extract_dna_samples(self):
     device = self.get_device('ACME corp', 'DNA magic extractor', '0.0')
-    asetup = self.get_action_setup('nothing to declare')
+    asetup = self.get_action_setup('dna-sample-conf-%f' % time.time(),
+                                   '{"foo" : "a-value"}')
     atype  = self.atype_map['EXTRACTION']
 
     for e in self.enrollments:
       blood_sample = self.ikb.get_blood_sample(individual=e.individual)
       assert blood_sample
-      self.extract_dna_sample(blood_sample, device, asetup, atype, 'Wiley E. Coyote')
+      self.extract_dna_sample(blood_sample, device,
+                              asetup, atype, 'Wiley E. Coyote')
 
+  @debug_decorator
   def fill_titer_plate(self, rows, columns, stream):
     plate = self.skb.TiterPlate(rows, columns)
     plate = self.skb.save(plate)
@@ -226,8 +252,9 @@ class network_builder(object):
         dna_sample = self.skb.save(dna_sample)
     return True, plate
 
+  @debug_decorator
   def fill_titer_plates(self):
-    rows, columns = 16, 16
+    rows, columns = 3, 3
 
     def dna_sample_stream():
       for e in self.enrollments:
@@ -237,6 +264,8 @@ class network_builder(object):
     while plates_to_fill:
       plates_to_fill, plate = fill_titer_plate(rows, columns, stream)
 
+
+  @debug_decorator
   def measure_raw_genotype(self, sample, device, asetup, atype, operator):
     action = self.get_action_on_sample_slot(sample, device, asetup, atype, operator)
     #-
@@ -245,21 +274,34 @@ class network_builder(object):
     sample.outcome = self.outcome_map['PASSED']
     sample.name = '%s.cel' % sample.id
     sample.dataType = self.dtype_map['GTRAW']
-    return self.skb.save(sample)
+    sample = self.skb.save(sample)
+    #-
+    #FIXME: We are assuming that the measuring process generated a physical file
+    #
+    path = 'file://ELS/els5/storage/a/%s' % data_sample.name
+    sha1 = 'a fake sha1 of %s' % data_sample.name
+    mime_type = 'x-application/affymetrix-cel' # FIXME, we need to list the legal mime_types
+    size = 0 # the actual file size
+    data_object = self.skb.DataObject(name=sample.name, mime_type=mime_type,
+                                      path=path, sha1=sha1, size=size)
+    data_object = self.skb.save(data_object)
+    return sample, data_object
 
+  @debug_decorator
   def measure_raw_genotypes(self):
+    #FIXME: asetup should be linked to the specific action device
     device = self.get_device('Affymetrix', 'GenomeWide 6.0', '0.0')
+    asetup = self.get_action_setup('affy6-%f' % time.time(),
+                                   '{foo2: "foo"}')
     asetup = self.get_action_setup('nothing to declare')
     atype  = self.atype_map['PROCESSING']
 
     for p in self.skb.get_titer_plates():
       for w in self.skb.get_wells_of_plate(p):
-        data_sample = self.measure_raw_genotype(w.sample, device, asetup, atype, 'Wiley E. Coyote')
-        path = 'file://ELS/els5/storage/a/%s' % data_sample.name
-        sha1 = 'a fake sha1 of %s' % data_sample.name
-        mime_type = 'x-application/affymetrix-cel' # FIXME, we need to list the legal mime_types
-        self.register_data_object(data_sample, mime_type, path, sha1)
+        self.measure_raw_genotype(w.sample, device, asetup,
+                                  atype, 'Wiley E. Coyote')
 
+  @debug_decorator
   def build_data_collection(self):
     data_collection = self.skb.DataCollection(study=self.study)
     data_collection = self.skb.save(data_collection)
@@ -270,6 +312,7 @@ class network_builder(object):
     #--
     return data_collection
 
+  @debug_decorator
   def call_genotype(self, item, device, asetup, atype,  operator):
     action = self.get_action_on_data_collection_item(item, device, asetup, atype, operator)
     #-
@@ -278,11 +321,25 @@ class network_builder(object):
     sample.outcome = self.outcome_map['PASSED']
     sample.name = '%s.gt' % sample.id
     sample.dataType = self.dtype_map['GTCALL']
-    return self.skb.save(sample)
+    sample = self.skb.save(sample)
+    #--
+    # FIXME
+    # (vid, path, sha1, mime_type) = self.gkb.append_gdo(set_vid, probs, confidence,
+    #                                                    data_sample.action.id)
+    path = 'table:table<xxx>.h5/<%s>' % sample.name
+    sha1 = 'a fake sha1 of %s' % sample.name
+    mime_type = 'x-application/gdo' # FIXME, we need to list the legal mime_types
+    size = 0 # the actual dataobject size
+    data_object = self.skb.DataObject(name=sample.name, mime_type=mime_type,
+                                      path=path, sha1=sha1, size=size)
+    data_object = self.skb.save(data_object)
+    return sample, data_object
 
+  @debug_decorator
   def call_genotypes(self):
     device = self.get_device('CRS4', 'MR-birdseed', '0.0')
-    asetup = self.get_action_setup('nothing to declare')
+    asetup = self.get_action_setup('mr-birdseed-conf-%f' % time.time(),
+                                   '{"foo2": "foo"}')
     atype  = self.atype_map['PROCESSING']
     selector = "(vendor == ''Affymetrix')&(model== 'GenomeWide 6.0')"
     set_vid = self.gkb.get_snp_markers_set(selector=selector)
@@ -290,9 +347,7 @@ class network_builder(object):
     data_collection = self.build_data_collection()
     #-
     for item in data_collection.items():
-      data_sample = self.call_genotype(item, device, asetup, atype,  'Wiley E. Coyote')
-      (vid, path, sha1, mime_type) = self.gkb.append_gdo(set_vid, probs, confidence, data_sample.action.id)
-      self.register_data_object(data_sample, mime_type, path, sha1)
+      self.call_genotype(item, device, asetup, atype,  'Wiley E. Coyote')
 
 def main():
   OME_HOST = os.getenv("OME_HOST", "localhost")
@@ -315,7 +370,7 @@ def main():
 
   nb.acquire_blood_samples({'organization' : 'Azienda Ospedaliera Brotzu',
                             'department'   : 'Centro trasfusionale',
-                            'notes' : 'no notes',
+                            'action-conf' : '{"protocol" : "a-protocol"}',
                             'operator' : 'Alfred E. Neuman',
                             'volume' : 100.0})
   logger.info('acquired blood samples')

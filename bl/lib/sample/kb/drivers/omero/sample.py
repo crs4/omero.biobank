@@ -16,6 +16,7 @@ class Sample(Result, kb.Sample):
 
   OME_TABLE = "Sample"
 
+
 #------------------------------------------------------------
 class ContainerSlot(Result, kb.Result):
 
@@ -145,6 +146,19 @@ class BioSample(Sample, kb.BioSample):
     else:
       return super(BioSample, self).__setattr__(name, value)
 
+  def __handle_validation_errors__(self):
+    if self.barcode is None:
+      raise kb.KBError("BioSample barcode can't be None")
+    elif self.initialVolume is None:
+      raise kb.KBError("BioSample initialVolume can't be None")
+    elif self.currentVolume is None:
+      raise kb.KBError("BioSample currentVolume can't be None")
+    elif self.status is None:
+      raise kb.KBError("BioSample status can't be None")
+    else:
+      super(BioSample, self).__handle_validation_errors__()
+
+
 #------------------------------------------------------------
 class BloodSample(BioSample, kb.BloodSample):
 
@@ -154,6 +168,17 @@ class BloodSample(BioSample, kb.BloodSample):
 class DNASample(BioSample, kb.DNASample):
 
   OME_TABLE = "DNASample"
+
+  def __handle_validation_errors__(self):
+    if self.nanodropConcentration is None:
+      raise kb.KBError("DNASample nanodropConcentration can't be None")
+    elif self.qp230260 is None:
+      raise kb.KBError("DNASample qp230260 can't be None")
+    elif self.qp230280 is None:
+      raise kb.KBError("DNASample qp230280 can't be None")
+    else:
+      super(DNASample, self).__handle_validation_errors__()
+
 
 #------------------------------------------------------------
 class SerumSample(BioSample, kb.SerumSample):

@@ -49,9 +49,11 @@ class SKBObjectCreator(unittest.TestCase):
     return conf, device
 
   def create_action_setup(self, action_setup=None):
-    action_setup = action_setup if action_setup else self.skb.ActionSetup()
-    conf = {'notes' : 'hooo'}
-    action_setup.notes = conf['notes']
+    conf = {'label' : 'asetup-%f' % time.time(),
+            'conf' : '{"param1": "foo"}'}
+    action_setup = action_setup if action_setup \
+                                else self.skb.ActionSetup(label=conf['label'])
+    action_setup.conf = conf['conf']
     conf['id'] = action_setup.id
     return conf, action_setup
 

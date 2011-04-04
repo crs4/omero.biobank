@@ -27,7 +27,9 @@ class Result(OmeroWrapper, kb.Result):
     super(Result, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):
-    if self.creationDate is None:
+    if self.vid is None:
+      raise kb.KBError("Result vid can't be None")
+    elif self.creationDate is None:
       raise kb.KBError("Result creationDate can't be None")
     elif self.action is None:
       raise kb.KBError("Result action can't be None")

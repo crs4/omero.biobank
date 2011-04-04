@@ -17,13 +17,16 @@ class ActionSetup(OmeroWrapper, kb.ActionSetup):
 
   OME_TABLE = "ActionSetup"
 
-  def __init__(self, from_=None):
+  def __init__(self, from_=None, label=None):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
+      if label is None:
+        raise ValueError('ActionSetup label cannot be None')
       ome_obj = ome_type()
       ome_obj.vid = ort.rstring(vlu.make_vid())
+      ome_obj.label = ort.rstring(label)
     super(ActionSetup, self).__init__(ome_obj)
 #----------------------------------------------------------------------
 class Action(OmeroWrapper, kb.Action):

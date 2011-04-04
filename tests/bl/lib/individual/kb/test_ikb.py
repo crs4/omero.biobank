@@ -73,7 +73,6 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
   def create_action_on_individual(self):
     conf, individual = self.create_individual()
     individual = self.ikb.save(individual)
-    print 'individual.vid:', individual.id
     self.kill_list.append(individual)
     #--
     conf, action = self.create_action(action=self.ikb.ActionOnIndividual())
@@ -127,13 +126,37 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     sample = self.skb.save(sample)
     #FIXME: it is unclear if this should be handled automatically by OmeroWrap...
     target = self.ikb.Individual(sample.action.target)
-    print 'target:', target.ome_obj
-    print 'type(target):', type(target)
-    print 'target.id:', target.ome_obj._id._val
     #--
     self.kill_list.append(sample)
     bs = self.ikb.get_blood_sample(target)
-    print bs
+    self.assertTrue(not bs is None)
+    self.assertEqual(bs.id, sample.id)
+
+  def test_get_dna_sample(self):
+    conf, action = self.create_action_on_individual()
+    action = self.ikb.save(action)
+    self.kill_list.append(action)
+    #--
+    conf, blood_sample = self.create_blood_sample()
+    blood_sample.action = action
+    blood_sample = self.skb.save(blood_sample)
+    target = self.ikb.Individual(blood_sample.action.target)
+    self.kill_list.append(blood_sample)
+    #--
+    conf, action = self.create_action_on_sample()
+    action.target = blood_sample
+    action = self.skb.save(action)
+    self.kill_list.append(action)
+    #--
+    conf, dna_sample = self.create_dna_sample()
+    dna_sample.action = action
+    dna_sample = self.skb.save(dna_sample)
+    self.kill_list.append(dna_sample)
+    #--
+    target = self.ikb.Individual(blood_sample.action.target)
+    dnas = self.ikb.get_dna_sample(target)
+    self.assertTrue(not dnas is None)
+    self.assertEqual(dnas.id, dna_sample.id)
 
 def suite():
   suite = unittest.TestSuite()
@@ -142,6 +165,7 @@ def suite():
   suite.addTest(TestIKB('test_enrollment'))
   suite.addTest(TestIKB('test_action_on_individual'))
   suite.addTest(TestIKB('test_get_blood_sample'))
+  suite.addTest(TestIKB('test_get_dna_sample'))
   return suite
 
 if __name__ == '__main__':
