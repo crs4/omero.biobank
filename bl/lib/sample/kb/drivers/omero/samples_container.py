@@ -44,13 +44,15 @@ class TiterPlate(SamplesContainer, kb.TiterPlate):
 
   OME_TABLE = "TiterPlate"
 
-  def __init__(self, from_=None, rows=None, columns=None):
+  def __init__(self, from_=None, rows=None, columns=None,
+               barcode=None,
+               virtual_container=False):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
-      if rows is None or columns is None:
-        raise ValueError('TiterPlate rows and columns cannot be None')
+      if rows is None or columns is None or barcode is None:
+        raise ValueError('TiterPlate rows, columns barcode cannot be None')
       # FIXME
       assert rows > 0 and columns > 0
       ome_obj = ome_type()
@@ -58,6 +60,8 @@ class TiterPlate(SamplesContainer, kb.TiterPlate):
       ome_obj.rows    = ort.rint(rows)
       ome_obj.columns = ort.rint(columns)
       ome_obj.slots   = ort.rint(rows * columns)
+      ome_obj.barcode = ort.rstring(barcode)
+      ome_obj.virtualContainer = ort.rbool(virtual_container)
     super(TiterPlate, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):

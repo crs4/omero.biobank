@@ -159,6 +159,16 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
     self.skb.delete(container_slot)
     return conf, container_slot
 
+  def test_plate_well_dna(self):
+    conf, dna_sample = self.create_dna_sample()
+    dna_sample = self.skb.save(dna_sample)
+    self.kill_list.append(dna_sample)
+    #-
+    conf, plate_well = self.create_plate_well(sample=dna_sample)
+    plate_well = self.skb.save(plate_well)
+    self.check_object(plate_well, conf, self.skb.PlateWell)
+    self.kill_list.append(plate_well)
+
   def test_plate_well(self):
     conf, plate_well = self.create_plate_well()
     plate_well = self.skb.save(plate_well)
@@ -214,6 +224,7 @@ def suite():
   suite.addTest(TestSKB('test_titer_plate'))
   suite.addTest(TestSKB('test_container_slot'))
   suite.addTest(TestSKB('test_plate_well'))
+  suite.addTest(TestSKB('test_plate_well_dna'))
   suite.addTest(TestSKB('test_action_on_sample'))
   suite.addTest(TestSKB('test_action_on_container'))
   suite.addTest(TestSKB('test_action_on_sample_slot'))

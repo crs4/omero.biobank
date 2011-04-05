@@ -1,5 +1,6 @@
 import time
 
+import omero.rtypes as ort
 from bl.lib.sample.kb.drivers.omero.proxy_core import ProxyCore
 from bl.lib.sample.kb.drivers.omero.sample     import BloodSample
 from bl.lib.sample.kb.drivers.omero.sample     import DNASample
@@ -32,13 +33,33 @@ class Proxy(ProxyCore):
     res = self.ome_operation("getQueryService", "findAll", "Gender", None)
     return dict([(x._value._val, x) for x in res])
 
-  def get_blood_sample(self, individual):
-    query = """select bs from ActionOnIndividual a, BloodSample as bs
-                      join a.target as t join bs.action as bsa
-               where t.vid = :i_id and a.id = bs.action.id"""
+  def get_blood_samples(self, individual):
+    """
+    blood_sample_vids = ikb.get_blood_samples(individual)
+    """
+    query = """select bs
+               from ActionOnIndividual a, BloodSample as bs
+               join  a.target  as t
+               join  bs.action as bsa
+               where t.vid = :i_id
+                     and a.id = bs.action.id
+            """
     pars = self.ome_query_params({'i_id' : self.ome_wrap(individual.id)})
-    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
-    return BloodSample(result) if result else result
+    results = self.ome_operation("getQueryService", "findAllByQuery", query, pars)
+    return [(ort.unwrap(bs.vid), ort.unwrap(bs.id)) for bs in results]
+
+  def get_blood_sample(self, individual):
+    """
+    FIXME this is a rather gross implementation...
+    """
+    bss = self.get_blood_samples(individual)
+    assert len(bss) <= 1
+
+    if len(bss) == 0:
+      return None
+    result = self.ome_operation("getQueryService", "get", "BloodSample", bss[0][1])
+    return BloodSample(result)
+
 
   def get_dna_sample(self, individual):
     query = """select dna
@@ -55,6 +76,17 @@ class Proxy(ProxyCore):
              """
     pars = self.ome_query_params({'i_id' : self.ome_wrap(individual.id)})
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
-    return DNASample(result) if result else result
+    if not result:
+      return result
+    action = self.ome_operation("getQueryService",
+                                "get", "ActionOnSample",
+                                result.action._id._val)
+    result.action = action
+    target = self.ome_operation("getQueryService",
+                                "get", "BloodSample",
+                                action.target._id._val)
+    action.target = target
+    print 'get_dna_sample.action:', action
+    return DNASample(result)
 
 

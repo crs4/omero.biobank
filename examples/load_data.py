@@ -26,37 +26,30 @@ import os
 import logging
 
 LOG_FILENAME = 'load_data.log'
-#logging.basicConfig(filename=LOG_FILENAME)
+logging.basicConfig(filename=LOG_FILENAME,
+                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                    level=logging.DEBUG)
 
 logger = logging.getLogger("example_data_loader")
-logger.setLevel(logging.DEBUG)
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter()
 
 ch.setFormatter(formatter)
 
 logger.addHandler(ch)
-
-# o = omero.model.OriginalFileI()
-
-# o.mimetype = 'x-omero-bl/affymetrix-cel'
-# o.path = 'hdfs://host:93090/data/foo.cel'
-
-# o.name = <object-vid>
-# o.mimetype = 'x-omero-bl/<marker-set-vid>'
-# o.path = 'hf:<gdo-table-name>:<rowid>'
 
 INDIVIDUALS = [(0, None, None, 'MALE'), (1, None, None, 'FEMALE'),
                (2, 0, 1, 'MALE'), (3, 0, 1, 'FEMALE')]
 
 def debug_decorator(f):
   def debug_decorator_wrapper(*args, **kv):
+    now = time.time()
     logger.debug('%s in' % f.__name__)
     res = f(*args, **kv)
-    logger.debug('%s out' % f.__name__)
+    logger.debug('%s out (%f)' % (f.__name__, time.time() - now))
     return res
   return debug_decorator_wrapper
 
@@ -201,14 +194,13 @@ class network_builder(object):
 
     for e in self.enrollments:
       self.acquire_blood_sample(e, device, asetup, atype, conf['operator'], conf['volume'])
-    #-
-    self.logger.debug('acquire_blood_sample out')
+
 
   @debug_decorator
   def extract_dna_sample(self, blood_sample, device, asetup, atype, operator):
     action = self.get_action_on_sample(blood_sample, device,
                                        asetup, atype, operator)
-    status = self.sstatus_map['USABLE']
+    action = self.skb.save(action)
     #-
     sample = self.skb.DNASample()
     sample.action, sample.outcome   = action, self.outcome_map['PASSED']
@@ -218,7 +210,6 @@ class network_builder(object):
     sample.nanodropConcentration = 40
     sample.qp230260 = sample.qp230280 = 0.3
     sample.status = self.sstatus_map['USABLE']
-    self.logger.debug('sample: %s' % sample.ome_obj)
     return self.skb.save(sample)
 
   @debug_decorator
@@ -235,18 +226,29 @@ class network_builder(object):
                               asetup, atype, 'Wiley E. Coyote')
 
   @debug_decorator
-  def fill_titer_plate(self, rows, columns, stream):
-    plate = self.skb.TiterPlate(rows, columns)
+  def fill_titer_plate(self, device, asetup, atype,
+                       operator,
+                       rows, columns, barcode, stream):
+    plate = self.skb.TiterPlate(rows=rows, columns=columns, barcode=barcode)
+    plate.barcode
     plate = self.skb.save(plate)
     delta_volume = 0.01
+
     for r in range(plate.rows):
       for c in range(plate.columns):
         try:
           dna_sample = stream.next()
         except StopIteration:
           return False, plate
-        plate_well = self.skb.PlateWell(sample=dna_sample, contaier=plate,
-                                        row=r, column=c, volume=delta_volume)
+        action = self.get_action_on_sample(dna_sample, device,
+                                           asetup, atype, operator)
+        plate_well = self.skb.PlateWell(sample=dna_sample, container=plate,
+                                        row=r, column=c,
+                                        volume=delta_volume)
+        print 'action:', action
+        plate_well.action = action
+        plate_well.outcome = self.outcome_map['PASSED']
+        print 'plate_well:', plate_well.ome_obj
         plate_well = self.skb.save(plate_well)
         dna_sample.volume = dna_sample.volume - delta_volume
         dna_sample = self.skb.save(dna_sample)
@@ -255,15 +257,24 @@ class network_builder(object):
   @debug_decorator
   def fill_titer_plates(self):
     rows, columns = 3, 3
+    device = self.get_device('ACME corp', 'DNA magic aliquot dispenser', '0.0')
+    asetup = self.get_action_setup('dna-aliquot-conf-%f' % time.time(),
+                                   '{"foo" : "a-value"}')
+    atype  = self.atype_map['EXTRACTION'] # ???
+    operator = "Alfred E. Neuman"
 
     def dna_sample_stream():
       for e in self.enrollments:
         yield self.ikb.get_dna_sample(individual=e.individual)
 
     stream = dna_sample_stream()
+    barcode = 'titer-plate-bc-%f' % time.time()
+    plates_to_fill, plate = self.fill_titer_plate(device, asetup, atype, operator,
+                                                  rows, columns, barcode, stream)
     while plates_to_fill:
-      plates_to_fill, plate = fill_titer_plate(rows, columns, stream)
-
+      barcode = 'titer-plate-bc-%f' % time.time()
+      plates_to_fill, plate = self.fill_titer_plate(device, asetup, atype, operator,
+                                                    rows, columns, barcode, stream)
 
   @debug_decorator
   def measure_raw_genotype(self, sample, device, asetup, atype, operator):

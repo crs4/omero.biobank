@@ -60,13 +60,16 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
       conf, device = self.create_device()
       device = self.skb.save(device)
       dev_by_vid[device.id] = device
+      self.kill_list.append(device)
     devs = self.skb.get_devices()
+    found = 0
     for d in devs:
-      self.assertTrue(dev_by_vid.has_key(d.id))
-      self.assertEqual(dev_by_vid[d.id].vendor, d.vendor)
-      self.assertEqual(dev_by_vid[d.id].model, d.model)
-      self.assertEqual(dev_by_vid[d.id].release, d.release)
-      self.skb.delete(d)
+      if dev_by_vid.has_key(d.id):
+        found += 1
+        self.assertEqual(dev_by_vid[d.id].vendor, d.vendor)
+        self.assertEqual(dev_by_vid[d.id].model, d.model)
+        self.assertEqual(dev_by_vid[d.id].release, d.release)
+    self.assertEqual(len(dev_by_vid), found)
 
   def test_get_titer_plates(self):
     plates_by_vid = {}
@@ -76,8 +79,11 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
       self.kill_list.append(tplate)
       plates_by_vid[tplate.id] = tplate
     tps = self.skb.get_titer_plates()
+    found = 0
     for tp in tps:
-      self.assertTrue(plates_by_vid.has_key(tp.id))
+      if plates_by_vid.has_key(tp.id):
+        found += 1
+    self.assertEqual(found, len(plates_by_vid))
 
   def test_get_wells_of_plate(self):
     pw_map = {}

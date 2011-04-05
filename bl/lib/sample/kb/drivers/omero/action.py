@@ -44,7 +44,9 @@ class Action(OmeroWrapper, kb.Action):
     super(Action, self).__init__(ome_action)
 
   def __handle_validation_errors__(self):
-    if self.beginTime is None:
+    if self.id is None:
+      raise kb.KBError("action id can't be None")
+    elif self.beginTime is None:
       raise kb.KBError("action beginTime can't be None")
     elif self.actionType is None:
       raise kb.KBError("action actionType can't be None")

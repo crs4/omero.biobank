@@ -116,31 +116,21 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     self.check_object(action, conf, self.ikb.ActionOnIndividual)
     self.ikb.delete(action)
 
-  def test_get_blood_sample(self):
+  def create_individual_blood_chain(self):
     conf, action = self.create_action_on_individual()
     action = self.ikb.save(action)
     self.kill_list.append(action)
+    print 'ibc: action:', action.ome_obj
+    print 'ibc: target:', action.ome_obj.target
+    print 'ibc:action.target:', action.target.ome_obj
     #--
     conf, sample = self.create_blood_sample()
     sample.action = action
-    sample = self.skb.save(sample)
-    #FIXME: it is unclear if this should be handled automatically by OmeroWrap...
-    target = self.ikb.Individual(sample.action.target)
-    #--
-    self.kill_list.append(sample)
-    bs = self.ikb.get_blood_sample(target)
-    self.assertTrue(not bs is None)
-    self.assertEqual(bs.id, sample.id)
+    return action.target, sample
 
-  def test_get_dna_sample(self):
-    conf, action = self.create_action_on_individual()
-    action = self.ikb.save(action)
-    self.kill_list.append(action)
-    #--
-    conf, blood_sample = self.create_blood_sample()
-    blood_sample.action = action
+  def create_individual_blood_dna_chain(self):
+    individual, blood_sample = self.create_individual_blood_chain()
     blood_sample = self.skb.save(blood_sample)
-    target = self.ikb.Individual(blood_sample.action.target)
     self.kill_list.append(blood_sample)
     #--
     conf, action = self.create_action_on_sample()
@@ -150,13 +140,39 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     #--
     conf, dna_sample = self.create_dna_sample()
     dna_sample.action = action
+    #--
+    return individual, dna_sample
+
+  def test_get_blood_sample(self):
+    individual, blood_sample = self.create_individual_blood_chain()
+    blood_sample = self.skb.save(blood_sample)
+    self.kill_list.append(blood_sample)
+    #-
+    bs = self.ikb.get_blood_sample(individual)
+    print 'bs.ome_obj:', bs.ome_obj
+    self.assertTrue(not bs is None)
+    self.assertEqual(bs.id, blood_sample.id)
+
+  def test_get_dna_sample(self):
+    individual, dna_sample = self.create_individual_blood_dna_chain()
     dna_sample = self.skb.save(dna_sample)
     self.kill_list.append(dna_sample)
-    #--
-    target = self.ikb.Individual(blood_sample.action.target)
-    dnas = self.ikb.get_dna_sample(target)
+    #-
+    dnas = self.ikb.get_dna_sample(individual)
     self.assertTrue(not dnas is None)
     self.assertEqual(dnas.id, dna_sample.id)
+
+  def test_plate_well_dna(self):
+    individual, dna_sample = self.create_individual_blood_dna_chain()
+    dna_sample = self.skb.save(dna_sample)
+    self.kill_list.append(dna_sample)
+    #-
+    dnas = self.ikb.get_dna_sample(individual)
+    #
+    conf, plate_well = self.create_plate_well(sample=dna_sample)
+    plate_well = self.skb.save(plate_well)
+    self.check_object(plate_well, conf, self.skb.PlateWell)
+    self.kill_list.append(plate_well)
 
 def suite():
   suite = unittest.TestSuite()

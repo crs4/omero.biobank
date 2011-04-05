@@ -23,7 +23,7 @@ class ActionOnIndividual(Action, kb.ActionOnIndividual):
 
   def __getattr__(self, name):
     if name == 'target':
-      return Individual(self.ome_obj.device)
+      return Individual(self.ome_obj.target)
     else:
       return super(ActionOnIndividual, self).__getattr__(name)
 

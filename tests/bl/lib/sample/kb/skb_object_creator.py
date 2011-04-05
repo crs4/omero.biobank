@@ -149,17 +149,16 @@ class SKBObjectCreator(unittest.TestCase):
     self.configure_object(sc, conf)
     return conf, sc
 
-  def create_titer_plate(self, titer_plate=None):
-    if titer_plate is None:
-      n_rows, n_columns = 4, 4
-      titer_plate = self.skb.TiterPlate(rows=n_rows,
-                                        columns=n_columns)
-    else:
-      n_rows, n_columns = titer_plate.rows, titer_plate.columns
-    conf, tp = self.create_samples_container(titer_plate)
-    conf['rows'], conf['columns'] = n_rows, n_columns
-    titer_plate.rows = conf['rows']
-    titer_plate.columns = conf['columns']
+  def create_titer_plate(self):
+    conf = {'labLabel' : 'tp-lab_label-%f' % time.time(),
+            'barcode'  : 'tp-barcode-%s' % time.time(),
+            'virtualContainer' : False,
+            'rows' : 4,
+            'columns' : 4}
+    titer_plate = self.skb.TiterPlate(rows=conf['rows'],
+                                      columns=conf['columns'],
+                                      barcode=conf['barcode'],
+                                      virtual_container=conf['virtualContainer'])
     return conf, titer_plate
 
   def create_action_on_sample(self):
@@ -201,10 +200,11 @@ class SKBObjectCreator(unittest.TestCase):
     conf['id'] = container_slot.id
     return conf, container_slot
 
-  def create_plate_well(self, container=None, row=1, column=2):
-    conf, sample = self.create_bio_sample()
-    sample = self.skb.save(sample)
-    self.kill_list.append(sample)
+  def create_plate_well(self, sample=None, container=None, row=1, column=2):
+    if sample is None:
+      conf, sample = self.create_bio_sample()
+      sample = self.skb.save(sample)
+      self.kill_list.append(sample)
     #-
     if container is None:
       conf, container = self.create_titer_plate()
