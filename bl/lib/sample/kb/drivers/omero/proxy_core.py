@@ -8,9 +8,12 @@ import omero_SharedResources_ice
 
 import bl.lib.sample.kb as kb
 
+import itertools as it
 import numpy as np
 
-def convert_to_np(d):
+import time as time
+
+def convert_coordinates_to_np(d):
   def convert_type(o):
     if isinstance(o, omero.grid.LongColumn):
       return 'i8'
@@ -25,6 +28,41 @@ def convert_to_np(d):
   for c in d.columns:
     npd[c.name] = c.values
   return npd
+
+def convert_to_numpy_record_type(d):
+  def convert_type(o):
+    if isinstance(o, omero.grid.LongColumn):
+      return 'i8'
+    elif isinstance(o, omero.grid.DoubleColumn):
+      return 'f8'
+    elif isinstance(o, omero.grid.BoolColumn):
+      return 'b'
+    elif isinstance(o, omero.grid.StringColumn):
+      return '|S%d' % o.size
+  return [(c.name, convert_type(c)) for c in d]
+
+def convert_from_numpy(x):
+  if isinstance(x, np.int64):
+    return int(x)
+  else:
+    return x
+
+import logging
+LOG_FILENAME = 'proxy_core.log'
+logging.basicConfig(filename=LOG_FILENAME,
+                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                    level=logging.DEBUG)
+
+logger = logging.getLogger("proxy_core")
+
+def debug_boundary(f):
+  def debug_boundary_wrapper(*args, **kv):
+    now = time.time()
+    logger.debug('%s in' % f.__name__)
+    res = f(*args, **kv)
+    logger.debug('%s out (%f)' % (f.__name__, time.time() - now))
+    return res
+  return debug_boundary_wrapper
 
 class ProxyCore(object):
   """
@@ -86,6 +124,7 @@ class ProxyCore(object):
       self.disconnect()
     return result
 
+  @debug_boundary
   def save(self, obj):
     """
     Save and return a kb object.
@@ -112,16 +151,21 @@ class ProxyCore(object):
       raise kb.KBError("object does not exist")
     return result
 
+  #---------------------------------------------------------------------------------
+  #---------------------------------------------------------------------------------
+  #---------------------------------------------------------------------------------
   #-- TABLES SUPPORT
 
-  def _list_table_copies(self, file_name):
+  @debug_boundary
+  def _list_table_copies(self, table_name):
     return self.ome_operation('getQueryService',
                               'findAllByString', 'OriginalFile',
-                              'name', file_name, True, None)
+                              'name', table_name, True, None)
 
-  def get_table(self, file_name):
+  @debug_boundary
+  def get_table(self, table_name):
     try:
-      ofiles = self._list_table_copies(file_name)
+      ofiles = self._list_table_copies(table_name)
     finally:
       self.disconnect()
 
@@ -132,37 +176,151 @@ class ProxyCore(object):
     return t
 
     if len(ofiles) != 1:
-      raise ValueError('get_table: cannot resolve %s' % file_name)
+      raise ValueError('get_table: cannot resolve %s' % table_name)
     return
 
-  def delete_table(self, file_name):
+  @debug_boundary
+  def delete_table(self, table_name):
     """
     FIXME: Actual file removal is left to something else...
     """
     try:
-      ofiles = self._list_table_copies(file_name)
+      ofiles = self._list_table_copies(table_name)
       for o in ofiles:
         self.ome_operation('getUpdateService' , 'deleteObject', o)
     finally:
       self.disconnect()
 
-  def table_exists(self, file_name):
+  @debug_boundary
+  def table_exists(self, table_name):
     try:
-      ofiles = self._list_table_copies(file_name)
+      ofiles = self._list_table_copies(table_name)
     finally:
       self.disconnect()
     return len(ofiles) > 0
 
-  def create_table(self, file_name, fields):
+  @debug_boundary
+  def create_table(self, table_name, fields):
     ofields = [self.OME_TABLE_COLUMN[f[0]](*f[1:]) for f in fields]
     s = self.connect()
     try:
       r = s.sharedResources()
       m = r.repositories()
       i = m.descriptions[0].id.val
-      t = r.newTable(i, file_name)
-      t.initialize(fields)
+      t = r.newTable(i, table_name)
+      t.initialize(ofields)
     finally:
       self.disconnect()
     return t
+
+  @debug_boundary
+  def _get_table(self, session, table_name):
+    s = session
+    qs = s.getQueryService()
+    ofile = qs.findByString('OriginalFile', 'name', table_name, None)
+    if not ofile:
+      raise kb.KBError('the requested %s table is missing' % table_name)
+    r = s.sharedResources()
+    t = r.openTable(ofile)
+    return t
+
+  @debug_boundary
+  def get_table_rows(self, table_name, selector, batch_size=50000):
+    s = self.connect()
+    try:
+      t = self._get_table(s, table_name)
+      if selector:
+        res = self.__get_table_rows_selected(t, selector, batch_size)
+      else:
+        res = self.__get_table_rows_bulk(t, batch_size)
+    finally:
+      self.disconnect()
+    return res
+
+  @debug_boundary
+  def __get_table_rows_selected(self, table, selector, batch_size):
+    res, row_read, max_row = [], 0, table.getNumberOfRows()
+    while row_read < max_row:
+      ids = table.getWhereList(selector, {}, row_read, row_read + batch_size, 1)
+      if ids:
+        d = table.readCoordinates(ids)
+        res.append(convert_coordinates_to_np(d))
+      row_read += batch_size
+    return np.concatenate(tuple(res)) if res else []
+
+  @debug_boundary
+  def __get_table_rows_bulk(self, table, batch_size):
+    res, row_read, max_row = [], 0, table.getNumberOfRows()
+    col_objs = table.getHeaders()
+    while row_read < max_row:
+      d = table.read(range(len(col_objs)), row_read, row_read + batch_size)
+      if d:
+        res.append(convert_coordinates_to_np(d))
+      row_read += batch_size
+    return np.concatenate(tuple(res)) if res else []
+
+  #--
+  @debug_boundary
+  def get_table_headers(self, table_name):
+    col_objs = None
+    s = self.connect()
+    try:
+      t = self._get_table(s, table_name)
+      col_objs = t.getHeaders()
+    finally:
+      self.disconnect()
+    if col_objs:
+      return convert_to_numpy_record_type(col_objs)
+
+  @debug_boundary
+  def add_table_row(self, table_name, row):
+    if hasattr(row, 'dtype'):
+      dtype = row.dtype
+      row = dict([(k, convert_from_numpy(row[k])) for k in dtype.names])
+    def stream(row):
+      for i in range(1):
+        yield row
+    self.__extend_table(table_name, self.__load_batch, stream(row), 10)
+
+  @debug_boundary
+  def add_table_rows(self, table_name, rows, batch_size=10000):
+    dtype = rows.dtype
+    def stream(rows):
+      for r in rows:
+        yield dict([(k, convert_from_numpy(r[k])) for k in dtype.names])
+    self.__extend_table(table_name, self.__load_batch, stream(rows), batch_size)
+
+  @debug_boundary
+  def __extend_table(self, table_name, batch_loader, records_stream, batch_size=10000):
+    s = self.connect()
+    try:
+      t = self._get_table(s, table_name)
+      col_objs = t.getHeaders()
+      batch = batch_loader(records_stream, col_objs, batch_size)
+      while batch:
+        t.addData(batch)
+        batch = batch_loader(records_stream, col_objs, batch_size)
+    finally:
+      self.disconnect()
+
+  @debug_boundary
+  def __load_batch(self, records_stream, col_objs, chunk_size):
+    """
+    FIXME: Validation checks? We don't need no stinking validation checks.
+    """
+    v = {}
+    for r in it.islice(records_stream, chunk_size):
+      for k in r.keys():
+        v.setdefault(k,[]).append(r[k])
+    if len(v) == 0:
+      return None
+    for o in col_objs:
+      o.values = v[o.name]
+    return col_objs
+
+
+
+
+
+
 

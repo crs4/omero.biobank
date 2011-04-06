@@ -1,9 +1,8 @@
 import time
 
 import bl.lib.sample.kb as kb
-import vl.lib.utils     as vlu
 
-from proxy_core import ProxyCore
+from proxy_indexed import ProxyIndexed
 
 from study  import Study
 from device import Device
@@ -18,7 +17,8 @@ from sample import DataCollection, DataCollectionItem
 from samples_container import SamplesContainer, TiterPlate
 from data_object import DataObject
 
-class Proxy(ProxyCore):
+
+class Proxy(ProxyIndexed):
   """
   A knowledge base for the Sample package implemented as a driver for
   OMERO.
@@ -47,31 +47,7 @@ class Proxy(ProxyCore):
   DNASample   = DNASample
   SerumSample = SerumSample
 
-  ACTION_TABLE='vl_action_table.h5'
-  ACTION_RESULT_CLASS_MAX_NAME_LEN = 256
-  ACTION_TABLE_COLUMNS =  [('string', 'r_type', 'Result object type', ACTION_RESULT_CLASS_MAX_NAME_LEN, None),
-                           ('string', 'r_vid',  'Result object VID',        len(vlu.make_vid()), None),
-                           ('long',   'r_id',   'Result object ID',         None),
-                           ('string', 'o_vid',  'Action VID',               len(vlu.make_vid()), None),
-                           ('string', 't_vid',  'Action target object VID', len(vlu.make_vid()), None),
-                           ('string', 'i_vid',  'Root tree VID',            len(vlu.make_vid()), None)]
-
-  def __init__(self, host, user, passwd):
-    super(Proxy, self).__init__(host, user, passwd)
-    self.create_if_missing(self.ACTION_TABLE, self.ACTION_TABLE_COLUMNS)
-
-  #---------------------------------------------------------------------------------------------
-  def create_if_missing(self, table_name, fields):
-    if not self.table_exists(table_name):
-      self.create_table(table_name, fields)
-
-  def get_objects_linked_to_object(self, object):
-    data = self.get_table_rows(self.ACTION_TABLE, selector, batch_size)
-    #[apply(Foo, ome_obj) for Foo, ome_obj in data]
-
-  def get_actions_tree(self, vid):
-    pass
-  #----------------------------------------------------------------------------------------------
+  ProxyIndexed.ACTION_INDEXED_TYPES.extend([Result])
 
   def get_action_type_table(self):
     res = self.ome_operation("getQueryService", "findAll", "ActionType", None)

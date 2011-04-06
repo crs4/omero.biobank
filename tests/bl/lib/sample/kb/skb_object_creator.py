@@ -136,6 +136,29 @@ class SKBObjectCreator(unittest.TestCase):
   def create_serum_sample(self):
     return self.create_bio_sample(self.skb.SerumSample())
 
+  def create_sample_chain(self):
+    conf, blood_sample = self.create_blood_sample()
+    blood_sample = self.skb.save(blood_sample)
+    self.kill_list.append(blood_sample)
+    #-
+    conf, action = self.create_action_on_sample()
+    action.target = blood_sample
+    action = self.skb.save(action)
+    self.kill_list.append(action)
+    #-
+    conf, dna_sample = self.create_dna_sample()
+    dna_sample.action = action
+    dna_sample = self.skb.save(dna_sample)
+    self.kill_list.append(dna_sample)
+    #-
+    conf, action2 = self.create_action_on_sample()
+    action2.target = dna_sample
+    action2 = self.skb.save(action2)
+    self.kill_list.append(action2)
+    #-
+    conf, data_sample = self.create_data_sample()
+    data_sample.action = action2
+    return conf, data_sample
 
   def create_samples_container(self, sc=None):
     conf = {'labLabel' : 'sc-lab_label-%f' % time.time(),

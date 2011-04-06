@@ -46,6 +46,10 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
     except:
       pass
 
+  def test_sample_chain(self):
+    conf, sample = self.create_sample_chain()
+    sample = self.skb.save(sample)
+    self.kill_list.append(sample)
 
   def test_get_device(self):
     conf, device = self.create_device()
@@ -102,6 +106,7 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
 
 def suite():
   suite = unittest.TestSuite()
+  suite.addTest(TestSKBExtended('test_sample_chain'))
   suite.addTest(TestSKBExtended('test_get_device'))
   suite.addTest(TestSKBExtended('test_get_devices'))
   suite.addTest(TestSKBExtended('test_get_titer_plates'))
