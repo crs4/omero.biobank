@@ -1,9 +1,8 @@
 import os, unittest, time
 import itertools as it
-from bl.lib.genotype.kb import KBError
-import bl.lib.genotype.kb.drivers.omero         as okb
-import bl.lib.genotype.kb.drivers.omero.markers as okbm
-import bl.lib.genotype.kb.drivers.omero.utils   as okbu
+from bl.lib.sample.kb import KBError
+from bl.lib.genotype.kb.drivers.omero.proxy import Proxy
+
 import vl.lib.utils as vlu
 
 import numpy as np
@@ -18,30 +17,29 @@ OME_PASS = os.getenv("OME_PASS", "romeo")
 
 BATCH_SIZE=1000
 
-okbm.SNP_DEFINITION_TABLE = 'UNIT_TESTING.' + okbm.SNP_DEFINITION_TABLE
-okbm.SNP_ALIGNMENT_TABLE  = 'UNIT_TESTING.' + okbm.SNP_ALIGNMENT_TABLE
-okbm.SNP_SET_DEF_TABLE    = 'UNIT_TESTING.' + okbm.SNP_SET_DEF_TABLE
-okbm.SNP_SET_TABLE        = 'UNIT_TESTING.' + okbm.SNP_SET_TABLE
+class SafeProxy(Proxy):
+  SNP_MARKER_DEFINITIONS_TABLE = 'UNIT_TESTING.' + Proxy.SNP_MARKER_DEFINITIONS_TABLE
+  SNP_ALIGNMENT_TABLE         = 'UNIT_TESTING.' + Proxy.SNP_ALIGNMENT_TABLE
+  SNP_SET_DEF_TABLE           = 'UNIT_TESTING.' + Proxy.SNP_SET_DEF_TABLE
+  SNP_SET_TABLE               = 'UNIT_TESTING.' + Proxy.SNP_SET_TABLE
 
 class TestMarkers(unittest.TestCase):
   def setUp(self):
-    pass
+    self.proxy = SafeProxy(OME_HOST, OME_USER, OME_PASS)
 
   def tearDown(self):
-    for tn in [okbm.SNP_DEFINITION_TABLE,
-               okbm.SNP_ALIGNMENT_TABLE,
-               okbm.SNP_SET_DEF_TABLE,
-               okbm.SNP_SET_TABLE
+    for tn in [SafeProxy.SNP_MARKER_DEFINITIONS_TABLE,
+               SafeProxy.SNP_ALIGNMENT_TABLE,
+               SafeProxy.SNP_SET_DEF_TABLE,
+               SafeProxy.SNP_SET_TABLE
                ]:
-      okbu.delete_table(OME_HOST, OME_USER, OME_PASS, tn)
+
+      self.proxy.delete_table(tn)
 
   def manipulate_snp_definition_table(self):
-    okbu.delete_table(OME_HOST, OME_USER, OME_PASS,
-                      okbm.SNP_DEFINITION_TABLE)
-    okbu.create_snp_definition_table(OME_HOST, OME_USER, OME_PASS,
-                                     okbm.SNP_DEFINITION_TABLE)
-    #-
-    okb.open(OME_HOST, OME_USER, OME_PASS)
+    self.proxy.delete_table(SafeProxy.SNP_MARKER_DEFINITIONS_TABLE)
+    self.proxy.create_snp_marker_definitions_table()
+    #--
     source  = 'src-%d' % int(time.time())
     context = 'cxt-%d' % int(time.time())
     op_vid  = vlu.make_vid()
@@ -50,12 +48,12 @@ class TestMarkers(unittest.TestCase):
             'label':   'foo-%06d' % i,
             'rs_label': 'rs-%06d' % i,
             'mask'    : 'GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT'} for i in range(10)]
-    vids = okb.extend_snp_definition_table(it.islice(mds, len(mds)), op_vid=op_vid)
+    vids = self.proxy.add_snp_marker_definitions(it.islice(mds, len(mds)), op_vid=op_vid)
     self.assertEqual(len(vids), len(mds))
     #--
     for sel in [None, '(source=="%s")' % source, '(context=="%s")' % context,
                 '(op_vid=="%s")' % op_vid]:
-      mrks = okb.get_snp_definition_table_rows(selector=sel)
+      mrks = self.proxy.get_snp_marker_definitions(selector=sel)
       self.assertEqual(len(mrks), len(mds))
       dmds = {}
       for m in mds:
@@ -65,14 +63,11 @@ class TestMarkers(unittest.TestCase):
         self.assertEqual(m['source'], x[1])
         self.assertEqual(m['context'],x[2])
         self.assertEqual(m['rs_label'],  x[4])
-    okb.close()
 
   def manipulate_snp_alignment_table(self):
-    okbu.delete_table(OME_HOST, OME_USER, OME_PASS, okbm.SNP_ALIGNMENT_TABLE)
-    okbu.create_snp_alignment_table(OME_HOST, OME_USER, OME_PASS,
-                                    okbm.SNP_ALIGNMENT_TABLE)
+    self.proxy.delete_table(SafeProxy.SNP_ALIGNMENT_TABLE)
+    self.proxy.create_snp_alignment_table()
     #-
-    okb.open(OME_HOST, OME_USER, OME_PASS)
     ref_genome = 'hg18'
     op_vid  = vlu.make_vid()
     mds = [{'marker_vid' : vlu.make_vid(),
@@ -86,9 +81,9 @@ class TestMarkers(unittest.TestCase):
             } for i in range(10)]
     for x in mds:
       x['global_pos'] = 10**10 * x['chromosome'] + x['pos']
-    okb.extend_snp_alignment_table(it.islice(mds, len(mds)), op_vid=op_vid)
+    self.proxy.add_snp_alignments(it.islice(mds, len(mds)), op_vid=op_vid)
     for sel in [None]:
-      mrks = okb.get_snp_alignment_table_rows(selector=sel)
+      mrks = self.proxy.get_snp_alignments(selector=sel)
       self.assertEqual(len(mrks), len(mds))
       dmds = {}
       for m in mds:
@@ -97,17 +92,13 @@ class TestMarkers(unittest.TestCase):
         m = dmds[x[0]] # vid
         for i, k in enumerate(x.dtype.names):
           self.assertEqual(m[k], x[i])
-    okb.close()
 
   def manipulate_snp_set_table(self):
     #-
-    okbu.delete_table(OME_HOST, OME_USER, OME_PASS, okbm.SNP_SET_DEF_TABLE)
-    okbu.delete_table(OME_HOST, OME_USER, OME_PASS, okbm.SNP_SET_TABLE)
-    okbu.create_snp_set_def_table(OME_HOST, OME_USER, OME_PASS,
-                                  okbm.SNP_SET_DEF_TABLE)
-    okbu.create_snp_set_table(OME_HOST, OME_USER, OME_PASS,
-                              okbm.SNP_SET_TABLE)
-    okb.open(OME_HOST, OME_USER, OME_PASS)
+    self.proxy.delete_table(SafeProxy.SNP_SET_DEF_TABLE)
+    self.proxy.delete_table(SafeProxy.SNP_SET_TABLE)
+    self.proxy.create_snp_markers_set_table()
+    self.proxy.create_snp_set_table()
     set_vid = vlu.make_vid()
     maker   = 'foomatic'
     model   = 'barfoo'
@@ -116,12 +107,12 @@ class TestMarkers(unittest.TestCase):
             'marker_indx' : i,
             'allele_flip' : [True, False][np.random.random_integers(0,1)],
             } for i in range(10)]
-    set_vid = okb.extend_snp_set_def_table(maker, model,op_vid=op_vid)
-    okb.extend_snp_set_table(set_vid, it.islice(mds, len(mds)), op_vid=op_vid)
+    set_vid = self.proxy.add_snp_markers_set(maker, model,op_vid=op_vid)
+    self.proxy.fill_snp_markers_set(set_vid, it.islice(mds, len(mds)), op_vid=op_vid)
     for sel in [None,
                 '(maker=="%s")&(model=="%s")' % (maker, model),
                 ]:
-      snp_sets = okb.get_snp_set_def_table_rows(selector=sel)
+      snp_sets = self.proxy.get_snp_markers_sets(selector=sel)
       self.assertEqual(len(snp_sets), 1)
       self.assertEqual(snp_sets[0][0], set_vid)
       self.assertEqual(snp_sets[0][1], maker)
@@ -131,7 +122,7 @@ class TestMarkers(unittest.TestCase):
                 '(vid=="%s")' % set_vid,
                 '(op_vid=="%s")' % op_vid
                 ]:
-      mrks = okb.get_snp_set_table_rows(selector=sel)
+      mrks = self.proxy.get_snp_markers_set(selector=sel)
       self.assertEqual(len(mrks), len(mds))
       dmds = {}
       for m in mds:
@@ -140,7 +131,6 @@ class TestMarkers(unittest.TestCase):
         m = dmds[x[1]] # marker_vid
         for i, k in enumerate(x.dtype.names):
           self.assertEqual(m[k], x[i])
-    okb.close()
 
 def suite():
   suite = unittest.TestSuite()

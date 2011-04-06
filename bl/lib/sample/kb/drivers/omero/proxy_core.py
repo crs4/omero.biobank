@@ -86,6 +86,8 @@ class ProxyCore(object):
 
   OME_TABLE_COLUMN = {'string' : omero.grid.StringColumn,
                       'long'   : omero.grid.LongColumn,
+                      'double' : omero.grid.DoubleColumn,
+                      'bool'   : omero.grid.BoolColumn,
                       }
 
   def __init__(self, host, user, passwd):
@@ -224,6 +226,28 @@ class ProxyCore(object):
     t = r.openTable(ofile)
     return t
 
+
+  @debug_boundary
+  def get_table_rows_iterator(self, table_name, batch_size=100):
+    """FIXME error control..."""
+    #-
+    def iter_on_rows(t, n_cols):
+      i, N = 0, t.getNumberOfRows()
+      while i < N:
+        j = min(N, i + batch_size)
+        v = t.read(range(n_cols), i, j)
+        Z = convert_coordinates_to_np(v)
+        for k in range(j - i):
+          yield Z[k]
+        i = j
+      # this closes the connect() below
+      self.disconnect()
+    #-
+    s = self.connect()
+    t = self._get_table(s, table_name)
+    col_objs = t.getHeaders()
+    return iter_on_rows(t, len(col_objs))
+
   @debug_boundary
   def get_table_rows(self, table_name, selector, batch_size=50000):
     s = self.connect()
@@ -280,7 +304,7 @@ class ProxyCore(object):
     def stream(row):
       for i in range(1):
         yield row
-    self.__extend_table(table_name, self.__load_batch, stream(row), 10)
+    return self.add_table_rows_from_stream(table_name, stream(row), 10)
 
   @debug_boundary
   def add_table_rows(self, table_name, rows, batch_size=10000):
@@ -288,7 +312,11 @@ class ProxyCore(object):
     def stream(rows):
       for r in rows:
         yield dict([(k, convert_from_numpy(r[k])) for k in dtype.names])
-    self.__extend_table(table_name, self.__load_batch, stream(rows), batch_size)
+    return self.add_table_rows_from_stream(table_name, stream(rows), batch_size)
+
+  @debug_boundary
+  def add_table_rows_from_stream(self, table_name, stream, batch_size=10000):
+    self.__extend_table(table_name, self.__load_batch, stream, batch_size)
 
   @debug_boundary
   def __extend_table(self, table_name, batch_loader, records_stream, batch_size=10000):
@@ -317,7 +345,6 @@ class ProxyCore(object):
     for o in col_objs:
       o.values = v[o.name]
     return col_objs
-
 
 
 

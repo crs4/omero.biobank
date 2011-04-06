@@ -29,7 +29,6 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
   def tearDown(self):
     self.kill_list.reverse()
     for x in self.kill_list:
-      #print 'deleting %s[%s]' % (type(x), x.id)
       self.skb.delete(x)
     self.kill_list = []
 
@@ -120,9 +119,6 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     conf, action = self.create_action_on_individual()
     action = self.ikb.save(action)
     self.kill_list.append(action)
-    print 'ibc: action:', action.ome_obj
-    print 'ibc: target:', action.ome_obj.target
-    print 'ibc:action.target:', action.target.ome_obj
     #--
     conf, sample = self.create_blood_sample()
     sample.action = action
@@ -149,7 +145,6 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     self.kill_list.append(blood_sample)
     #-
     bs = self.ikb.get_blood_sample(individual)
-    print 'bs.ome_obj:', bs.ome_obj
     self.assertTrue(not bs is None)
     self.assertEqual(bs.id, blood_sample.id)
 

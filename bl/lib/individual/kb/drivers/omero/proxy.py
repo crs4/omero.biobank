@@ -29,6 +29,7 @@ class Proxy(ProxyCore):
   Enrollment = Enrollment
   ActionOnIndividual = ActionOnIndividual
 
+
   def get_gender_table(self):
     res = self.ome_operation("getQueryService", "findAll", "Gender", None)
     return dict([(x._value._val, x) for x in res])
@@ -86,7 +87,6 @@ class Proxy(ProxyCore):
                                 "get", "BloodSample",
                                 action.target._id._val)
     action.target = target
-    print 'get_dna_sample.action:', action
     return DNASample(result)
 
 

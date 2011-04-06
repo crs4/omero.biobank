@@ -10,8 +10,6 @@ import sys
 # The actual KnowledgeBase front-end
 #
 #--
-from outer_layer import OuterLayer
-
 driver_table = { 'omero' : 'bl.lib.genotype.kb.drivers.omero' }
 
 def KnowledgeBase(driver):
@@ -21,5 +19,4 @@ def KnowledgeBase(driver):
   except KeyError, e:
     print 'Driver %s is unknown' % driver
     assert(False)
-  return OuterLayer(driver_module.driver)
-
+  return driver_module.driver

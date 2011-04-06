@@ -30,7 +30,10 @@ class ProxyIndexed(ProxyCore):
       t_vid = obj.action.target.vid._val if hasattr(obj.action, 'target') else ''
       if t_vid:
         row = self.get_table_rows(self.ACTION_TABLE, selector='(r_vid == "%s")' % t_vid)
-        i_vid = row[0]['i_vid']
+        if row:
+          i_vid = row[0]['i_vid']
+        else:
+          i_vid = t_vid
       else:
         i_vid = r_vid
       #-
