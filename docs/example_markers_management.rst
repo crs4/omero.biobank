@@ -88,7 +88,7 @@ Upload a new set of markers
 
 .. code-block:: Python
 
-   import bl.lib.genotype.kb as kb
+   import bl.vl.genotype.kb as kb
    import csv
 
    fname = 'new_markers.tsv'

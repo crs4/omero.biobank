@@ -11,7 +11,8 @@ and a small subset of other SNP markers.
 """
 
 import bl.lib.chip.io     as cio
-from bl.lib.genotype.kb import KnowledgeBase as gKB
+from bl.vl.genotype.kb import KnowledgeBase as gKB
+import bl.vl.utils           as vlu
 
 import numpy as np
 
@@ -22,11 +23,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 #--------------------------------------------------------------------------------
 def import_affy_snp_table(kb):
-  affy_snp_tsv = '/data/GenomeWideSNP_6.na28.annot.tsv'
+  affy_snp_tsv = '../tests/bl/vl/genotype/data/GenomeWideSNP_6.na28.annot.tsv'
   # FIXME: we need to decide what we want to do with the action vid
   source = 'affymetrix'
   context = 'GenomeWide-6.0-na28'
-  op_vid = kb.make_vid()
+  op_vid = vlu.make_vid()
   tsv = cio.TsvFile(affy_snp_tsv)
   def ns(stream):
     for x in stream:
@@ -42,7 +43,7 @@ def import_affy_snp_table(kb):
 def import_other_snps(kb):
   source  = 'dbsnp'
   context = 'taqman-calibration'
-  op_vid = kb.make_vid()
+  op_vid = vlu.make_vid()
   snps = [{'source' : source, 'context' : context,
            'label' : 'rs12265218', 'rs_label' : 'rs12265218',
            'mask' : 'CACAGTCACTTCTTCAAAGCTTTGCC[A/G]CAGAAGCTACAAGCATTATTTCCAC'},

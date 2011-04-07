@@ -6,14 +6,14 @@ Basic Computations on Genotype data
 This example describes how one can use the ``bl.vl.genotype```package
 to perform basic computation on genotype data.
 
-In this example we are assuming that FIXME
+...
 
 
 """
 
 import bl.lib.pedal.io as io
-from bl.lib.genotype.kb import KnowledgeBase
-from bl.lib.genotype import algo
+from bl.vl.genotype.kb import KnowledgeBase as gKB
+from bl.vl.genotype import algo
 import numpy as np
 
 import os
@@ -22,18 +22,21 @@ import itertools as it
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
+def get_markers_set_vid(kb, maker, model):
+  res = kb.get_snp_markers_sets(selector='(maker=="%s")&(model=="%s")' % (maker, model))
+  return res[0]['vid']
+
 def main():
   OME_HOST = os.getenv("OME_HOST", "localhost")
   OME_USER = os.getenv("OME_USER", "root")
   OME_PASS = os.getenv("OME_PASS", "romeo")
 
-  kb = KnowledgeBase(driver='omero')
+  gkb = gKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
 
-  kb.open(OME_HOST, OME_USER, OME_PASS)
   #--
   maker, model = 'crs4-bl', 'taqman-foo'
-  set_vid = kb.get_snp_marker_set_vid(maker, model)
-  s = kb.get_gdo_stream(set_vid)
+  set_vid = get_markers_set_vid(gkb, maker, model)
+  s = gkb.get_gdo_iterator(set_vid)
   start = time.clock()
   counts = algo.count_homozygotes(s)
   print 'counts on %d:' % counts[0], time.clock() - start
@@ -44,6 +47,5 @@ def main():
   hwe  = algo.hwe(None, counts)
   print 'hwe on %d:' % counts[0], time.clock() - start
   #--
-  kb.close()
 
 main()

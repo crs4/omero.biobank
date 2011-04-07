@@ -22,7 +22,9 @@ We are working under the following assumptions:
 """
 
 import bl.lib.pedal.io as io
-from bl.lib.genotype.kb import KnowledgeBase as gKB
+from bl.vl.genotype.kb import KnowledgeBase as gKB
+import bl.vl.utils     as vlu
+
 import numpy as np
 
 import os
@@ -31,7 +33,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 
-#-------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class PedReader(object):
   def __init__(self, pedfile, datfile, conf_value=1.0):
     self.ped_file = pedfile
@@ -71,20 +73,29 @@ class PedReader(object):
     c[:] = self.conf_value
     return {'op_vid' : fam_id[1:], 'probs' : nd, 'confs' : c}
 
-#------------------------------------------------------------------------------------------
-def create_new_snp_markers_set(kb, maker, model, ped_reader):
-  marker_vids = gkb.get_snp_vids(rs_labels=ped_reader.get_marker_names())
+#------------------------------------------------------------------------------
+def create_new_snp_markers_set(gkb, maker, model, ped_reader):
+  #-
+  rs_labels = ped_reader.get_marker_names()
+  op_vid = vlu.make_vid()
+  set_vid = gkb.add_snp_markers_set(maker, model, op_vid)
+  gkb.create_gdo_repository(set_vid, len(rs_labels))
+  #-
+  selector = '|'.join(["(rs_label == '%s')" % name for name in rs_labels])
+  markers = gkb.get_snp_marker_definitions(selector=selector)
+  vids = markers['vid']
   def snp_set_item(vids):
     for i, v in enumerate(vids):
       r = {'marker_vid' : v, 'marker_indx' : i, 'allele_flip' : False}
       yield r
-  op_vid = kb.make_vid()
-  set_vid = kb.create_snp_markers_set(maker, model, snp_set_item(marker_vids), op_vid)
+  op_vid = vlu.make_vid()
+  N = gkb.fill_snp_markers_set(set_vid, snp_set_item(vids), op_vid)
+  print 'loaded %d gdo' % N
   return set_vid
 
 def main():
-  pedfile = '../tests/bl/lib/genotype/data/VALIDAZ_noCBLB.ped'
-  datfile = '../tests/bl/lib/genotype/data/validazione.dat'
+  pedfile = '../tests/bl/vl/genotype/data/VALIDAZ_noCBLB.ped'
+  datfile = '../tests/bl/vl/genotype/data/validazione.dat'
   OME_HOST = os.getenv("OME_HOST", "localhost")
   OME_USER = os.getenv("OME_USER", "root")
   OME_PASS = os.getenv("OME_PASS", "romeo")
@@ -96,7 +107,7 @@ def main():
   set_vid = create_new_snp_markers_set(gkb, maker, model, pr)
   #--
   for x in pr:
-    vid = gkb.append_gdo(set_vid, x['probs'], x['confs'], x['op_vid'])
+    vid = gkb.add_gdo(set_vid, x['probs'], x['confs'], x['op_vid'])
   #--
 
 main()
