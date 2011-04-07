@@ -1,9 +1,9 @@
 import os, unittest, time
 import itertools as it
-from bl.lib.sample.kb import KBError
-from bl.lib.genotype.kb.drivers.omero.proxy import Proxy
+from bl.vl.sample.kb import KBError
+from bl.vl.genotype.kb.drivers.omero.proxy import Proxy
 
-import vl.lib.utils as vlu
+import bl.vl.utils as vlu
 
 import numpy as np
 

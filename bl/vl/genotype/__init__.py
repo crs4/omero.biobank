@@ -1,5 +1,5 @@
 """
-FIXME doc of bl/lib/genotype module
+FIXME doc of bl/vl/genotype module
 """
 
 

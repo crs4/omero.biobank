@@ -1,9 +1,9 @@
 import time
 
 import omero.rtypes as ort
-from bl.lib.sample.kb.drivers.omero.proxy_core import ProxyCore
-from bl.lib.sample.kb.drivers.omero.sample     import BloodSample
-from bl.lib.sample.kb.drivers.omero.sample     import DNASample
+from bl.vl.sample.kb.drivers.omero.proxy_core import ProxyCore
+from bl.vl.sample.kb.drivers.omero.sample     import BloodSample
+from bl.vl.sample.kb.drivers.omero.sample     import DNASample
 
 from individual import Individual
 from enrollment import Enrollment

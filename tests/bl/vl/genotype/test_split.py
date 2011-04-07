@@ -3,7 +3,7 @@ import time, os
 
 import numpy as np
 
-import bl.lib.genotype.pedigree as ped
+import bl.vl.genotype.pedigree as ped
 
 class individual(object):
   def __init__(self, iid, sex, father=None, mother=None, genotyped=False):

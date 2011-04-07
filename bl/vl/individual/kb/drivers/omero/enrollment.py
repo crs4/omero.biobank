@@ -1,12 +1,11 @@
-from wrapper import OmeroWrapper
 import omero.rtypes as ort
 
-from bl.lib.sample.kb.drivers.omero.wrapper import OmeroWrapper
-from bl.lib.sample.kb.drivers.omero.study import Study
-import vl.lib.utils           as vlu
-import vl.lib.utils.ome_utils as vluo
+from bl.vl.sample.kb.drivers.omero.wrapper import OmeroWrapper
+from bl.vl.sample.kb.drivers.omero.study import Study
+import bl.vl.utils           as vlu
+import bl.vl.utils.ome_utils as vluo
 
-import bl.lib.individual.kb as kb
+import bl.vl.individual.kb as kb
 
 import time
 

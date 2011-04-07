@@ -1,7 +1,7 @@
 from proxy_core import ProxyCore
 
-import vl.lib.utils     as vlu
-import numpy            as np
+import bl.vl.utils     as vlu
+import numpy           as np
 
 
 class ProxyIndexed(ProxyCore):

@@ -6,7 +6,7 @@ import omero_ServerErrors_ice  # magically adds exceptions to the omero module
 import omero_Tables_ice
 import omero_SharedResources_ice
 
-import bl.lib.sample.kb as kb
+import bl.vl.sample.kb as kb
 
 import itertools as it
 import numpy as np
@@ -48,19 +48,24 @@ def convert_from_numpy(x):
     return x
 
 import logging
-LOG_FILENAME = 'proxy_core.log'
-logging.basicConfig(filename=LOG_FILENAME,
+#LOG_FILENAME = 'proxy_core.log'
+logging.basicConfig(#filename=LOG_FILENAME,
                     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                     level=logging.DEBUG)
 
 logger = logging.getLogger("proxy_core")
 
+counter = 0
 def debug_boundary(f):
   def debug_boundary_wrapper(*args, **kv):
+    global counter
     now = time.time()
-    logger.debug('%s in' % f.__name__)
+    counter += 1
+    logger.debug('%s[%d] in' % (f.__name__, counter))
     res = f(*args, **kv)
-    logger.debug('%s out (%f)' % (f.__name__, time.time() - now))
+    logger.debug('%s[%d] out (%f)' % (f.__name__, counter,
+                                      time.time() - now))
+    counter -= 1
     return res
   return debug_boundary_wrapper
 
@@ -110,6 +115,7 @@ class ProxyCore(object):
       params.add(k, conf[k])
     return params
 
+  @debug_boundary
   def ome_operation(self, operation, action, *action_args):
     session = self.connect()
     try:
@@ -140,6 +146,7 @@ class ProxyCore(object):
       obj.__handle_validation_errors__()
     return obj.__class__(result)
 
+  @debug_boundary
   def delete(self, kb_obj):
     """
     Delete a kb object.

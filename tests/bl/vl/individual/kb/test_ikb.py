@@ -1,7 +1,7 @@
 import os, unittest, time
 import itertools as it
-from bl.lib.individual.kb import KnowledgeBase as iKB
-from bl.lib.sample.kb     import KnowledgeBase as sKB
+from bl.vl.individual.kb import KnowledgeBase as iKB
+from bl.vl.sample.kb     import KnowledgeBase as sKB
 
 from skb_object_creator import SKBObjectCreator
 

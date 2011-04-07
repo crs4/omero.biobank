@@ -1,7 +1,7 @@
 import os, unittest, time
 import itertools as it
-from bl.lib.sample.kb import KBError
-from bl.lib.sample.kb import KnowledgeBase as sKB
+from bl.vl.sample.kb import KBError
+from bl.vl.sample.kb import KnowledgeBase as sKB
 
 import logging
 logging.basicConfig(level=logging.DEBUG)

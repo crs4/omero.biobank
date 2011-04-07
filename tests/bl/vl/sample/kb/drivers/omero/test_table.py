@@ -1,10 +1,10 @@
 import os, unittest, time
 import itertools as it
 import numpy as np
-from bl.lib.sample.kb import KBError
+from bl.vl.sample.kb import KBError
 
 
-from bl.lib.sample.kb.drivers.omero.proxy_core import ProxyCore
+from bl.vl.sample.kb.drivers.omero.proxy_core import ProxyCore
 
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")

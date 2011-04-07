@@ -1,6 +1,6 @@
 import time
 
-import bl.lib.sample.kb as kb
+import bl.vl.sample.kb as kb
 
 from proxy_indexed import ProxyIndexed
 

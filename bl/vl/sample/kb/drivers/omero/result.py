@@ -1,8 +1,8 @@
 import omero.rtypes as ort
-import vl.lib.utils           as vlu
-import vl.lib.utils.ome_utils as vluo
+import bl.vl.utils           as vlu
+import bl.vl.utils.ome_utils as vluo
 
-import bl.lib.sample.kb as kb
+import bl.vl.sample.kb as kb
 
 import time
 

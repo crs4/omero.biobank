@@ -1,8 +1,8 @@
 import time
 
-from bl.lib.sample.kb.drivers.omero.proxy_core import ProxyCore
+from bl.vl.sample.kb.drivers.omero.proxy_core import ProxyCore
 
-import vl.lib.utils as vlu
+import bl.vl.utils as vlu
 import itertools as it
 import numpy     as np
 

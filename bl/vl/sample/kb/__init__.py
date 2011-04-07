@@ -10,7 +10,7 @@ import sys
 # The actual KnowledgeBase front-end
 #
 #--
-driver_table = { 'omero' : 'bl.lib.sample.kb.drivers.omero' }
+driver_table = { 'omero' : 'bl.vl.sample.kb.drivers.omero' }
 
 def KnowledgeBase(driver):
   try:

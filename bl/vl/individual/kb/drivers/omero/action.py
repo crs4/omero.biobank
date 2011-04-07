@@ -1,7 +1,7 @@
-import bl.lib.individual.kb as kb
-import bl.lib.sample.kb as skb
+import bl.vl.individual.kb as kb
+import bl.vl.sample.kb as skb
 
-from bl.lib.sample.kb.drivers.omero.action import Action
+from bl.vl.sample.kb.drivers.omero.action import Action
 from individual import Individual
 
 #----------------------------------------------------------------------
