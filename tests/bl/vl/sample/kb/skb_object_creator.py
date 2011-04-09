@@ -4,7 +4,7 @@ from bl.vl.sample.kb import KBError
 from bl.vl.sample.kb import KnowledgeBase as sKB
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger()
 
 class SKBObjectCreator(unittest.TestCase):
@@ -169,8 +169,8 @@ class SKBObjectCreator(unittest.TestCase):
   def create_serum_sample(self, action=None):
     return self.create_bio_sample(sample=self.skb.SerumSample(), action=action)
 
-  def create_sample_chain(self):
-    conf, blood_sample = self.create_blood_sample()
+  def create_sample_chain(self, root_action=None):
+    conf, blood_sample = self.create_blood_sample(action=root_action)
     blood_sample = self.skb.save(blood_sample)
     self.kill_list.append(blood_sample)
     #-

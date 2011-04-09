@@ -1,7 +1,7 @@
 import time
 
 import omero.rtypes as ort
-from bl.vl.sample.kb.drivers.omero.proxy_core import ProxyCore
+from bl.vl.sample.kb.drivers.omero.proxy_indexed import ProxyIndexed
 from bl.vl.sample.kb.drivers.omero.sample     import BloodSample
 from bl.vl.sample.kb.drivers.omero.sample     import DNASample
 
@@ -10,7 +10,7 @@ from enrollment import Enrollment
 from action     import ActionOnIndividual
 
 
-class Proxy(ProxyCore):
+class Proxy(ProxyIndexed):
   """
   A knowledge base implemented as a driver for OMERO.
 
@@ -29,6 +29,7 @@ class Proxy(ProxyCore):
   Enrollment = Enrollment
   ActionOnIndividual = ActionOnIndividual
 
+  ProxyIndexed.ACTION_INDEXED_TYPES.extend([Individual])
 
   def get_gender_table(self):
     res = self.ome_operation("getQueryService", "findAll", "Gender", None)

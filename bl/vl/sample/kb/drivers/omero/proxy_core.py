@@ -336,6 +336,7 @@ class ProxyCore(object):
       batch = batch_loader(records_stream, col_objs, batch_size)
       while batch:
         t.addData(batch)
+        col_objs = t.getHeaders()
         batch = batch_loader(records_stream, col_objs, batch_size)
     finally:
       self.disconnect()

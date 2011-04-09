@@ -6,7 +6,7 @@ from bl.vl.sample.kb     import KnowledgeBase as sKB
 from skb_object_creator import SKBObjectCreator
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
 
 OME_HOST = os.getenv("OME_HOST", "localhost")
@@ -47,10 +47,16 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     except:
       pass
 
-  def create_individual(self, gender='MALE'):
+  def create_individual(self, gender='MALE', action=None):
     gmap = self.ikb.get_gender_table()
-    conf = {'gender' : gmap[gender]}
+    #-
+    if action is None:
+      conf, action = self.create_action()
+      action = self.skb.save(action)
+      self.kill_list.append(action)
+    conf = {'gender' : gmap[gender], 'action' : action}
     i = self.ikb.Individual(gender=conf['gender'])
+    self.configure_object(i, conf)
     return conf, i
 
   def create_enrollment(self):
@@ -69,22 +75,15 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
                             study_code=conf['studyCode'])
     return conf, e
 
-  def create_action_on_individual(self):
-    conf, individual = self.create_individual()
-    individual = self.ikb.save(individual)
-    self.kill_list.append(individual)
-    #--
-    conf, action = self.create_action(action=self.ikb.ActionOnIndividual())
-    sconf = { 'target' : individual}
-    self.configure_object(action, sconf)
-    conf.update(sconf)
-    return conf, action
+  def create_action_on_individual(self, individual=None):
+    return self.create_action(action=self.ikb.ActionOnIndividual(),
+                              target=individual)
 
   def test_orphan(self):
     conf, i = self.create_individual('MALE')
     i = self.ikb.save(i)
+    self.kill_list.append(i)
     self.check_object(i, conf, self.ikb.Individual)
-    self.ikb.delete(i)
 
   def test_with_parents(self):
     conf, f = self.create_individual('MALE')
@@ -100,62 +99,51 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     self.configure_object(i, sconf)
     conf.update(sconf)
     i = self.ikb.save(i)
+    self.kill_list.append(i)
     self.check_object(i, conf, self.ikb.Individual)
-    self.ikb.delete(i)
 
   def test_enrollment(self):
     conf, e = self.create_enrollment()
     e = self.ikb.save(e)
+    self.kill_list.append(e)
     self.check_object(e, conf, self.ikb.Enrollment)
-    self.ikb.delete(e)
+
 
   def test_action_on_individual(self):
-    conf, action = self.create_action_on_individual()
+    conf, i = self.create_individual('MALE')
+    i = self.ikb.save(i)
+    self.kill_list.append(i)
+    conf, action = self.create_action_on_individual(individual=i)
     action = self.ikb.save(action)
+    self.kill_list.append(action)
     self.check_object(action, conf, self.ikb.ActionOnIndividual)
-    self.ikb.delete(action)
 
-  def create_individual_blood_chain(self):
-    conf, action = self.create_action_on_individual()
+  def create_individual_sample_chain(self):
+    conf, i = self.create_individual('MALE')
+    i = self.ikb.save(i)
+    self.kill_list.append(i)
+    conf, action = self.create_action_on_individual(individual=i)
     action = self.ikb.save(action)
     self.kill_list.append(action)
     #--
-    conf, sample = self.create_blood_sample()
-    sample.action = action
-    return action.target, sample
+    conf, data_sample = self.create_sample_chain(root_action=action)
+    return conf, data_sample
 
-  def create_individual_blood_dna_chain(self):
-    individual, blood_sample = self.create_individual_blood_chain()
-    blood_sample = self.skb.save(blood_sample)
-    self.kill_list.append(blood_sample)
-    #--
-    conf, action = self.create_action_on_sample()
-    action.target = blood_sample
-    action = self.skb.save(action)
-    self.kill_list.append(action)
-    #--
-    conf, dna_sample = self.create_dna_sample()
-    dna_sample.action = action
-    #--
-    return individual, dna_sample
-
-  def test_get_blood_sample(self):
-    individual, blood_sample = self.create_individual_blood_chain()
-    blood_sample = self.skb.save(blood_sample)
-    self.kill_list.append(blood_sample)
+  def test_get_individual_chain(self):
+    conf, data_sample = self.create_individual_sample_chain()
+    data_sample = self.skb.save(data_sample)
+    self.kill_list.append(data_sample)
     #-
-    bs = self.ikb.get_blood_sample(individual)
-    self.assertTrue(not bs is None)
-    self.assertEqual(bs.id, blood_sample.id)
-
-  def test_get_dna_sample(self):
-    individual, dna_sample = self.create_individual_blood_dna_chain()
-    dna_sample = self.skb.save(dna_sample)
-    self.kill_list.append(dna_sample)
+    root = self.skb.get_root(data_sample)
+    self.assertTrue(isinstance(root, self.ikb.Individual))
+    self.assertEqual(type(root), self.ikb.Individual)
     #-
-    dnas = self.ikb.get_dna_sample(individual)
-    self.assertTrue(not dnas is None)
-    self.assertEqual(dnas.id, dna_sample.id)
+    blood_samples = self.skb.get_descendants(root, self.skb.BloodSample)
+    for bs in blood_samples:
+      self.assertEqual(type(bs), self.skb.BloodSample)
+    dna_samples =  self.skb.get_descendants(root, self.skb.DNASample)
+    for ds in dna_samples:
+      self.assertEqual(type(ds), self.skb.DNASample)
 
   def test_plate_well_dna(self):
     individual, dna_sample = self.create_individual_blood_dna_chain()
@@ -175,8 +163,7 @@ def suite():
   suite.addTest(TestIKB('test_with_parents'))
   suite.addTest(TestIKB('test_enrollment'))
   suite.addTest(TestIKB('test_action_on_individual'))
-  # suite.addTest(TestIKB('test_get_blood_sample'))
-  # suite.addTest(TestIKB('test_get_dna_sample'))
+  suite.addTest(TestIKB('test_get_individual_chain'))
   return suite
 
 if __name__ == '__main__':

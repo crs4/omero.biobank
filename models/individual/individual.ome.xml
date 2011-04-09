@@ -7,6 +7,7 @@
       <required name="gender" type="ome.model.vl.Gender"/>
       <optional name="father" type="ome.model.vl.Individual"/>
       <optional name="mother" type="ome.model.vl.Individual"/>
+      <required name="action" type="ome.model.vl.Action"/>
       <!-- optional name="ancestry" type="ome.model.vl.Ancestry"/ -->
     </properties>
   </type>

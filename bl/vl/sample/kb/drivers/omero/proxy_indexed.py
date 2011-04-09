@@ -74,7 +74,7 @@ class ProxyIndexed(ProxyCore):
              'r_vl_class' : obj.__class__.__name__, 'r_vl_module' : obj.__module__,
              'r_vid' : r_vid, 'r_id'  : r_id,
              'o_id' : o_id, 't_id' : t_id, 'i_id' : i_id}
-      logger.debug('row: %s' % row)
+      logger.debug('new row: %s' % row)
       self.add_table_row(self.ACTION_TABLE, row)
     return obj
 

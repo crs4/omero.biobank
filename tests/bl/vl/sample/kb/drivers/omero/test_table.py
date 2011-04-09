@@ -50,8 +50,8 @@ class TestProxyCore(unittest.TestCase):
     data['o_vid'] = ['o_vid%04d' % i for i in range(N)]
     data['t_vid'] = ['t_vid%04d' % i for i in range(N)]
     data['i_vid'] = ['i_vid%04d' % i for i in range(N)]
-    pc.add_table_row(table_name, data[0])
-    pc.add_table_rows(table_name, data)
+    pc.add_table_rows(table_name, data[:-1])
+    pc.add_table_row(table_name, data[-1])
     return data
 
   def test_table_rows(self):
@@ -63,8 +63,7 @@ class TestProxyCore(unittest.TestCase):
     pc.create_table(table_name, fields)
     data = self.fill_table(pc, table_name, N)
     r = pc.get_table_rows(table_name, None)
-    self.assertTrue(r[0] == data[0])
-    self.assertTrue(np.all(data == r[1:]))
+    self.assertTrue(np.all(data == r))
     #--
     m = N/2
     r = pc.get_table_rows(table_name, '(r_vid == "%s")' % data[m]['r_vid'])
@@ -82,10 +81,7 @@ class TestProxyCore(unittest.TestCase):
     data = self.fill_table(pc, table_name, N)
     row_it = pc.get_table_rows_iterator(table_name)
     for i, row in enumerate(row_it):
-      if i == 0:
-        self.assertTrue(row == data[0])
-      else:
-        self.assertTrue(row == data[i-1])
+      self.assertTrue(row == data[i])
     pc.delete_table(table_name)
 
 def suite():
