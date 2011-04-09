@@ -8,7 +8,7 @@ import bl.vl.utils.ome_utils as vluo
 import bl.vl.sample.kb as kb
 
 from sample import Sample
-from sample import ContainerSlot, DataCollectionItem
+from sample import SamplesContainerSlot, DataCollectionItem
 from samples_container import SamplesContainer, DataCollection
 from study  import Study
 from action import Action
@@ -28,62 +28,68 @@ class ActionOnSample(Action, kb.ActionOnSample):
 
   def __setattr__(self, name, value):
     if name == 'target':
+      if not isinstance(value, Sample):
+        raise ValueError('ActionOnSample target should be a Sample instance')
       return setattr(self.ome_obj, name, value.ome_obj)
     else:
       return super(ActionOnSample, self).__setattr__(name, value)
 
   def __getattr__(self, name):
     if name == 'target':
-      return Sample(self.ome_obj.device)
+      return Sample(self.ome_obj.target)
     else:
       return super(ActionOnSample, self).__getattr__(name)
 
 
 #----------------------------------------------------------------------
-class ActionOnContainer(Action, kb.ActionOnContainer):
+class ActionOnSamplesContainer(Action, kb.ActionOnSamplesContainer):
 
-  OME_TABLE = "ActionOnContainer"
+  OME_TABLE = "ActionOnSamplesContainer"
 
   def __handle_validation_errors__(self):
     if self.target is None:
-      raise kb.KBError("ActionOnContainer target can't be None")
+      raise kb.KBError("ActionOnSamplesContainer target can't be None")
     else:
-      super(ActionOnContainer, self).__handle_validation_errors__()
+      super(ActionOnSamplesContainer, self).__handle_validation_errors__()
 
   def __setattr__(self, name, value):
     if name == 'target':
+      if not isinstance(value, SamplesContainer):
+        raise ValueError('ActionOnSamplesContainer target should be a SamplesContainer instance')
       return setattr(self.ome_obj, name, value.ome_obj)
     else:
-      return super(ActionOnContainer, self).__setattr__(name, value)
+      return super(ActionOnSamplesContainer, self).__setattr__(name, value)
 
   def __getattr__(self, name):
     if name == 'target':
       return SamplesContainer(self.ome_obj.device)
     else:
-      return super(ActionOnContainer, self).__getattr__(name)
+      return super(ActionOnSamplesContainer, self).__getattr__(name)
 
 #----------------------------------------------------------------------
-class ActionOnSampleSlot(Action, kb.ActionOnSampleSlot):
+class ActionOnSamplesContainerSlot(Action, kb.ActionOnSamplesContainerSlot):
 
-  OME_TABLE = "ActionOnSampleSlot"
+  OME_TABLE = "ActionOnSamplesContainerSlot"
 
   def __handle_validation_errors__(self):
     if self.target is None:
-      raise kb.KBError("ActionOnSampleSlot target can't be None")
+      raise kb.KBError("ActionOnSamplesContainerSlot target can't be None")
     else:
-      super(ActionOnSampleSlot, self).__handle_validation_errors__()
+      super(ActionOnSamplesContainerSlot, self).__handle_validation_errors__()
 
   def __setattr__(self, name, value):
     if name == 'target':
+      if not isinstance(value, SamplesContainerSlot):
+        raise ValueError('ActionOnSamplesContainerSlot target should be a SamplesContainerSlot instance')
       return setattr(self.ome_obj, name, value.ome_obj)
     else:
-      return super(ActionOnSampleSlot, self).__setattr__(name, value)
+      return super(ActionOnSamplesContainerSlot, self).__setattr__(name, value)
 
   def __getattr__(self, name):
     if name == 'target':
-      return ContainerSlot(self.ome_obj.device)
+      return SamplesContainerSlot(self.ome_obj.device)
     else:
-      return super(ActionOnSampleSlot, self).__getattr__(name)
+      return super(ActionOnSamplesContainerSlot, self).__getattr__(name)
 
 
 #----------------------------------------------------------------------
@@ -99,6 +105,8 @@ class ActionOnDataCollection(Action, kb.ActionOnDataCollection):
 
   def __setattr__(self, name, value):
     if name == 'target':
+      if not isinstance(value, DataCollection):
+        raise ValueError('ActionOnDataCollection target should be a DataCollection instance')
       return setattr(self.ome_obj, name, value.ome_obj)
     else:
       return super(ActionOnDataCollection, self).__setattr__(name, value)
@@ -123,6 +131,8 @@ class ActionOnDataCollectionItem(Action, kb.ActionOnDataCollectionItem):
 
   def __setattr__(self, name, value):
     if name == 'target':
+      if not isinstance(value, DataCollectionItem):
+        raise ValueError('ActionOnDataCollectionItem target should be a DataCollectionItem instance')
       return setattr(self.ome_obj, name, value.ome_obj)
     else:
       return super(ActionOnDataCollectionItem, self).__setattr__(name, value)

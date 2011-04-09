@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <types>
-  <type id="ome.model.vl.PlateWell" superclass="ome.model.vl.ContainerSlot">
+  <type id="ome.model.vl.PlateWell" superclass="ome.model.vl.SamplesContainerSlot">
     <properties>
       <required name="volume" type="float"/>
       <optional name="concentration" type="float"/>

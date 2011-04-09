@@ -55,13 +55,13 @@ class ActionOnSample(object):
     raise NotImplementedError
 
 #--
-class ActionOnContainer(object):
+class ActionOnSamplesContainer(object):
 
   def __init__(self):
     raise NotImplementedError
 
 #--
-class ActionOnSampleSlot(object):
+class ActionOnSamplesContainerSlot(object):
 
   def __init__(self):
     raise NotImplementedError
@@ -103,7 +103,7 @@ class Sample(object):
     raise NotImplementedError
 
 #--
-class ContainerSlot(object):
+class SamplesContainerSlot(object):
 
   def __init__(self):
     raise NotImplementedError
@@ -165,6 +165,12 @@ class DataCollectionItem(object):
 
 #--
 class DataCollection(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+#--
+class DataObject(object):
 
   def __init__(self):
     raise NotImplementedError

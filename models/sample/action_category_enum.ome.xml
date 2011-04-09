@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <types>
-  <!-- ActionType enumeration describes all kind of actions that the
-       system can handle. -->
-  <enum id="ome.model.vl.ActionType">
+  <!-- ActionCategory enumeration lists the known action categories. -->
+  <enum id="ome.model.vl.ActionCategory">
     <entry name="IMPORT"/>
     <entry name="EXTRACTION"/>
     <entry name="UPDATE"/>

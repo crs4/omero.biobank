@@ -17,12 +17,13 @@ individuals and objects. Specifically, we will:
 
 """
 
-from bl.lib.sample.kb     import KnowledgeBase as sKB
-from bl.lib.individual.kb import KnowledgeBase as iKB
-from bl.lib.genotype.kb   import KnowledgeBase as gKB
+from bl.vl.sample.kb     import KBError
+from bl.vl.sample.kb     import KnowledgeBase as sKB
+from bl.vl.individual.kb import KnowledgeBase as iKB
+from bl.vl.genotype.kb   import KnowledgeBase as gKB
 import numpy as np
 import time
-import os
+import os, sys
 import logging
 
 LOG_FILENAME = 'load_data.log'
@@ -44,14 +45,18 @@ logger.addHandler(ch)
 INDIVIDUALS = [(0, None, None, 'MALE'), (1, None, None, 'FEMALE'),
                (2, 0, 1, 'MALE'), (3, 0, 1, 'FEMALE')]
 
-def debug_decorator(f):
-  def debug_decorator_wrapper(*args, **kv):
+counter = 0
+def debug_wrapper(f):
+  def debug_wrapper_wrapper(*args, **kv):
+    global counter
     now = time.time()
-    logger.debug('%s in' % f.__name__)
+    counter += 1
+    logger.debug('%s[%d] in' % (f.__name__, counter))
     res = f(*args, **kv)
-    logger.debug('%s out (%f)' % (f.__name__, time.time() - now))
+    logger.debug('%s[%d] out (%f)' % (f.__name__, counter, time.time() - now))
+    counter -= 1
     return res
-  return debug_decorator_wrapper
+  return debug_wrapper_wrapper
 
 class network_builder(object):
 
@@ -75,7 +80,7 @@ class network_builder(object):
     #
     self.logger = logger
 
-  @debug_decorator
+  @debug_wrapper
   def register_in_db(self, i_map):
     work_to_do = False
     for k in i_map.keys():
@@ -88,7 +93,7 @@ class network_builder(object):
         work_to_do = True
     return work_to_do
 
-  @debug_decorator
+  @debug_wrapper
   def update_parents(self, i_map):
     for k in i_map.keys():
       registered, i, father, mother = i_map[k]
@@ -103,7 +108,7 @@ class network_builder(object):
         i.mother = i_map[mother][1]
       i_map[k] = (False, i, None, None)
 
-  @debug_decorator
+  @debug_wrapper
   def register_individuals(self, i_stream):
     i_map = {}
     for x in i_stream:
@@ -116,7 +121,7 @@ class network_builder(object):
       work_to_do = self.register_in_db(i_map)
     self.individuals = [x[1] for x in i_map.values()]
 
-  @debug_decorator
+  @debug_wrapper
   def enroll_individuals(self, individuals):
     self.register_individuals(individuals)
     for k, i in enumerate(self.individuals):
@@ -137,21 +142,28 @@ class network_builder(object):
     asetup.conf = conf
     return self.skb.save(asetup)
 
-  @debug_decorator
+  @debug_wrapper
   def get_action_helper(self, aclass, study, target, device, asetup, atype, operator):
     desc = "This is a simulation"
     action = aclass()
     action.setup, action.device, action.actionType = asetup, device, atype
     action.operator, action.context, action.description = operator, study, desc
     action.target = target
-    return self.skb.save(action)
+    try:
+      return self.skb.save(action)
+    except KBError, e:
+      print 'got an error:', e
+      print 'action:', action
+      print 'action.ome_obj:', action.ome_obj
+      sys.exit(1)
+
 
   def get_action_on_individual(self, enrollment, device, asetup, atype, operator):
     return self.get_action_helper(self.ikb.ActionOnIndividual,
                                   enrollment.study, enrollment.individual,
                                   device, asetup, atype, operator)
 
-  @debug_decorator
+  @debug_wrapper
   def get_action_on_sample(self, sample, device, asetup, atype, operator):
     return self.get_action_helper(self.skb.ActionOnSample,
                                   self.study, sample,
@@ -172,7 +184,7 @@ class network_builder(object):
                                   self.study, item,
                                   device, asetup, atype, operator)
 
-  @debug_decorator
+  @debug_wrapper
   def acquire_blood_sample(self, enrollment, device, asetup,
                            atype, operator, volume):
     action = self.get_action_on_individual(enrollment, device, asetup, atype, operator)
@@ -185,7 +197,7 @@ class network_builder(object):
     sample.status = self.sstatus_map['USABLE']
     return self.skb.save(sample)
 
-  @debug_decorator
+  @debug_wrapper
   def acquire_blood_samples(self, conf):
     device = self.get_device(conf['organization'], conf['department'], '0.0')
     asetup = self.get_action_setup('blood-samples-conf-%f' % time.time(),
@@ -196,7 +208,7 @@ class network_builder(object):
       self.acquire_blood_sample(e, device, asetup, atype, conf['operator'], conf['volume'])
 
 
-  @debug_decorator
+  @debug_wrapper
   def extract_dna_sample(self, blood_sample, device, asetup, atype, operator):
     action = self.get_action_on_sample(blood_sample, device,
                                        asetup, atype, operator)
@@ -212,7 +224,7 @@ class network_builder(object):
     sample.status = self.sstatus_map['USABLE']
     return self.skb.save(sample)
 
-  @debug_decorator
+  @debug_wrapper
   def extract_dna_samples(self):
     device = self.get_device('ACME corp', 'DNA magic extractor', '0.0')
     asetup = self.get_action_setup('dna-sample-conf-%f' % time.time(),
@@ -220,12 +232,12 @@ class network_builder(object):
     atype  = self.atype_map['EXTRACTION']
 
     for e in self.enrollments:
-      blood_sample = self.ikb.get_blood_sample(individual=e.individual)
+      blood_sample = self.skb.get_descendants(e.individual, self.skb.BloodSample)[0]
       assert blood_sample
       self.extract_dna_sample(blood_sample, device,
                               asetup, atype, 'Wiley E. Coyote')
 
-  @debug_decorator
+  @debug_wrapper
   def fill_titer_plate(self, device, asetup, atype,
                        operator,
                        rows, columns, barcode, stream):
@@ -254,7 +266,7 @@ class network_builder(object):
         dna_sample = self.skb.save(dna_sample)
     return True, plate
 
-  @debug_decorator
+  @debug_wrapper
   def fill_titer_plates(self):
     rows, columns = 3, 3
     device = self.get_device('ACME corp', 'DNA magic aliquot dispenser', '0.0')
@@ -276,7 +288,7 @@ class network_builder(object):
       plates_to_fill, plate = self.fill_titer_plate(device, asetup, atype, operator,
                                                     rows, columns, barcode, stream)
 
-  @debug_decorator
+  @debug_wrapper
   def measure_raw_genotype(self, sample, device, asetup, atype, operator):
     action = self.get_action_on_sample_slot(sample, device, asetup, atype, operator)
     #-
@@ -293,12 +305,12 @@ class network_builder(object):
     sha1 = 'a fake sha1 of %s' % data_sample.name
     mime_type = 'x-application/affymetrix-cel' # FIXME, we need to list the legal mime_types
     size = 0 # the actual file size
-    data_object = self.skb.DataObject(name=sample.name, mime_type=mime_type,
+    data_object = self.skb.DataObject(sample=sample, mime_type=mime_type,
                                       path=path, sha1=sha1, size=size)
     data_object = self.skb.save(data_object)
     return sample, data_object
 
-  @debug_decorator
+  @debug_wrapper
   def measure_raw_genotypes(self):
     #FIXME: asetup should be linked to the specific action device
     device = self.get_device('Affymetrix', 'GenomeWide 6.0', '0.0')
@@ -312,7 +324,7 @@ class network_builder(object):
         self.measure_raw_genotype(w.sample, device, asetup,
                                   atype, 'Wiley E. Coyote')
 
-  @debug_decorator
+  @debug_wrapper
   def build_data_collection(self):
     data_collection = self.skb.DataCollection(study=self.study)
     data_collection = self.skb.save(data_collection)
@@ -323,7 +335,7 @@ class network_builder(object):
     #--
     return data_collection
 
-  @debug_decorator
+  @debug_wrapper
   def call_genotype(self, item, device, asetup, atype,  operator):
     action = self.get_action_on_data_collection_item(item, device, asetup, atype, operator)
     #-
@@ -346,7 +358,7 @@ class network_builder(object):
     data_object = self.skb.save(data_object)
     return sample, data_object
 
-  @debug_decorator
+  @debug_wrapper
   def call_genotypes(self):
     device = self.get_device('CRS4', 'MR-birdseed', '0.0')
     asetup = self.get_action_setup('mr-birdseed-conf-%f' % time.time(),

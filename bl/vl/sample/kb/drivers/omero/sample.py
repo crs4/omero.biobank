@@ -18,48 +18,48 @@ class Sample(Result, kb.Sample):
 
 
 #------------------------------------------------------------
-class ContainerSlot(Result, kb.Result):
+class SamplesContainerSlot(Result, kb.Result):
 
-  OME_TABLE = "ContainerSlot"
+  OME_TABLE = "SamplesContainerSlot"
 
-  def __setup__(self, ome_obj, sample, container, slot_position):
+  def __setup__(self, ome_obj, sample, container, slot, **kw):
+    if sample is None or container is None or slot is None:
+      raise ValueError('SamplesContainerSlot sample, container, slot cannot be None')
+    if not isinstance(container, SamplesContainer):
+      raise ValueError('SamplesContainerSlot container should be a SamplesContainer instance')
+    if not isinstance(sample, BioSample):
+      raise ValueError('SamplesContainerSlot sample should be a Sample instance')
     slots = container.slots
-    assert slot_position >= 0 and  slot_position < slots
+    assert slot >= 0 and  slot < slots
     assert isinstance(sample, BioSample)
     ome_obj.sample = sample.ome_obj
     ome_obj.container = container.ome_obj
-    ome_obj.slotPosition = ort.rint(slot_position)
-    ome_obj.contSlotUK = vluo.make_unique_key(container.id, slot_position)
-    super(ContainerSlot, self).__setup__(ome_obj)
+    ome_obj.slotPosition = ort.rint(slot)
+    ome_obj.contSlotUK = vluo.make_unique_key(container.id, slot)
+    super(SamplesContainerSlot, self).__setup__(ome_obj, **kw)
 
-  def __init__(self, from_=None, sample=None, container=None, slot_position=None):
+  def __init__(self, from_=None, sample=None, container=None, slot=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
-      if sample is None or container is None or slot_position is None:
-        raise ValueError('ContainerSlot sample, container, slot_position cannot be None')
-      if not isinstance(container, SamplesContainer):
-        raise ValueError('ContainerSlot container should be a SamplesContainer instance')
-      if not isinstance(sample, BioSample):
-        raise ValueError('ContainerSlot sample should be a Sample instance')
       ome_obj = ome_type()
-      self.__setup__(ome_obj, sample, container, slot_position)
+      self.__setup__(ome_obj, sample, container, slot, **kw)
       # FIXME
       #ome_obj.contLabelUK = vluo.make_unique_key(container.id, label)
-    super(ContainerSlot, self).__init__(ome_obj)
+    super(SamplesContainerSlot, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):
     if self.sample is None:
-      raise kb.KBError("ContainerSlot sample can't be None")
+      raise kb.KBError("SamplesContainerSlot sample can't be None")
     elif self.container is None:
-      raise kb.KBError("ContainerSlot container can't be None")
+      raise kb.KBError("SamplesContainerSlot container can't be None")
     elif self.slotPosition is None:
-      raise kb.KBError("ContainerSlot slotPosition can't be None")
+      raise kb.KBError("SamplesContainerSlot slotPosition can't be None")
     elif self.contSlotUK is None:
-      raise kb.KBError("ContainerSlot contSlotUK can't be None")
+      raise kb.KBError("SamplesContainerSlot contSlotUK can't be None")
     else:
-      super(ContainerSlot, self).__handle_validation_errors__()
+      super(SamplesContainerSlot, self).__handle_validation_errors__()
 
   def __getattr__(self, name):
     if name == 'sample':
@@ -67,32 +67,36 @@ class ContainerSlot(Result, kb.Result):
     elif name == 'container':
       return SamplesContainer(getattr(self.ome_obj, name))
     else:
-      return super(ContainerSlot, self).__getattr__(name)
+      return super(SamplesContainerSlot, self).__getattr__(name)
 
 #------------------------------------------------------------
-class PlateWell(ContainerSlot, kb.PlateWell):
+class PlateWell(SamplesContainerSlot, kb.PlateWell):
 
   OME_TABLE = "PlateWell"
 
-  def __init__(self, from_=None, sample=None, container=None, row=None, column=None, volume=None):
+  def __setup__(self, ome_obj, volume, sample, container, row, column, **kw):
+    if sample is None or container is None or row is None or column is None or volume is None:
+      raise ValueError('PlateWell sample, container, row, column, and volume cannot be None')
+    if not isinstance(container, TiterPlate):
+      raise ValueError('PlateWell container should be a TiterPlate instance')
+    if not isinstance(sample, BioSample):
+      raise ValueError('PlateWell sample should be a Sample instance')
+    # FIXME
+    assert row >= 0 and column >= 0 and volume > 0
+    columns = container.columns
+    slot = row * columns + column
+    assert slot < container.slots
+    ome_obj.volume =  ort.rfloat(volume)
+    super(PlateWell, self).__setup__(ome_obj, sample, container, slot, **kw)
+
+  def __init__(self, from_=None, sample=None, container=None, row=None, column=None,
+               volume=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
-      if sample is None or container is None or row is None or column is None or volume is None:
-        raise ValueError('PlateWell sample, container, row, column, and volume cannot be None')
-      if not isinstance(container, TiterPlate):
-        raise ValueError('PlateWell container should be a TiterPlate instance')
-      if not isinstance(sample, BioSample):
-        raise ValueError('ContainerSlot sample should be a Sample instance')
-      # FIXME
-      assert row >= 0 and column >= 0 and volume > 0
-      columns = container.columns
-      slot = row * columns + column
-      assert slot < container.slots
       ome_obj = ome_type()
-      super(PlateWell, self).__setup__(ome_obj, sample, container, slot)
-      ome_obj.volume =  ort.rfloat(volume)
+      self.__setup__(ome_obj, volume, sample, container, row, column, **kw)
     super(PlateWell, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):
@@ -116,17 +120,20 @@ class DataSample(Sample, kb.DataSample):
 
   OME_TABLE = "DataSample"
 
-  def __init__(self, from_=None, name=None, data_type=None):
+  def __setup__(self, ome_obj, name, data_type, **kw):
+    if name is None or data_type is None:
+      raise ValueError('DataSample name and data_type cannot be None')
+    ome_obj.name = ort.rstring(name)
+    ome_obj.dataType = data_type
+    super(DataSample, self).__setup__(ome_obj, **kw)
+
+  def __init__(self, from_=None, name=None, data_type=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
-      if name is None or data_type is None:
-        raise ValueError('DataSample name and data_type cannot be None')
       ome_obj = ome_type()
-      ome_obj.name = ort.rstring(name)
-      ome_obj.dataType = data_type
-      self.__setup__(ome_obj)
+      self.__setup__(ome_obj, name, data_type, **kw)
     super(DataSample, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):
@@ -186,23 +193,27 @@ class SerumSample(BioSample, kb.SerumSample):
   OME_TABLE = "SerumSample"
 
 #-----------------------------------------------------------
-class DataCollectionItem(OmeroWrapper, kb.DataCollectionItem):
+class DataCollectionItem(Result, kb.DataCollectionItem):
 
   OME_TABLE = "DataCollectionItem"
 
-  def __init__(self, from_=None, data_collection=None, data_sample=None):
+
+  def __setup__(self, ome_obj, data_sample, data_collection, **kw):
+    if data_sample is None or data_collection is None:
+      raise ValueError('DataCollectionItem  data_sample and data_collection cannot be None')
+    # FIXME
+    ome_obj.dataSample= data_sample.ome_obj
+    ome_obj.dataSet   = data_collection.ome_obj
+    ome_obj.dataCollUK = vluo.make_unique_key(data_collection.id, data_sample.ome_obj)
+    super(DataCollectionItem, self).__setup__(ome_obj, **kw)
+
+  def __init__(self, from_=None, data_collection=None, data_sample=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
-      if data_sample is None or data_collection is None:
-        raise ValueError('DataCollectionItem  data_sample and data_collection cannot be None')
-      # FIXME
       ome_obj = ome_type()
-      ome_obj.vid = ort.rstring(vlu.make_vid())
-      ome_obj.dataSample= data_sample.ome_obj
-      ome_obj.dataSet   = data_collection.ome_obj
-      ome_obj.dataCollUK = vluo.make_unique_key(data_collection.id, data_sample.ome_obj)
+      self.__setup__(ome_obj, data_sample, data_collection, **kw)
     super(DataCollectionItem, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):

@@ -4,7 +4,7 @@ from bl.vl.sample.kb import KBError
 from bl.vl.sample.kb import KnowledgeBase as sKB
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
 from skb_object_creator import SKBObjectCreator
 
@@ -20,7 +20,7 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
 
   def setUp(self):
     self.skb = sKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
-    self.atype_map   = self.skb.get_action_type_table()
+    self.acat_map   = self.skb.get_action_category_table()
     self.outcome_map = self.skb.get_result_outcome_table()
     self.sstatus_map = self.skb.get_sample_status_table()
     self.dtype_map   = self.skb.get_data_type_table()
@@ -28,7 +28,6 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
   def tearDown(self):
     self.kill_list.reverse()
     for x in self.kill_list:
-      #print 'deleting %s[%s]' % (type(x), x.id)
       self.skb.delete(x)
     self.kill_list = []
 
@@ -50,6 +49,18 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
     conf, sample = self.create_sample_chain()
     sample = self.skb.save(sample)
     self.kill_list.append(sample)
+    root = self.skb.get_root(sample)
+    self.assertEqual(root.__class__, self.skb.BloodSample)
+    #-
+    derived = self.skb.get_descendants(root)
+    self.assertTrue(len(derived), 2)
+    derived = self.skb.get_descendants(root, self.skb.DataSample)
+    self.assertTrue(len(derived), 1)
+    self.assertTrue(derived[0].__class__, self.skb.DataSample)
+    derived = self.skb.get_descendants(root, self.skb.DNASample)
+    self.assertTrue(len(derived), 1)
+    self.assertTrue(derived[0].__class__, self.skb.DNASample)
+
 
   def test_get_device(self):
     conf, device = self.create_device()

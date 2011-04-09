@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <types>
-  <type id="ome.model.vl.ActionOnContainer" superclass="ome.model.vl.Action">
+  <type id="ome.model.vl.ActionOnSamplesContainer" superclass="ome.model.vl.Action">
     <properties>
       <required name="target" type="ome.model.vl.SamplesContainer"/>
     </properties>

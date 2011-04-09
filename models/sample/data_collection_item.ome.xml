@@ -2,9 +2,8 @@
 
 <types>
   <!-- A DataCollectionItem is a DataSample associated to a Study -->
-  <type id="ome.model.vl.DataCollectionItem">
+  <type id="ome.model.vl.DataCollectionItem" superclass="ome.model.vl.Result">
     <properties>
-      <required name="vid" type="string" unique="true"/>
       <required name="dataSample" type="ome.model.vl.DataSample"/>
       <required name="dataSet" type="ome.model.vl.DataCollection"/>
       <!-- Multi-field unique key -->

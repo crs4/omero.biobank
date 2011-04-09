@@ -7,11 +7,12 @@ from proxy_indexed import ProxyIndexed
 from study  import Study
 from device import Device
 from action import Action, ActionSetup
-from action_derived import ActionOnSample, ActionOnSampleSlot, ActionOnContainer
+from action_derived import ActionOnSample
+from action_derived import ActionOnSamplesContainerSlot, ActionOnSamplesContainer
 from action_derived import ActionOnDataCollection, ActionOnDataCollectionItem
 from result import Result
 from sample import Sample, DataSample, BioSample
-from sample import ContainerSlot, PlateWell
+from sample import SamplesContainerSlot, PlateWell
 from sample import BloodSample, DNASample, SerumSample
 from sample import DataCollection, DataCollectionItem
 from samples_container import SamplesContainer, TiterPlate
@@ -28,15 +29,15 @@ class Proxy(ProxyIndexed):
   Action      = Action
   ActionSetup = ActionSetup
   ActionOnSample = ActionOnSample
-  ActionOnSampleSlot = ActionOnSampleSlot
-  ActionOnContainer = ActionOnContainer
+  ActionOnSamplesContainerSlot = ActionOnSamplesContainerSlot
+  ActionOnSamplesContainer = ActionOnSamplesContainer
   ActionOnDataCollection = ActionOnDataCollection
   ActionOnDataCollectionItem = ActionOnDataCollectionItem
   Result      = Result
   Sample      = Sample
   SamplesContainer = SamplesContainer
   TiterPlate  = TiterPlate
-  ContainerSlot = ContainerSlot
+  SamplesContainerSlot = SamplesContainerSlot
   PlateWell   = PlateWell
   DataSample  = DataSample
   DataCollection  = DataCollection
@@ -49,8 +50,8 @@ class Proxy(ProxyIndexed):
 
   ProxyIndexed.ACTION_INDEXED_TYPES.extend([Result])
 
-  def get_action_type_table(self):
-    res = self.ome_operation("getQueryService", "findAll", "ActionType", None)
+  def get_action_category_table(self):
+    res = self.ome_operation("getQueryService", "findAll", "ActionCategory", None)
     return dict([(x._value._val, x) for x in res])
 
   def get_result_outcome_table(self):
@@ -99,8 +100,5 @@ class Proxy(ProxyIndexed):
     pars = self.ome_query_params({'c_id' : self.ome_wrap(plate.id)})
     result = self.ome_operation("getQueryService", "findAllByQuery", query, pars)
     return [PlateWell(r) for r in result]
-
-
-
 
 

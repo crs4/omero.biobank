@@ -4,7 +4,7 @@ from bl.vl.sample.kb import KBError
 from bl.vl.sample.kb import KnowledgeBase as sKB
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
 from skb_object_creator import SKBObjectCreator
 
@@ -20,7 +20,7 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
 
   def setUp(self):
     self.skb = sKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
-    self.atype_map   = self.skb.get_action_type_table()
+    self.acat_map    = self.skb.get_action_category_table()
     self.outcome_map = self.skb.get_result_outcome_table()
     self.sstatus_map = self.skb.get_sample_status_table()
     self.dtype_map   = self.skb.get_data_type_table()
@@ -28,7 +28,6 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
   def tearDown(self):
     self.kill_list.reverse()
     for x in self.kill_list:
-      #print 'deleting %s[%s]' % (type(x), x.id)
       self.skb.delete(x)
     self.kill_list = []
 
@@ -62,6 +61,7 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
   def test_data_object(self):
     conf, do = self.create_data_object()
     do = self.skb.save(do)
+    self.kill_list.append(do)
     self.check_object(do, conf, self.skb.DataObject)
 
   def test_device(self):
@@ -141,21 +141,26 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
     self.skb.delete(tp)
 
   def test_action_on_sample(self):
-    conf, action = self.create_action_on_sample()
+    conf, sample = self.create_sample()
+    sample = self.skb.save(sample)
+    self.kill_list.append(sample)
+    #--
+    conf, action = self.create_action_on_sample(sample=sample)
     action = self.skb.save(action)
+    self.kill_list.append(action)
+    #--
     self.check_object(action, conf, self.skb.ActionOnSample)
-    self.skb.delete(action)
 
   def test_action_on_container(self):
     conf, action = self.create_action_on_container()
     action = self.skb.save(action)
-    self.check_object(action, conf, self.skb.ActionOnContainer)
+    self.check_object(action, conf, self.skb.ActionOnSamplesContainer)
     self.skb.delete(action)
 
   def test_container_slot(self):
     conf, container_slot = self.create_container_slot()
     container_slot = self.skb.save(container_slot)
-    self.check_object(container_slot, conf, self.skb.ContainerSlot)
+    self.check_object(container_slot, conf, self.skb.SamplesContainerSlot)
     self.skb.delete(container_slot)
     return conf, container_slot
 
@@ -175,23 +180,23 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
     self.check_object(plate_well, conf, self.skb.PlateWell)
     self.skb.delete(plate_well)
 
-  def test_action_on_sample_slot(self):
-    conf, action = self.create_action_on_sample_slot()
+  def test_action_on_container_slot(self):
+    conf, action = self.create_action_on_container_slot()
     action = self.skb.save(action)
-    self.check_object(action, conf, self.skb.ActionOnSampleSlot)
+    self.check_object(action, conf, self.skb.ActionOnSamplesContainerSlot)
     self.skb.delete(action)
 
   def test_data_collection(self):
     conf, data_collection = self.create_data_collection()
     data_collection = self.skb.save(data_collection)
+    self.kill_list.append(data_collection)
     self.check_object(data_collection, conf, self.skb.DataCollection)
-    self.skb.delete(data_collection)
 
   def test_data_collection_item(self):
     conf, data_collection_item = self.create_data_collection_item()
     data_collection_item = self.skb.save(data_collection_item)
-    self.check_object(data_collection_item, conf, self.skb.DataCollection)
-    self.skb.delete(data_collection_item)
+    self.kill_list.append(data_collection_item)
+    self.check_object(data_collection_item, conf, self.skb.DataCollectionItem)
 
   def test_action_on_data_collection(self):
     conf, action = self.create_action_on_data_collection()
@@ -227,7 +232,7 @@ def suite():
   suite.addTest(TestSKB('test_plate_well_dna'))
   suite.addTest(TestSKB('test_action_on_sample'))
   suite.addTest(TestSKB('test_action_on_container'))
-  suite.addTest(TestSKB('test_action_on_sample_slot'))
+  suite.addTest(TestSKB('test_action_on_container_slot'))
   suite.addTest(TestSKB('test_action_on_data_collection'))
   suite.addTest(TestSKB('test_action_on_data_collection_item'))
   suite.addTest(TestSKB('test_data_collection'))

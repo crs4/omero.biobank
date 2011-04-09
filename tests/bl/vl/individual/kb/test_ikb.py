@@ -21,7 +21,7 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
   def setUp(self):
     self.ikb = iKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
     self.skb = sKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
-    self.atype_map   = self.skb.get_action_type_table()
+    self.acat_map   = self.skb.get_action_category_table()
     self.outcome_map = self.skb.get_result_outcome_table()
     self.sstatus_map = self.skb.get_sample_status_table()
     self.dtype_map   = self.skb.get_data_type_table()
@@ -175,8 +175,8 @@ def suite():
   suite.addTest(TestIKB('test_with_parents'))
   suite.addTest(TestIKB('test_enrollment'))
   suite.addTest(TestIKB('test_action_on_individual'))
-  suite.addTest(TestIKB('test_get_blood_sample'))
-  suite.addTest(TestIKB('test_get_dna_sample'))
+  # suite.addTest(TestIKB('test_get_blood_sample'))
+  # suite.addTest(TestIKB('test_get_dna_sample'))
   return suite
 
 if __name__ == '__main__':

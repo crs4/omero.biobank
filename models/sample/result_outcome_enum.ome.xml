@@ -3,7 +3,7 @@
 <types>
   <enum id="ome.model.vl.ResultOutcome">
 <!-- FIXME:  this should be COMPLETED -->
-    <entry name="PASSED"/>
+    <entry name="OK"/>
     <entry name="FAILED"/>
   </enum>
 </types>

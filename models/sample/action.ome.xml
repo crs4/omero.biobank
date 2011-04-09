@@ -8,9 +8,11 @@
       <optional name="endTime" type="timestamp"/>
       <optional name="setup" type="ome.model.vl.ActionSetup"/>
       <optional name="device" type="ome.model.vl.Device"/>
-      <required name="actionType" type="ome.model.vl.ActionType"/>
-      <required name="operator" type="string"/> <!--TODO create an operator schema or use the user schema provided by omero -->
-      <required name="context" type="ome.model.vl.Study"/> <!--The item refers to a Study and it is used to know in which context the action was performed -->
+      <required name="actionCategory" type="ome.model.vl.ActionCategory"/>
+      <!--TODO create an operator schema or use the user schema provided by omero -->
+      <required name="operator" type="string"/> 
+      <!--The item refers to a Study and it is used to know in which context the action was performed -->
+      <required name="context" type="ome.model.vl.Study"/> 
       <optional name="description" type="text"/>
     </properties>
   </type>

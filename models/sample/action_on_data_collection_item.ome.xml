@@ -3,7 +3,7 @@
 <types>
   <type id="ome.model.vl.ActionOnDataCollectionItem" superclass="ome.model.vl.Action">
     <properties>
-      <required name="target"       type="ome.model.vl.DataCollectionItem"/>
+      <required name="target" type="ome.model.vl.DataCollectionItem"/>
     </properties>
   </type>
 </types>

@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <types>
-  <type id="ome.model.vl.SamplesContainer">
+  <type id="ome.model.vl.SamplesContainer" superclass="ome.model.vl.Result">
     <properties>
-      <required name="vid" type="string" unique="true"/>
       <optional name="labLabel" type="string" unique="true"/>
       <required name="slots" type="int"/>
       <required name="barcode" type="string" unique="true"/>

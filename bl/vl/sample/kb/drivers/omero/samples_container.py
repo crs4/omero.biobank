@@ -9,24 +9,32 @@ import time
 from wrapper import OmeroWrapper
 from action  import Action
 from study   import Study
+from result  import Result
+
+import logging
+
+logger = logging.getLogger()
 
 #-----------------------------------------------------------
-class SamplesContainer(OmeroWrapper, kb.SamplesContainer):
+class SamplesContainer(Result, kb.SamplesContainer):
 
   OME_TABLE = "SamplesContainer"
 
-  def __init__(self, from_=None, slots=None):
+  def __setup__(self, ome_obj, slots, **kw):
+    if slots is None:
+      raise ValueError('SamplesContainer slots cannot be None')
+    # FIXME
+    assert slots > 0
+    ome_obj.slots = ort.rint(slots)
+    super(SamplesContainer, self).__setup__(ome_obj, **kw)
+
+  def __init__(self, from_=None, slots=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
-      if slots is None:
-        raise ValueError('SamplesContainer slots cannot be None')
-      # FIXME
-      assert slots > 0
       ome_obj = ome_type()
-      ome_obj.vid = ort.rstring(vlu.make_vid())
-      ome_obj.slots = ort.rint(slots)
+      self.__setup__(ome_obj, slots, **kw)
     super(SamplesContainer, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):
@@ -37,31 +45,34 @@ class SamplesContainer(OmeroWrapper, kb.SamplesContainer):
     elif self.virtualContainer is None:
       raise kb.KBError("SamplesContainer virtualContainer can't be None")
     else:
-      raise kb.KBError("unkwon error")
+      raise super(SamplesContainer, self).__handle_validation_errors__()
 
 #-----------------------------------------------------------
 class TiterPlate(SamplesContainer, kb.TiterPlate):
 
   OME_TABLE = "TiterPlate"
 
+  def __setup__(self, ome_obj, rows, columns, barcode, virtual_container, **kw):
+    if rows is None or columns is None or barcode is None:
+      raise ValueError('TiterPlate rows, columns barcode cannot be None')
+    # FIXME
+    assert rows > 0 and columns > 0
+    ome_obj.rows    = ort.rint(rows)
+    ome_obj.columns = ort.rint(columns)
+    ome_obj.barcode = ort.rstring(barcode)
+    ome_obj.virtualContainer = ort.rbool(virtual_container)
+    super(TiterPlate, self).__setup__(ome_obj, slots=(rows*columns), **kw)
+
   def __init__(self, from_=None, rows=None, columns=None,
                barcode=None,
-               virtual_container=False):
+               virtual_container=False,
+               **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
-      if rows is None or columns is None or barcode is None:
-        raise ValueError('TiterPlate rows, columns barcode cannot be None')
-      # FIXME
-      assert rows > 0 and columns > 0
       ome_obj = ome_type()
-      ome_obj.vid = ort.rstring(vlu.make_vid())
-      ome_obj.rows    = ort.rint(rows)
-      ome_obj.columns = ort.rint(columns)
-      ome_obj.slots   = ort.rint(rows * columns)
-      ome_obj.barcode = ort.rstring(barcode)
-      ome_obj.virtualContainer = ort.rbool(virtual_container)
+      self.__setup__(ome_obj, rows, columns, barcode, virtual_container, **kw)
     super(TiterPlate, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):
@@ -78,21 +89,20 @@ class DataCollection(OmeroWrapper, kb.DataCollection):
 
   OME_TABLE = "DataCollection"
 
-  def __setup__(self, ome_obj):
+  def __setup__(self, ome_obj, study, **kw):
+    if study is None:
+      raise ValueError('DataCollection study cannot be None')
     ome_obj.vid = ort.rstring(vlu.make_vid())
     ome_obj.creationDate = vluo.time2rtime(time.time())
+    ome_obj.study = study.ome_obj
 
-  def __init__(self, from_=None, study=None):
+  def __init__(self, from_=None, study=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
-      if study is None:
-        raise ValueError('DataCollection study cannot be None')
-      # FIXME
       ome_obj = ome_type()
-      self.__setup__(ome_obj)
-      ome_obj.study = study.ome_obj
+      self.__setup__(ome_obj, study, **kw)
     super(DataCollection, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):

@@ -1,6 +1,8 @@
 import omero.model as om
 import omero.rtypes as ort
 
+# Note: OmeroWrapper cannot add a vid attribute to ome_obj, because this
+#       will break the wrapping of standard omero objects
 class OmeroWrapper(object):
 
   OME_TABLE = None

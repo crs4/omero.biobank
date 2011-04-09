@@ -28,6 +28,7 @@ class ActionSetup(OmeroWrapper, kb.ActionSetup):
       ome_obj.vid = ort.rstring(vlu.make_vid())
       ome_obj.label = ort.rstring(label)
     super(ActionSetup, self).__init__(ome_obj)
+
 #----------------------------------------------------------------------
 class Action(OmeroWrapper, kb.Action):
 
@@ -48,8 +49,8 @@ class Action(OmeroWrapper, kb.Action):
       raise kb.KBError("action id can't be None")
     elif self.beginTime is None:
       raise kb.KBError("action beginTime can't be None")
-    elif self.actionType is None:
-      raise kb.KBError("action actionType can't be None")
+    elif self.actionCategory is None:
+      raise kb.KBError("action actionCategory can't be None")
     elif self.operator is None:
       raise kb.KBError("action operator can't be None")
     elif self.context is None:
@@ -66,7 +67,7 @@ class Action(OmeroWrapper, kb.Action):
       return setattr(self.ome_obj, name, value.ome_obj)
     elif name == 'device':
       return setattr(self.ome_obj, name, value.ome_obj)
-    elif name == 'actionType':
+    elif name == 'actionCategory':
       return setattr(self.ome_obj, name, value)
     else:
       return super(Action, self).__setattr__(name, value)
@@ -82,8 +83,8 @@ class Action(OmeroWrapper, kb.Action):
       return Device(self.ome_obj.device)
     elif name == 'context':
       return Study(self.ome_obj.context)
-    elif name == 'actionType':
-      return self.ome_obj.actionType
+    elif name == 'actionCategory':
+      return self.ome_obj.actionCategory
     else:
       return super(Action, self).__getattr__(name)
 
