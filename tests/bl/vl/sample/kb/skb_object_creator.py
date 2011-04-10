@@ -4,7 +4,7 @@ from bl.vl.sample.kb import KBError
 from bl.vl.sample.kb import KnowledgeBase as sKB
 
 import logging
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
 class SKBObjectCreator(unittest.TestCase):

@@ -19,6 +19,10 @@ from samples_container import SamplesContainer, TiterPlate
 from data_object import DataObject
 
 
+import logging
+
+logger = logging.getLogger()
+
 class Proxy(ProxyIndexed):
   """
   A knowledge base for the Sample package implemented as a driver for
@@ -48,7 +52,13 @@ class Proxy(ProxyIndexed):
   DNASample   = DNASample
   SerumSample = SerumSample
 
-  ProxyIndexed.ACTION_INDEXED_TYPES.extend([Result])
+  ProxyIndexed.INDEXED_TARGET_TYPES.extend([Result])
+
+  def get_all_instances(self, klass):
+    table_name = klass.get_ome_table()
+    res = self.ome_operation("getQueryService", "findAll", table_name, None)
+    return [klass(x) for x in res]
+
 
   def get_action_category_table(self):
     res = self.ome_operation("getQueryService", "findAll", "ActionCategory", None)
@@ -85,11 +95,11 @@ class Proxy(ProxyIndexed):
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else Device(result)
 
+
   def get_devices(self):
     """
     """
-    res = self.ome_operation("getQueryService", "findAll", "Device", None)
-    return [Device(x) for x in res]
+    return self.get_all_instances(Device)
 
   def get_titer_plates(self, filter=None):
     result = self.ome_operation("getQueryService", "findAll", "TiterPlate", None)
@@ -99,6 +109,13 @@ class Proxy(ProxyIndexed):
     query = 'select w from PlateWell w join w.container as c where c.vid = :c_id'
     pars = self.ome_query_params({'c_id' : self.ome_wrap(plate.id)})
     result = self.ome_operation("getQueryService", "findAllByQuery", query, pars)
+    logger.debug('get_wells_of_plate results: %s' % result)
     return [PlateWell(r) for r in result]
 
+  def get_data_collection_items(self, data_collection):
+    query = 'select dci from DataCollectionItem dci join dci.dataSet as c where c.vid = :c_id'
+    pars = self.ome_query_params({'c_id' : self.ome_wrap(data_collection.id)})
+    result = self.ome_operation("getQueryService", "findAllByQuery", query, pars)
+    logger.debug('get_data_collection_items results:[%d] %s' % (len(result), result))
+    return [DataCollectionItem(r) for r in result]
 

@@ -4,7 +4,7 @@ from bl.vl.sample.kb import KBError
 from bl.vl.sample.kb import KnowledgeBase as sKB
 
 import logging
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 
 from skb_object_creator import SKBObjectCreator
 
@@ -112,15 +112,18 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
         self.kill_list.append(pw)
         pw_map[pw.id] = pw
     wells = self.skb.get_wells_of_plate(tplate)
+    self.assertEqual(len(wells), tplate.rows * tplate.columns)
     for w in wells:
       self.assertTrue(pw_map.has_key(w.id))
+      self.assertEqual(type(w), self.skb.PlateWell)
+
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(TestSKBExtended('test_sample_chain'))
-  suite.addTest(TestSKBExtended('test_get_device'))
-  suite.addTest(TestSKBExtended('test_get_devices'))
-  suite.addTest(TestSKBExtended('test_get_titer_plates'))
+  # suite.addTest(TestSKBExtended('test_sample_chain'))
+  # suite.addTest(TestSKBExtended('test_get_device'))
+  # suite.addTest(TestSKBExtended('test_get_devices'))
+  # suite.addTest(TestSKBExtended('test_get_titer_plates'))
   suite.addTest(TestSKBExtended('test_get_wells_of_plate'))
   return suite
 

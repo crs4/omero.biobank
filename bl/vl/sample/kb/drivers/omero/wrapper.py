@@ -11,6 +11,10 @@ class OmeroWrapper(object):
   def get_ome_type(klass):
     return getattr(om, "%sI" % klass.OME_TABLE)
 
+  @classmethod
+  def get_ome_table(klass):
+    return klass.OME_TABLE
+
   def __init__(self, ome_obj):
     super(OmeroWrapper, self).__setattr__("ome_obj", ome_obj)
 
@@ -32,5 +36,9 @@ class OmeroWrapper(object):
   @property
   def id(self):
     return self.vid
+
+  @property
+  def omero_id(self):
+    return self.ome_obj._id._val
 
 

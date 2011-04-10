@@ -4,7 +4,7 @@ from bl.vl.sample.kb import KBError
 from bl.vl.sample.kb import KnowledgeBase as sKB
 
 import logging
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 
 from skb_object_creator import SKBObjectCreator
 
@@ -38,6 +38,7 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
         v = conf[k]
         if hasattr(v, 'ome_obj'):
           self.assertEqual(getattr(o, k).id, v.id)
+          self.assertEqual(type(getattr(o, k)), type(v))
         elif hasattr(v, '_id'):
           self.assertEqual(getattr(o, k)._id, v._id)
         else:

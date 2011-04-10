@@ -29,7 +29,7 @@ class Proxy(ProxyIndexed):
   Enrollment = Enrollment
   ActionOnIndividual = ActionOnIndividual
 
-  ProxyIndexed.ACTION_INDEXED_TYPES.extend([Individual])
+  ProxyIndexed.INDEXED_TARGET_TYPES.extend([Individual])
 
   def get_gender_table(self):
     res = self.ome_operation("getQueryService", "findAll", "Gender", None)
