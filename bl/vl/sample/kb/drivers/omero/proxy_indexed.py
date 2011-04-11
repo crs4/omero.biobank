@@ -118,6 +118,19 @@ class ProxyIndexed(ProxyCore):
     return obj
 
   @debug_boundary
+  def delete(self, obj):
+    logger.debug('processing %s with vid: %s' % (obj.get_ome_table(), obj.id))
+    try:
+      if isinstance(obj, Action) and hasattr(obj, 'target'):
+        self.__delete_action(obj)
+      elif filter(lambda x: isinstance(obj, x), self.INDEXED_TARGET_TYPES):
+        self.__delete_target(obj)
+    finally:
+      obj = super(ProxyIndexed, self).delete(obj)
+
+
+
+  @debug_boundary
   def __record_action(self, obj):
     logger.debug('\tprocessing %s with vid: %s' % (obj.get_ome_table(), obj.id))
     target = self._fetch_object_if_needed(obj.target)
@@ -132,6 +145,13 @@ class ProxyIndexed(ProxyCore):
            't_id' : target.omero_id}
     logger.debug('\tsaving in ACTION_TABLE %s' % row)
     self.add_table_row(self.ACTION_TABLE, row)
+
+  @debug_boundary
+  def __delete_action(self, obj):
+    logger.debug('\tprocessing %s with vid: %s' % (obj.get_ome_table(), obj.id))
+    a_vid = obj.id
+    row = {'a_vid' : None, 'a_id' : 0, 't_vid' : None, 't_type' : None, 't_id' : 0}
+    self.update_table_row(self.ACTION_TABLE, '(a_vid == "%s")' % a_vid, row)
 
   @debug_boundary
   def __record_target(self, obj):
@@ -165,6 +185,15 @@ class ProxyIndexed(ProxyCore):
       row['r_id']  = int(t_row['r_id']) # FIXME from numpy conversion
     logger.debug('\tsaving in TARGET_TABLE %s' % row)
     self.add_table_row(self.TARGET_TABLE, row)
+
+
+  @debug_boundary
+  def __delete_target(self, obj):
+    logger.debug('\tprocessing %s with vid: %s' % (obj.get_ome_table(), obj.id))
+    t_vid = obj.id
+    row = {'t_type' : None, 't_vl_class' : None, 't_vl_module' : None, 't_vid' : None,
+           't_id'  : 0, 'r_vid' : None, 'r_type' : None, 'r_id' : 0, 'a_vid' : None}
+    self.update_table_row(self.TARGET_TABLE, '(t_vid == "%s")' % t_vid, row)
 
   @debug_boundary
   def __extract_object(self, row):

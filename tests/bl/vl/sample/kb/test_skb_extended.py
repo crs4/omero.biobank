@@ -120,10 +120,10 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
 
 def suite():
   suite = unittest.TestSuite()
-  # suite.addTest(TestSKBExtended('test_sample_chain'))
-  # suite.addTest(TestSKBExtended('test_get_device'))
-  # suite.addTest(TestSKBExtended('test_get_devices'))
-  # suite.addTest(TestSKBExtended('test_get_titer_plates'))
+  suite.addTest(TestSKBExtended('test_sample_chain'))
+  suite.addTest(TestSKBExtended('test_get_device'))
+  suite.addTest(TestSKBExtended('test_get_devices'))
+  suite.addTest(TestSKBExtended('test_get_titer_plates'))
   suite.addTest(TestSKBExtended('test_get_wells_of_plate'))
   return suite
 

@@ -356,8 +356,32 @@ class ProxyCore(object):
       o.values = v[o.name]
     return col_objs
 
+  @debug_boundary
+  def update_table_row(self, table_name, selector, row):
+    s = self.connect()
+    try:
+      t = self._get_table(s, table_name)
+      idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
+      logger.debug('\tselector %s results in %s' % (selector, idxs))
+      if not len(idxs) == 1:
+        raise ValueError('selector %s does not result in a single row selection' % selector)
+      logger.debug('\tselected idx: %s' % idxs)
+      data = t.readCoordinates(idxs)
+      logger.debug('\tdata read: %s' % data)
+      self.__update_data_contents(data, row)
+      logger.debug('\tupdated data: %s' % data)
+      t.update(data)
+    finally:
+      self.disconnect()
 
-
-
+  @debug_boundary
+  def __update_data_contents(self, data, row):
+    assert len(data.rowNumbers) == 1
+    if hasattr(row, 'dtype'):
+      dtype = row.dtype
+      row = dict([(k, convert_from_numpy(row[k])) for k in dtype.names])
+    for o in data.columns:
+      if row.has_key(o.name):
+        o.values[0] = row[o.name]
 
 

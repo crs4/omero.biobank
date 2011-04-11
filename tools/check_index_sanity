@@ -54,6 +54,8 @@ class Checker(object):
     self.ikb = iKB(driver='omero')(self.host, self.user, self.passwd)
     self.logger = logger
     self.TABLES_TO_BE_CHECKED = self.skb.INDEXED_TARGET_TYPES + self.ikb.INDEXED_TARGET_TYPES
+    self.skb_tables = [x for x in dir(self.skb) if hasattr(getattr(self.skb, x), 'OME_TABLE')]
+    self.ikb_tables = [x for x in dir(self.ikb) if hasattr(getattr(self.ikb, x), 'OME_TABLE')]
     self.results = {}
 
   @debug_boundary
@@ -95,17 +97,16 @@ class Checker(object):
 
   @debug_boundary
   def do_check_all(self):
-    for ome_table in VIRGIL_SKB_TABLES:
-      self.do_check(ome_table)
-    for ome_table in VIRGIL_IKB_TABLES:
+    tables = self.skb_tables + self.ikb_tables
+    for ome_table in tables:
       self.do_check(ome_table)
 
   @debug_boundary
   def do_check(self, ome_table):
     self.logger.info('processing table %s' % ome_table)
-    if ome_table in VIRGIL_SKB_TABLES:
+    if ome_table in self.skb_tables:
       klass = getattr(self.skb, ome_table)
-    elif ome_table in VIRGIL_IKB_TABLES:
+    elif ome_table in self.ikb_tables:
       klass = getattr(self.ikb, ome_table)
     else:
       raise ValueError('Table %s is unknown' % ome_table)

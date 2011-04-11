@@ -87,11 +87,36 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
     self.check_object(action, conf, self.skb.Action)
     self.skb.delete(action)
 
+
   def test_result(self):
     conf, result = self.create_result()
     result = self.skb.save(result)
     self.check_object(result, conf, self.skb.Result)
     self.skb.delete(result)
+
+
+  def test_object_deletion(self):
+    conf, action = self.create_action_on_container()
+    action = self.skb.save(action)
+    self.check_object(action, conf, self.skb.ActionOnSamplesContainer)
+    #
+    a_id = action.id
+    rows = self.skb.get_table_rows(self.skb.ACTION_TABLE, selector='(a_vid == "%s")' % a_id)
+    self.assertEqual(len(rows), 1)
+    self.skb.delete(action)
+    rows = self.skb.get_table_rows(self.skb.ACTION_TABLE, selector='(a_vid == "%s")' % a_id)
+    self.assertFalse(rows)
+    #-
+    conf, result = self.create_result()
+    result = self.skb.save(result)
+    self.check_object(result, conf, self.skb.Result)
+    t_id = result.id
+    rows = self.skb.get_table_rows(self.skb.TARGET_TABLE, selector='(t_vid == "%s")' % t_id)
+    self.assertEqual(len(rows), 1)
+    self.skb.delete(result)
+    rows = self.skb.get_table_rows(self.skb.TARGET_TABLE, selector='(t_vid == "%s")' % t_id)
+    self.assertFalse(rows)
+
 
   def test_sample(self):
     conf, sample = self.create_sample()
@@ -238,6 +263,7 @@ def suite():
   suite.addTest(TestSKB('test_action_on_data_collection_item'))
   suite.addTest(TestSKB('test_data_collection'))
   suite.addTest(TestSKB('test_data_collection_item'))
+  suite.addTest(TestSKB('test_object_deletion'))
   return suite
 
 if __name__ == '__main__':
