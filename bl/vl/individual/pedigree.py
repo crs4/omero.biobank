@@ -17,6 +17,53 @@ INDIVIDUAL_DEFINITION_DOC = """
 
 MAX_COMPLEXITY=19
 
+
+#--------------------------------------------------------------------------------------
+
+def import_pedigree(recorder, istream):
+  """
+  Given a stream of individuals it will record them so that it is
+  guaranteed that parents are recorded before their children.
+
+  :param recorder: a recorder object
+  :type recorder:  an object that presents a method with signature
+                   .record( , father, mother) FIXME
+
+  :param istream: the stream of individuals that should be imported
+  :type istream:  an iterator of individuals I.
+
+  %s
+
+  Note: The implementation is very naive. In the worst case, it will
+  be quadratic in the number of individual.
+  """ % INDIVIDUAL_DEFINITION_DOC
+  def register(i_map):
+    work_to_do = False
+    for k in i_map.keys():
+      registered, i, gender, father, mother = i_map[k]
+      if registered:
+        continue
+      if father is None and mother is None:
+        i_map[k] = (True, recorder.record(k, gender, None, None), gender, None, None)
+      elif not father or not mother:
+        work_to_do = True
+      elif i_map[father][0] and i_map[mother][0]:
+        i_map[k] = (True, recorder.record(k,
+                                          gender, i_map[father][1], i_map[mother][1]),
+                    gender, None, None)
+      else:
+        work_to_do = True
+    return work_to_do
+
+  i_map = {}
+  for x in istream:
+    i_map[x.id] = (False, None, x.gender, x.father, x.mother)
+
+  work_to_do = register(i_map)
+  while work_to_do:
+    work_to_do = register(i_map)
+
+
 def analyze(family):
   """
   Analyze pedigree to extract:
