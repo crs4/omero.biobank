@@ -156,7 +156,7 @@ class network_builder(object):
   def get_device(self, vendor, model, release):
     device = self.skb.get_device(vendor, model, release)
     if not device:
-      self.logger.debug('creating a new device')
+      self.logger.debug('creating a new device for %s %s %s' % (vendor, model, release))
       device = self.skb.Device(vendor=vendor, model=model, release=release)
       device = self.skb.save(device)
     return device

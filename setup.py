@@ -28,6 +28,6 @@ setup(name='bl_vl_genotype',
                 'bl.vl.genotype.kb.drivers.omero',
                 #-
                 'bl.vl.app',
-                'bl.vl.app.import',
+                'bl.vl.app.importer',
                 ],
       )

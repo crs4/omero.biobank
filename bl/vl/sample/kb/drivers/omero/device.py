@@ -12,6 +12,8 @@ class Device(OmeroWrapper, kb.Device):
 
   OME_TABLE = "Device"
 
+  # FIXME here we use vendor, in the snp set in genotype we use
+  # maker. Use maker here too.
   def __setup__(self, ome_obj, vendor, model, release):
     ome_obj.vid    = ort.rstring(vlu.make_vid())
     ome_obj.vendor = ort.rstring(vendor)
