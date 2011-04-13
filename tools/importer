@@ -20,7 +20,36 @@ Data objects
 This is the basic import facility.
 
 
+Import of individuals collections
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+
+Will read in a tsv file with the following columns::
+
+  study label gender   father mother
+  xxx   id2   male   id4    id5
+  xxx   id3   female None   None
+  ....
+
+A study with label ''xxx'' will be automatically generated if missing,
+and the individuals will be enrolled in the given study. It is not
+possible to import the same individual twice, and the related file rows will be noisily
+ignored.
+
 .. FIXME ref to individual doc
+
+
+
+Import of blood samples
+,,,,,,,,,,,,,,,,,,,,,,,
+
+
+Will read in a tsv file with the following columns::
+
+  study label bslabel bsbarcode initial_volume current_volume status
+  xxx   id2   bs01    328989238 20             20             USABLE
+  xxx   id3   bs03    328989228 20             20             USABLE
+  ....
 
 .. FIXME ref to blood_sample doc
 
@@ -32,8 +61,8 @@ Will read in a csv file with the following columns::
 
   bslabel bsbarcode dnalabel dnabarcode initial_volume current_volume \
      nanodrop_concentration qp230260 qp230280 status
-  bs01    328989238 dn01      3989328   20             20             USABLE
-  bs03    328989228 dn02      2389898   20             20             USABLE
+  bs01    328989238 dn01      3989328   20             20            USABLE
+  bs03    328989228 dn02      2389898   20             20            USABLE
   ....
 
 Record that point to an unknown (bslabel, bsbarcode) pair will be noisily
@@ -47,8 +76,8 @@ Import of PlateWells
 
 Will read in a csv file with the following columns::
 
-  plabel pbarcode row column dnalabel dnabarcode volume
-  p01    2390920  10  2      d01      3289892389 0.1
+  plate_label plate_barcode row column dnalabel dnabarcode volume
+  p01         2390920       10  2      d01      3289892389 0.1
 
 Default plate dimensions are provided with a flag
 
@@ -62,8 +91,8 @@ Import of Raw GT result files
 
 Will read in a csv file with the following columns::
 
-  plabel pbarcode row column affy_cel_fname    path ......
-  p01    2390920  10  2      V89289898989.cel  ....
+  plate_label plate_barcode row column affy_cel_fname    path ......
+  p01         2390920       10  2      V89289898989.cel  file:/ELS/els6/.../V89289898989.cel
 
 
 
