@@ -24,6 +24,14 @@ def debug_wrapper(f):
   return debug_wrapper_wrapper
 #-----------------------------------------------------------------------------
 
+class BadRecord(Exception):
+  def __init__(self, msg):
+    self.msg = msg
+
+  def __str__(self):
+    return repr(self.msg)
+
+
 
 class Core(object):
   """
@@ -56,9 +64,12 @@ class Core(object):
     :type conf:  a python dict amenable to be json-ized
     :rtype: a skb.ActionSetup proxy to a saved ActionSetup object in VL
     """
-    asetup = self.skb.ActionSetup(label=label)
-    asetup.conf = json.dumps(conf)
-    return self.skb.save(asetup)
+    asetup = self.skb.get_action_setup_by_label(label=label)
+    if not asetup:
+      asetup = self.skb.ActionSetup(label=label)
+      asetup.conf = json.dumps(conf)
+      asetup = self.skb.save(asetup)
+    return asetup
 
   def get_study_by_label(self, label):
     study = self.skb.get_study_by_label(label)

@@ -1,29 +1,30 @@
 """
-Import of blood samples
-=======================
-
+Import of DNA samples
+=====================
 
 Will read in a csv file with the following columns::
 
-  study label barcode      individual_label  initial_volume current_volume status
-  xxx   bs01  328989238    id2               20             20             USABLE
-  xxx   bs03  328989228    id3               20             20             USABLE
+  study label  barcode blood_sample_barcode initial_volume current_volume nanodrop qp230260 qp230280 status
+  xxx   dn01   2903902 239898 9.5 6.5 40 0.4 0.5 USABLE
   ....
 
-Records that point to an unknown (individual_study, individual_label) pair will be noisily
+Volume units are FIXME ml
+Records that point to an unknown blood_sample_barcode will be noisily
 ignored. The same will happen to records that have the same label or
-barcode of a previously seen blood sample.
+barcode of a previously seen dna sample.
 
-Study defines the context in which the import occurred. The imported
-sample will be uniquely identified in VL, within BloodSample by its
-barcode. The sample label will be set to the string <study>-<label>,
-which will be enforced to be unique within VL.
+Study defines the context in which the import occurred, the blood
+sample is identified by its barcode, which is enforced to be unique
+(as far as BloodSample samples are concerned) in VL. In the same way,
+the imported sample will be uniquely identified by its barcode. The
+sample label will be set to the string <study>-<label>, which will be
+enforced to be unique too within VL.
 
 """
 
 from bio_sample import BioSampleRecorder, BadRecord
 
-import csv, json
+import csv
 
 #-----------------------------------------------------------------------------
 #FIXME this should be factored out....
@@ -46,38 +47,38 @@ def debug_wrapper(f):
 
 class Recorder(BioSampleRecorder):
   """
-  An utility class that handles the actual recording of BloodSample(s) into VL
+  An utility class that handles the actual recording of DNASample(s) into VL
   """
   def __init__(self, study_label=None, initial_volume=None, current_volume=None,
                host=None, user=None, passwd=None, operator='Alfred E. Neumann'):
-    super(Recorder, self).__init__('BloodSample',
+    super(Recorder, self).__init__(self, 'DNASample',
                                    study_label, initial_volume, current_volume,
                                    host, user, passwd, operator)
 
   @debug_wrapper
-  def create_action(self, enrollment, description=''):
-    return self.create_action_helper(self.ikb.ActionOnIndividual, description,
-                                     enrollment.study, self.device,
+  def create_action(self, study, blood_sample, description=''):
+    return self.create_action_helper(self.skb.ActionOnSample, description,
+                                     study, self.device,
                                      self.asetup, self.acat, self.operator,
-                                     enrollment.individual)
-
-    self.create_blood_sample(e, label, barcode,
-                             initial_volume, current_volume, status)
-
+                                     blood_sample)
 
   @debug_wrapper
-  def create_blood_sample(self, enrollment, label, barcode,
-                          initial_volume, current_volume, status):
+  def create_dna_sample(self, blood_sample, label, barcode,
+                        initial_volume, current_volume, status,
+                        nanodrop, qp230260, qp230280):
     assert label and barcode and initial_volume >= current_volume
-    action = self.create_action(enrollment, description=json.dumps(self.input_rows[barcode]))
+    action = self.create_action(blood_sample, desctiption=self.input_rows[barcode])
     #--
-    sample = self.skb.BloodSample()
+    sample = self.skb.DNASample()
     sample.action, sample.outcome   = action, self.outcome_map['OK']
     sample.labLabel = label
     sample.barcode  = barcode
     sample.initialVolume = initial_volume
     sample.currentVolume = current_volume
     sample.status = self.sstatus_map[status.upper()]
+    sample.nanodrop = nanodrop
+    sample.qp230260 = qp230260
+    sample.qp230280 = qp230280
     return self.skb.save(sample)
 
 
@@ -92,33 +93,39 @@ class Recorder(BioSampleRecorder):
       logger.warn('ignoring record %s: %s' % (r, msg))
 
     try:
-      i_label = r['individual_label']
+      blood_sample_barcode = r['blood_sample_barcode']
+      nanodrop, qp23260, qp230280 = [r[k] for k in 'nanodrop qp230260 qp230280'.split()]
     except KeyError, e:
       logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
-
-    e = self.ikb.get_enrollment(study.label, i_label)
-    if not e:
-      logger.warn('ignoring record %s because of unkown enrollment reference (%s,%s)' % \
-                  (r, study.label, i_label))
+    blood_sample = self.skb.get_blood_sample(barcode=blood_sample_barcode)
+    if not blood_sample:
+      logger.warn('ignoring record %s because there is not a blood_sample with that barcode' % r)
       return
-    self.create_blood_sample(e, label, barcode,
-                             initial_volume, current_volume, status)
+
+    self.create_dna_sample(blood_sample, label, barcode,
+                           initial_volume, current_volume, status,
+                           nanodrop, qp230260, qp230280)
 
 
-def make_parser_blood_sample(parser):
+help_doc = """
+import new dna sample definitions into a virgil system and attach
+them to previously registered blood samples.
+"""
+
+def make_parser_dna_sample(parser):
   parser.add_argument('-S', '--study', type=str,
-                      help="""default study assumed for the reference individuals and
-                      as context for the import action.  It will over-ride the study
-                      column value.""")
+                      help="""default study assumed for the reference individuals.
+                      It will over-ride the study column value""")
   parser.add_argument('-V', '--initial-volume', type=float,
                       help="""default initial volume assigned to the blood sample.
-                      It will over-ride the initial_volume column value.""")
+                      It will over-ride the initial_volume column value""")
   parser.add_argument('-C', '--current-volume', type=float,
                       help="""default current volume assigned to the blood sample.
-                      It will over-ride the current_volume column value.""")
+                      It will over-ride the initial_volume column value.""")
 
-def import_blood_sample_implementation(args):
+
+def import_dna_sample_implementation(args):
   recorder = Recorder(args.study,
                       initial_volume=args.initial_volume, current_volume=args.current_volume,
                       host=args.host, user=args.user, passwd=args.passwd)
@@ -126,14 +133,9 @@ def import_blood_sample_implementation(args):
   for r in f:
     recorder.record(r)
 
-help_doc = """
-import new blood sample definitions into a virgil system and attach
-them to previously registered patients.
-"""
-
 def do_register(registration_list):
-  registration_list.append(('blood_sample', help_doc,
-                            make_parser_blood_sample,
-                            import_blood_sample_implementation))
+  registration_list.append(('dna_sample', help_doc,
+                            make_parser_dna_sample,
+                            import_dna_sample_implementation))
 
 

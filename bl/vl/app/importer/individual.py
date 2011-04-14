@@ -17,10 +17,6 @@ ignored.
 
 """
 
-from bl.vl.sample.kb     import KBError
-from bl.vl.sample.kb     import KnowledgeBase as sKB
-from bl.vl.individual.kb import KnowledgeBase as iKB
-
 from bl.vl.individual.pedigree  import import_pedigree
 
 

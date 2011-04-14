@@ -69,6 +69,7 @@ Record that point to an unknown (bslabel, bsbarcode) pair will be noisily
 ignored. The same will happen to records that have the same dnalabel or
 dnabarcode of a previously seen dna sample.
 
+.. FIXME ref to dna_sample doc
 
 Import of PlateWells
 ,,,,,,,,,,,,,,,,,,,,
@@ -133,11 +134,15 @@ def debug_boundary(f):
 
 #---------------------------------------------------------------
 import bl.vl.app.importer.individual
+import bl.vl.app.importer.blood_sample
+import bl.vl.app.importer.dna_sample
 
 class App(object):
   def __init__(self):
     self.supported_submodules = []
     bl.vl.app.importer.individual.do_register(self.supported_submodules)
+    bl.vl.app.importer.blood_sample.do_register(self.supported_submodules)
+    bl.vl.app.importer.dna_sample.do_register(self.supported_submodules)
 
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic importer")

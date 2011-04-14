@@ -85,6 +85,15 @@ class Proxy(ProxyIndexed):
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else Study(result)
 
+  def get_action_setup_by_label(self, label):
+    """
+    Return the ActionSetup object labeled 'label' or None if nothing matches 'label'.
+    """
+    query = 'select a from ActionSetup a where a.label = :label'
+    pars = self.ome_query_params({'label' : self.ome_wrap(label, 'string')})
+    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
+    return None if result is None else ActionSetup(result)
+
   def get_device(self, vendor, model, release):
     """
     """
