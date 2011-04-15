@@ -128,3 +128,27 @@ class Proxy(ProxyIndexed):
     logger.debug('get_data_collection_items results:[%d] %s' % (len(result), result))
     return [DataCollectionItem(r) for r in result]
 
+  def get_bio_sample(self, aklass, barcode):
+    query = 'select s from %s s where s.barcode = :barcode' % aklass.OME_TABLE
+    pars = self.ome_query_params({'barcode' : self.ome_wrap(barcode, 'string')})
+    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
+    return None if result is None else aklass(result)
+
+  def get_blood_sample(self, barcode):
+    """
+    Get a BloodSample object stored in VL.
+    """
+    return self.get_bio_sample(BloodSample, barcode)
+
+  def get_dna_sample(self, barcode):
+    """
+    Get a DNAsample object stored in VL.
+    """
+    return self.get_bio_sample(DNASample, barcode)
+
+  def get_titer_plate(self, barcode):
+    """
+    Get a TiterPlate object stored in VL.
+    """
+    #FIXME this should have a more reasonable name...
+    return self.get_bio_sample(TiterPlate, barcode)

@@ -4,7 +4,7 @@ Import of DNA samples
 
 Will read in a csv file with the following columns::
 
-  study label  barcode blood_sample_barcode initial_volume current_volume nanodrop qp230260 qp230280 status
+  study label  barcode blood_sample_barcode initial_volume current_volume status nanodrop qp230260 qp230280
   xxx   dn01   2903902 239898 9.5 6.5 40 0.4 0.5 USABLE
   ....
 
@@ -22,9 +22,10 @@ enforced to be unique too within VL.
 
 """
 
+from bl.vl.sample.kb import KBError
 from bio_sample import BioSampleRecorder, BadRecord
 
-import csv
+import csv, json, sys
 
 #-----------------------------------------------------------------------------
 #FIXME this should be factored out....
@@ -51,7 +52,7 @@ class Recorder(BioSampleRecorder):
   """
   def __init__(self, study_label=None, initial_volume=None, current_volume=None,
                host=None, user=None, passwd=None, operator='Alfred E. Neumann'):
-    super(Recorder, self).__init__(self, 'DNASample',
+    super(Recorder, self).__init__('DNASample',
                                    study_label, initial_volume, current_volume,
                                    host, user, passwd, operator)
 
@@ -63,11 +64,11 @@ class Recorder(BioSampleRecorder):
                                      blood_sample)
 
   @debug_wrapper
-  def create_dna_sample(self, blood_sample, label, barcode,
+  def create_dna_sample(self, study, blood_sample, label, barcode,
                         initial_volume, current_volume, status,
                         nanodrop, qp230260, qp230280):
     assert label and barcode and initial_volume >= current_volume
-    action = self.create_action(blood_sample, desctiption=self.input_rows[barcode])
+    action = self.create_action(study, blood_sample, description=json.dumps(self.input_rows[barcode]))
     #--
     sample = self.skb.DNASample()
     sample.action, sample.outcome   = action, self.outcome_map['OK']
@@ -76,7 +77,7 @@ class Recorder(BioSampleRecorder):
     sample.initialVolume = initial_volume
     sample.currentVolume = current_volume
     sample.status = self.sstatus_map[status.upper()]
-    sample.nanodrop = nanodrop
+    sample.nanodropConcentration = nanodrop
     sample.qp230260 = qp230260
     sample.qp230280 = qp230280
     return self.skb.save(sample)
@@ -87,26 +88,36 @@ class Recorder(BioSampleRecorder):
     logger.debug('\tworking on %s' % r)
     klass = self.skb.DNASample
     try:
-      study, label, barcode, initial_volume, current_volume, status = self.record_helper(klass.__name__,
-                                                                                         r)
+      study, label, barcode, initial_volume, current_volume, status = \
+             self.record_helper(klass.__name__, r)
+      blood_sample_barcode = r['blood_sample_barcode']
+      nanodrop, qp230260, qp230280 = [r[k] for k in 'nanodrop qp230260 qp230280'.split()]
+      nanodrop = int(nanodrop)
+      qp230260 = float(qp230260)
+      qp230280 = float(qp230280)
+
+      blood_sample = self.skb.get_blood_sample(barcode=blood_sample_barcode)
+      if not blood_sample:
+        logger.warn('ignoring record %s because there is not a blood_sample with that barcode' % r)
+        return
+
+      self.create_dna_sample(study, blood_sample, label, barcode,
+                             initial_volume, current_volume, status,
+                             nanodrop, qp230260, qp230280)
     except BadRecord, msg:
       logger.warn('ignoring record %s: %s' % (r, msg))
-
-    try:
-      blood_sample_barcode = r['blood_sample_barcode']
-      nanodrop, qp23260, qp230280 = [r[k] for k in 'nanodrop qp230260 qp230280'.split()]
     except KeyError, e:
       logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
-    blood_sample = self.skb.get_blood_sample(barcode=blood_sample_barcode)
-    if not blood_sample:
-      logger.warn('ignoring record %s because there is not a blood_sample with that barcode' % r)
+    except ValueError, e:
+      logger.warn('ignoring record %s because of conversion errors(%s)' % (r, e))
       return
-
-    self.create_dna_sample(blood_sample, label, barcode,
-                           initial_volume, current_volume, status,
-                           nanodrop, qp230260, qp230280)
-
+    except (KBError, NotImplementedError), e:
+      logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
+      return
+    except Error, e:
+      logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
+      sys.exit(1)
 
 help_doc = """
 import new dna sample definitions into a virgil system and attach

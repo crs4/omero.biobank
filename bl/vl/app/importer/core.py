@@ -45,6 +45,7 @@ class Core(object):
     self.sstatus_map = self.skb.get_sample_status_table()
     self.dtype_map   = self.skb.get_data_type_table()
     self.gender_map  = self.ikb.get_gender_table()
+    self.logger = logger
 
   @debug_wrapper
   def get_device(self, vendor, model, release):

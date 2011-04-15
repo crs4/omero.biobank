@@ -3,6 +3,7 @@
 <types>
   <type id="ome.model.vl.DNASample" superclass="ome.model.vl.BioSample">
     <properties>
+      <!-- FIXME why is nanodropConcentration an int? Should it not be a float? -->
       <required name="nanodropConcentration" type="int"/>
       <required name="qp230260" type="float"/>
       <required name="qp230280" type="float"/>

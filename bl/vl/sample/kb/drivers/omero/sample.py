@@ -81,7 +81,7 @@ class PlateWell(SamplesContainerSlot, kb.PlateWell):
       raise ValueError('PlateWell container should be a TiterPlate instance')
     if not isinstance(sample, BioSample):
       raise ValueError('PlateWell sample should be a Sample instance')
-    # FIXME
+    #FIXME raise meaningfull exceptions...
     assert row >= 0 and column >= 0 and volume > 0
     columns = container.columns
     slot = row * columns + column

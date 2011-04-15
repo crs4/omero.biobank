@@ -25,6 +25,7 @@ from bio_sample import BioSampleRecorder, BadRecord
 
 import csv, json
 
+
 #-----------------------------------------------------------------------------
 #FIXME this should be factored out....
 
@@ -86,24 +87,28 @@ class Recorder(BioSampleRecorder):
     logger.debug('\tworking on %s' % r)
     klass = self.skb.DNASample
     try:
-      study, label, barcode, initial_volume, current_volume, status = self.record_helper(klass.__name__,
-                                                                                         r)
+      study, label, barcode, initial_volume, current_volume, status = \
+             self.record_helper(klass.__name__, r)
+      i_label = r['individual_label']
+      e = self.ikb.get_enrollment(study.label, i_label)
+      if not e:
+        logger.warn('ignoring record %s because of unkown enrollment reference (%s,%s)' % \
+                    (r, study.label, i_label))
+        return
+
+      self.create_blood_sample(e, label, barcode,
+                               initial_volume, current_volume, status)
     except BadRecord, msg:
       logger.warn('ignoring record %s: %s' % (r, msg))
-
-    try:
-      i_label = r['individual_label']
+      return
     except KeyError, e:
       logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
-
-    e = self.ikb.get_enrollment(study.label, i_label)
-    if not e:
-      logger.warn('ignoring record %s because of unkown enrollment reference (%s,%s)' % \
-                  (r, study.label, i_label))
+    except Error, e:
+      logger.warn('ignoring record %s because of (%s)' % (r, e))
       return
-    self.create_blood_sample(e, label, barcode,
-                             initial_volume, current_volume, status)
+
+
 
 
 def make_parser_blood_sample(parser):

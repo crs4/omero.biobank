@@ -96,9 +96,9 @@ class BioSampleRecorder(Core):
               else self.known_studies.setdefault(i_study,
                                                  self.get_study_by_label(i_study))
 
-      label, barcode, i_label, status = [r[k] for k in 'label barcode individual_label status'.split()]
-      initial_volume =  float(self.initial_volume if self.initial_volume else r['initial_volume'])
-      current_volume =  float(self.current_volume if self.current_volume else r['current_volume'])
+      label, barcode, status = [r[k] for k in 'label barcode status'.split()]
+      initial_volume =  self.initial_volume if self.initial_volume else float(r['initial_volume'])
+      current_volume =  self.current_volume if self.current_volume else float(r['current_volume'])
     except KeyError, e:
       raise BadRecord(e)
 
