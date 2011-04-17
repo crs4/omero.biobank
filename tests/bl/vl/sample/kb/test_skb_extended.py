@@ -117,6 +117,17 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
       self.assertTrue(pw_map.has_key(w.id))
       self.assertEqual(type(w), self.skb.PlateWell)
 
+  def test_get_dna_sample(self):
+    saved = {}
+    for i in range(10):
+      conf, dna_sample = self.create_dna_sample()
+      dna_sample = self.skb.save(dna_sample)
+      self.kill_list.append(dna_sample)
+      saved[dna_sample.barcode] = dna_sample
+    for k in saved.keys():
+      sample = self.skb.get_dna_sample(barcode=k)
+      self.assertEqual(sample.omero_id, saved[k].omero_id)
+      self.assertEqual(sample.id, saved[k].id)
 
 def suite():
   suite = unittest.TestSuite()
@@ -125,6 +136,7 @@ def suite():
   suite.addTest(TestSKBExtended('test_get_devices'))
   suite.addTest(TestSKBExtended('test_get_titer_plates'))
   suite.addTest(TestSKBExtended('test_get_wells_of_plate'))
+  suite.addTest(TestSKBExtended('test_get_dna_sample'))
   return suite
 
 if __name__ == '__main__':

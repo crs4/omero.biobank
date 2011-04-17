@@ -91,5 +91,5 @@ class Core(object):
     except KBError, e:
       msg = 'got an error: %s\n\taction: %s\n\tome_obj: %s' % (e, action, action.ome_obj)
       logger.error(msg)
-      raise KBerror(msg)
+      raise KBError(msg)
 

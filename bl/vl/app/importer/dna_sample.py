@@ -80,6 +80,9 @@ class Recorder(BioSampleRecorder):
     sample.nanodropConcentration = nanodrop
     sample.qp230260 = qp230260
     sample.qp230280 = qp230280
+
+    logger.debug('\tsaving dna_sample(>%s<,>%s<)' % (sample.labLabel,
+                                                     sample.barcode))
     return self.skb.save(sample)
 
 

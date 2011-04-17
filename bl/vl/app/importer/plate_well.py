@@ -107,13 +107,17 @@ class Recorder(Core):
         if current_volume < delta_volume:
           raise ValueError('dna_sample.current_volume(%f) < requested plate_well volume(%f)' % \
                            (current_volume, delta_volume))
-        self.create_plate_well(container=plate, sample=dna_sample, row=row, column=column,
+        self.create_plate_well(study=study,
+                               container=plate, sample=dna_sample,
+                               row=row, column=column,
                                volume=delta_volume, description=json.dumps(r))
         current_volume -= delta_volume
         dna_sample.current_volume = current_volume
         self.skb.save(dna_sample)
       else:
-        self.create_plate_well(container=plate, sample=dna_sample, row=row, column=column,
+        self.create_plate_well(study=study,
+                               container=plate, sample=dna_sample,
+                               row=row, column=column,
                                volume=delta_volume, description=json.dumps(r))
     except KeyError, e:
       logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
@@ -129,8 +133,10 @@ class Recorder(Core):
     #   sys.exit(1)
 
   @debug_wrapper
-  def create_plate_well(self, container, sample, row, column, volume, description=''):
-    action = self.create_action_on_sample(sample, description=description)
+  def create_plate_well(self, study, container, sample,
+                        row, column, volume, description=''):
+    action = self.create_action_on_sample(study, sample,
+                                          description=description)
     plate_well = self.skb.PlateWell(sample=sample, container=container,
                                     row=row, column=column,
                                     volume=volume)
@@ -139,10 +145,11 @@ class Recorder(Core):
     return self.skb.save(plate_well)
 
   @debug_wrapper
-  def create_action_on_sample(self, sample, description=''):
+  def create_action_on_sample(self, study, sample, description=''):
     return self.create_action_helper(self.skb.ActionOnSample, description,
                                      study, self.device,
-                                     self.asetup, self.acat, self.operator)
+                                     self.asetup, self.acat, self.operator,
+                                     sample)
 
 
   @debug_wrapper
