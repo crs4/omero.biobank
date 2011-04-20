@@ -123,6 +123,20 @@ class SKBObjectCreator(unittest.TestCase):
     conf['dataType'] = dtype
     return conf, sample
 
+  def create_affymetrix_cel(self, action=None):
+    name = 'affymetrix-cel-name-%f' % time.time()
+    dtype = self.dtype_map['GTRAW']
+    array_type = 'GenomeWideSNP_6'
+    sample = self.skb.AffymetrixCel(name=name,
+                                    array_type=array_type,
+                                    data_type= dtype)
+    conf, sample = self.create_sample(sample=sample,
+                                      action=action)
+    conf['name'] = name
+    conf['arrayType'] = array_type
+    conf['dataType'] = dtype
+    return conf, sample
+
   def create_data_object(self, action=None):
     conf, data_sample = self.create_data_sample(action=action)
     data_sample = self.skb.save(data_sample)

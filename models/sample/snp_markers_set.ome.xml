@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <type id="ome.model.vl.SNPMarkersSet" superclass="ome.model.vl.DataSample">
+<!--
+    this is merely a link to the actual snp_markers_set definition sitting in an omero table.
+-->
+    <properties>
+      <required name="maker"    type="string"/>
+      <required name="model"    type="string"/>
+      <required name="release"  type="string"/>
+      <!-- It could actually be better to explicitely point to a
+           DataObject that refers to the set... -->
+      <required name="set_vid"  type="string" unique="true"/>
+    </properties>
+  </type>
+</types>

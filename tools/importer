@@ -90,12 +90,10 @@ Each import should have flags with the device description....
 Import of Raw GT result files
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-Will read in a csv file with the following columns::
+Will read in a tsv file with the following columns::
 
-  plate_label plate_barcode row column affy_cel_fname    path ......
-  p01         2390920       10  2      V89289898989.cel  file:/ELS/els6/.../V89289898989.cel
-
-
+  study  label    type            plate_barcode row column QC path
+  BSTUDY AAAA.CEL AffymetrixCel   2849823098429 22  22     0.33       file:/ELS/els6/...
 
 """
 

@@ -18,6 +18,8 @@ from sample import DataCollection, DataCollectionItem
 from samples_container import SamplesContainer, TiterPlate
 from data_object import DataObject
 
+from genotyping import AffymetrixCel
+
 
 import logging
 
@@ -37,6 +39,7 @@ class Proxy(ProxyIndexed):
   ActionOnSamplesContainer = ActionOnSamplesContainer
   ActionOnDataCollection = ActionOnDataCollection
   ActionOnDataCollectionItem = ActionOnDataCollectionItem
+  #-
   Result      = Result
   Sample      = Sample
   SamplesContainer = SamplesContainer
@@ -51,6 +54,7 @@ class Proxy(ProxyIndexed):
   BloodSample = BloodSample
   DNASample   = DNASample
   SerumSample = SerumSample
+  AffymetrixCel = AffymetrixCel
 
   ProxyIndexed.INDEXED_TARGET_TYPES.extend([Result])
 

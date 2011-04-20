@@ -21,10 +21,10 @@ is_multicolor : False
    Algorithmic details will go in the production device.
     -->
     <properties>
-      <optional name="affymetrixCelID" type="string" unique="true"/>
       <required name="arrayType" type="string"/>
-      <required name="numMasked" type="int"/>
-      <required name="numOutliers" type="int"/>
+      <optional name="affymetrixCelID" type="string" unique="true"/>
+      <optional name="numMasked" type="int"/>
+      <optional name="numOutliers" type="int"/>
       <optional name="contrastQC" type="float"/>
     </properties>
   </type>

@@ -212,9 +212,14 @@ class network_builder(object):
                                   device, asetup, acat, operator):
     action = self.create_action_on_sample_slot(sample_slot, device,
                                                asetup, acat, operator)
-    #-
-    data_sample = self.skb.DataSample(name='foo-%f.cel' % time.time(),
-                                      data_type=self.dtype_map['GTRAW'])
+
+    # FIXME: assigning data_type here is stupid: it can only be a
+    # 'GTRAW'. We need to do this because the constructor does not
+    # have access to the dtype_map. There should be a FactoryClass that does this
+    # under the hood..
+    data_sample = self.skb.AffymetrixCel(name='foo-%f.cel' % time.time(),
+                                         array_type='GenomeWideSNP_6',
+                                         data_type=self.dtype_map['GTRAW'])
     data_sample.action  = action
     data_sample.outcome = self.outcome_map['OK']
     data_sample = self.skb.save(data_sample)
@@ -445,7 +450,7 @@ class network_builder(object):
     data_collection = self.skb.save(data_collection)
     #-
     for e in self.enrollments:
-      data_samples = self.skb.get_descendants(e.individual, self.skb.DataSample)
+      data_samples = self.skb.get_descendants(e.individual, self.skb.AffymetrixCel)
       data_sample = [ds for ds in data_samples
                      if same_object(ds.dataType, self.dtype_map['GTRAW'])][0]
       #data_collection.append_item(dataSample=data_sample)
@@ -462,7 +467,7 @@ class network_builder(object):
                                    '{"foo2": "foo"}')
     acat  = self.acat_map['PROCESSING']
     selector = "(maker == 'Affymetrix')&(model== 'GenomeWide 6.0')"
-    set_vid = self.gkb.get_snp_markers_sets(selector=selector)
+    set_vid = self.gkb.get_snp_markers_sets(selector=selector)[0]
     #-
 
     #for item in data_collection.items():

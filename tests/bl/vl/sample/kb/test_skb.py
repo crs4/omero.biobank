@@ -130,6 +130,12 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
     self.check_object(data_sample, conf, self.skb.DataSample)
     self.skb.delete(data_sample)
 
+  def test_affymetrix_cel(self):
+    conf, data_sample = self.create_affymetrix_cel()
+    data_sample = self.skb.save(data_sample)
+    self.check_object(data_sample, conf, self.skb.AffymetrixCel)
+    self.skb.delete(data_sample)
+
   def test_bio_sample(self):
     conf, bio_sample = self.create_bio_sample()
     bio_sample = self.skb.save(bio_sample)
@@ -247,6 +253,7 @@ def suite():
   suite.addTest(TestSKB('test_result'))
   suite.addTest(TestSKB('test_sample'))
   suite.addTest(TestSKB('test_data_sample'))
+  suite.addTest(TestSKB('test_affymetrix_cel'))
   suite.addTest(TestSKB('test_bio_sample'))
   suite.addTest(TestSKB('test_blood_sample'))
   suite.addTest(TestSKB('test_dna_sample'))

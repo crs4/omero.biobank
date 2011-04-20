@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+  <type id="ome.model.vl.GenotypeDataSample" superclass="ome.model.vl.DataSample">
+    <properties>
+      <required name="snpMarkersSet"  type="ome.model.vl.SNPMarkersSet" />
+    </properties>
+  </type>
+</types>
