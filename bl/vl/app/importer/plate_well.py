@@ -5,8 +5,8 @@ Import of PlateWells
 
 Will read in a csv file with the following columns::
 
-  study  label   barcode row column dna_barcode volume
-  ASTUDY p01     2390920 10  2      3289892389 0.1
+  study  label   plate_label plate_barcode row column dna_barcode volume
+  ASTUDY p01.J02 p01         2390920 10  2      3289892389 0.1
 
 Default plate dimensions are provided with a flag
 
@@ -93,14 +93,16 @@ class Recorder(Core):
   def record(self, r):
     logger.debug('\tworking on %s' % r)
     try:
-      i_study, label, barcode, dna_barcode = r['study'], r['label'], r['barcode'], r['dna_barcode']
+      i_study, label, plate_label, barcode, dna_barcode = \
+               r['label'], r['study'], r['plate_label'], r['plate_barcode'], r['dna_barcode']
       row, column  = map(int, [r['row'], r['column']])
       delta_volume = self.volume if self.volume else float(r['volume'])
       #-
       study = self.default_study if self.default_study \
               else self.known_studies.setdefault(i_study,
                                                  self.get_study_by_label(i_study))
-      plate = self.get_titer_plate(study=study, barcode=barcode, shape=self.plate_shape)
+      plate = self.get_titer_plate(study=study, barcode=plate_barcode,
+                                   shape=self.plate_shape)
       dna_sample = self.get_dna_sample(barcode=dna_barcode)
       if self.update_volume:
         current_volume = dna_sample.current_volume
@@ -109,6 +111,7 @@ class Recorder(Core):
                            (current_volume, delta_volume))
         self.create_plate_well(study=study,
                                container=plate, sample=dna_sample,
+                               label=label,
                                row=row, column=column,
                                volume=delta_volume, description=json.dumps(r))
         current_volume -= delta_volume
@@ -117,7 +120,7 @@ class Recorder(Core):
       else:
         self.create_plate_well(study=study,
                                container=plate, sample=dna_sample,
-                               row=row, column=column,
+                               label=label, row=row, column=column,
                                volume=delta_volume, description=json.dumps(r))
     except KeyError, e:
       logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
@@ -134,12 +137,13 @@ class Recorder(Core):
 
   @debug_wrapper
   def create_plate_well(self, study, container, sample,
-                        row, column, volume, description=''):
+                        label, row, column, volume, description=''):
     action = self.create_action_on_sample(study, sample,
                                           description=description)
     plate_well = self.skb.PlateWell(sample=sample, container=container,
                                     row=row, column=column,
                                     volume=volume)
+    plate_well.label  = label
     plate_well.action = action
     plate_well.outcome = self.outcome_map['OK']
     return self.skb.save(plate_well)

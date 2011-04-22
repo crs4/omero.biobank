@@ -1,0 +1,34 @@
+2011-04-22    <zag@pflip>
+
+	* examples/load_data.py (network_builder.call_genotypes): in phase
+	with SNPMarkersSet and GenotypeDataSample
+
+	* tests/bl/vl/sample/kb/skb_object_creator.py (SKBObjectCreator.create_snp_markers_set): added.
+	(SKBObjectCreator.create_genotype_data_sample): added. Added also tests in test_skb.py
+
+	* bl/vl/sample/kb/drivers/omero/genotyping.py (SNPMarkersSet): added.
+	(GenotypeDataSample): added.
+
+	* bl/vl/app/importer/core.py (Core.get_device): in phase with new device API
+
+	* examples/load_data.py (network_builder.get_device): in phase
+	with new device API
+
+	* tests/bl/vl/sample/kb/test_skb.py (TestSKB.test_device): updated
+	to the new API
+
+	* bl/vl/sample/kb/drivers/omero/proxy.py (Proxy.get_device): now
+	we search by label.
+
+	* tests/bl/vl/sample/kb/skb_object_creator.py
+	(SKBObjectCreator.create_device): in phase with changes to new
+	python interface.
+
+	* bl/vl/sample/kb/drivers/omero/device.py (Device): in phase with
+	changes to the ome model.
+
+	* models/sample/device.ome.xml: Added a required, unique,
+	attribute name. We need it to distinguish between, e.g., physical
+	instances of a given class. Changed 'vendor' to a politically
+	neutral 'maker'
+

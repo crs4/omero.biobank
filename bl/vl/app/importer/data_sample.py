@@ -1,8 +1,10 @@
 """
-Import of DNA samples
-=====================
+Import of Data samples
+======================
 
-Will read in a csv file with the following columns::
+Will read in a tsv file with the following columns::
+
+  study label sample_label device_name device_maker device_model device_release
 
   bslabel bsbarcode dnalabel dnabarcode initial_volume current_volume \
      nanodrop_concentration qp230260 qp230280 status

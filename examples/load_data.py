@@ -7,12 +7,12 @@ Load Data
 This example shows how one can import a full connected network of
 individuals and objects. Specifically, we will:
 
-  * create a study;
+* create a study;
 
-  * load a group of individuals and enroll them in the study;
+* load a group of individuals and enroll them in the study;
 
-  * for each individual define blood samples, derived samples, and
-    derived experimental results.
+* for each individual define blood samples, derived samples, and
+  derived experimental results.
 
 
 """
@@ -147,19 +147,43 @@ class network_builder(object):
                                      self.study, device, asetup, acat, operator,
                                      item)
 
-  #--------------------------------------------------------------------------------------------------------
+  #------------------------------------------------------------------------
   #
   # OBJECTS DEFINITION
   #
-  #--------------------------------------------------------------------------------------------------------
+  #------------------------------------------------------------------------
   @debug_wrapper
-  def get_device(self, vendor, model, release):
-    device = self.skb.get_device(vendor, model, release)
+  def get_device(self, maker, model, release):
+    label = '%s-%s-%s' % (maker, model, release)
+    device = self.skb.get_device(label)
     if not device:
-      self.logger.debug('creating a new device for %s %s %s' % (vendor, model, release))
-      device = self.skb.Device(vendor=vendor, model=model, release=release)
+      self.logger.debug('creating device %s [%s,%s,%s]' % (label,
+                                                           maker, model,
+                                                           release))
+      device = self.skb.Device(label=label,
+                               maker=maker, model=model, release=release)
       device = self.skb.save(device)
     return device
+
+  @debug_wrapper
+  def get_markers_set(self, maker, model, release, set_vid=None):
+    snp_markers_set = self.skb.get_snp_markers_set(maker, model, release)
+    if not snp_markers_set:
+      assert set_vid
+      self.logger.debug('creating a SMPMarkersSet instance [%s,%s,%s,%s]' % (maker, model,
+                                                                             release, set_vid))
+      device = self.get_device('CRS4', 'FAKE-snp_markers_set-builder', '0.0')
+      asetup = self.get_action_setup('import-prog-%f' % time.time(),
+                                     '{"foo2": "foo"}')
+      acat  = self.acat_map['IMPORT']
+      operator = 'Alfred E. Neumann'
+      action = self.create_action(device, asetup, acat, operator)
+      #--
+      snp_markers_set = self.skb.SNPMarkersSet(maker=maker, model=model, release=release,
+                                               set_vid=set_vid)
+      snp_markers_set.action = action
+      snp_markers_set = self.skb.save(snp_markers_set)
+    return snp_markers_set
 
   @debug_wrapper
   def get_action_setup(self, label, conf):
@@ -215,8 +239,8 @@ class network_builder(object):
 
     # FIXME: assigning data_type here is stupid: it can only be a
     # 'GTRAW'. We need to do this because the constructor does not
-    # have access to the dtype_map. There should be a FactoryClass that does this
-    # under the hood..
+    # have access to the dtype_map. There should be a FactoryClass in
+    # the kb that does this under the hood..
     data_sample = self.skb.AffymetrixCel(name='foo-%f.cel' % time.time(),
                                          array_type='GenomeWideSNP_6',
                                          data_type=self.dtype_map['GTRAW'])
@@ -252,11 +276,12 @@ class network_builder(object):
     data_collection_item = self.skb.save(data_collection_item)
 
   @debug_wrapper
-  def create_called_genotype_data(self, item, device, asetup, acat,  operator):
+  def create_called_genotype_data(self, item, device, markers_set, asetup, acat,  operator):
     action = self.create_action_on_data_collection_item(item, device, asetup, acat, operator)
     #-
-    data_sample = self.skb.DataSample(name='foo-%f.gc' % time.time(),
-                                      data_type=self.dtype_map['GTCALL'])
+    data_sample = self.skb.GenotypeDataSample(name='foo-%f.gc' % time.time(),
+                                              snp_markers_set=markers_set,
+                                              data_type=self.dtype_map['GTCALL'])
     data_sample.action  = action
     data_sample.outcome = self.outcome_map['OK']
     data_sample = self.skb.save(data_sample)
@@ -384,7 +409,10 @@ class network_builder(object):
           return False, plate
         action = self.create_action_on_sample(dna_sample, device,
                                               asetup, acat, operator)
-        plate_well = self.skb.PlateWell(sample=dna_sample, container=plate,
+        # FIXME: label, labLabel, .... !?!
+        label = '%s.%02d%02d' % (plate.labLabel, r, c)
+        plate_well = self.skb.PlateWell(label=label,
+                                        sample=dna_sample, container=plate,
                                         row=r, column=c,
                                         volume=delta_volume)
         plate_well.action = action
@@ -426,9 +454,9 @@ class network_builder(object):
   #--------------------------------------------------------------------------------------------------------
 
   @debug_wrapper
-  def measure_raw_genotypes(self, vendor, model):
+  def measure_raw_genotypes(self, maker, model):
     #FIXME: asetup should be linked to the specific action device
-    device = self.get_device(vendor, model, '0.0')
+    device = self.get_device(maker, model, '0.0')
     asetup = self.get_action_setup('affy6-%f' % time.time(),
                                    '{foo2: "foo"}')
     acat  = self.acat_map['PROCESSING']
@@ -466,13 +494,17 @@ class network_builder(object):
     asetup = self.get_action_setup('mr-birdseed-conf-%f' % time.time(),
                                    '{"foo2": "foo"}')
     acat  = self.acat_map['PROCESSING']
-    selector = "(maker == 'Affymetrix')&(model== 'GenomeWide 6.0')"
-    set_vid = self.gkb.get_snp_markers_sets(selector=selector)[0]
+    #--- FIXME this should be moved to an internal detail of skb and gkb
+    maker, model = 'Affymetrix', 'GenomeWideSNP_6'
+    selector = "(maker == '%s')&(model== '%s')"  % (maker, model)
+    #-- FIXME this is disabled, since we have not defined yet this snp_markers_set
+    #set_vid = self.gkb.get_snp_markers_sets(selector=selector)[0]
+    set_vid = 'A-FAKE-VID'
     #-
-
+    markers_set = self.get_markers_set(maker, model, release='1.0', set_vid=set_vid)
     #for item in data_collection.items():
     for item in self.skb.get_data_collection_items(data_collection):
-      self.create_called_genotype_data(item, device, asetup, acat,  'Wiley E. Coyote')
+      self.create_called_genotype_data(item, device, markers_set, asetup, acat,  'Wiley E. Coyote')
 
 def main():
   OME_HOST = os.getenv("OME_HOST", "localhost")
@@ -503,7 +535,7 @@ def main():
   logger.info('dna samples extracted')
   nb.fill_titer_plates()
   logger.info('titer plate filled')
-  nb.measure_raw_genotypes(vendor='affymetrix', model='GenomeWide6.0')
+  nb.measure_raw_genotypes(maker='affymetrix', model='GenomeWide6.0')
   logger.info('raw genotypes acquired')
   nb.call_genotypes()
   logger.info('genotypes called')

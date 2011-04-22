@@ -69,11 +69,12 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
     conf, d = self.create_device()
     d = self.skb.save(d)
     self.check_object(d, conf, self.skb.Device)
-    # xs = self.skb.get_device(conf['vendor'], conf['model'], conf['release'])
-    # self.assertTrue(not xs is None)
-    # self.check_object(xs, conf, self.skb.Device)
+    xs = self.skb.get_device(conf['label'])
+    self.assertTrue(not xs is None)
+    self.check_object(xs, conf, self.skb.Device)
     self.skb.delete(d)
-#    self.assertEqual(self.skb.get_device(conf['vendor'], conf['model'], conf['release']), None)
+    self.assertEqual(self.skb.get_device(conf['label']),
+                     None)
 
   def test_action_setup(self):
     conf, a = self.create_action_setup()
@@ -135,6 +136,22 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
     data_sample = self.skb.save(data_sample)
     self.check_object(data_sample, conf, self.skb.AffymetrixCel)
     self.skb.delete(data_sample)
+
+  def test_snp_markers_set(self):
+    conf, mset = self.create_snp_markers_set()
+    mset = self.skb.save(mset)
+    self.check_object(mset, conf, self.skb.SNPMarkersSet)
+    mx = self.skb.get_snp_markers_set(conf['maker'], conf['model'], conf['release'])
+    self.assertEqual(mx.id, mset.id)
+    self.skb.delete(mset)
+    mx = self.skb.get_snp_markers_set(conf['maker'], conf['model'], conf['release'])
+    self.assertTrue(mx is None)
+
+  def test_genotype_data_sample(self):
+    conf, obj = self.create_genotype_data_sample()
+    obj = self.skb.save(obj)
+    self.check_object(obj, conf, self.skb.GenotypeDataSample)
+    self.skb.delete(obj)
 
   def test_bio_sample(self):
     conf, bio_sample = self.create_bio_sample()
@@ -253,6 +270,8 @@ def suite():
   suite.addTest(TestSKB('test_result'))
   suite.addTest(TestSKB('test_sample'))
   suite.addTest(TestSKB('test_data_sample'))
+  suite.addTest(TestSKB('test_snp_markers_set'))
+  suite.addTest(TestSKB('test_genotype_data_sample'))
   suite.addTest(TestSKB('test_affymetrix_cel'))
   suite.addTest(TestSKB('test_bio_sample'))
   suite.addTest(TestSKB('test_blood_sample'))

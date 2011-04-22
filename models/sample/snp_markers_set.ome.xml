@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <types>
-  <type id="ome.model.vl.SNPMarkersSet" superclass="ome.model.vl.DataSample">
+  <type id="ome.model.vl.SNPMarkersSet" superclass="ome.model.vl.Result">
 <!--
     this is merely a link to the actual snp_markers_set definition sitting in an omero table.
 -->
     <properties>
+      <!-- FIXME: we need to remove these from the omerotables snp_markers_set -->
       <required name="maker"    type="string"/>
       <required name="model"    type="string"/>
       <required name="release"  type="string"/>
       <!-- It could actually be better to explicitely point to a
            DataObject that refers to the set... -->
-      <required name="set_vid"  type="string" unique="true"/>
+      <required name="markersSetVID"  type="string" unique="true"/>
+      <!-- maker model release -->
+      <required name="snpMarkersSetUK" type="string" unique="true"/>
     </properties>
   </type>
 </types>

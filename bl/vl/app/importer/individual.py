@@ -10,15 +10,14 @@ Will read in a csv file with the following columns::
   xxx   id3   female None   None
   ....
 
-A study with label ''xxx'' will be automatically generated if missing,
+A study with label ``xxx`` will be automatically generated if missing,
 and the individuals will be enrolled in the given study. It is not
-possible to import the same individual twice, and the related file rows will be noisily
-ignored.
+possible to import the same individual twice: the related file rows
+will be noisily ignored.
 
 """
 
 from bl.vl.individual.pedigree  import import_pedigree
-
 
 from core import Core
 
@@ -66,7 +65,7 @@ class Recorder(Core):
         s = self.skb.save(self.skb.Study(label=study_label))
       self.default_study = s
     self.known_studies = {}
-    self.device = self.get_device('CRS4', 'IMPORT', '0.0')
+    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
     self.asetup = self.get_action_setup('import-prog-%f' % time.time(),
                                         # FIXME the json below should
                                         # record the app version, and the

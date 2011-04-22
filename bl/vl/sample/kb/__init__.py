@@ -170,7 +170,20 @@ class DataObject(object):
     raise NotImplementedError
 
 #--
+# The following should go in genotyping...
+#
+class SNPMarkersSet(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
 class AffymetrixCel(object):
+
+  def __init__(self):
+    raise NotImplementedError
+
+
+class GenotypeDataSample(object):
 
   def __init__(self):
     raise NotImplementedError

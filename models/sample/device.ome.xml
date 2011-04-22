@@ -4,10 +4,11 @@
   <type id="ome.model.vl.Device">
     <properties>
       <required name="vid" type="string" unique="true"/>
-      <required name="vendor" type="string"/>
+      <required name="label" type="string" unique="true"/>
+      <required name="maker" type="string"/>
       <required name="model" type="string"/>
       <required name="release" type="string"/>
-      <!-- vendor model release -->
+      <!-- label maker model release -->
       <required name="deviceUK" type="string" unique="true"/>
     </properties>
   </type>

@@ -18,7 +18,7 @@ from sample import DataCollection, DataCollectionItem
 from samples_container import SamplesContainer, TiterPlate
 from data_object import DataObject
 
-from genotyping import AffymetrixCel
+from genotyping import AffymetrixCel, SNPMarkersSet, GenotypeDataSample
 
 
 import logging
@@ -54,7 +54,10 @@ class Proxy(ProxyIndexed):
   BloodSample = BloodSample
   DNASample   = DNASample
   SerumSample = SerumSample
+  #-
   AffymetrixCel = AffymetrixCel
+  SNPMarkersSet = SNPMarkersSet
+  GenotypeDataSample = GenotypeDataSample
 
   ProxyIndexed.INDEXED_TARGET_TYPES.extend([Result])
 
@@ -98,16 +101,26 @@ class Proxy(ProxyIndexed):
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else ActionSetup(result)
 
-  def get_device(self, vendor, model, release):
+  def get_device(self, label):
     """
     """
-    query = 'select d from Device d where d.vendor = :vendor and d.model = :model and d.release = :release'
-    pars = self.ome_query_params({'vendor' : self.ome_wrap(vendor),
-                                  'model'  : self.ome_wrap(model),
-                                  'release' : self.ome_wrap(release)})
+    query = 'select d from Device d where d.label = :label'
+    pars = self.ome_query_params({'label' : self.ome_wrap(label)})
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else Device(result)
 
+  def get_snp_markers_set(self, maker, model, release):
+    """
+    """
+    query = """select ms from SNPMarkersSet ms
+               where ms.maker = :maker and ms.model = :model and ms.release = :release
+               """
+    pars = self.ome_query_params({'maker' : self.ome_wrap(maker),
+                                  'model' : self.ome_wrap(model),
+                                  'release' : self.ome_wrap(release)
+                                  })
+    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
+    return None if result is None else SNPMarkersSet(result)
 
   def get_devices(self):
     """

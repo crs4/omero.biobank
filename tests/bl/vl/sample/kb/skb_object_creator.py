@@ -2,6 +2,7 @@ import os, unittest, time
 import itertools as it
 from bl.vl.sample.kb import KBError
 from bl.vl.sample.kb import KnowledgeBase as sKB
+import bl.vl.utils           as vlu
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -27,10 +28,12 @@ class SKBObjectCreator(unittest.TestCase):
     return pars, s
 
   def create_device(self):
-    conf = {'vendor' : 'foomaker',
+    conf = {'label' : 'foo-%f' % time.time(),
+            'maker' : 'foomaker',
             'model' : 'foomodel',
             'release' : '%f' % time.time()}
-    device = self.skb.Device(vendor=conf['vendor'],
+    device = self.skb.Device(label=conf['label'],
+                             maker=conf['maker'],
                              model=conf['model'],
                              release=conf['release'])
     self.configure_object(device, conf)
@@ -136,6 +139,33 @@ class SKBObjectCreator(unittest.TestCase):
     conf['arrayType'] = array_type
     conf['dataType'] = dtype
     return conf, sample
+
+  def create_snp_markers_set(self, action=None):
+    conf = {'maker' : 'snp-foomaker',
+            'model' : 'snp-foomodel',
+            'release' : 'snp-rel-%f' % time.time(),
+            'markersSetVID' : vlu.make_vid()}
+    result = self.skb.SNPMarkersSet(maker=conf['maker'], model=conf['model'], release=conf['release'],
+                                    set_vid=conf['markersSetVID'])
+    sconf, res = self.create_result(result=result, action=action)
+    conf.update(sconf)
+    return conf, res
+
+
+  def create_genotype_data_sample(self, action=None):
+    conf, markers_set = self.create_snp_markers_set()
+    markers_set = self.skb.save(markers_set)
+    self.kill_list.append(markers_set)
+    name = 'genotype-data-sample-name-%f' % time.time()
+    dtype = self.dtype_map['GTCALL']
+    conf, sample = self.create_sample(sample=self.skb.GenotypeDataSample(name=name,
+                                                                         snp_markers_set=markers_set,
+                                                                         data_type= dtype),
+                                      action=action)
+    conf['name'] = name
+    conf['dataType'] = dtype
+    return conf, sample
+
 
   def create_data_object(self, action=None):
     conf, data_sample = self.create_data_sample(action=action)
@@ -256,7 +286,7 @@ class SKBObjectCreator(unittest.TestCase):
     conf['id'] = container_slot.id
     return conf, container_slot
 
-  def create_plate_well(self, sample=None, container=None, row=1, column=2):
+  def create_plate_well(self, sample=None, container=None, label=None, row=1, column=2):
     if sample is None:
       conf, sample = self.create_bio_sample()
       sample = self.skb.save(sample)
@@ -267,13 +297,16 @@ class SKBObjectCreator(unittest.TestCase):
       container = self.skb.save(container)
       self.kill_list.append(container)
     #-
-    sconf = { 'sample' : sample, 'container' : container,
-              'row' : row, 'column' : column, 'volume' : 0.23}
+    if label is None:
+      label = container.labLabel + '.%03d%03d' % (row, column)
+    sconf = {'label' : label, 'sample' : sample, 'container' : container,
+             'row' : row, 'column' : column, 'volume' : 0.23}
     container_slot = self.skb.PlateWell(sample=sconf['sample'],
                                         container=sconf['container'],
                                         row=sconf['row'],
                                         column=sconf['column'],
                                         volume=sconf['volume'])
+    container_slot.label = sconf['label']
     conf, container_slot = self.create_result(result=container_slot)
     conf.update(sconf)
     conf['id'] = container_slot.id

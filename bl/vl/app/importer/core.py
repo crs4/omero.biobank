@@ -48,11 +48,11 @@ class Core(object):
     self.logger = logger
 
   @debug_wrapper
-  def get_device(self, vendor, model, release):
-    device = self.skb.get_device(vendor, model, release)
+  def get_device(self, label, maker, model, release):
+    device = self.skb.get_device(label)
     if not device:
-      self.logger.debug('creating a new device')
-      device = self.skb.Device(vendor=vendor, model=model, release=release)
+      self.logger.debug('creating a device')
+      device = self.skb.Device(label=label, maker=maker, model=model, release=release)
       device = self.skb.save(device)
     return device
 

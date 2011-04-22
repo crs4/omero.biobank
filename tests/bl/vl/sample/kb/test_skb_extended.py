@@ -65,7 +65,7 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
   def test_get_device(self):
     conf, device = self.create_device()
     device = self.skb.save(device)
-    d2 = self.skb.get_device(conf['vendor'], conf['model'], conf['release'])
+    d2 = self.skb.get_device(conf['label'])
     self.assertEqual(d2.id, device.id)
     self.skb.delete(device)
 
@@ -81,7 +81,8 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
     for d in devs:
       if dev_by_vid.has_key(d.id):
         found += 1
-        self.assertEqual(dev_by_vid[d.id].vendor, d.vendor)
+        self.assertEqual(dev_by_vid[d.id].label, d.label)
+        self.assertEqual(dev_by_vid[d.id].maker, d.maker)
         self.assertEqual(dev_by_vid[d.id].model, d.model)
         self.assertEqual(dev_by_vid[d.id].release, d.release)
     self.assertEqual(len(dev_by_vid), found)
