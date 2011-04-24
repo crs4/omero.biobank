@@ -88,22 +88,34 @@ class Recorder(Core):
                                      self.asetup, self.acat, self.operator)
 
   @debug_wrapper
-  def record(self, identifier, gender, father, mother):
-    logger.debug('\tworking on  %s %s %s %s' % (identifier, gender, father, mother))
+  def retrieve(self, identifier):
     study_label, label = identifier
     study = self.default_study if self.default_study \
             else self.known_studies.setdefault(study_label,
                                                self.get_study_by_label(study_label))
-    action = self.create_import_action(study,
-                                       description=self.input_rows[identifier])
-    i = self.ikb.Individual(gender=self.gender_map[gender.upper()])
-    i.action = action
-    i = self.ikb.save(i)
-    e = self.ikb.Enrollment(study=study, individual=i,
-                            study_code=label)
-    e = self.ikb.save(e)
-    return i
+    e = self.ikb.get_enrollment(study_label=study.label, ind_label=label)
+    return e.individual if e else None
 
+  @debug_wrapper
+  def record(self, identifier, gender, father, mother):
+    logger.debug('\tworking on  %s %s %s %s' % (identifier, gender, father, mother))
+    logger.info('importing %s %s %s %s' % (identifier, gender, father, mother))
+    study_label, label = identifier
+    study = self.default_study if self.default_study \
+            else self.known_studies.setdefault(study_label,
+                                               self.get_study_by_label(study_label))
+    e = self.ikb.get_enrollment(study_label=study.label, ind_label=label)
+    if not e:
+      logger.info('creating %s %s %s %s' % (identifier, gender, father, mother))
+      action = self.create_import_action(study,
+                                         description=self.input_rows[identifier])
+      i = self.ikb.Individual(gender=self.gender_map[gender.upper()])
+      i.action = action
+      i = self.ikb.save(i)
+      e = self.ikb.Enrollment(study=study, individual=i,
+                              study_code=label)
+      e = self.ikb.save(e)
+    return e.individual
 
 help_doc = """
 import new individual definitions into a virgil system and register

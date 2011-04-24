@@ -11,7 +11,7 @@ INDIVIDUAL_DEFINITION_DOC = """
    - I.id       an unique string identifying this individual
    - I.father   the individual mother or None if not known
    - I.mother   the individual father or None if not known
-   - I.sex      FIXME (an integer? a constant?)
+   - I.gender      FIXME (an integer? a constant?)
    - I.genotyped a boolean
 """
 
@@ -22,59 +22,88 @@ MAX_COMPLEXITY=19
 
 def import_pedigree(recorder, istream):
   """
-  Given a stream of individuals it will record them so that it is
+  Given a stream of individuals it will manage the flow so that it is
   guaranteed that parents are recorded before their children.
 
   :param recorder: a recorder object
-  :type recorder:  an object that presents a method with signature
-                   .record( , father, mother) FIXME
+  :type recorder: an object that presents a method with signature
+                  .record(label, gender, father, mother) FIXME also a method
+                  .retrieve(label)
 
   :param istream: the stream of individuals that should be imported
   :type istream:  an iterator of individuals I.
 
   %s
 
-  Note: The implementation is very naive. In the worst case, it will
-  be quadratic in the number of individual.
   """ % INDIVIDUAL_DEFINITION_DOC
-  def register(i_map):
-    work_to_do = False
-    for k in i_map.keys():
-      registered, i, gender, father, mother = i_map[k]
-      if registered:
-        continue
-      if father is None and mother is None:
-        i_map[k] = (True, recorder.record(k, gender, None, None), gender, None, None)
-      elif not father or not mother:
-        work_to_do = True
-      elif i_map[father][0] and i_map[mother][0]:
-        i_map[k] = (True, recorder.record(k,
-                                          gender, i_map[father][1], i_map[mother][1]),
-                    gender, None, None)
-      else:
-        work_to_do = True
-    return work_to_do
 
-  i_map = {}
-  for x in istream:
-    i_map[x.id] = (False, None, x.gender, x.father, x.mother)
+  family = []
+  by_id = {}
+  for i in istream:
+    family.append(i)
+    by_id[i.id] = (i, None)
 
-  work_to_do = register(i_map)
-  while work_to_do:
-    work_to_do = register(i_map)
+  def register(x):
+    i = recorder.retrieve(x.id)
+    if not i:
+      father = None if x.father is None else by_id[x.father][1]
+      mother = None if x.mother is None else by_id[x.mother][1]
+      i = recorder.record(x.id, x.gender, father, mother)
+    by_id[x.id] = (x, i)
+
+  founders, non_founders, dandlings, couples, children = analyze(family)
+  assert not dandlings
+
+  kids = {}
+  visited = {}
+  couples_by_partner = {}
+
+  for c in couples:
+    visited[c] = False
+    kids[c] = children[c[0]].union(children[c[1]])
+    couples_by_partner.setdefault(c[0], set()).add(c)
+    couples_by_partner.setdefault(c[1], set()).add(c)
+
+  registered = []
+  for f in founders:
+    register(f)
+
+  wave = []
+  for c in couples:
+    if by_id[c[0]][1] and by_id[c[1]][1]:
+      wave.append(c)
+  while wave:
+    new_wave = []
+    for c in  wave:
+      for k in kids[c]:
+        register(k)
+        for c1 in couples_by_partner.get(k.id, []):
+          if visited[c1]:
+            new_wave.append(c1)
+          else:
+            visited[c1] = True
+    wave = new_wave
 
 
 def analyze(family):
   """
   Analyze pedigree to extract:
+
      - F  the list of founders
+
      - NF the list of non-founders
+
+     - D the list of dangling individuals ids, that is individuals
+       that are mentioned as a parent but that do not appear in
+       family as members
+
      - C  the list of couples
+
      - CH a dictionary of children set with individual id as key.
 
   :param family: a list of individuals
   :type  family: list
-  :rtype: tuple(F, NF, C, CH)
+  :rtype: tuple(F, NF, D, C, CH)
 
   %s
 
@@ -91,11 +120,8 @@ def analyze(family):
       children.setdefault(i.father, set()).add(i)
       children.setdefault(i.mother, set()).add(i)
       couples.add((i.father, i.mother))
-  # for c in it.combinations(founders):
-  #   if (not (c[0].genotyped or c[1].genotyped)
-  #       and children[c[0].id] - children[c[1].id]):
-  #     couples.append(c)
-  return (founders, non_founders, list(couples), children)
+  dandlings = set(children.keys()) - set([x.id for x in (founders + non_founders)])
+  return (founders, non_founders, list(dandlings), list(couples), children)
 
 def compute_bit_complexity(family):
   """

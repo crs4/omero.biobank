@@ -1,10 +1,15 @@
+2011-04-24    <zag@pflip>
+
+	* bl/vl/individual/pedigree.py (import_pedigree): Changed
+	algorithm. Now it should be able to handle a large number of individuals.
+
 2011-04-22    <zag@pflip>
 
 	* examples/load_data.py (network_builder.call_genotypes): in phase
 	with SNPMarkersSet and GenotypeDataSample
 
 	* tests/bl/vl/sample/kb/skb_object_creator.py (SKBObjectCreator.create_snp_markers_set): added.
-	(SKBObjectCreator.create_genotype_data_sample): added. Added also tests in test_skb.py
+	(SKBObjectCreator.create_genotype_data_sample): added. Added also relates tests in test_skb.py
 
 	* bl/vl/sample/kb/drivers/omero/genotyping.py (SNPMarkersSet): added.
 	(GenotypeDataSample): added.

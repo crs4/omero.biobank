@@ -109,8 +109,6 @@ class Recorder(BioSampleRecorder):
       return
 
 
-
-
 def make_parser_blood_sample(parser):
   parser.add_argument('-S', '--study', type=str,
                       help="""default study assumed for the reference individuals and

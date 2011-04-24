@@ -108,7 +108,7 @@ logging.basicConfig(filename=LOG_FILENAME,
 logger = logging.getLogger("check_index_sanity")
 
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 
 formatter = logging.Formatter()
 
