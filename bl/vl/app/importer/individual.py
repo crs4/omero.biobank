@@ -52,6 +52,12 @@ class Ind(object):
     self.father = father
     self.mother = mother
 
+  def is_male(self):
+    return self.gender.upper() == 'MALE'
+
+  def is_female(self):
+    return self.gender.upper() == 'FEMALE'
+
 class Recorder(Core):
   """
   An utility class that handles the actual recording into VL
@@ -111,6 +117,16 @@ class Recorder(Core):
                                          description=self.input_rows[identifier])
       i = self.ikb.Individual(gender=self.gender_map[gender.upper()])
       i.action = action
+      if father:
+        # FIXME: this is disabled, since father does not automatically load field objects
+        # if not father.gender == self.gender_map['MALE']:
+        #   raise ValueError('putative father of %s is not male' % label)
+        i.father = father
+      if mother:
+        # FIXME: this is disabled, since father does not automatically load field objects
+        # if not mother.gender == self.gender_map['FEMALE']:
+        #   raise ValueError('putative mother of %s is not female' % label)
+        i.mother = mother
       i = self.ikb.save(i)
       e = self.ikb.Enrollment(study=study, individual=i,
                               study_code=label)

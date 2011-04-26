@@ -6,7 +6,8 @@ A quick and dirty collection of pedigree manipulation functions.
 import itertools as it
 
 INDIVIDUAL_DEFINITION_DOC = """
-  An individual I is, as far this function is concerned, an object that has the following attributes:
+  An individual I is, as far this function is concerned, an object
+  with the following attributes:
 
    - I.id       an unique string identifying this individual
    - I.father   the individual mother or None if not known
