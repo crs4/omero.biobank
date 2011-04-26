@@ -145,27 +145,32 @@ class Proxy(ProxyIndexed):
     logger.debug('get_data_collection_items results:[%d] %s' % (len(result), result))
     return [DataCollectionItem(r) for r in result]
 
-  def get_bio_sample(self, aklass, barcode):
-    query = 'select s from %s s where s.barcode = :barcode' % aklass.OME_TABLE
-    pars = self.ome_query_params({'barcode' : self.ome_wrap(barcode, 'string')})
+  def get_bio_sample(self, aklass, label=None, barcode=None):
+    if label:
+      # FIXME this is rather dumb. labLabel should be called label
+      query = 'select s from %s s where s.labLabel = :label' % aklass.OME_TABLE
+      pars = self.ome_query_params({'label' : self.ome_wrap(label, 'string')})
+    elif barcode:
+      query = 'select s from %s s where s.barcode = :barcode' % aklass.OME_TABLE
+      pars = self.ome_query_params({'barcode' : self.ome_wrap(barcode, 'string')})
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else aklass(result)
 
-  def get_blood_sample(self, barcode):
+  def get_blood_sample(self, label=None, barcode=None):
     """
     Get a BloodSample object stored in VL.
     """
-    return self.get_bio_sample(BloodSample, barcode)
+    return self.get_bio_sample(BloodSample, label, barcode)
 
-  def get_dna_sample(self, barcode):
+  def get_dna_sample(self, label=None, barcode=None):
     """
     Get a DNAsample object stored in VL.
     """
-    return self.get_bio_sample(DNASample, barcode)
+    return self.get_bio_sample(DNASample, label, barcode)
 
-  def get_titer_plate(self, barcode):
+  def get_titer_plate(self, label=None, barcode=None):
     """
     Get a TiterPlate object stored in VL.
     """
     #FIXME this should have a more reasonable name...
-    return self.get_bio_sample(TiterPlate, barcode)
+    return self.get_bio_sample(TiterPlate, label=label, barcode=barcode)

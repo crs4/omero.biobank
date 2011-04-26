@@ -40,8 +40,14 @@ def individual_conversion_rule(study, x):
     y['gender'] = 'male'
   elif x['Submitted_Gender'] == '2':
     y['gender'] = 'female'
-  y['father'] = x['Father'] if not (x['Father'] == '0' or x['Father'] == 'x') else 'None'
-  y['mother'] = x['Mother'] if not (x['Mother'] == '0' or x['Mother'] == 'x') else 'None'
+  y['father'] = x['Father'] if not (x['Father'] == '0'
+                                    or x['Father'] == 'x'
+                                    or x['Father'] == ''
+                                    ) else 'None'
+  y['mother'] = x['Mother'] if not (x['Mother'] == '0'
+                                    or x['Mother'] == 'x'
+                                    or x['Mother'] == ''
+                                    ) else 'None'
   return y
 
 def make_parser():
@@ -100,13 +106,14 @@ def dump_out(args, individuals, ostream):
 
 def check_consistency(args, individuals):
   def gender_check(k, label, expected):
-    if (individuals.has_key(label)
-        and not (individuals[label]['gender'].upper() == expected)):
+    if label == 'None':
+      return
+    if not individuals.has_key(label):
+      logger.warn('putative parent >%s< of %s is not in this set.' % (label, k))
+    elif not (individuals[label]['gender'].upper() == expected):
       logger.critical('putative gender for %s is wrong: expected >%s< got >%s<. Bailing out!'
                       % (label, expected, individuals[label]['gender'].upper()))
       #sys.exit(1)
-    elif not label == 'None':
-      logger.warn('putative parent %s of %s is not in this set.' % (label, k))
   #-
   for k in individuals.keys():
     father = individuals[k]['father']

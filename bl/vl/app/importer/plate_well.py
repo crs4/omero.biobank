@@ -5,8 +5,8 @@ Import of PlateWells
 
 Will read in a csv file with the following columns::
 
-  study  label   plate_label plate_barcode row column dna_barcode volume
-  ASTUDY p01.J02 p01         2390920 10  2      3289892389 0.1
+  study  label   plate_label row column dna_label volume
+  ASTUDY p01.J02 p01         10  2      lab-89 0.1
 
 Default plate dimensions are provided with a flag
 
@@ -67,7 +67,7 @@ class Recorder(Core):
       logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
       self.default_study = s
     self.known_studies = {}
-    self.device = self.get_device('CRS4', 'IMPORT', '0.0')
+    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
     self.asetup = self.get_action_setup('importer-version-%s-%s-%f' % (version, "PlateWell", time.time()),
                                         # FIXME the json below should
                                         # record the app version, and the
@@ -93,8 +93,8 @@ class Recorder(Core):
   def record(self, r):
     logger.debug('\tworking on %s' % r)
     try:
-      i_study, label, plate_label, barcode, dna_barcode = \
-               r['label'], r['study'], r['plate_label'], r['plate_barcode'], r['dna_barcode']
+      i_study, label, plate_label, plate_barcode, dna_label = \
+               r['label'], r['study'], r['plate_label'], r['plate_barcode'], r['dna_label']
       row, column  = map(int, [r['row'], r['column']])
       delta_volume = self.volume if self.volume else float(r['volume'])
       #-
@@ -103,7 +103,7 @@ class Recorder(Core):
                                                  self.get_study_by_label(i_study))
       plate = self.get_titer_plate(study=study, barcode=plate_barcode,
                                    shape=self.plate_shape)
-      dna_sample = self.get_dna_sample(barcode=dna_barcode)
+      dna_sample = self.get_dna_sample(label=dna_label)
       if self.update_volume:
         current_volume = dna_sample.current_volume
         if current_volume < delta_volume:
@@ -172,7 +172,7 @@ class Recorder(Core):
 
   @debug_wrapper
   def get_titer_plate(self, study, barcode, shape=None):
-    titer_plate = self.skb.get_titer_plate(barcode)
+    titer_plate = self.skb.get_titer_plate(barcode=barcode)
     if titer_plate:
       return titer_plate
     if not shape:
@@ -180,10 +180,10 @@ class Recorder(Core):
     return self.create_titer_plate(study, barcode, shape)
 
   @debug_wrapper
-  def get_dna_sample(self, barcode):
-    dna_sample = self.skb.get_dna_sample(barcode=barcode)
+  def get_dna_sample(self, label):
+    dna_sample = self.skb.get_dna_sample(label=label)
     if not dna_sample:
-      raise ValueError('cannot find a dna sample with barcode <%s>' % barcode)
+      raise ValueError('cannot find a dna sample with label <%s>' % label)
     return dna_sample
 
 

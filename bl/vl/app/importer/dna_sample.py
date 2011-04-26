@@ -4,17 +4,17 @@ Import of DNA samples
 
 Will read in a csv file with the following columns::
 
-  study label  barcode blood_sample_barcode initial_volume current_volume status nanodrop qp230260 qp230280
-  xxx   dn01   2903902 239898 9.5 6.5 40 0.4 0.5 USABLE
+  study label  barcode blood_sample_label initial_volume current_volume status nanodrop qp230260 qp230280
+  xxx   dn01   2903902 bs-label 9.5 6.5 40 0.4 0.5 USABLE
   ....
 
 Volume units are FIXME ml
-Records that point to an unknown blood_sample_barcode will be noisily
+Records that point to an unknown blood_sample_label will be noisily
 ignored. The same will happen to records that have the same label or
 barcode of a previously seen dna sample.
 
 Study defines the context in which the import occurred, the blood
-sample is identified by its barcode, which is enforced to be unique
+sample is identified by its label, which is enforced to be unique
 (as far as BloodSample samples are concerned) in VL. In the same way,
 the imported sample will be uniquely identified by its barcode. The
 sample label will be set to the string <study>-<label>, which will be
@@ -93,15 +93,15 @@ class Recorder(BioSampleRecorder):
     try:
       study, label, barcode, initial_volume, current_volume, status = \
              self.record_helper(klass.__name__, r)
-      blood_sample_barcode = r['blood_sample_barcode']
+      blood_sample_label = r['blood_sample_label']
       nanodrop, qp230260, qp230280 = [r[k] for k in 'nanodrop qp230260 qp230280'.split()]
       nanodrop = int(nanodrop)
       qp230260 = float(qp230260)
       qp230280 = float(qp230280)
 
-      blood_sample = self.skb.get_blood_sample(barcode=blood_sample_barcode)
+      blood_sample = self.skb.get_blood_sample(label=blood_sample_label)
       if not blood_sample:
-        logger.warn('ignoring record %s because there is not a blood_sample with that barcode' % r)
+        logger.warn('ignoring record %s because there is not a blood_sample with that label' % r)
         return
 
       self.create_dna_sample(study, blood_sample, label, barcode,

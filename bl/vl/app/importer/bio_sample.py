@@ -46,7 +46,7 @@ class BioSampleRecorder(Core):
     self.initial_volume = initial_volume
     self.current_volume = current_volume
     self.known_studies = {}
-    self.device = self.get_device('CRS4', 'IMPORT', '0.0')
+    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
     self.asetup = self.get_action_setup('importer-version-%s-%s-%f' % (version, klass_name, time.time()),
                                         # FIXME the json below should
                                         # record the app version, and the
