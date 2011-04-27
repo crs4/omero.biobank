@@ -77,13 +77,11 @@ def load_individuals(args, stream):
       if not (individuals[k]['father'] == y['father']
               and individuals[k]['mother'] == y['mother']):
         logger.error('Inconsistent parental info between records for %s.' % k)
-        logger.error('Removing records (%s, %s) for %s.' % (individuals[k], y, k))
-        del individuals[k]
+        logger.error('Removing record (%s) for %s.' % (y, k))
         continue
       if not (individuals[k]['gender'] == y['gender']):
         logger.error('Inconsistent gender between records for %s.' % k)
-        logger.error('Removing records (%s, %s) for %s.' % (individuals[k], y, k))
-        del individuals[k]
+        logger.error('Removing record (%s) for %s.' % (y, k))
         continue
       logger.warn('Ignoring duplicate %s <-> %s' % (y, individuals[k]))
       continue
