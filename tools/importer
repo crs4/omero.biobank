@@ -110,7 +110,7 @@ logger = logging.getLogger("check_index_sanity")
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 
-formatter = logging.Formatter()
+formatter = logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 ch.setFormatter(formatter)
 
@@ -134,7 +134,9 @@ def debug_boundary(f):
 import bl.vl.app.importer.individual
 import bl.vl.app.importer.blood_sample
 import bl.vl.app.importer.dna_sample
+import bl.vl.app.importer.titer_plate
 import bl.vl.app.importer.plate_well
+
 
 class App(object):
   def __init__(self):
@@ -142,6 +144,7 @@ class App(object):
     bl.vl.app.importer.individual.do_register(self.supported_submodules)
     bl.vl.app.importer.blood_sample.do_register(self.supported_submodules)
     bl.vl.app.importer.dna_sample.do_register(self.supported_submodules)
+    bl.vl.app.importer.titer_plate.do_register(self.supported_submodules)
     bl.vl.app.importer.plate_well.do_register(self.supported_submodules)
 
   def make_parser(self):

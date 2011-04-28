@@ -3,7 +3,7 @@
 <types>
   <type id="ome.model.vl.SamplesContainer" superclass="ome.model.vl.Result">
     <properties>
-      <optional name="labLabel" type="string" unique="true"/>
+      <optional name="label" type="string" unique="true"/>
       <required name="slots" type="int"/>
       <required name="barcode" type="string" unique="true"/>
       <required name="virtualContainer" type="boolean"/>

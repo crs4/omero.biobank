@@ -100,6 +100,8 @@ class Recorder(Core):
             else self.known_studies.setdefault(study_label,
                                                self.get_study_by_label(study_label))
     e = self.ikb.get_enrollment(study_label=study.label, ind_label=label)
+    if e:
+      logger.info('using (%s,%s) already in kb' % (study.label, label))
     return e.individual if e else None
 
   @debug_wrapper

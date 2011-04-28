@@ -210,7 +210,7 @@ class network_builder(object):
     #--
     sample = self.skb.BloodSample()
     sample.action, sample.outcome   = action, self.outcome_map['OK']
-    sample.labLabel = '%s-%s' % (self.study_label, enrollment.studyCode)
+    sample.label = '%s-%s' % (self.study_label, enrollment.studyCode)
     sample.barcode  = sample.id
     sample.initialVolume = sample.currentVolume = volume
     sample.status = self.sstatus_map['USABLE']
@@ -223,7 +223,7 @@ class network_builder(object):
     #-
     sample = self.skb.DNASample()
     sample.action, sample.outcome   = action, self.outcome_map['OK']
-    sample.labLabel = '%s-DNA-%s' % (blood_sample.labLabel, time.time())
+    sample.label = '%s-DNA-%s' % (blood_sample.label, time.time())
     sample.barcode  = sample.id
     sample.initialVolume = sample.currentVolume = 0.1
     sample.nanodropConcentration = 40
@@ -409,8 +409,7 @@ class network_builder(object):
           return False, plate
         action = self.create_action_on_sample(dna_sample, device,
                                               asetup, acat, operator)
-        # FIXME: label, labLabel, .... !?!
-        label = '%s.%02d%02d' % (plate.labLabel, r, c)
+        label = '%s.%02d%02d' % (plate.label, r, c)
         plate_well = self.skb.PlateWell(label=label,
                                         sample=dna_sample, container=plate,
                                         row=r, column=c,

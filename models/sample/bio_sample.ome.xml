@@ -4,7 +4,7 @@
 <types>
   <type id="ome.model.vl.BioSample" superclass="ome.model.vl.Sample">
     <properties>
-      <optional name="labLabel" type="string" unique="true"/>
+      <optional name="label" type="string" unique="true"/>
       <required name="barcode" type="string" unique="true"/>
       <!-- measured in ml -->
       <required name="initialVolume" type="float"/> 

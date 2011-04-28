@@ -1,4 +1,21 @@
+2011-04-28    <zag@manzanillo>
+
+	* tools/importer (App): added titer_plate module.
+
+	* bl/vl/app/importer/plate_well.py: moved all the titer_plate
+	stuff to titer_plate.py.
+
+	* bl/vl/app/importer/titer_plate.py: Added.
+
 2011-04-27    <zag@manzanillo>
+
+	* tests/bl/vl/sample/kb/skb_object_creator.py: labLabel -> label
+
+	* models/sample/samples_container.ome.xml: labLabel -> label
+
+	* bl/vl/sample/kb/drivers/omero/proxy.py (Proxy.get_bio_sample): labLabel -> label
+
+	* models/sample/bio_sample.ome.xml: changed labLabel to label
 
 	* tools/extract_individuals.py (load_individuals): now we keep the
 	first record found when there is a 'parental' conflict between

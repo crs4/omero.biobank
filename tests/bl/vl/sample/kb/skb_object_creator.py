@@ -186,7 +186,7 @@ class SKBObjectCreator(unittest.TestCase):
     return conf, do
 
   def create_bio_sample(self, sample=None, action=None):
-    sconf = {'labLabel' : 'bio-sample-lab-label-%f' % time.time(),
+    sconf = {'label' : 'bio-sample-lab-label-%f' % time.time(),
              'barcode'  : 'bio-sample-barcode-%f' % time.time(),
              'initialVolume' : 1.0,
              'currentVolume' : 0.8,
@@ -234,7 +234,7 @@ class SKBObjectCreator(unittest.TestCase):
     return conf, data_sample
 
   def create_samples_container(self, result=None):
-    sconf = {'labLabel' : 'sc-lab_label-%f' % time.time(),
+    sconf = {'label' : 'sc-lab_label-%f' % time.time(),
              'barcode'  : 'sc-barcode-%s' % time.time(),
              'virtualContainer' : False,
              'slots' : 96}
@@ -247,7 +247,7 @@ class SKBObjectCreator(unittest.TestCase):
     return conf, container
 
   def create_titer_plate(self):
-    sconf = {'labLabel' : 'tp-lab_label-%f' % time.time(),
+    sconf = {'label' : 'tp-lab_label-%f' % time.time(),
             'barcode'  : 'tp-barcode-%s' % time.time(),
             'virtualContainer' : False,
             'rows' : 4,
@@ -298,7 +298,7 @@ class SKBObjectCreator(unittest.TestCase):
       self.kill_list.append(container)
     #-
     if label is None:
-      label = container.labLabel + '.%03d%03d' % (row, column)
+      label = container.label + '.%03d%03d' % (row, column)
     sconf = {'label' : label, 'sample' : sample, 'container' : container,
              'row' : row, 'column' : column, 'volume' : 0.23}
     container_slot = self.skb.PlateWell(sample=sconf['sample'],

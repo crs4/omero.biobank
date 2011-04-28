@@ -12,6 +12,8 @@ Default plate dimensions are provided with a flag
 
   > import -v plate_well -i file.csv --plate-shape=32x48
 
+It will noisily ignore records that do not correspond to a valid plate_label or dna sample.
+
 """
 
 from bl.vl.sample.kb import KBError
@@ -43,21 +45,16 @@ def debug_wrapper(f):
 class Recorder(Core):
   """
   An utility class that handles the actual recording of PlateWell(s)
-  into VL, including TiterPlate(s) generation as needed.
+  into VL.
   """
-  def __init__(self, study_label=None,
-               plate_shape=None, volume=None,  update_volume=False,
+  def __init__(self, study_label=None, volume=None,  update_volume=False,
                host=None, user=None, passwd=None, operator='Alfred E. Neumann'):
     """
     FIXME
-
-    :param plate_shape: the default titer plate shape
-    :type plate_shape: tuple of two positive integers
     """
     super(Recorder, self).__init__(host, user, passwd)
     self.volume = float(volume) if volume else volume
     self.update_volume = update_volume
-    self.plate_shape = plate_shape
     #FIXME this can probably go to core....
     self.default_study = None
     if study_label:
@@ -77,7 +74,6 @@ class Recorder(Core):
                                         # likely, a transient object.
                                         json.dumps({'study' : study_label,
                                                     'volume' : volume,
-                                                    'plate_shape' : plate_shape,
                                                     'update_volume' : update_volume,
                                                     'operator' : operator,
                                                     'host' : host,
@@ -88,21 +84,19 @@ class Recorder(Core):
     self.input_rows = {}
     self.counter = 0
 
-
   @debug_wrapper
   def record(self, r):
     logger.debug('\tworking on %s' % r)
     try:
-      i_study, label, plate_label, plate_barcode, dna_label = \
-               r['label'], r['study'], r['plate_label'], r['plate_barcode'], r['dna_label']
+      i_study, label, plate_label, dna_label = \
+               r['study'], r['label'], r['plate_label'], r['dna_label']
       row, column  = map(int, [r['row'], r['column']])
       delta_volume = self.volume if self.volume else float(r['volume'])
       #-
       study = self.default_study if self.default_study \
               else self.known_studies.setdefault(i_study,
                                                  self.get_study_by_label(i_study))
-      plate = self.get_titer_plate(study=study, barcode=plate_barcode,
-                                   shape=self.plate_shape)
+      plate = self.get_titer_plate(label=plate_label)
       dna_sample = self.get_dna_sample(label=dna_label)
       if self.update_volume:
         current_volume = dna_sample.current_volume
@@ -157,27 +151,11 @@ class Recorder(Core):
 
 
   @debug_wrapper
-  def create_plate_creation_action(self, study, description=''):
-    return self.create_action_helper(self.skb.Action, description,
-                                     study, self.device,
-                                     self.asetup, self.acat, self.operator)
-  @debug_wrapper
-  def create_titer_plate(self, study, barcode, shape):
-    rows, columns = shape
-    plate = self.skb.TiterPlate(barcode=barcode, rows=rows, columns=columns)
-    plate.action = self.create_plate_creation_action(study, description='automatic creation')
-    plate = self.skb.save(plate)
-    return plate
-
-
-  @debug_wrapper
-  def get_titer_plate(self, study, barcode, shape=None):
+  def get_titer_plate(self, study, label):
     titer_plate = self.skb.get_titer_plate(barcode=barcode)
-    if titer_plate:
-      return titer_plate
-    if not shape:
-      raise ValueError('cannot find a plate with barcode <%s>' % barcode)
-    return self.create_titer_plate(study, barcode, shape)
+    if not titer_plate:
+      raise ValueError('cannot find a plate with label <%s>' % label)
+    return titer_plate
 
   @debug_wrapper
   def get_dna_sample(self, label):
@@ -186,11 +164,8 @@ class Recorder(Core):
       raise ValueError('cannot find a dna sample with label <%s>' % label)
     return dna_sample
 
-
 help_doc = """
-import new plate_well definitions into a virgil system. Define new
-titer plates if needed, and attach the newly generated plate_well(s)
-to previously registered dna samples.
+import new plate_well definitions into a virgil system.
 """
 
 def make_parser_plate_well(parser):
@@ -203,22 +178,11 @@ def make_parser_plate_well(parser):
   parser.add_argument('--update-volume', action='store_true', default=False,
                       help="""if set, it will subract the amount required by the plate well row from the
                               referenced dna sample vial""")
-  parser.add_argument('-s', '--plate-shape', type=str, default="32x48",
-                      help="""plate shape expressed as <rows>x<cols>, e.g. 32x48 (default value).""")
-
 
 def import_plate_well_implementation(args):
   # FIXME it is very likely that the following can be directly
   # implemented as a validation function in the parser definition above.
-  try:
-    plate_shape = tuple(map(int, args.plate_shape.split('x')))
-    if len(plate_shape) != 2:
-      raise ValueError('')
-  except ValueError, e:
-    logger.fatal('illegal value for plate-shape %s' % args.plate_shape)
-    sys.exit(1)
-  recorder = Recorder(args.study, plate_shape=plate_shape,
-                      volume=args.volume, update_volume=args.update_volume,
+  recorder = Recorder(args.study, volume=args.volume, update_volume=args.update_volume,
                       host=args.host, user=args.user, passwd=args.passwd)
   f = csv.DictReader(args.ifile, delimiter='\t')
   for r in f:

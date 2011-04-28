@@ -147,8 +147,7 @@ class Proxy(ProxyIndexed):
 
   def get_bio_sample(self, aklass, label=None, barcode=None):
     if label:
-      # FIXME this is rather dumb. labLabel should be called label
-      query = 'select s from %s s where s.labLabel = :label' % aklass.OME_TABLE
+      query = 'select s from %s s where s.label = :label' % aklass.OME_TABLE
       pars = self.ome_query_params({'label' : self.ome_wrap(label, 'string')})
     elif barcode:
       query = 'select s from %s s where s.barcode = :barcode' % aklass.OME_TABLE
