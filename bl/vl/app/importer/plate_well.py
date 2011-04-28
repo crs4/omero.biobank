@@ -48,11 +48,11 @@ class Recorder(Core):
   into VL.
   """
   def __init__(self, study_label=None, volume=None,  update_volume=False,
-               host=None, user=None, passwd=None, operator='Alfred E. Neumann'):
+               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
     """
     FIXME
     """
-    super(Recorder, self).__init__(host, user, passwd)
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens)
     self.volume = float(volume) if volume else volume
     self.update_volume = update_volume
     #FIXME this can probably go to core....
@@ -183,7 +183,8 @@ def import_plate_well_implementation(args):
   # FIXME it is very likely that the following can be directly
   # implemented as a validation function in the parser definition above.
   recorder = Recorder(args.study, volume=args.volume, update_volume=args.update_volume,
-                      host=args.host, user=args.user, passwd=args.passwd)
+                      host=args.host, user=args.user, passwd=args.passwd,
+                      keep_tokens=args.keep_tokens)
   f = csv.DictReader(args.ifile, delimiter='\t')
   for r in f:
     recorder.record(r)

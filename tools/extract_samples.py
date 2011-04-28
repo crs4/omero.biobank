@@ -67,9 +67,30 @@ def dna_sample_conversion_rule(study, s, x):
   barcode_counter += 1
   return [y]
 
+
+def titer_plate_conversion_rule_helper(study, label):
+  global barcode_counter
+  y = {'study' : study, 'label' : label, 'barcode' : barcode_counter,
+       'rows' : 32, 'columns' : 48, 'maker' : 'CRS4', 'model' : 'virtual'}
+  return y
+
+known_plates = {}
+def titer_plate_conversion_rule(study, r):
+  pfields = ['Affymetrix_Plate_Pula', 'Affymetrix_Plate_Lanusei', 'Affymetrix_Plate_USA',
+             'Illumina_Plate', 'Illumina_dup_Plate']
+  tps = []
+  for k in pfields:
+    if r.has_key(k) and not r[k] == 'x':
+      label = r[k]
+      if not known_plates.has_key(label):
+        tps.append(titer_plate_conversion_rule_helper(study, r[k]))
+        known_plates[label] = 1
+  return tps
+
+#----------------------------------------
 row_counters = {}
 column_counters = {}
-max_columns = 32
+max_columns = 48
 def convert_well_position(label, pos):
   pos = 'TBF' if pos == 'x' else pos
   if pos == 'TBF':
@@ -216,7 +237,6 @@ def make_parser():
   return parser
 
 
-
 plate_counter = 0
 def patch_missing_plate_info(x):
   global plate_counter
@@ -261,6 +281,7 @@ def main():
 
   blood_samples = []
   dna_samples = []
+  titer_plates = []
   plate_wells = []
   data_samples = []
   for x in f:
@@ -270,6 +291,8 @@ def main():
     blood_samples.extend(bss)
     dns = dna_sample_conversion_rule(args.study, bss[0], x)
     dna_samples.extend(dns)
+    tps = titer_plate_conversion_rule(args.study, x)
+    titer_plates.extend(tps)
     pws = plate_well_conversion_rule(args.study, dns[0], x)
     plate_wells.extend(pws.values())
     dss = data_sample_conversion_rule(args.study, dns[0], pws, x)
@@ -279,6 +302,10 @@ def main():
         fieldnames='study label barcode individual_label initial_volume current_volume status'.split())
   dump_(args.ofile_root + 'dna_samples.tsv', dna_samples,
         fieldnames='study label barcode blood_sample_label initial_volume current_volume status nanodrop qp230260 qp230280'.split())
+
+  dump_(args.ofile_root + 'titer_plates.tsv', titer_plates,
+        fieldnames='study label barcode rows columns maker model'.split())
+  #-
   dump_(args.ofile_root + 'plate_wells.tsv', plate_wells,
         fieldnames='study label plate_label row column dna_label volume'.split())
   #--

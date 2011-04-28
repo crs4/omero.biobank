@@ -160,6 +160,8 @@ class App(object):
                         default='root')
     parser.add_argument('-P', '--passwd', type=str,
                         help='omero user passwd')
+    parser.add_argument('-K', '--keep-tokens', type=int,
+                        default=1, help='omero tokens for open session')
 
     subparsers = parser.add_subparsers()
 

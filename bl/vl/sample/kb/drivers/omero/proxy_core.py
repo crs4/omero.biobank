@@ -95,16 +95,30 @@ class ProxyCore(object):
                       'bool'   : omero.grid.BoolColumn,
                       }
 
-  def __init__(self, host, user, passwd):
+  def __init__(self, host, user, passwd, session_keep_tokens=1):
     self.user = user
     self.passwd = passwd
     self.client = omero.client(host)
+    self.session_keep_tokens = session_keep_tokens
+    self.transaction_tokens = 0
+    self.current_session = None
+
+  def __del__(self):
+    if self.current_session:
+      self.client.closeSession()
 
   def connect(self):
-    return self.client.createSession(self.user, self.passwd)
+    if not self.current_session:
+      self.current_session = self.client.createSession(self.user, self.passwd)
+      self.transaction_tokens = self.session_keep_tokens
+    self.transaction_tokens -= 1
+    return self.current_session
 
   def disconnect(self):
-    self.client.closeSession()
+    if self.transaction_tokens <= 0:
+      self.client.closeSession()
+      self.current_session = None
+      self.transaction_tokens = 0
 
   def ome_wrap(self, v, wtype=None):
     return self.WRAPPING[wtype](v) if wtype else ort.wrap(v)

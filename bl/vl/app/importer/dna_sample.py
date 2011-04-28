@@ -51,10 +51,10 @@ class Recorder(BioSampleRecorder):
   An utility class that handles the actual recording of DNASample(s) into VL
   """
   def __init__(self, study_label=None, initial_volume=None, current_volume=None,
-               host=None, user=None, passwd=None, operator='Alfred E. Neumann'):
+               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
     super(Recorder, self).__init__('DNASample',
                                    study_label, initial_volume, current_volume,
-                                   host, user, passwd, operator)
+                                   host, user, passwd, keep_tokens, operator)
 
   @debug_wrapper
   def create_action(self, study, blood_sample, description=''):
@@ -142,7 +142,8 @@ def make_parser_dna_sample(parser):
 def import_dna_sample_implementation(args):
   recorder = Recorder(args.study,
                       initial_volume=args.initial_volume, current_volume=args.current_volume,
-                      host=args.host, user=args.user, passwd=args.passwd)
+                      host=args.host, user=args.user, passwd=args.passwd,
+                      keep_tokens=args.keep_tokens)
   f = csv.DictReader(args.ifile, delimiter='\t')
   for r in f:
     recorder.record(r)

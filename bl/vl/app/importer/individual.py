@@ -62,8 +62,8 @@ class Recorder(Core):
   """
   An utility class that handles the actual recording into VL
   """
-  def __init__(self, study_label=None, host=None, user=None, passwd=None):
-    super(Recorder, self).__init__(host, user, passwd)
+  def __init__(self, study_label=None, host=None, user=None, passwd=None, keep_tokens=1):
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens)
     self.default_study = None
     if study_label:
       s = self.skb.get_study_by_label(study_label)
@@ -145,7 +145,8 @@ def make_parser_individual(parser):
                       It will over-ride the study column value""")
 
 def import_individual_implementation(args):
-  recorder = Recorder(args.study, args.host, args.user, args.passwd)
+  recorder = Recorder(args.study, args.host, args.user, args.passwd,
+                      args.keep_tokens)
   def istream(f, input_rows):
     for r in f:
       k = (r['study'], r['label'])

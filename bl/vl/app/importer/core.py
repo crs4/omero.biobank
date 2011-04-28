@@ -37,9 +37,9 @@ class Core(object):
   """
   The common set of methods used by the importer's modules.
   """
-  def __init__(self, host=None, user=None, passwd=None):
-    self.skb = sKB(driver='omero')(host, user, passwd)
-    self.ikb = iKB(driver='omero')(host, user, passwd)
+  def __init__(self, host=None, user=None, passwd=None, keep_tokens=1):
+    self.skb = sKB(driver='omero')(host, user, passwd, keep_tokens)
+    self.ikb = iKB(driver='omero')(host, user, passwd, keep_tokens)
     self.acat_map    = self.skb.get_action_category_table()
     self.outcome_map = self.skb.get_result_outcome_table()
     self.sstatus_map = self.skb.get_sample_status_table()

@@ -60,7 +60,7 @@ class Recorder(Core):
   metadata into VL, including the potential actual saving of datasets.
   """
   def __init__(self, study_label=None, data_dir=None, load_data_objects=False,
-               host=None, user=None, passwd=None, operator='Alfred E. Neumann'):
+               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
     """
     FIXME
 
@@ -227,7 +227,8 @@ def make_parser_data_sample(parser):
 def import_data_sample_implementation(args):
   recorder = Recorder(args.study, plate_shape=plate_shape,
                       volume=args.volume, update_volume=args.update_volume,
-                      host=args.host, user=args.user, passwd=args.passwd)
+                      host=args.host, user=args.user, passwd=args.passwd,
+                      keep_tokens=args.keep_tokens)
   f = csv.DictReader(args.ifile, delimiter='\t')
   for r in f:
     recorder.record(r)

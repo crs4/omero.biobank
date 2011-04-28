@@ -48,14 +48,14 @@ class Recorder(Core):
   """
   def __init__(self, study_label=None,
                plate_shape=None,
-               host=None, user=None, passwd=None, operator='Alfred E. Neumann'):
+               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
     """
     FIXME
 
     :param plate_shape: the default titer plate shape
     :type plate_shape: tuple of two positive integers
     """
-    super(Recorder, self).__init__(host, user, passwd)
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens)
     self.plate_shape = plate_shape
     #FIXME this can probably go to core....
     self.default_study = None
@@ -149,7 +149,7 @@ help_doc = """
 import new TiterPlate definitions into a virgil system.
 """
 
-def make_parser_plate_well(parser):
+def make_parser_titer_plate(parser):
   parser.add_argument('-S', '--study', type=str,
                       help="""default conxtest study label.
                       It will over-ride the study column value""")
@@ -168,7 +168,8 @@ def import_titer_plate_implementation(args):
     logger.fatal('illegal value for plate-shape %s' % args.plate_shape)
     sys.exit(1)
   recorder = Recorder(args.study, plate_shape=plate_shape,
-                      host=args.host, user=args.user, passwd=args.passwd)
+                      host=args.host, user=args.user, passwd=args.passwd,
+                      keep_tokens=args.keep_tokens)
   f = csv.DictReader(args.ifile, delimiter='\t')
   for r in f:
     recorder.record(r)

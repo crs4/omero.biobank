@@ -77,8 +77,8 @@ class ProxyIndexed(ProxyCore):
 
   INDEXED_TARGET_TYPES = []
 
-  def __init__(self, host, user, passwd):
-    super(ProxyIndexed, self).__init__(host, user, passwd)
+  def __init__(self, host, user, passwd, session_keep_tokens=1):
+    super(ProxyIndexed, self).__init__(host, user, passwd, session_keep_tokens)
     self.create_if_missing(self.ACTION_TABLE, self.ACTION_TABLE_COLUMNS)
     self.create_if_missing(self.TARGET_TABLE, self.TARGET_TABLE_COLUMNS)
 

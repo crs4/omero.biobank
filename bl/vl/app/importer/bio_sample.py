@@ -34,8 +34,8 @@ class BioSampleRecorder(Core):
   """
   # FIXME: the klass_name thing is a kludge...
   def __init__(self, klass_name, study_label=None, initial_volume=None, current_volume=None,
-               host=None, user=None, passwd=None, operator='Alfred E. Neumann'):
-    super(BioSampleRecorder, self).__init__(host, user, passwd)
+               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
+    super(BioSampleRecorder, self).__init__(host, user, passwd, keep_tokens)
     self.default_study = None
     if study_label:
       s = self.skb.get_study_by_label(study_label)

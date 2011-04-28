@@ -11,6 +11,7 @@ from skb_object_creator import SKBObjectCreator
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
+OME_KEEP = int(os.getenv("OME_KEEP", 1))
 
 class TestSKB(SKBObjectCreator, unittest.TestCase):
   " "
@@ -19,7 +20,7 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
     self.kill_list = []
 
   def setUp(self):
-    self.skb = sKB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
+    self.skb = sKB(driver='omero')(OME_HOST, OME_USER, OME_PASS, OME_KEEP)
     self.acat_map    = self.skb.get_action_category_table()
     self.outcome_map = self.skb.get_result_outcome_table()
     self.sstatus_map = self.skb.get_sample_status_table()

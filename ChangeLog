@@ -1,5 +1,26 @@
 2011-04-28    <zag@manzanillo>
 
+	* bl/vl/app/importer/plate_well.py (Recorder): same as below...
+
+	* bl/vl/app/importer/titer_plate.py (Recorder):  same as below...
+
+	* bl/vl/app/importer/blood_sample.py (import_blood_sample_implementation): same as below..
+
+	* bl/vl/app/importer/bio_sample.py (BioSampleRecorder): added
+	keep_tokens support. Humm, why am i not using **kw???
+
+	* bl/vl/app/importer/core.py (Core.__init__): added keep_tokens support.
+
+	* bl/vl/app/importer/individual.py (Recorder): added keep_tokens support.
+
+	* tools/importer (App.make_parser): added keep-token flag
+
+	* tests/bl/vl/sample/kb/test_skb.py (OME_KEEP): in phase with new
+	keep_section_open mechanism.
+
+	* bl/vl/sample/kb/drivers/omero/proxy_core.py (ProxyCore): Added a
+	simple keep_session_open mechanism to speed-up operations.
+
 	* tools/importer (App): added titer_plate module.
 
 	* bl/vl/app/importer/plate_well.py: moved all the titer_plate
