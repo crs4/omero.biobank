@@ -157,8 +157,8 @@ class ProxyCore(object):
       result = self.ome_operation("getQueryService", "get",
                                   obj.OME_TABLE, result.id._val)
     except omero.ValidationException, e:
-      print 'omero.ValidationException: %s' % e.message
-      print type(obj)
+      logger.error('omero.ValidationException: %s' % e.message)
+      logger.error('omero.ValidationException object: %s' % type(obj))
       obj.__handle_validation_errors__()
     return obj.__class__(result)
 

@@ -100,7 +100,6 @@ class Recorder(Core):
     self.input_rows = {}
     self.counter = 0
 
-
   @debug_wrapper
   def get_study_by_label(self, study_label):
     if self.default_study:
@@ -111,7 +110,8 @@ class Recorder(Core):
   @debug_wrapper
   def get_action(self, sample, name, maker, model, release):
     device = self.get_device(name, maker, model, release)
-    asetup = self.get_action_setup('import-')
+    asetup = self.get_action_setup('import-%s-%s' % (maker, model),
+                                   json.dumps({}))
     if sample.__class__.name == 'PlateWell':
       action = self.create_action_on_sample_slot(sample, device, asetup)
     elif sample.__class__.name == 'DNASample':
@@ -159,56 +159,23 @@ class Recorder(Core):
     #   sys.exit(1)
 
   @debug_wrapper
-  def create_plate_well(self, study, container, sample,
-                        label, row, column, volume, description=''):
-    action = self.create_action_on_sample(study, sample,
-                                          description=description)
-    plate_well = self.skb.PlateWell(sample=sample, container=container,
-                                    row=row, column=column,
-                                    volume=volume)
-    plate_well.label  = label
-    plate_well.action = action
-    plate_well.outcome = self.outcome_map['OK']
-    return self.skb.save(plate_well)
-
-  @debug_wrapper
-  def create_action_on_sample(self, study, sample, description=''):
+  def create_action_on_sample(self, study, sample, device, asetup, description):
     return self.create_action_helper(self.skb.ActionOnSample, description,
-                                     study, self.device,
-                                     self.asetup, self.acat, self.operator,
-                                     sample)
-
+                                     study, device, asetup,
+                                     self.acat, self.operator, sample)
 
   @debug_wrapper
-  def create_plate_creation_action(self, study, description=''):
-    return self.create_action_helper(self.skb.Action, description,
-                                     study, self.device,
-                                     self.asetup, self.acat, self.operator)
-  @debug_wrapper
-  def create_titer_plate(self, study, barcode, shape):
-    rows, columns = shape
-    plate = self.skb.TiterPlate(barcode=barcode, rows=rows, columns=columns)
-    plate.action = self.create_plate_creation_action(study, description='automatic creation')
-    plate = self.skb.save(plate)
-    return plate
-
+  def create_action_on_sample_slot(self, study, sample_slot, device, asetup, description):
+    return self.create_action_helper(self.skb.ActionOnSamplesContainerSlot, description,
+                                     study, device, asetup, self.acat, self.operator,
+                                     sample_slot)
 
   @debug_wrapper
-  def get_titer_plate(self, study, barcode, shape=None):
-    titer_plate = self.skb.get_titer_plate(barcode=barcode)
-    if titer_plate:
-      return titer_plate
-    if not shape:
-      raise ValueError('cannot find a plate with barcode <%s>' % barcode)
-    return self.create_titer_plate(study, barcode, shape)
-
-  @debug_wrapper
-  def get_dna_sample(self, label):
-    dna_sample = self.skb.get_dna_sample(label=label)
-    if not dna_sample:
-      raise ValueError('cannot find a dna sample with label <%s>' % label)
-    return dna_sample
-
+  def get_bio_sample(self, label):
+    bio_sample = self.skb.get_bio_sample(label=label)
+    if not bio_sample:
+      raise ValueError('cannot find a sample with label <%s>' % label)
+    return  bio_sample
 
 help_doc = """
 import new data_sample definitions into a virgil system. It will also

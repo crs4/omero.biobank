@@ -62,10 +62,6 @@ class Recorder(BioSampleRecorder):
                                      self.asetup, self.acat, self.operator,
                                      enrollment.individual)
 
-    self.create_blood_sample(e, label, barcode,
-                             initial_volume, current_volume, status)
-
-
   @debug_wrapper
   def create_blood_sample(self, enrollment, label, barcode,
                           initial_volume, current_volume, status):
@@ -74,7 +70,7 @@ class Recorder(BioSampleRecorder):
     #--
     sample = self.skb.BloodSample()
     sample.action, sample.outcome   = action, self.outcome_map['OK']
-    sample.labLabel = label
+    sample.label = label
     sample.barcode  = barcode
     sample.initialVolume = initial_volume
     sample.currentVolume = current_volume
@@ -98,13 +94,15 @@ class Recorder(BioSampleRecorder):
 
       self.create_blood_sample(e, label, barcode,
                                initial_volume, current_volume, status)
+      logger.info('saving record %s for individual (%s, %s)' %  (label, study.label, i_label))
+
     except BadRecord, msg:
       logger.warn('ignoring record %s: %s' % (r, msg))
       return
     except KeyError, e:
       logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
-    except Error, e:
+    except Exception, e:
       logger.warn('ignoring record %s because of (%s)' % (r, e))
       return
 

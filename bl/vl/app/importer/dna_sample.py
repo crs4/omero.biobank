@@ -72,7 +72,7 @@ class Recorder(BioSampleRecorder):
     #--
     sample = self.skb.DNASample()
     sample.action, sample.outcome   = action, self.outcome_map['OK']
-    sample.labLabel = label
+    sample.label = label
     sample.barcode  = barcode
     sample.initialVolume = initial_volume
     sample.currentVolume = current_volume
@@ -81,7 +81,7 @@ class Recorder(BioSampleRecorder):
     sample.qp230260 = qp230260
     sample.qp230280 = qp230280
 
-    logger.debug('\tsaving dna_sample(>%s<,>%s<)' % (sample.labLabel,
+    logger.debug('\tsaving dna_sample(>%s<,>%s<)' % (sample.label,
                                                      sample.barcode))
     return self.skb.save(sample)
 
