@@ -238,8 +238,9 @@ class SKBObjectCreator(unittest.TestCase):
              'barcode'  : 'sc-barcode-%s' % time.time(),
              'virtualContainer' : False,
              'slots' : 96}
-
-    result = result if result is not None else self.skb.SamplesContainer(slots=sconf['slots'])
+    result = result if result is not None \
+                    else self.skb.SamplesContainer(slots=sconf['slots'],
+                                                   barcode=sconf['barcode'])
     conf, container = self.create_result(result=result)
     sconf['slots'] = result.slots
     self.configure_object(container, sconf)

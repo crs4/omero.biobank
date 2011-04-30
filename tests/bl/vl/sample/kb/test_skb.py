@@ -221,8 +221,11 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
     #-
     conf, plate_well = self.create_plate_well(sample=dna_sample)
     plate_well = self.skb.save(plate_well)
-    self.check_object(plate_well, conf, self.skb.PlateWell)
     self.kill_list.append(plate_well)
+    self.check_object(plate_well, conf, self.skb.PlateWell)
+    pw = self.skb.get_well_of_plate(plate=conf['container'],
+                                    row=conf['row'], column=conf['column'])
+    self.assertTrue(not pw is None)
 
   def test_plate_well(self):
     conf, plate_well = self.create_plate_well()

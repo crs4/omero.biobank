@@ -138,6 +138,17 @@ class Proxy(ProxyIndexed):
     logger.debug('get_wells_of_plate results: %s' % result)
     return [PlateWell(r) for r in result]
 
+  def get_well_of_plate(self, plate, row, column):
+    slot_position = (plate.columns * row) + column
+    query = """select w
+               from PlateWell w join w.container as c
+               where c.vid = :c_id and w.slotPosition = :slot_position
+               """
+    pars = self.ome_query_params({'c_id' : self.ome_wrap(plate.id),
+                                  'slot_position' : self.ome_wrap(slot_position)})
+    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
+    return None if result is None else PlateWell(result)
+
   def get_data_collection_items(self, data_collection):
     query = 'select dci from DataCollectionItem dci join dci.dataSet as c where c.vid = :c_id'
     pars = self.ome_query_params({'c_id' : self.ome_wrap(data_collection.id)})

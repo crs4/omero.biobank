@@ -1,5 +1,8 @@
 2011-04-30    <zag@manzanillo>
 
+	* bl/vl/sample/kb/drivers/omero/samples_container.py (TiterPlate):
+	moved barcode, label and virtualContainer handling to superclass
+
 	* tests/bl/vl/individual/kb/test_ikb.py (TestIKB.test_enrollment): in phase ...
 
 	* bl/vl/individual/kb/drivers/omero/individual.py (Individual): in phase ...

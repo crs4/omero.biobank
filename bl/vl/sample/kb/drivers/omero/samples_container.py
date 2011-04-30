@@ -20,21 +20,26 @@ class SamplesContainer(Result, kb.SamplesContainer):
 
   OME_TABLE = "SamplesContainer"
 
-  def __setup__(self, ome_obj, slots, **kw):
-    if slots is None:
-      raise ValueError('SamplesContainer slots cannot be None')
+  def __setup__(self, ome_obj, slots, barcode, virtual_container, **kw):
+    if slots is None or barcode is None:
+      raise ValueError('SamplesContainer slots and barcode cannot be None')
     # FIXME
     assert slots > 0
     ome_obj.slots = ort.rint(slots)
+    ome_obj.barcode = ort.rstring(barcode)
+    ome_obj.virtualContainer = ort.rbool(virtual_container)
+    if kw.has_key('label'):
+      ome_obj.label = ort.rstring(kw['label'])
     super(SamplesContainer, self).__setup__(ome_obj, **kw)
 
-  def __init__(self, from_=None, slots=None, **kw):
+  def __init__(self, from_=None, slots=None,
+               barcode=None, virtual_container=False, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
       ome_obj = ome_type()
-      self.__setup__(ome_obj, slots, **kw)
+      self.__setup__(ome_obj, slots, barcode, virtual_container, **kw)
     super(SamplesContainer, self).__init__(ome_obj)
 
   def __handle_validation_errors__(self):
@@ -59,9 +64,10 @@ class TiterPlate(SamplesContainer, kb.TiterPlate):
     assert rows > 0 and columns > 0
     ome_obj.rows    = ort.rint(rows)
     ome_obj.columns = ort.rint(columns)
-    ome_obj.barcode = ort.rstring(barcode)
-    ome_obj.virtualContainer = ort.rbool(virtual_container)
-    super(TiterPlate, self).__setup__(ome_obj, slots=(rows*columns), **kw)
+    super(TiterPlate, self).__setup__(ome_obj, slots=(rows*columns),
+                                      barcode=barcode,
+                                      virtual_container=virtual_container,
+                                      **kw)
 
   def __init__(self, from_=None, rows=None, columns=None,
                barcode=None,

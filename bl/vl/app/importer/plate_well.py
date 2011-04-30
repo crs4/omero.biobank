@@ -96,7 +96,11 @@ class Recorder(Core):
       study = self.default_study if self.default_study \
               else self.known_studies.setdefault(i_study,
                                                  self.get_study_by_label(i_study))
-      plate = self.get_titer_plate(label=plate_label)
+      plate = self.get_titer_plate(study=study, label=plate_label)
+      pw = self.skb.get_plate_well(plate=plate, row=row, column=column)
+      if pw:
+        logger.info('Not loading PlateWell[%s]. Is already in KB.' % (i_study, label))
+        return
       dna_sample = self.get_dna_sample(label=dna_label)
       if self.update_volume:
         current_volume = dna_sample.current_volume
@@ -152,7 +156,8 @@ class Recorder(Core):
 
   @debug_wrapper
   def get_titer_plate(self, study, label):
-    titer_plate = self.skb.get_titer_plate(barcode=barcode)
+    # currently study is ignored.
+    titer_plate = self.skb.get_titer_plate(label=label)
     if not titer_plate:
       raise ValueError('cannot find a plate with label <%s>' % label)
     return titer_plate
