@@ -16,7 +16,7 @@ class Individual(OmeroWrapper, kb.Individual):
     ome_obj.vid = ort.rstring(vlu.make_vid())
     ome_obj.gender = gender
 
-  def __init__(self, from_=None, gender=None):
+  def __init__(self, from_=None, gender=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
@@ -25,7 +25,7 @@ class Individual(OmeroWrapper, kb.Individual):
         raise ValueError('Individual gender cannot be None')
       ome_obj = ome_type()
       self.__setup__(ome_obj, gender)
-    super(Individual, self).__init__(ome_obj)
+    super(Individual, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.gender is None:

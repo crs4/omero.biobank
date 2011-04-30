@@ -154,13 +154,16 @@ class ProxyCore(object):
     try:
       result = self.ome_operation("getUpdateService", "saveAndReturnObject",
                                   obj.ome_obj)
+      # FIXME: this is baroque, does it really help?
       result = self.ome_operation("getQueryService", "get",
                                   obj.OME_TABLE, result.id._val)
     except omero.ValidationException, e:
       logger.error('omero.ValidationException: %s' % e.message)
       logger.error('omero.ValidationException object: %s' % type(obj))
       obj.__handle_validation_errors__()
-    return obj.__class__(result)
+    result = obj.__class__(result)
+    result.__set_proxy__(self)
+    return result
 
   @debug_boundary
   def delete(self, kb_obj):

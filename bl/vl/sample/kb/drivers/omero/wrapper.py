@@ -15,13 +15,28 @@ class OmeroWrapper(object):
   def get_ome_table(klass):
     return klass.OME_TABLE
 
-  def __init__(self, ome_obj):
+  def __init__(self, ome_obj, **kw):
+    self.__set_proxy__(kw.get('proxy', None))
     super(OmeroWrapper, self).__setattr__("ome_obj", ome_obj)
+
+  def __set_proxy__(self, proxy):
+    super(OmeroWrapper, self).__setattr__("proxy", proxy)
+
+  def __get_proxy__(self):
+    return super(OmeroWrapper, self).__getattribute__("proxy")
+
+  def __get_if_needed__(self, name):
+    proxy = self.__get_proxy__()
+    if proxy and not self.ome_obj.loaded:
+      o = proxy.ome_operation("getQueryService", "get", self.OME_TABLE,
+                              self.ome_obj.id._val)
+      super(OmeroWrapper, self).__setattr__("ome_obj", o)
 
   def __handle_validation_errors__(self):
     raise NotImplementedError("OmeroWrapper cannot handle validation errors")
 
   def __getattr__(self, name):
+    self.__get_if_needed__(name)
     return ort.unwrap(getattr(self.ome_obj, name))
 
   # WARNING: the 'wrap' function performs only basic type

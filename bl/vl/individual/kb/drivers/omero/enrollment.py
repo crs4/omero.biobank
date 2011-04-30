@@ -23,7 +23,7 @@ class Enrollment(OmeroWrapper, kb.Enrollment):
     ome_obj.stCodeUK = vluo.make_unique_key(study.id, study_code)
     ome_obj.stIndUK =  vluo.make_unique_key(study.id, individual.id)
 
-  def __init__(self, from_=None, study=None, individual=None, study_code=None):
+  def __init__(self, from_=None, study=None, individual=None, study_code=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
@@ -34,7 +34,7 @@ class Enrollment(OmeroWrapper, kb.Enrollment):
       assert isinstance(study, Study) and isinstance(individual, Individual)
       ome_obj = ome_type()
       self.__setup__(ome_obj, study, individual, study_code)
-    super(Enrollment, self).__init__(ome_obj)
+    super(Enrollment, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.individual is None:
@@ -59,9 +59,9 @@ class Enrollment(OmeroWrapper, kb.Enrollment):
 
   def __getattr__(self, name):
     if name == 'individual':
-      return Individual(self.ome_obj.individual)
+      return Individual(self.ome_obj.individual, proxy=self.proxy)
     elif name == 'study':
-      return Study(self.ome_obj.study)
+      return Study(self.ome_obj.study, proxy=self.proxy)
     else:
       return super(Enrollment, self).__getattr__(name)
 

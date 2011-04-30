@@ -1,3 +1,20 @@
+2011-04-30    <zag@manzanillo>
+
+	* tests/bl/vl/individual/kb/test_ikb.py (TestIKB.test_enrollment): in phase ...
+
+	* bl/vl/individual/kb/drivers/omero/individual.py (Individual): in phase ...
+
+	* bl/vl/sample/kb/drivers/omero/study.py (Study): in phase with ...
+
+	* bl/vl/individual/kb/drivers/omero/enrollment.py 
+	(Enrollment): in phase with new convoluted...
+
+	* bl/vl/sample/kb/drivers/omero/proxy_core.py (ProxyCore.save):
+	Added support for the convoluted dynamic object fetching mechanism.
+
+	* bl/vl/sample/kb/drivers/omero/wrapper.py (OmeroWrapper): Added a
+	convoluted mechanism to allow dynamic object fetching.
+
 2011-04-28    <zag@manzanillo>
 
 	* bl/vl/app/importer/plate_well.py (Recorder): same as below...

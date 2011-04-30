@@ -11,7 +11,7 @@ class Study(OmeroWrapper, kb.Study):
 
   OME_TABLE = "Study"
 
-  def __init__(self, from_=None, label=None):
+  def __init__(self, from_=None, label=None, **kw):
     ome_type = self.get_ome_type()
     if not (from_ is None):
       ome_obj = from_
@@ -21,7 +21,7 @@ class Study(OmeroWrapper, kb.Study):
       if label is not None:
         ome_obj.label = ort.rstring(label)
       ome_obj.startDate = vluo.time2rtime(time.time())
-    super(Study, self).__init__(ome_obj)
+    super(Study, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.label is None:

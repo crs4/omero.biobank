@@ -37,7 +37,7 @@ class Proxy(ProxyIndexed):
 
   def get_enrollment(self, study_label, ind_label):
     query = """select e
-               from Enrollment e join e.study as s
+               from Enrollment e join fetch e.study as s join fetch e.individual as i
                where e.studyCode = :ilabel and s.label = :slabel
                """
     pars = self.ome_query_params({'ilabel' : self.ome_wrap(ind_label),
