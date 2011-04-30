@@ -97,9 +97,9 @@ class Recorder(Core):
               else self.known_studies.setdefault(i_study,
                                                  self.get_study_by_label(i_study))
       plate = self.get_titer_plate(study=study, label=plate_label)
-      pw = self.skb.get_plate_well(plate=plate, row=row, column=column)
+      pw = self.skb.get_well_of_plate(plate=plate, row=row, column=column)
       if pw:
-        logger.info('Not loading PlateWell[%s]. Is already in KB.' % (i_study, label))
+        logger.info('Not loading PlateWell[%s, %s]. Is already in KB.' % (i_study, label))
         return
       dna_sample = self.get_dna_sample(label=dna_label)
       if self.update_volume:
