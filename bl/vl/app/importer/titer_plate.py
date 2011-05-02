@@ -107,15 +107,15 @@ class Recorder(Core):
     except KeyError, e:
       self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
-    # except ValueError, e:
-    #   logger.warn('ignoring record %s since %s' % (r, e))
-    #   return
-    # except (KBError, NotImplementedError), e:
-    #   logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
-    #   return
-    # except Exception, e:
-    #   logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
-    #   sys.exit(1)
+    except ValueError, e:
+      logger.warn('ignoring record %s since %s' % (r, e))
+      return
+    except (KBError, NotImplementedError), e:
+      logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
+      return
+    except Exception, e:
+      logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
+      sys.exit(1)
 
 
   @debug_wrapper

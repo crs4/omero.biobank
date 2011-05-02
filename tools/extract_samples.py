@@ -249,6 +249,19 @@ def patch_missing_plate_info(x):
                                                       x['Well_Pula']))
     plate_counter += 1
 
+def is_worth_analyzing(x):
+  has_data = False
+  for k in x.keys():
+    if k.startswith('Affy_') and x[k] != 'x':
+      has_data = True
+    elif k.startswith('Illumina_') and x[k] != 'x':
+      has_data = True
+    elif k.startswith('Solexa_') and x[k] != 'x':
+      has_data = True
+    elif k.startswith('Sanger_') and x[k] != 'x':
+      has_data = True
+  return has_data
+
 def normalizer(args, x):
   if x.has_key(None):
     del x[None]
@@ -286,6 +299,8 @@ def main():
   data_samples = []
   for x in f:
     x = normalizer(args, x)
+    if not is_worth_analyzing(x):
+      continue
     y = individual_conversion_rule(args.study, x)
     bss = blood_sample_conversion_rule(args.study, y, x)
     blood_samples.extend(bss)
