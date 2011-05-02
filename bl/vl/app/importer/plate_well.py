@@ -86,6 +86,8 @@ class Recorder(Core):
 
   @debug_wrapper
   def record(self, r):
+    self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
+    self.record_counter += 1
     logger.debug('\tworking on %s' % r)
     try:
       i_study, label, plate_label, dna_label = \
@@ -99,7 +101,7 @@ class Recorder(Core):
       plate = self.get_titer_plate(study=study, label=plate_label)
       pw = self.skb.get_well_of_plate(plate=plate, row=row, column=column)
       if pw:
-        logger.info('Not loading PlateWell[%s, %s]. Is already in KB.' % (i_study, label))
+        logger.info('not loading PlateWell[%s, %s]. Is already in KB.' % (i_study, label))
         return
       dna_sample = self.get_dna_sample(label=dna_label)
       if self.update_volume:
@@ -112,14 +114,21 @@ class Recorder(Core):
                                label=label,
                                row=row, column=column,
                                volume=delta_volume, description=json.dumps(r))
+        self.logger.info('saved plate_well (%s,%s),' % (study.label, label))
+        old_current_volume = dna_sample.current_volume
         current_volume -= delta_volume
         dna_sample.current_volume = current_volume
         self.skb.save(dna_sample)
+        self.logger.info('updated volume of dna_sample %s from %f to %f' % (dna_sample.label,
+                                                                            old_current_volume,
+                                                                            current_volume))
+
       else:
         self.create_plate_well(study=study,
                                container=plate, sample=dna_sample,
                                label=label, row=row, column=column,
                                volume=delta_volume, description=json.dumps(r))
+        self.logger.info('saved plate_well (%s,%s),' % (study.label, label))
     except KeyError, e:
       logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return

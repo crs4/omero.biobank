@@ -88,6 +88,8 @@ class Recorder(Core):
 
   @debug_wrapper
   def record(self, r):
+    self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
+    self.record_counter += 1
     logger.debug('\tworking on %s' % r)
     try:
       i_study, label, barcode = r['study'], r['label'], r['barcode']
@@ -103,7 +105,7 @@ class Recorder(Core):
       #-
       plate = self.get_titer_plate(study, label, barcode, shape, maker, model)
     except KeyError, e:
-      logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
+      self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
     # except ValueError, e:
     #   logger.warn('ignoring record %s since %s' % (r, e))
@@ -128,13 +130,14 @@ class Recorder(Core):
     plate = self.skb.TiterPlate(label=label, barcode=barcode, rows=rows, columns=columns)
     plate.action = self.create_plate_creation_action(study, description=description)
     plate = self.skb.save(plate)
+    self.logger.info('created a TiterPlate record (%s,%s)' % (study.label, plate.label))
     return plate
 
   @debug_wrapper
   def get_titer_plate(self, study, label, barcode, shape, maker, model):
     plate = self.skb.get_titer_plate(barcode=barcode)
     if plate:
-      logger.info('using (%s,%s) already in kb' % (plate.label, plate.barcode))
+      self.logger.info('using (%s,%s) already in kb' % (plate.label, plate.barcode))
       if not plate.label == label:
         msg = 'inconsistent label (>%s< != >%s<) for %s' % (plate.label, label, plate.barcode)
         logger.error(msg)

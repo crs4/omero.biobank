@@ -46,6 +46,7 @@ class Core(object):
     self.dtype_map   = self.skb.get_data_type_table()
     self.gender_map  = self.ikb.get_gender_table()
     self.logger = logger
+    self.record_counter = 0
 
   @debug_wrapper
   def get_device(self, label, maker, model, release):
@@ -90,6 +91,6 @@ class Core(object):
       return self.skb.save(action)
     except KBError, e:
       msg = 'got an error: %s\n\taction: %s\n\tome_obj: %s' % (e, action, action.ome_obj)
-      logger.error(msg)
+      self.logger.error(msg)
       raise KBError(msg)
 

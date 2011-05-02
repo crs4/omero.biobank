@@ -75,26 +75,28 @@ class Recorder(BioSampleRecorder):
     sample.initialVolume = initial_volume
     sample.currentVolume = current_volume
     sample.status = self.sstatus_map[status.upper()]
-    return self.skb.save(sample)
-
+    sample = self.skb.save(sample)
+    return sample
 
   @debug_wrapper
   def record(self, r):
+    self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
+    self.record_counter += 1
     logger.debug('\tworking on %s' % r)
     klass = self.skb.DNASample
     try:
       study, label, barcode, initial_volume, current_volume, status = \
              self.record_helper(klass.__name__, r)
       i_label = r['individual_label']
-      e = self.ikb.get_enrollment(study.label, i_label)
+      e = self.ikb.get_enrollment(study_label=study.label, ind_label=i_label)
       if not e:
-        logger.warn('ignoring record %s because of unkown enrollment reference (%s,%s)' % \
-                    (r, study.label, i_label))
+        self.logger.warn('ignoring record %s because of unkown enrollment reference (%s,%s)' % \
+                         (r, study.label, i_label))
         return
 
-      self.create_blood_sample(e, label, barcode,
-                               initial_volume, current_volume, status)
-      logger.info('saving record %s for individual (%s, %s)' %  (label, study.label, i_label))
+      sample = self.create_blood_sample(e, label, barcode,
+                                        initial_volume, current_volume, status)
+      self.logger.info('saving record (%s, %s)' %  (study.name, sample.label))
 
     except BadRecord, msg:
       logger.warn('ignoring record %s: %s' % (r, msg))
@@ -124,9 +126,11 @@ def import_blood_sample_implementation(args):
                       initial_volume=args.initial_volume, current_volume=args.current_volume,
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)
+  logger.info('start processing file %s' % args.ifile.name)
   f = csv.DictReader(args.ifile, delimiter='\t')
   for r in f:
     recorder.record(r)
+  logger.info('done processing file %s' % args.ifile.name)
 
 help_doc = """
 import new blood sample definitions into a virgil system and attach

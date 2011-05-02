@@ -107,13 +107,9 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     e = self.ikb.save(e)
     self.kill_list.append(e)
     self.check_object(e, conf, self.ikb.Enrollment)
-    print 'e:', e.ome_obj
-    print 'e.study:', e.study.ome_obj
-    print 'e.individual:', e.individual.ome_obj
     e1 = self.ikb.get_enrollment(study_label=(e.study).label,
                                  ind_label=e.studyCode)
     self.assertTrue(not e1 is None)
-    print 'e1.ome_obj:', e1.ome_obj
 
   def test_action_on_individual(self):
     conf, i = self.create_individual('MALE')

@@ -83,11 +83,16 @@ class Recorder(BioSampleRecorder):
 
     logger.debug('\tsaving dna_sample(>%s<,>%s<)' % (sample.label,
                                                      sample.barcode))
-    return self.skb.save(sample)
 
+    sample = self.skb.save(sample)
+    self.logger.info('created a DNASample record (%s, %s) extracted from BloodSample with label %s' %
+                     (study.label, sample.label, blood_sample.label))
+    return sample
 
   @debug_wrapper
   def record(self, r):
+    self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
+    self.record_counter += 1
     logger.debug('\tworking on %s' % r)
     klass = self.skb.DNASample
     try:
@@ -101,25 +106,27 @@ class Recorder(BioSampleRecorder):
 
       blood_sample = self.skb.get_blood_sample(label=blood_sample_label)
       if not blood_sample:
-        logger.warn('ignoring record %s because there is not a blood_sample with that label' % r)
+        self.logger.warn('ignoring record (%s, %s) because there is not a blood_sample with label %s' %
+                         (r['study'], r['label'], r['blood_sample_label']))
         return
 
       self.create_dna_sample(study, blood_sample, label, barcode,
                              initial_volume, current_volume, status,
                              nanodrop, qp230260, qp230280)
+
     except BadRecord, msg:
-      logger.warn('ignoring record %s: %s' % (r, msg))
+      self.logger.warn('ignoring record %s: %s' % (r, msg))
     except KeyError, e:
-      logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
+      self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
     except ValueError, e:
-      logger.warn('ignoring record %s because of conversion errors(%s)' % (r, e))
+      self.logger.warn('ignoring record %s because of conversion errors(%s)' % (r, e))
       return
     except (KBError, NotImplementedError), e:
-      logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
+      self.logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
       return
-    except Error, e:
-      logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
+    except Exception, e:
+      self.logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
       sys.exit(1)
 
 help_doc = """
@@ -144,9 +151,11 @@ def import_dna_sample_implementation(args):
                       initial_volume=args.initial_volume, current_volume=args.current_volume,
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)
+  logger.info('start processing file %s' % args.ifile.name)
   f = csv.DictReader(args.ifile, delimiter='\t')
   for r in f:
     recorder.record(r)
+  logger.info('done processing file %s' % args.ifile.name)
 
 def do_register(registration_list):
   registration_list.append(('dna_sample', help_doc,
