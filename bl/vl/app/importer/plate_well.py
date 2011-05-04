@@ -83,10 +83,38 @@ class Recorder(Core):
     #
     self.input_rows = {}
     self.counter = 0
+    #--
+    self.logger.info('start prefetching DNASample(s)')
+    dna_samples = self.skb.get_bio_samples(self.skb.DNASample)
+    self.dna_samples = {}
+    for ds in dna_samples:
+      self.dna_samples[ds.label] = ds
+    self.logger.info('done prefetching DNASample(s)')
+    self.logger.info('there are %d DNASample(s) in the kb' % len(self.dna_samples))
+    #-
+    self.logger.info('start prefetching TiterPlate(s)')
+    # FIXME this method has a funny name
+    tps = self.skb.get_bio_samples(self.skb.TiterPlate)
+    self.titer_plates = {}
+    for tp in tps:
+      self.titer_plates[tp.label] = tp
+    self.logger.info('done prefetching TiterPlate(s)')
+    self.logger.info('there are %d TiterPlate(s) in the kb' % len(self.titer_plates))
+    #-
+    self.logger.info('start prefetching PlateWell(s)')
+    # FIXME this method has a funny name
+    pws = self.skb.get_bio_samples(self.skb.PlateWell)
+    self.plate_wells = {}
+    for pw in pws:
+      k = (pw.container.label, pw.slotPosition)
+      self.plate_wells[k] = pw
+    self.logger.info('done prefetching PlateWell(s)')
+    self.logger.info('there are %d PlateWell(s) in the kb' % len(self.plate_wells))
+
 
   @debug_wrapper
   def record(self, r):
-    self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
+    record_id = self.record_counter
     self.record_counter += 1
     self.logger.debug('\tworking on %s' % r)
     try:
@@ -95,15 +123,33 @@ class Recorder(Core):
       row, column  = map(int, [r['row'], r['column']])
       delta_volume = self.volume if self.volume else float(r['volume'])
       #-
+      self.logger.info('processing record[%d] (%s,%s),' % (record_id,
+                                                           i_study, label))
+      #-
+      if not self.titer_plates.has_key(plate_label):
+        self.logger.error('cannot load record[%d]: %s is not a known TiterPlate' %
+                          record_id, plate_label)
+        return
+      plate = self.titer_plates[plate_label]
+      #-
+      if not self.dna_samples.has_key(dna_label):
+        self.logger.error('cannot load record[%d]: %s is not a known DNASample' %
+                          record_id, dna_label)
+        return
+      dna_sample = self.dna_samples[dna_label]
+      #-
+      slot = plate.columns * row + column
+      if self.plate_wells.has_key((plate_label, slot)):
+        self.logger.warn('will not load record %d, is already in the kb' %
+                         record_id)
+        return
       study = self.default_study if self.default_study \
               else self.known_studies.setdefault(i_study,
                                                  self.get_study_by_label(i_study))
-      plate = self.get_titer_plate(study=study, label=plate_label)
       pw = self.skb.get_well_of_plate(plate=plate, row=row, column=column)
       if pw:
-        self.logger.info('not loading PlateWell[%s, %s]. Is already in KB.' % (i_study, label))
+        self.logger.warn('not loading PlateWell[%s, %s]. Is already in KB.' % (i_study, label))
         return
-      dna_sample = self.get_dna_sample(label=dna_label)
       if self.update_volume:
         current_volume = dna_sample.current_volume
         if current_volume < delta_volume:
@@ -132,15 +178,15 @@ class Recorder(Core):
     except KeyError, e:
       self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
-    # except ValueError, e:
-    #   logger.warn('ignoring record %s since %s' % (r, e))
-    #   return
-    # except (KBError, NotImplementedError), e:
-    #   logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
-    #   return
-    # except Exception, e:
-    #   logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
-    #   sys.exit(1)
+    except ValueError, e:
+      logger.warn('ignoring record %s since %s' % (r, e))
+      return
+    except (KBError, NotImplementedError), e:
+      logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
+      return
+    except Exception, e:
+      logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
+      sys.exit(1)
 
   @debug_wrapper
   def create_plate_well(self, study, container, sample,
