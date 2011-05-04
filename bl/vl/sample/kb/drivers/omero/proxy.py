@@ -166,6 +166,11 @@ class Proxy(ProxyIndexed):
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else aklass(result)
 
+  def get_bio_samples(self, aklass):
+    query = 'select s from %s s' % aklass.OME_TABLE
+    result = self.ome_operation("getQueryService", "findAllByQuery", query, None)
+    return [aklass(r) for r in result]
+
   def get_blood_sample(self, label=None, barcode=None):
     """
     Get a BloodSample object stored in VL.

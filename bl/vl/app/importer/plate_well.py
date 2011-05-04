@@ -27,7 +27,7 @@ import time, sys
 #FIXME this should be factored out....
 
 import logging, time
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 counter = 0
 def debug_wrapper(f):
   def debug_wrapper_wrapper(*args, **kv):
@@ -61,7 +61,7 @@ class Recorder(Core):
       s = self.skb.get_study_by_label(study_label)
       if not s:
         raise ValueError('No known study with label %s' % study_label)
-      logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
+      self.logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
       self.default_study = s
     self.known_studies = {}
     self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
@@ -88,7 +88,7 @@ class Recorder(Core):
   def record(self, r):
     self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
     self.record_counter += 1
-    logger.debug('\tworking on %s' % r)
+    self.logger.debug('\tworking on %s' % r)
     try:
       i_study, label, plate_label, dna_label = \
                r['study'], r['label'], r['plate_label'], r['dna_label']
@@ -101,7 +101,7 @@ class Recorder(Core):
       plate = self.get_titer_plate(study=study, label=plate_label)
       pw = self.skb.get_well_of_plate(plate=plate, row=row, column=column)
       if pw:
-        logger.info('not loading PlateWell[%s, %s]. Is already in KB.' % (i_study, label))
+        self.logger.info('not loading PlateWell[%s, %s]. Is already in KB.' % (i_study, label))
         return
       dna_sample = self.get_dna_sample(label=dna_label)
       if self.update_volume:
@@ -130,7 +130,7 @@ class Recorder(Core):
                                volume=delta_volume, description=json.dumps(r))
         self.logger.info('saved plate_well (%s,%s),' % (study.label, label))
     except KeyError, e:
-      logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
+      self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
     # except ValueError, e:
     #   logger.warn('ignoring record %s since %s' % (r, e))

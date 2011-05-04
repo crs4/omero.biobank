@@ -110,6 +110,9 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     e1 = self.ikb.get_enrollment(study_label=(e.study).label,
                                  ind_label=e.studyCode)
     self.assertTrue(not e1 is None)
+    es = self.ikb.get_enrolled(e.study)
+    self.assertEqual(len(es), 1)
+    self.assertEqual(es[0].id, e.id)
 
   def test_action_on_individual(self):
     conf, i = self.create_individual('MALE')
@@ -161,11 +164,11 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
 
 def suite():
   suite = unittest.TestSuite()
-  # suite.addTest(TestIKB('test_orphan'))
-  # suite.addTest(TestIKB('test_with_parents'))
+  suite.addTest(TestIKB('test_orphan'))
+  suite.addTest(TestIKB('test_with_parents'))
   suite.addTest(TestIKB('test_enrollment'))
-  # suite.addTest(TestIKB('test_action_on_individual'))
-  # suite.addTest(TestIKB('test_get_individual_chain'))
+  suite.addTest(TestIKB('test_action_on_individual'))
+  suite.addTest(TestIKB('test_get_individual_chain'))
   return suite
 
 if __name__ == '__main__':

@@ -27,7 +27,7 @@ import csv
 #FIXME this should be factored out....
 
 import logging, time
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 counter = 0
 def debug_wrapper(f):
   def debug_wrapper_wrapper(*args, **kv):
@@ -86,6 +86,17 @@ class Recorder(Core):
     #
     self.input_rows = {}
     self.counter = 0
+    #--
+    self.known_enrollments = {}
+    if self.default_study:
+      self.logger.info('start pre-loading known enrolled individuala')
+      known_enrollments = self.ikb.get_enrolled(self.default_study)
+      for e in known_enrollments:
+        self.known_enrollments[e.studyCode] = e
+      self.logger.info('done pre-loading known enrolled individuals')
+      self.logger.info('there are %d enrolled individuals in study %s' % (len(self.known_enrollments),
+                                                                          self.default_study.label))
+    #--
 
   @debug_wrapper
   def create_import_action(self, study, description=''):
@@ -94,27 +105,34 @@ class Recorder(Core):
                                      self.asetup, self.acat, self.operator)
 
   @debug_wrapper
-  def retrieve(self, identifier):
+  def retrieve_enrollment(self, identifier):
     study_label, label = identifier
-    study = self.default_study if self.default_study \
-            else self.known_studies.setdefault(study_label,
-                                               self.get_study_by_label(study_label))
-    e = self.ikb.get_enrollment(study_label=study.label, ind_label=label)
-    if e:
-      logger.info('using (%s,%s) already in kb' % (study.label, label))
+    if self.default_study and self.known_enrollments.has_key(label):
+      study = self.default_study
+      e = self.known_enrollments[label]
+    else:
+      study = self.default_study if self.default_study \
+              else self.known_studies.setdefault(study_label,
+                                                 self.get_study_by_label(study_label))
+      e = self.ikb.get_enrollment(study_label=study.label, ind_label=label)
+    return study, e
+
+
+  @debug_wrapper
+  def retrieve(self, identifier):
+    study, e = self.retrieve_enrollment(identifier)
     return e.individual if e else None
 
   @debug_wrapper
   def record(self, identifier, gender, father, mother):
-    logger.debug('\tworking on  %s %s %s %s' % (identifier, gender, father, mother))
-    logger.info('importing %s %s %s %s' % (identifier, gender, father, mother))
-    study_label, label = identifier
-    study = self.default_study if self.default_study \
-            else self.known_studies.setdefault(study_label,
-                                               self.get_study_by_label(study_label))
-    e = self.ikb.get_enrollment(study_label=study.label, ind_label=label)
+    self.logger.info('importing %s %s %s %s' % (identifier, gender,
+                                                father.id if father else None,
+                                                mother.id if mother else None))
+    study, e = self.retrieve_enrollment(identifier)
     if not e:
-      logger.info('creating %s %s %s %s' % (identifier, gender, father, mother))
+      self.logger.info('creating %s %s %s %s' % (identifier, gender,
+                                                 father.id if father else None,
+                                                 mother.id if mother else None))
       action = self.create_import_action(study,
                                          description=self.input_rows[identifier])
       i = self.ikb.Individual(gender=self.gender_map[gender.upper()])
@@ -131,7 +149,7 @@ class Recorder(Core):
         i.mother = mother
       i = self.ikb.save(i)
       e = self.ikb.Enrollment(study=study, individual=i,
-                              study_code=label)
+                              study_code=identifier[1])
       e = self.ikb.save(e)
     return e.individual
 

@@ -39,7 +39,7 @@ import time, sys
 #FIXME this should be factored out....
 
 import logging, time
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 counter = 0
 def debug_wrapper(f):
   def debug_wrapper_wrapper(*args, **kv):
@@ -76,7 +76,7 @@ class Recorder(Core):
       s = self.skb.get_study_by_label(study_label)
       if not s:
         raise ValueError('No known study with label %s' % study_label)
-      logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
+      self.logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
       self.default_study = s
     #-------------------------
     self.known_studies = {}
@@ -122,7 +122,7 @@ class Recorder(Core):
 
   @debug_wrapper
   def record(self, r):
-    logger.debug('\tworking on %s' % r)
+    self.logger.debug('\tworking on %s' % r)
     try:
       study = self.get_study_by_label(r['study'])
       #-
@@ -146,7 +146,7 @@ class Recorder(Core):
         raise ValueError('%s, %s not supported' % (maker, model))
 
     except KeyError, e:
-      logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
+      self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
     # except ValueError, e:
     #   logger.warn('ignoring record %s since %s' % (r, e))

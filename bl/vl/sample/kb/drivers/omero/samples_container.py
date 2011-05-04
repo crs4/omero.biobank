@@ -11,10 +11,6 @@ from action  import Action
 from study   import Study
 from result  import Result
 
-import logging
-
-logger = logging.getLogger()
-
 #-----------------------------------------------------------
 class SamplesContainer(Result, kb.SamplesContainer):
 

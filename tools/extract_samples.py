@@ -58,6 +58,7 @@ def blood_sample_conversion_rule(study, y, x):
 
 def dna_sample_conversion_rule(study, s, x):
   global barcode_counter
+  print barcode_counter
   y= {'study' : study, 'label' : '%s-dna-%s' % (study, x['Sample_Name']),
       'barcode' : '%s-%06d' % (study, barcode_counter),
       'blood_sample_label' : s['label'],
@@ -72,6 +73,7 @@ def titer_plate_conversion_rule_helper(study, label):
   global barcode_counter
   y = {'study' : study, 'label' : label, 'barcode' : barcode_counter,
        'rows' : 32, 'columns' : 48, 'maker' : 'CRS4', 'model' : 'virtual'}
+  barcode_counter += 1
   return y
 
 known_plates = {}

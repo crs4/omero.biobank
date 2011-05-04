@@ -12,7 +12,7 @@ import csv, json, time
 #FIXME this should be factored out....
 
 import logging, time
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 counter = 0
 def debug_wrapper(f):
   def debug_wrapper_wrapper(*args, **kv):
@@ -41,7 +41,7 @@ class BioSampleRecorder(Core):
       s = self.skb.get_study_by_label(study_label)
       if not s:
         raise ValueError('No known study with label %s' % study_label)
-      logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
+      self.logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
       self.default_study = s
     self.initial_volume = initial_volume
     self.current_volume = current_volume
@@ -89,7 +89,7 @@ class BioSampleRecorder(Core):
     :param r: basic biosample information.
     :type r: a dict
     """
-    logger.debug('\tworking on %s' % r)
+    self.logger.debug('\tworking on %s' % r)
     try:
       i_study =  r['study']
       study = self.default_study if self.default_study \

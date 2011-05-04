@@ -1,3 +1,9 @@
+2011-05-03    <zag@manzanillo>
+
+	* bl/vl/app/importer/individual.py (Recorder.record): clean up.
+
+	* bl/vl/individual/kb/drivers/omero/proxy.py (Proxy.get_enrolled): Added.
+
 2011-04-30    <zag@manzanillo>
 
 	* bl/vl/sample/kb/drivers/omero/samples_container.py (TiterPlate):

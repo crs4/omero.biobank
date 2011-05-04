@@ -30,7 +30,7 @@ import csv, json
 #FIXME this should be factored out....
 
 import logging, time
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 counter = 0
 def debug_wrapper(f):
   def debug_wrapper_wrapper(*args, **kv):
@@ -54,6 +54,26 @@ class Recorder(BioSampleRecorder):
     super(Recorder, self).__init__('BloodSample',
                                    study_label, initial_volume, current_volume,
                                    host, user, passwd, keep_tokens, operator)
+    #--
+    self.known_enrollments = {}
+    if self.default_study:
+      self.logger.info('start pre-loading known enrolled individuala')
+      known_enrollments = self.ikb.get_enrolled(self.default_study)
+      for e in known_enrollments:
+        self.known_enrollments[e.studyCode] = e
+      self.logger.info('done pre-loading known enrolled individuals')
+      self.logger.info('there are %d enrolled individuals in study %s' % (len(self.known_enrollments),
+                                                                          self.default_study.label))
+    #--
+    self.logger.info('start prefetching BloodSample(s)')
+    blood_samples = self.skb.get_bio_samples(self.skb.BloodSample)
+    self.known_blood_samples = {}
+    for bs in blood_samples:
+      self.known_blood_samples[bs.label] = bs
+    self.logger.info('done prefetching BloodSample(s)')
+    self.logger.info('there are %d BloodSample(s) in the kb' % (len(self.known_blood_samples)))
+    #--
+
 
   @debug_wrapper
   def create_action(self, enrollment, description=''):
@@ -82,13 +102,19 @@ class Recorder(BioSampleRecorder):
   def record(self, r):
     self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
     self.record_counter += 1
-    logger.debug('\tworking on %s' % r)
-    klass = self.skb.DNASample
+    if self.known_blood_samples.has_key(r['label']):
+      self.logger.info('BloodSample %s is already in the kb' % r['label'])
+      return
+    #--
+    klass = self.skb.BloodSample
     try:
       study, label, barcode, initial_volume, current_volume, status = \
              self.record_helper(klass.__name__, r)
       i_label = r['individual_label']
-      e = self.ikb.get_enrollment(study_label=study.label, ind_label=i_label)
+      if self.default_study and self.known_enrollments.has_key(i_label):
+        e = self.known_enrollments[i_label]
+      else:
+        e = self.ikb.get_enrollment(study_label=study.label, ind_label=i_label)
       if not e:
         self.logger.warn('ignoring record %s because of unkown enrollment reference (%s,%s)' % \
                          (r, study.label, i_label))
@@ -96,16 +122,16 @@ class Recorder(BioSampleRecorder):
 
       sample = self.create_blood_sample(e, label, barcode,
                                         initial_volume, current_volume, status)
-      self.logger.info('saving record (%s, %s)' %  (study.name, sample.label))
+      self.logger.info('saving record (%s, %s)' %  (study.label, sample.label))
 
     except BadRecord, msg:
-      logger.warn('ignoring record %s: %s' % (r, msg))
+      self.logger.warn('ignoring record %s: %s' % (r, msg))
       return
     except KeyError, e:
-      logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
+      self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
     except Exception, e:
-      logger.warn('ignoring record %s because of (%s)' % (r, e))
+      self.logger.warn('ignoring record %s because of (%s)' % (r, e))
       return
 
 

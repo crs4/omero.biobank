@@ -45,6 +45,15 @@ class Proxy(ProxyIndexed):
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else Enrollment(result)
 
+  def get_enrolled(self, study):
+    query = """select e
+               from Enrollment e join fetch e.study as s
+               where s.label = :slabel
+               """
+    pars = self.ome_query_params({'slabel'  : self.ome_wrap(study.label)})
+    result = self.ome_operation("getQueryService", "findAllByQuery", query, pars)
+    return [Enrollment(r) for r in result]
+
   def get_blood_samples(self, individual):
     """
     blood_sample_vids = ikb.get_blood_samples(individual)

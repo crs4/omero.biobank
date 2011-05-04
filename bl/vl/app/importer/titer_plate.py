@@ -26,7 +26,7 @@ import time, sys
 #FIXME this should be factored out....
 
 import logging, time
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 counter = 0
 def debug_wrapper(f):
   def debug_wrapper_wrapper(*args, **kv):
@@ -63,7 +63,7 @@ class Recorder(Core):
       s = self.skb.get_study_by_label(study_label)
       if not s:
         raise ValueError('No known study with label %s' % study_label)
-      logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
+      self.logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
       self.default_study = s
     self.known_studies = {}
     self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
@@ -90,7 +90,7 @@ class Recorder(Core):
   def record(self, r):
     self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
     self.record_counter += 1
-    logger.debug('\tworking on %s' % r)
+    self.logger.debug('\tworking on %s' % r)
     try:
       i_study, label, barcode = r['study'], r['label'], r['barcode']
       shape = self.plate_shape if self.plate_shape else tuple(map(int, [r['rows'], r['columns']]))
@@ -108,13 +108,13 @@ class Recorder(Core):
       self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
     except ValueError, e:
-      logger.warn('ignoring record %s since %s' % (r, e))
+      self.logger.warn('ignoring record %s since %s' % (r, e))
       return
     except (KBError, NotImplementedError), e:
-      logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
+      self.logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
       return
     except Exception, e:
-      logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
+      self.logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
       sys.exit(1)
 
 
@@ -140,7 +140,7 @@ class Recorder(Core):
       self.logger.info('using (%s,%s) already in kb' % (plate.label, plate.barcode))
       if not plate.label == label:
         msg = 'inconsistent label (>%s< != >%s<) for %s' % (plate.label, label, plate.barcode)
-        logger.error(msg)
+        self.logger.error(msg)
         raise ValueError(msg)
     elif shape:
       plate = self.create_titer_plate(study, label, barcode, shape, maker, model)

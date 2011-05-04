@@ -31,7 +31,7 @@ import csv, json, sys
 #FIXME this should be factored out....
 
 import logging, time
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 counter = 0
 def debug_wrapper(f):
   def debug_wrapper_wrapper(*args, **kv):
@@ -55,6 +55,22 @@ class Recorder(BioSampleRecorder):
     super(Recorder, self).__init__('DNASample',
                                    study_label, initial_volume, current_volume,
                                    host, user, passwd, keep_tokens, operator)
+    #--
+    self.logger.info('start prefetching BloodSample(s)')
+    blood_samples = self.skb.get_bio_samples(self.skb.BloodSample)
+    self.blood_samples = {}
+    for bs in blood_samples:
+      self.blood_samples[bs.label] = bs
+    self.logger.info('done prefetching BloodSample(s)')
+    self.logger.info('there are %d BloodSample(s) in the kb' % len(self.blood_samples))
+    #--
+    self.logger.info('start prefetching DNASample(s)')
+    dna_samples = self.skb.get_bio_samples(self.skb.DNASample)
+    self.dna_samples = {}
+    for ds in dna_samples:
+      self.dna_samples[ds.label] = ds
+    self.logger.info('done prefetching DNASample(s)')
+    self.logger.info('there are %d DNASample(s) in the kb' % len(self.dna_samples))
 
   @debug_wrapper
   def create_action(self, study, blood_sample, description=''):
@@ -81,7 +97,7 @@ class Recorder(BioSampleRecorder):
     sample.qp230260 = qp230260
     sample.qp230280 = qp230280
 
-    logger.debug('\tsaving dna_sample(>%s<,>%s<)' % (sample.label,
+    self.logger.debug('\tsaving dna_sample(>%s<,>%s<)' % (sample.label,
                                                      sample.barcode))
 
     sample = self.skb.save(sample)
@@ -93,7 +109,12 @@ class Recorder(BioSampleRecorder):
   def record(self, r):
     self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
     self.record_counter += 1
-    logger.debug('\tworking on %s' % r)
+    self.logger.debug('\tworking on %s' % r)
+
+    if self.dna_samples.has_key(r['label']):
+      self.logger.warn('DNASample with same label %s in kb, ignoring this record' % r['label'])
+      return
+
     klass = self.skb.DNASample
     try:
       study, label, barcode, initial_volume, current_volume, status = \
@@ -104,7 +125,11 @@ class Recorder(BioSampleRecorder):
       qp230260 = float(qp230260)
       qp230280 = float(qp230280)
 
-      blood_sample = self.skb.get_blood_sample(label=blood_sample_label)
+      if self.blood_samples.has_key(blood_sample_label):
+        blood_sample = self.blood_samples[blood_sample_label]
+        self.logger.info('using prefetched BloodSample[%s]' % blood_sample_label)
+      else:
+        blood_sample = self.skb.get_blood_sample(label=blood_sample_label)
       if not blood_sample:
         self.logger.warn('ignoring record (%s, %s) because there is not a blood_sample with label %s' %
                          (r['study'], r['label'], r['blood_sample_label']))
@@ -116,6 +141,7 @@ class Recorder(BioSampleRecorder):
 
     except BadRecord, msg:
       self.logger.warn('ignoring record %s: %s' % (r, msg))
+      return
     except KeyError, e:
       self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
@@ -126,8 +152,8 @@ class Recorder(BioSampleRecorder):
       self.logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
       return
     except Exception, e:
-      self.logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
-      sys.exit(1)
+      self.logger.error('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
+      return
 
 help_doc = """
 import new dna sample definitions into a virgil system and attach
