@@ -164,12 +164,12 @@ class Proxy(ProxyIndexed):
       query = 'select s from %s s where s.barcode = :barcode' % aklass.OME_TABLE
       pars = self.ome_query_params({'barcode' : self.ome_wrap(barcode, 'string')})
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
-    return None if result is None else aklass(result)
+    return None if result is None else aklass(result, proxy=self)
 
   def get_bio_samples(self, aklass):
     query = 'select s from %s s' % aklass.OME_TABLE
     result = self.ome_operation("getQueryService", "findAllByQuery", query, None)
-    return [aklass(r) for r in result]
+    return [aklass(r, proxy=self) for r in result]
 
   def get_blood_sample(self, label=None, barcode=None):
     """
@@ -189,3 +189,14 @@ class Proxy(ProxyIndexed):
     """
     #FIXME this should have a more reasonable name...
     return self.get_bio_sample(TiterPlate, label=label, barcode=barcode)
+
+  def get_data_sample(self, name):
+    """
+    Get a DataSample object stored in VL.
+    """
+    aklass = self.DataSample
+    query = 'select s from %s s where s.name = :name' % aklass.OME_TABLE
+    pars = self.ome_query_params({'name' : self.ome_wrap(name, 'string')})
+    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
+    return None if result is None else aklass(result, proxy=self)
+

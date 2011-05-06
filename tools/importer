@@ -136,6 +136,7 @@ import bl.vl.app.importer.blood_sample
 import bl.vl.app.importer.dna_sample
 import bl.vl.app.importer.titer_plate
 import bl.vl.app.importer.plate_well
+import bl.vl.app.importer.data_sample
 
 
 class App(object):
@@ -146,6 +147,7 @@ class App(object):
     bl.vl.app.importer.dna_sample.do_register(self.supported_submodules)
     bl.vl.app.importer.titer_plate.do_register(self.supported_submodules)
     bl.vl.app.importer.plate_well.do_register(self.supported_submodules)
+    bl.vl.app.importer.data_sample.do_register(self.supported_submodules)
 
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic importer")

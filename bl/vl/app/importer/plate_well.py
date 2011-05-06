@@ -94,23 +94,25 @@ class Recorder(Core):
     #-
     self.logger.info('start prefetching TiterPlate(s)')
     # FIXME this method has a funny name
-    tps = self.skb.get_bio_samples(self.skb.TiterPlate)
     self.titer_plates = {}
+    self.titer_plates_by_omero_id = {}
+    tps = self.skb.get_bio_samples(self.skb.TiterPlate)
     for tp in tps:
       self.titer_plates[tp.label] = tp
+      self.titer_plates_by_omero_id[tp.omero_id] = tp
     self.logger.info('done prefetching TiterPlate(s)')
     self.logger.info('there are %d TiterPlate(s) in the kb' % len(self.titer_plates))
     #-
+    self.plate_wells = {}
     self.logger.info('start prefetching PlateWell(s)')
     # FIXME this method has a funny name
     pws = self.skb.get_bio_samples(self.skb.PlateWell)
-    self.plate_wells = {}
     for pw in pws:
-      k = (pw.container.label, pw.slotPosition)
+      k = (self.titer_plates_by_omero_id[pw.container.omero_id],
+           pw.slotPosition)
       self.plate_wells[k] = pw
     self.logger.info('done prefetching PlateWell(s)')
     self.logger.info('there are %d PlateWell(s) in the kb' % len(self.plate_wells))
-
 
   @debug_wrapper
   def record(self, r):
@@ -140,8 +142,8 @@ class Recorder(Core):
       #-
       slot = plate.columns * row + column
       if self.plate_wells.has_key((plate_label, slot)):
-        self.logger.warn('will not load record %d, is already in the kb' %
-                         record_id)
+        self.logger.warn('will not load record %d, is already (%s, %d) in the kb' %
+                         (record_id, plate_label, slot))
         return
       study = self.default_study if self.default_study \
               else self.known_studies.setdefault(i_study,
@@ -186,7 +188,7 @@ class Recorder(Core):
       return
     except Exception, e:
       logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
-      sys.exit(1)
+      return
 
   @debug_wrapper
   def create_plate_well(self, study, container, sample,

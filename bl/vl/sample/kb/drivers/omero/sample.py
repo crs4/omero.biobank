@@ -107,7 +107,7 @@ class PlateWell(SamplesContainerSlot, kb.PlateWell):
 
   def __getattr__(self, name):
     if name == 'container':
-      return TiterPlate(getattr(self.ome_obj, name))
+      return TiterPlate(getattr(self.ome_obj, name), proxy=self.proxy)
     elif name == 'row':
       return self.slotPosition / self.container.columns
     elif name == 'column':
@@ -226,8 +226,8 @@ class DataCollectionItem(Result, kb.DataCollectionItem):
 
   def __getattr__(self, name):
     if name == 'dataSample':
-      return DataSample(getattr(self.ome_obj, name))
+      return DataSample(getattr(self.ome_obj, name), proxy=self.proxy)
     elif name == 'dataCollection':
-      return DataCollection(getattr(self.ome_obj, name))
+      return DataCollection(getattr(self.ome_obj, name), proxy=self.proxy)
     else:
       return super(DataCollectionItem, self).__getattr__(name)
