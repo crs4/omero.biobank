@@ -167,14 +167,15 @@ class SKBObjectCreator(unittest.TestCase):
     return conf, sample
 
 
-  def create_data_object(self, action=None):
-    conf, data_sample = self.create_data_sample(action=action)
-    data_sample = self.skb.save(data_sample)
-    self.kill_list.append(data_sample)
+  def create_data_object(self, data_sample=None, action=None):
+    if not data_sample:
+      conf, data_sample = self.create_data_sample(action=action)
+      data_sample = self.skb.save(data_sample)
+      self.kill_list.append(data_sample)
 
     conf = {'sample' : data_sample,
             'mimetype' : 'x-application/foo',
-            'path'     : 'file:/usr/share/foo.dat',
+            'path'     : 'file:/usr/share/%s/foo.dat' % time.time(),
             'sha1'     : 'this should be a sha1',
             'size'     :  100
             }

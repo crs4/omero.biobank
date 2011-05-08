@@ -95,14 +95,15 @@ class Recorder(Core):
     #
     self.input_rows = {}
     self.counter = 0
-    #----------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     self.logger.info('start prefetching DNASample(s)')
     dna_samples = self.skb.get_bio_samples(self.skb.DNASample)
     self.dna_samples = {}
     for ds in dna_samples:
       self.dna_samples[ds.label] = ds
     self.logger.info('done prefetching DNASample(s)')
-    self.logger.info('there are %d DNASample(s) in the kb' % len(self.dna_samples))
+    self.logger.info('there are %d DNASample(s) in the kb' %
+                     len(self.dna_samples))
     #-
     self.logger.info('start prefetching TiterPlate(s)')
     # FIXME this method has a funny name
@@ -113,7 +114,8 @@ class Recorder(Core):
       self.titer_plates[tp.label] = tp
       self.titer_plates_by_omero_id[tp.omero_id] = tp
     self.logger.info('done prefetching TiterPlate(s)')
-    self.logger.info('there are %d TiterPlate(s) in the kb' % len(self.titer_plates))
+    self.logger.info('there are %d TiterPlate(s) in the kb' %
+                     len(self.titer_plates))
     #-
     self.plate_wells = {}
     #FIXME this is deeply wrong. PlateWell.label is optional and NOT
@@ -173,7 +175,7 @@ class Recorder(Core):
           sample = self.plate_wells_by_label[sample_label]
           self.logger.info('using sample %s[%s]' % (sample.__class__.__name__, sample.label))
         else:
-          sample = self.get_bio_sample(label=sample_label)
+          sample = self.get_bio_sample(self.skb.PlateWell, label=sample_label)
       #-
       if not sample:
         raise ValueError('could not find a sample with label %s' % sample_label)
@@ -225,8 +227,8 @@ class Recorder(Core):
                                      sample_slot)
 
   @debug_wrapper
-  def get_bio_sample(self, label):
-    bio_sample = self.skb.get_bio_sample(label=label)
+  def get_bio_sample(self, aklass, label):
+    bio_sample = self.skb.get_bio_sample(aklass, label=label)
     if not bio_sample:
       raise ValueError('cannot find a sample with label <%s>' % label)
     return  bio_sample

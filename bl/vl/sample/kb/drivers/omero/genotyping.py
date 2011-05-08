@@ -22,14 +22,15 @@ class AffymetrixCel(DataSample, kb.AffymetrixCel):
     ome_obj.arrayType = ort.rstring(array_type)
     super(AffymetrixCel, self).__setup__(ome_obj, name, data_type, **kw)
 
-  def __init__(self, from_=None, name=None, array_type=None, data_type=None, **kw):
+  def __init__(self, from_=None, name=None, array_type=None,
+               data_type=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
       ome_obj = ome_type()
       self.__setup__(ome_obj, name, array_type, data_type, **kw)
-    super(AffymetrixCel, self).__init__(ome_obj)
+    super(AffymetrixCel, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.arrayType is None:

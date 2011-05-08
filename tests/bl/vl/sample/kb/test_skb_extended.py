@@ -130,6 +130,24 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
       self.assertEqual(sample.omero_id, saved[k].omero_id)
       self.assertEqual(sample.id, saved[k].id)
 
+  def test_get_data_objects(self):
+    saved, data_sample= {}, None
+    for i in range(10):
+      conf, do = self.create_data_object(data_sample=data_sample)
+      do = self.skb.save(do)
+      self.kill_list.append(do)
+      saved[do.path] = do
+      data_sample = do.sample
+    #-
+    res = self.skb.get_data_objects(data_sample)
+    counts = {}
+    self.assertTrue(len(saved), len(res))
+    for r in res:
+      self.assertTrue(saved.has_key(r.path))
+      self.assertFalse(counts.has_key(r.path))
+      counts[r.path] = 1
+
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestSKBExtended('test_sample_chain'))
@@ -138,6 +156,7 @@ def suite():
   suite.addTest(TestSKBExtended('test_get_titer_plates'))
   suite.addTest(TestSKBExtended('test_get_wells_of_plate'))
   suite.addTest(TestSKBExtended('test_get_dna_sample'))
+  suite.addTest(TestSKBExtended('test_get_data_objects'))
   return suite
 
 if __name__ == '__main__':

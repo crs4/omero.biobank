@@ -134,7 +134,7 @@ class DataSample(Sample, kb.DataSample):
     else:
       ome_obj = ome_type()
       self.__setup__(ome_obj, name, data_type, **kw)
-    super(DataSample, self).__init__(ome_obj)
+    super(DataSample, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.name is None:

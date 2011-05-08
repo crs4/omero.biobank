@@ -261,11 +261,13 @@ class network_builder(object):
     return data_sample, data_object
 
   @debug_wrapper
-  def create_data_collection_item(self, device, asetup, acat, operator, data_collection, data_sample):
-    self.logger.debug('data_collection: %s[%s] data_sample: %s[%s]' % (data_collection.get_ome_table(),
-                                                                       data_collection.id,
-                                                                       data_sample.get_ome_table(),
-                                                                       data_sample.id))
+  def create_data_collection_item(self, device, asetup, acat,
+                                  operator, data_collection, data_sample):
+    self.logger.debug('data_collection: %s[%s] data_sample: %s[%s]' %
+                      (data_collection.get_ome_table(),
+                       data_collection.id,
+                       data_sample.get_ome_table(),
+                       data_sample.id))
     action = self.create_action_on_sample(data_sample, device,
                                           asetup, acat, operator)
     action = self.skb.save(action)
@@ -472,7 +474,7 @@ class network_builder(object):
                                    '{"foo2": "foo"}')
     acat  = self.acat_map['PROCESSING']
     operator = 'Alfred E. Neumann'
-    #-
+    #- FIXME DataCollection do not have a label attribute.
     data_collection = self.skb.DataCollection(study=self.study)
     data_collection = self.skb.save(data_collection)
     #-

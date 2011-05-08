@@ -171,6 +171,16 @@ class Proxy(ProxyIndexed):
     result = self.ome_operation("getQueryService", "findAllByQuery", query, None)
     return [aklass(r, proxy=self) for r in result]
 
+  def get_data_objects(self, data_sample):
+    query = """select d
+               from DataObject d join d.sample as sample
+               where sample.id = :sid
+             """
+    pars = self.ome_query_params({'sid' : self.ome_wrap(data_sample.omero_id)})
+    result = self.ome_operation("getQueryService", "findAllByQuery",
+                                query, pars)
+    return [DataObject(r, proxy=self) for r in result]
+
   def get_blood_sample(self, label=None, barcode=None):
     """
     Get a BloodSample object stored in VL.

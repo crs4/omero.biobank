@@ -1,20 +1,24 @@
 """
-Import of Data samples
-======================
+Import of Data Collection
+=========================
 
 Will read in a tsv file with the following columns::
 
-   study path data_label mime_type size sha1
-
-   TEST01 file:/share/fs/v039303.cel CA_03030.CEL x-vl/affymetrix-cel 39090 E909090
+  study    label   data_label
+  BSTUDY   COLL01  a0390290
+  BSTUDY   COLL01  a0390291
+  BSTUDY   COLL01  a0390292
+  BSTUDY   COLL01  a0390293
   ....
 
+This will create a new DataCollection and link to it the DataSample
+object identified by data_label.
+
 Record that point to an unknown (data_label) will be noisily
-ignored. The same will happen to records that have the same path of a
-previously seen data_object
-
+ignored. Previously seen collections will be noisily ignored too. No,
+it is not legal to use the importer to add items to a previously known
+collection.
 """
-
 
 from bl.vl.sample.kb import KBError
 from core import Core, BadRecord
@@ -44,12 +48,11 @@ def debug_wrapper(f):
 
 class Recorder(Core):
   """
-  An utility class that handles the actual recording of DataObject(s)
-  metadata into VL, including the potential copying of datasets.
+  An utility class that handles the actual recording of DataSample(s)
+  metadata into VL, including the potential actual saving of datasets.
   """
-  def __init__(self, study_label=None, data_dir=None, copy_data_objects=False,
-               host=None, user=None, passwd=None, keep_tokens=1,
-               operator='Alfred E. Neumann'):
+  def __init__(self, study_label=None,
+               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
     """
     FIXME
 
@@ -57,8 +60,6 @@ class Recorder(Core):
     :type data_dir:
     """
     super(Recorder, self).__init__(host, user, passwd)
-    self.data_dir = data_dir
-    self.copy_data_objects = copy_data_objects
     #FIXME this can probably go to core....
     self.default_study = None
     if study_label:
@@ -80,42 +81,32 @@ class Recorder(Core):
                                         # data from, since it is, most
                                         # likely, a transient object.
                                         json.dumps({'study' : study_label,
-                                                    'data_dir' : self.data_dir,
-                                                    'copy_data_objects' : self.copy_data_objects,
                                                     'operator' : operator,
                                                     'host' : host,
                                                     'user' : user}))
     self.acat  = self.acat_map['IMPORT']
     self.operator = operator
+    self.data_collection = None
     #
     self.input_rows = {}
     self.counter = 0
-    #-------------------------------------------------------------------------
+    #--------------------------------------------------------------------
+    #--
     self.logger.info('start prefetching DataSample(s)')
     data_samples = self.skb.get_bio_samples(self.skb.DataSample)
     self.data_samples = {}
     for ds in data_samples:
       self.data_samples[ds.name] = ds
     self.logger.info('done prefetching DataSample(s)')
-    self.logger.info('there are %d DataSample(s) in the kb' %
-                     len(self.data_samples))
-    #-------------------------------------------------------------------------
-    self.logger.info('start prefetching DataObject(s)')
-    data_objects = self.skb.get_bio_samples(self.skb.DataObject)
-    self.data_objects = {}
-    for do in data_objects:
-      self.data_objects[do.path] = do
-    self.logger.info('done prefetching DataObject(s)')
-    self.logger.info('there are %d DataObject(s) in the kb' %
-                     len(self.data_objects))
+    self.logger.info('there are %d DataSample(s) in the kb' % len(self.data_samples))
 
   @debug_wrapper
   def get_study_by_label(self, study_label):
     if self.default_study:
       return self.default_study
-    return self.known_studies.\
-           setdefault(study_label, super(Recorder, self).\
-                      get_study_by_label(study_label))
+    return self.known_studies.setdefault(study_label,
+                                         super(Recorder, self)\
+                                         .get_study_by_label(study_label))
 
   @debug_wrapper
   def get_action(self, study, sample, name, maker, model, release):
@@ -134,27 +125,31 @@ class Recorder(Core):
 
   @debug_wrapper
   def record(self, r):
-    self.logger.debug('\tworking on %s' % r)
     try:
       study = self.get_study_by_label(r['study'])
-      path, data_label, mime_type, size, sha1 = r['path'], r['data_label'], \
-                                                r['mime_type'], r['size'], r['sha1']
-      size = int(size)
       #-
-      if self.data_objects.has_key(path):
-        raise ValueError('We already have a DataObject with path %s in the kb' %
-                         path)
-      if not self.data_samples.has_key(data_label):
-        raise ValueError('Cannot find a DataSample with label %s in the kb' %
-                         data_label)
-      data_sample = self.data_samples[data_label]
-      data_object = self.skb.DataObject(sample=data_sample,
-                                        mime_type=mime_type,
-                                        path=path,
-                                        size=size,
-                                        sha1=sha1)
-      self.skb.save(data_object)
-      self.logger.info('Saving DataObject with path %s in the kb' % path)
+      label, sample_label = r['label'], r['sample_label']
+      if not self.data_collection:
+        #FIXME data_collection does not have a label attribute!
+        data_collection = self.skb.DataCollection(study=study)
+        self.data_collection = self.skb.save(data_collection)
+      #-
+      if not self.data_samples.has_key(sample_label):
+        raise ValueError('ignoring %s because is unknown to the kb' %
+                         label)
+      #-
+      data_sample = self.data_samples[sample_label]
+      action = self.create_action_on_sample(data_sample,
+                                            self.device, self.asetup,
+                                            self.acat, self.operator)
+      action = self.skb.save(action)
+      #-
+      dc_it = self.skb.DataCollectionItem(data_collection=self.data_collection,
+                                          data_sample=data_sample)
+      dc_it.action = action
+      self.skb.save(dc_it)
+      self.logger.info('saved  %s[%s]' % (self.data_collection.id,
+                                          sample_label))
     except KeyError, e:
       self.logger.warn('ignoring record %s because of missing value(%s)' %
                        (r, e))
@@ -163,7 +158,8 @@ class Recorder(Core):
       self.logger.warn('ignoring record %s since %s' % (r, e))
       return
     except (KBError, NotImplementedError), e:
-      self.logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
+      self.logger.warn('ignoring record %s because it triggers a KB error: %s'%
+                       (r, e))
       return
     except Exception, e:
       self.logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
@@ -175,36 +171,19 @@ class Recorder(Core):
                                      study, device, asetup,
                                      self.acat, self.operator, sample)
 
-  @debug_wrapper
-  def create_action_on_sample_slot(self, study, sample_slot, device, asetup, description):
-    return self.create_action_helper(self.skb.ActionOnSamplesContainerSlot, description,
-                                     study, device, asetup, self.acat, self.operator,
-                                     sample_slot)
 
-  @debug_wrapper
-  def get_bio_sample(self, label):
-    bio_sample = self.skb.get_bio_sample(label=label)
-    if not bio_sample:
-      raise ValueError('cannot find a sample with label <%s>' % label)
-    return  bio_sample
 
 help_doc = """
-import new data_object definitions into a virgil system. It will also
-import actual datasets if so instructed.
+import new data_collections definitions into a virgil system.
 """
 
-def make_parser_data_object(parser):
+def make_parser_data_sample(parser):
   parser.add_argument('-S', '--study', type=str,
-                      help="""default conxtest study label.
+                      help="""default context study label.
                       It will over-ride the study column value""")
-  parser.add_argument('-d', '--data-dir', type=str,
-                      help="""directory that contains the data object files""")
-  parser.add_argument('--copy-data-objects', action='store_true', default=False,
-                      help="""if set, copies datasets in VL repositories""")
 
-def import_data_object_implementation(args):
-  recorder = Recorder(args.study, data_dir=args.data_dir,
-                      copy_data_objects=args.copy_data_objects,
+def import_data_sample_implementation(args):
+  recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)
   f = csv.DictReader(args.ifile, delimiter='\t')
@@ -212,8 +191,8 @@ def import_data_object_implementation(args):
     recorder.record(r)
 
 def do_register(registration_list):
-  registration_list.append(('data_object', help_doc,
-                            make_parser_data_object,
-                            import_data_object_implementation))
+  registration_list.append(('data_collection', help_doc,
+                            make_parser_data_collection,
+                            import_data_collection_implementation))
 
 

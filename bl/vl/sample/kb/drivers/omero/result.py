@@ -23,8 +23,8 @@ class Result(OmeroWrapper, kb.Result):
       ome_obj = from_
     else:
       ome_obj = ome_type()
-      self.__setup__(ome_obj)
-    super(Result, self).__init__(ome_obj)
+      self.__setup__(ome_obj, **kw)
+    super(Result, self).__init__(ome_obj, **kw)
 
 
   def __handle_validation_errors__(self):
