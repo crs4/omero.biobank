@@ -4,7 +4,7 @@ Import of Data samples
 
 Will read in a tsv file with the following columns::
 
-   study path data_label mime_type size sha1
+   study path data_label mimetype size sha1
 
    TEST01 file:/share/fs/v039303.cel CA_03030.CEL x-vl/affymetrix-cel 39090 E909090
   ....
@@ -137,8 +137,8 @@ class Recorder(Core):
     self.logger.debug('\tworking on %s' % r)
     try:
       study = self.get_study_by_label(r['study'])
-      path, data_label, mime_type, size, sha1 = r['path'], r['data_label'], \
-                                                r['mime_type'], r['size'], r['sha1']
+      path, data_label, mimetype, size, sha1 = r['path'], r['data_label'], \
+                                                r['mimetype'], r['size'], r['sha1']
       size = int(size)
       #-
       if self.data_objects.has_key(path):
@@ -149,7 +149,7 @@ class Recorder(Core):
                          data_label)
       data_sample = self.data_samples[data_label]
       data_object = self.skb.DataObject(sample=data_sample,
-                                        mime_type=mime_type,
+                                        mime_type=mimetype,
                                         path=path,
                                         size=size,
                                         sha1=sha1)
