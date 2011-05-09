@@ -43,7 +43,7 @@ class Proxy(ProxyIndexed):
     pars = self.ome_query_params({'ilabel' : self.ome_wrap(ind_label),
                                   'slabel'  : self.ome_wrap(study_label)})
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
-    return None if result is None else Enrollment(result)
+    return None if result is None else Enrollment(result, proxy=self)
 
   def get_enrolled(self, study):
     query = """select e
@@ -52,7 +52,7 @@ class Proxy(ProxyIndexed):
                """
     pars = self.ome_query_params({'slabel'  : self.ome_wrap(study.label)})
     result = self.ome_operation("getQueryService", "findAllByQuery", query, pars)
-    return [Enrollment(r) for r in result]
+    return [Enrollment(r, proxy=self) for r in result]
 
   def get_blood_samples(self, individual):
     """

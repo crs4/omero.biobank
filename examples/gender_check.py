@@ -40,6 +40,10 @@ class App(object):
     self.study = self.skb.get_study_by_label(args.study_label)
     self.output_file = args.output_file
     self.preload()
+    self.gm = self.ikb.get_gender_table()
+    self.gm_by_object = {}
+    self.gm_by_object[self.gm["MALE"].id] = "MALE"
+    self.gm_by_object[self.gm["FEMALE"].id] = "FEMALE"
   #-----------------------------------------------------------------------
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic importer")
@@ -71,7 +75,7 @@ class App(object):
     #--
 
   def run(self):
-    fieldnames = 'study label path mimetype size sha1'.split()
+    fieldnames = 'study label gender path mimetype size sha1'.split()
     tsv = csv.DictWriter(self.output_file, fieldnames, delimiter='\t')
     tsv.writeheader()
     for l,e in self.known_enrollments.iteritems():
@@ -84,6 +88,7 @@ class App(object):
             do = dos[0]
             r = {'study': self.study.label,
                  'label': e.studyCode,
+                 'gender': self.gm_by_object[e.individual.gender.id],
                  'path' : do.path,
                  'mimetype' : do.mimetype,
                  'sha1' : do.sha1,

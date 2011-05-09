@@ -49,11 +49,11 @@ class Individual(OmeroWrapper, kb.Individual):
 
   def __getattr__(self, name):
     if name == 'father':
-      return Individual(self.ome_obj.father)
+      return Individual(self.ome_obj.father, proxy=self.proxy)
     elif name == 'mother':
-      return Individual(self.ome_obj.mother)
+      return Individual(self.ome_obj.mother, proxy=self.proxy)
     elif name == 'action':
-      obj = Action(self.ome_obj.action)
+      obj = Action(self.ome_obj.action, proxy=self.proxy)
       return obj
     else:
       return super(Individual, self).__getattr__(name)
