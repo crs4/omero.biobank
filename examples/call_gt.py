@@ -6,6 +6,7 @@ The goal of this example is to show a basic workflow that will: FIXME
 """
 from bl.vl.sample.kb     import KBError
 from bl.vl.sample.kb     import KnowledgeBase as sKB
+from bl.vl.individual.kb import KnowledgeBase as iKB
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -27,10 +28,15 @@ class App(object):
     self.dc_vid = args.data_collection_vid
     #-
     self.skb = sKB(driver='omero')(host, user, passwd, keep_tokens)
+    self.ikb = iKB(driver='omero')(host, user, passwd, keep_tokens)
     #-
     self.study = self.skb.get_study_by_label(args.study_label)
     self.output_file = args.output_file
     self.preload()
+    self.gm = self.ikb.get_gender_table()
+    self.gm_by_object = {}
+    self.gm_by_object[self.gm["MALE"].id] = "MALE"
+    self.gm_by_object[self.gm["FEMALE"].id] = "FEMALE"
   #-----------------------------------------------------------------------
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic importer")
@@ -63,18 +69,19 @@ class App(object):
     self.logger.info('there are %d DataCollection(s) in the kb' %
                      len(self.data_collections))
 
-
   def run(self):
     data_collection = self.data_collections[self.dc_vid]
-    fieldnames = 'path mimetype size sha1'.split()
+    fieldnames = 'path gender mimetype size sha1'.split()
     tsv = csv.DictWriter(self.output_file, fieldnames, delimiter='\t')
     tsv.writeheader()
     for item in self.skb.get_data_collection_items(data_collection):
       ds = item.dataSample
+      root = self.skb.get_root(ds, aklass=self.skb.AffymetrixCel)
       dos = self.skb.get_data_objects(ds)
       if dos:
         do = dos[0]
         r = {'path' : do.path,
+             'gender': self.gm_by_object[root.gender.id],
              'mimetype' : do.mimetype,
              'sha1' : do.sha1,
              'size' : do.size}

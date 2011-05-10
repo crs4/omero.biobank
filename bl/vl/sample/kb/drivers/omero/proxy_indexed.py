@@ -86,8 +86,8 @@ class ProxyIndexed(ProxyCore):
       obj = super(ProxyIndexed, self).delete(obj)
 
   @debug_boundary
-  def get_root(self, object):
-    return self.indexer.get_root(object)
+  def get_root(self, object, aklass=None):
+    return self.indexer.get_root(object, aklass)
 
   @debug_boundary
   def get_descendants(self, obj, klass=None):

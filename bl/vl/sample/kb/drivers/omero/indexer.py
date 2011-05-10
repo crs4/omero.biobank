@@ -178,9 +178,11 @@ class Indexer(object):
     return obj
 
   @debug_boundary
-  def get_root(self, object):
+  def get_root(self, object, aklass=None):
     logger.debug('get_root on %s' % object.ome_obj)
-    selector = '(t_id==%d)&(t_type=="%s")' % (object.omero_id, object.get_ome_table())
+    ome_table = (object.get_ome_table() if aklass is None
+                 else aklass.get_ome_table())
+    selector = '(t_id==%d)&(t_type=="%s")' % (object.omero_id, ome_table)
     self.logger.debug('get_root selector: %s' % selector)
     o_rows = self.get_table_rows(self.TARGET_TABLE, selector)
     self.logger.debug('get_root object record[%d]: %s' % (len(o_rows), o_rows))
