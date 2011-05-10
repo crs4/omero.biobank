@@ -4,7 +4,7 @@ Import of Data Collection
 
 Will read in a tsv file with the following columns::
 
-  study    label   data_label
+  study    label   sample_label
   BSTUDY   COLL01  a0390290
   BSTUDY   COLL01  a0390291
   BSTUDY   COLL01  a0390292
@@ -12,9 +12,9 @@ Will read in a tsv file with the following columns::
   ....
 
 This will create a new DataCollection and link to it the DataSample
-object identified by data_label.
+object identified by sample_label.
 
-Record that point to an unknown (data_label) will be noisily
+Record that point to an unknown (sample_label) will be noisily
 ignored. Previously seen collections will be noisily ignored too. No,
 it is not legal to use the importer to add items to a previously known
 collection.
@@ -48,17 +48,12 @@ def debug_wrapper(f):
 
 class Recorder(Core):
   """
-  An utility class that handles the actual recording of DataSample(s)
-  metadata into VL, including the potential actual saving of datasets.
+  An utility class that handles the actual recording of a DataCollection
+  metadata into VL.
   """
   def __init__(self, study_label=None,
-               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
-    """
-    FIXME
-
-    :param data_dir:
-    :type data_dir:
-    """
+               host=None, user=None, passwd=None, keep_tokens=1,
+               operator='Alfred E. Neumann'):
     super(Recorder, self).__init__(host, user, passwd)
     #FIXME this can probably go to core....
     self.default_study = None
@@ -98,7 +93,8 @@ class Recorder(Core):
     for ds in data_samples:
       self.data_samples[ds.name] = ds
     self.logger.info('done prefetching DataSample(s)')
-    self.logger.info('there are %d DataSample(s) in the kb' % len(self.data_samples))
+    self.logger.info('there are %d DataSample(s) in the kb' %
+                     len(self.data_samples))
 
   @debug_wrapper
   def get_study_by_label(self, study_label):
@@ -139,9 +135,7 @@ class Recorder(Core):
                          label)
       #-
       data_sample = self.data_samples[sample_label]
-      action = self.create_action_on_sample(data_sample,
-                                            self.device, self.asetup,
-                                            self.acat, self.operator)
+      action = self.create_action_on_sample(study, data_sample, json.dumps(r))
       action = self.skb.save(action)
       #-
       dc_it = self.skb.DataCollectionItem(data_collection=self.data_collection,
@@ -166,9 +160,9 @@ class Recorder(Core):
       return
 
   @debug_wrapper
-  def create_action_on_sample(self, study, sample, device, asetup, description):
+  def create_action_on_sample(self, study, sample, description):
     return self.create_action_helper(self.skb.ActionOnSample, description,
-                                     study, device, asetup,
+                                     study, self.device, self.asetup,
                                      self.acat, self.operator, sample)
 
 
@@ -177,12 +171,15 @@ help_doc = """
 import new data_collections definitions into a virgil system.
 """
 
-def make_parser_data_sample(parser):
+def make_parser_data_collection(parser):
   parser.add_argument('-S', '--study', type=str,
                       help="""default context study label.
                       It will over-ride the study column value""")
+  parser.add_argument('-C', '--collection', type=str,
+                      help="""default collection label.
+                      It will over-ride the label column value""")
 
-def import_data_sample_implementation(args):
+def import_data_collection_implementation(args):
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)
@@ -194,5 +191,3 @@ def do_register(registration_list):
   registration_list.append(('data_collection', help_doc,
                             make_parser_data_collection,
                             import_data_collection_implementation))
-
-

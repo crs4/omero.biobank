@@ -21,6 +21,7 @@ from bl.vl.individual.kb import KnowledgeBase as iKB
 
 import sys, os
 import logging
+logging.basicConfig(level=logging.INFO)
 import argparse
 import csv
 
@@ -35,7 +36,7 @@ class App(object):
     self.skb = sKB(driver='omero')(host, user, passwd, keep_tokens)
     self.ikb = iKB(driver='omero')(host, user, passwd, keep_tokens)
     self.known_enrollments = {}
-    self.logger = logging.getLogger()
+    self.logger = logging.getLogger("gender_check")
     #-
     self.study = self.skb.get_study_by_label(args.study_label)
     self.output_file = args.output_file
@@ -78,7 +79,10 @@ class App(object):
     fieldnames = 'study label gender path mimetype size sha1'.split()
     tsv = csv.DictWriter(self.output_file, fieldnames, delimiter='\t')
     tsv.writeheader()
-    for l,e in self.known_enrollments.iteritems():
+    N = len(self.known_enrollments)
+    for i, (l, e) in enumerate(self.known_enrollments.iteritems()):
+      self.logger.info('processing enrollment %r (%d of %d)' %
+                       (e.studyCode, (i+1), N))
       affy_datasets = self.skb.get_descendants(e.individual,
                                                self.skb.AffymetrixCel)
       if affy_datasets:

@@ -214,7 +214,7 @@ class DataCollectionItem(Result, kb.DataCollectionItem):
     else:
       ome_obj = ome_type()
       self.__setup__(ome_obj, data_sample, data_collection, **kw)
-    super(DataCollectionItem, self).__init__(ome_obj)
+    super(DataCollectionItem, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.dataSample is None:

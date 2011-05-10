@@ -138,6 +138,7 @@ import bl.vl.app.importer.titer_plate
 import bl.vl.app.importer.plate_well
 import bl.vl.app.importer.data_sample
 import bl.vl.app.importer.data_object
+import bl.vl.app.importer.data_collection
 
 
 class App(object):
@@ -150,6 +151,7 @@ class App(object):
     bl.vl.app.importer.plate_well.do_register(self.supported_submodules)
     bl.vl.app.importer.data_sample.do_register(self.supported_submodules)
     bl.vl.app.importer.data_object.do_register(self.supported_submodules)
+    bl.vl.app.importer.data_collection.do_register(self.supported_submodules)
 
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic importer")

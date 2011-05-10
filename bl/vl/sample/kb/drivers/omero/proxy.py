@@ -147,14 +147,14 @@ class Proxy(ProxyIndexed):
     pars = self.ome_query_params({'c_id' : self.ome_wrap(plate.id),
                                   'slot_position' : self.ome_wrap(slot_position)})
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
-    return None if result is None else PlateWell(result)
+    return None if result is None else PlateWell(result, proxy=self)
 
   def get_data_collection_items(self, data_collection):
     query = 'select dci from DataCollectionItem dci join dci.dataSet as c where c.vid = :c_id'
     pars = self.ome_query_params({'c_id' : self.ome_wrap(data_collection.id)})
     result = self.ome_operation("getQueryService", "findAllByQuery", query, pars)
     logger.debug('get_data_collection_items results:[%d] %s' % (len(result), result))
-    return [DataCollectionItem(r) for r in result]
+    return [DataCollectionItem(r, proxy=self) for r in result]
 
   def get_bio_sample(self, aklass, label=None, barcode=None):
     if label:
