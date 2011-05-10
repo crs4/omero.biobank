@@ -1,4 +1,4 @@
-study	path	data_label	mimetype	size	sha1
+study	path	data_sample_label	mimetype	size	sha1
 BSTUDY	file:/share/fs/v000.cel	foobar-00	x-vl/affymetrix-cel	8989	SHA1SHA1
 BSTUDY	file:/share/fs/v001.cel	foobar-01	x-vl/affymetrix-cel	8989	SHA1SHA1
 BSTUDY	file:/share/fs/v002.cel	foobar-02	x-vl/affymetrix-cel	8989	SHA1SHA1

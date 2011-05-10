@@ -4,17 +4,17 @@ Import of Data Collection
 
 Will read in a tsv file with the following columns::
 
-  study    label   sample_label
-  BSTUDY   COLL01  a0390290
-  BSTUDY   COLL01  a0390291
-  BSTUDY   COLL01  a0390292
-  BSTUDY   COLL01  a0390293
+  study    data_sample_label
+  BSTUDY   a0390290
+  BSTUDY   a0390291
+  BSTUDY   a0390292
+  BSTUDY   a0390293
   ....
 
 This will create a new DataCollection and link to it the DataSample
-object identified by sample_label.
+object identified by data_sample_label.
 
-Record that point to an unknown (sample_label) will be noisily
+Record that point to an unknown (data_sample_label) will be noisily
 ignored. Previously seen collections will be noisily ignored too. No,
 it is not legal to use the importer to add items to a previously known
 collection.
@@ -124,17 +124,17 @@ class Recorder(Core):
     try:
       study = self.get_study_by_label(r['study'])
       #-
-      label, sample_label = r['label'], r['sample_label']
+      data_sample_label = r['data_sample_label']
       if not self.data_collection:
         #FIXME data_collection does not have a label attribute!
         data_collection = self.skb.DataCollection(study=study)
         self.data_collection = self.skb.save(data_collection)
       #-
-      if not self.data_samples.has_key(sample_label):
+      if not self.data_samples.has_key(data_sample_label):
         raise ValueError('ignoring %s because is unknown to the kb' %
                          label)
       #-
-      data_sample = self.data_samples[sample_label]
+      data_sample = self.data_samples[data_sample_label]
       action = self.create_action_on_sample(study, data_sample, json.dumps(r))
       action = self.skb.save(action)
       #-
@@ -143,7 +143,7 @@ class Recorder(Core):
       dc_it.action = action
       self.skb.save(dc_it)
       self.logger.info('saved  %s[%s]' % (self.data_collection.id,
-                                          sample_label))
+                                          data_sample_label))
     except KeyError, e:
       self.logger.warn('ignoring record %s because of missing value(%s)' %
                        (r, e))

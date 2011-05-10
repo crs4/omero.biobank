@@ -4,12 +4,12 @@ Import of Data samples
 
 Will read in a tsv file with the following columns::
 
-   study path data_label mimetype size sha1
+   study path data_sample_label mimetype size sha1
 
    TEST01 file:/share/fs/v039303.cel CA_03030.CEL x-vl/affymetrix-cel 39090 E909090
   ....
 
-Record that point to an unknown (data_label) will be noisily
+Record that point to an unknown (data_sample_label) will be noisily
 ignored. The same will happen to records that have the same path of a
 previously seen data_object
 
@@ -137,17 +137,18 @@ class Recorder(Core):
     self.logger.debug('\tworking on %s' % r)
     try:
       study = self.get_study_by_label(r['study'])
-      path, data_label, mimetype, size, sha1 = r['path'], r['data_label'], \
-                                                r['mimetype'], r['size'], r['sha1']
+      path, data_sample_label, mimetype, size, sha1 = (
+        r['path'], r['data_sample_label'], r['mimetype'], r['size'], r['sha1']
+        )
       size = int(size)
       #-
       if self.data_objects.has_key(path):
         raise ValueError('We already have a DataObject with path %s in the kb' %
                          path)
-      if not self.data_samples.has_key(data_label):
+      if not self.data_samples.has_key(data_sample_label):
         raise ValueError('Cannot find a DataSample with label %s in the kb' %
-                         data_label)
-      data_sample = self.data_samples[data_label]
+                         data_sample_label)
+      data_sample = self.data_samples[data_sample_label]
       data_object = self.skb.DataObject(sample=data_sample,
                                         mime_type=mimetype,
                                         path=path,
