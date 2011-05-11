@@ -45,6 +45,7 @@ class TestMarkers(unittest.TestCase):
     op_vid  = vlu.make_vid()
     mds = [{'source' : source,
             'context': context,
+            'release': '1.0',
             'label':   'foo-%06d' % i,
             'rs_label': 'rs-%06d' % i,
             'mask'    : 'GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT'} for i in range(10)]
@@ -59,10 +60,11 @@ class TestMarkers(unittest.TestCase):
       for m in mds:
         dmds[m['label']] = m
       for x in mrks:
-        m = dmds[x[3]] # label
+        m = dmds[x[4]] # label
         self.assertEqual(m['source'], x[1])
         self.assertEqual(m['context'],x[2])
-        self.assertEqual(m['rs_label'],  x[4])
+        self.assertEqual(m['release'],x[3])
+        self.assertEqual(m['rs_label'],  x[5])
 
   def manipulate_snp_alignment_table(self):
     self.proxy.delete_table(SafeProxy.SNP_ALIGNMENT_TABLE)

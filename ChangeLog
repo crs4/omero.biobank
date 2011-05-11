@@ -1,3 +1,9 @@
+2011-05-11    <zag@manzanillo>
+
+	* bl/vl/app/importer/marker_definition.py (Recorder): Added new tool.
+
+	* tools/create_snp_tables: Added new tool.
+
 2011-05-08    <zag@manzanillo>
 
 	* bl/vl/sample/kb/drivers/omero/data_object.py

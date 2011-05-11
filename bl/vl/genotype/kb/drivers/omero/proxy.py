@@ -16,37 +16,43 @@ class Proxy(ProxyCore):
   SNP_SET_DEF_TABLE    = 'snp_set_def.h5'
   SNP_SET_TABLE        = 'snp_set.h5'
 
-  SNP_MARKER_DEFINITIONS_COLS = [('string', 'vid',    'This marker VID', len(vlu.make_vid()), None),
-                                 ('string', 'source', 'Origin of this marker definition.', 16, None),
-                                 ('string', 'context', 'Context of definition.', 16, None),
-                                 ('string', 'label', 'Label of marker in the definition context.', 16, None),
-                                 ('string', 'rs_label', 'dbSNP_id if available', 16, None),
-                                 ('string', 'mask', 'SNP definition mask in the format <FLANK>[A/B]<FLANK>', 69, None),
-                                 ('string', 'op_vid', 'Last operation that modified this row', len(vlu.make_vid()), None)]
+  SNP_MARKER_DEFINITIONS_COLS = \
+  [('string', 'vid',    'This marker VID', len(vlu.make_vid()), None),
+   ('string', 'source', 'Origin of this marker definition.', 16, None),
+   ('string', 'context', 'Context of definition.', 16, None),
+   ('string', 'release', 'Release within the context.', 16, None),
+   ('string', 'label', 'Label of marker in the definition context.', 16, None),
+   ('string', 'rs_label', 'dbSNP_id if available', 16, None),
+   ('string', 'mask', 'SNP definition mask in the format <FLANK>[A/B]<FLANK>', 69, None),
+   ('string', 'op_vid', 'Last operation that modified this row',
+    len(vlu.make_vid()), None)]
 
-  SNP_ALIGNMENT_COLS = [('string', 'marker_vid', 'VID of the aligned marker.', len(vlu.make_vid()), None),
-                        ('string', 'ref_genome', 'Reference alignment genome.', 16, None),
-                        ('long', 'chromosome',
-                         'Chromosome where this alignment was found. 1-22, 23(X) 24(Y)', None),
-                        ('long', 'pos', "Position on the chromosome. Starting from 5'", None),
-                        ('long', 'global_pos', "Global position in the genome. (chr*10**10 + pos)", None),
-                        ('bool', 'strand', 'Aligned on reference strand', None),
-                        # I know that this is in principle a bool, but what happens if we have more than two alleles?
-                        ('string', 'allele', 'Allele found at this position (A/B)', 1, None),
-                        ('long', 'copies', "Number of copies found for this marker within this alignment op.", None),
-                        ('string', 'op_vid', 'Last operation that modified this row', len(vlu.make_vid()), None)]
+  SNP_ALIGNMENT_COLS = \
+  [('string', 'marker_vid', 'VID of the aligned marker.', len(vlu.make_vid()), None),
+   ('string', 'ref_genome', 'Reference alignment genome.', 16, None),
+   ('long', 'chromosome',
+    'Chromosome where this alignment was found. 1-22, 23(X) 24(Y)', None),
+   ('long', 'pos', "Position on the chromosome. Starting from 5'", None),
+   ('long', 'global_pos', "Global position in the genome. (chr*10**10 + pos)", None),
+   ('bool', 'strand', 'Aligned on reference strand', None),
+   # I know that this is in principle a bool, but what happens if we have more than two alleles?
+   ('string', 'allele', 'Allele found at this position (A/B)', 1, None),
+   ('long', 'copies', "Number of copies found for this marker within this alignment op.", None),
+   ('string', 'op_vid', 'Last operation that modified this row', len(vlu.make_vid()), None)]
 
-  SNP_SET_COLS = [('string', 'vid', 'Set VID', len(vlu.make_vid()), None),
-                  ('string', 'marker_vid', 'Marker VID', len(vlu.make_vid()), None),
-                  ('long', 'marker_indx', "Ordered position of this marker within the set", None),
-                  ('bool', 'allele_flip', 'Is this technology flipping our A/B allele convention?', None),
-                  ('string', 'op_vid', 'Last operation that modified this row', len(vlu.make_vid()), None)]
+  SNP_SET_COLS = \
+  [('string', 'vid', 'Set VID', len(vlu.make_vid()), None),
+   ('string', 'marker_vid', 'Marker VID', len(vlu.make_vid()), None),
+   ('long', 'marker_indx', "Ordered position of this marker within the set", None),
+   ('bool', 'allele_flip', 'Is this technology flipping our A/B allele convention?', None),
+   ('string', 'op_vid', 'Last operation that modified this row', len(vlu.make_vid()), None)]
 
-  SNP_SET_DEF_COLS = [('string', 'vid', 'Set VID', len(vlu.make_vid()), None),
-                      ('string', 'maker', 'Maker identifier.', 32, None),
-                      ('string', 'model', 'Model identifier.', 32, None),
-                      ('string', 'op_vid', 'Last operation that modified this row',
-                       len(vlu.make_vid()), None)]
+  SNP_SET_DEF_COLS = \
+  [('string', 'vid', 'Set VID', len(vlu.make_vid()), None),
+   ('string', 'maker', 'Maker identifier.', 32, None),
+   ('string', 'model', 'Model identifier.', 32, None),
+   ('string', 'op_vid', 'Last operation that modified this row',
+    len(vlu.make_vid()), None)]
 
   @classmethod
   def SNP_GDO_REPO_COLS(klass, N):
@@ -59,8 +65,8 @@ class Proxy(ProxyCore):
              N*4, None)]
     return cols
 
-  def __init__(self, host, user, passwd):
-    super(Proxy, self).__init__(host, user, passwd)
+  def __init__(self, host, user, passwd, keep_tokens=1):
+    super(Proxy, self).__init__(host, user, passwd, keep_tokens)
 
   #-- markers definitions
   def create_snp_marker_definitions_table(self):

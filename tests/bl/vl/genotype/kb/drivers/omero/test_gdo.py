@@ -48,6 +48,7 @@ class TestGdos(unittest.TestCase):
     op_vid  = vlu.make_vid()
     mds = [{'source' : source,
             'context': context,
+            'release' : '0.1',
             'label':   'foo-%06d' % i,
             'rs_label': 'rs-%06d' % i,
             'mask'    : 'GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT'} for i in range(N_CALLS)]

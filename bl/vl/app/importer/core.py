@@ -1,6 +1,7 @@
 from bl.vl.sample.kb     import KBError
 from bl.vl.sample.kb     import KnowledgeBase as sKB
 from bl.vl.individual.kb import KnowledgeBase as iKB
+from bl.vl.genotype.kb   import KnowledgeBase as gKB
 
 import json
 
@@ -40,6 +41,7 @@ class Core(object):
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1):
     self.skb = sKB(driver='omero')(host, user, passwd, keep_tokens)
     self.ikb = iKB(driver='omero')(host, user, passwd, keep_tokens)
+    self.gkb = gKB(driver='omero')(host, user, passwd, keep_tokens)
     self.acat_map    = self.skb.get_action_category_table()
     self.outcome_map = self.skb.get_result_outcome_table()
     self.sstatus_map = self.skb.get_sample_status_table()
