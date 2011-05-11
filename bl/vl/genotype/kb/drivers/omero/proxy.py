@@ -51,6 +51,7 @@ class Proxy(ProxyCore):
   [('string', 'vid', 'Set VID', len(vlu.make_vid()), None),
    ('string', 'maker', 'Maker identifier.', 32, None),
    ('string', 'model', 'Model identifier.', 32, None),
+   ('string', 'release', 'Release identifier.', 32, None),
    ('string', 'op_vid', 'Last operation that modified this row',
     len(vlu.make_vid()), None)]
 
@@ -97,9 +98,20 @@ class Proxy(ProxyCore):
   def create_snp_set_table(self):
     self.create_table(self.SNP_SET_TABLE, self.SNP_SET_COLS)
 
-  def add_snp_markers_set(self, maker, model, op_vid):
+  def snp_markers_set_exists(self, maker, model, release='1.0'):
+    selector = ("(maker=='%s') & (model=='%s') & (release=='%s')" %
+                (maker, model, release))
+    if len(self.get_snp_markers_sets(selector)) > 0 :
+      return True
+    return False
+
+  def add_snp_markers_set(self, maker, model, release, op_vid):
+    if self.snp_markers_set_exists(maker, model, release):
+      raise ValueError('SNP_MARKERS_SET(%s, %s, %s) is already in kb.' %
+                       (maker, model, release))
     set_vid = vlu.make_vid()
-    row = {'vid':set_vid, 'maker': maker, 'model' : model, 'op_vid':op_vid}
+    row = {'vid':set_vid, 'maker': maker, 'model' : model, 'release' : release,
+           'op_vid':op_vid}
     self.add_table_row(self.SNP_SET_DEF_TABLE, row)
     return set_vid
 

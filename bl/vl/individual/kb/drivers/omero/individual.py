@@ -53,7 +53,7 @@ class Individual(OmeroWrapper, kb.Individual):
     elif name == 'mother':
       return Individual(self.ome_obj.mother, proxy=self.proxy)
     elif name == 'action':
-      obj = Action(self.ome_obj.action, proxy=self.proxy)
+      obj = Action(self.ome_obj.action)
       return obj
     else:
       return super(Individual, self).__getattr__(name)

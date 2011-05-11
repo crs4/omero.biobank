@@ -58,12 +58,13 @@ class TestGdos(unittest.TestCase):
     set_op_vid  = vlu.make_vid()
     maker   = 'foomatic'
     model   = 'barfoo'
+    release = '1.0'
     self.assertEqual(len(mds), len(mrks))
     mds = [{'marker_vid' : m['vid'],
             'marker_indx' : i,
             'allele_flip' : [True, False][np.random.random_integers(0,1)],
             } for i, m in enumerate(mrks)]
-    set_vid = self.proxy.add_snp_markers_set(maker, model,op_vid=set_op_vid)
+    set_vid = self.proxy.add_snp_markers_set(maker, model, release, op_vid=set_op_vid)
     self.proxy.fill_snp_markers_set(set_vid, it.islice(mds, len(mds)), op_vid=set_op_vid)
     #-- define new genotype repository
     self.proxy.create_gdo_repository(set_vid, len(mds))

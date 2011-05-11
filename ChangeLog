@@ -1,5 +1,7 @@
 2011-05-11    <zag@manzanillo>
 
+	* bl/vl/app/importer/markers_set.py: Added new tool.
+
 	* bl/vl/app/importer/marker_definition.py (Recorder): Added new tool.
 
 	* tools/create_snp_tables: Added new tool.

@@ -104,12 +104,13 @@ class TestMarkers(unittest.TestCase):
     set_vid = vlu.make_vid()
     maker   = 'foomatic'
     model   = 'barfoo'
+    release = '0.1'
     op_vid  = vlu.make_vid()
     mds = [{'marker_vid' : vlu.make_vid(),
             'marker_indx' : i,
             'allele_flip' : [True, False][np.random.random_integers(0,1)],
             } for i in range(10)]
-    set_vid = self.proxy.add_snp_markers_set(maker, model,op_vid=op_vid)
+    set_vid = self.proxy.add_snp_markers_set(maker, model, release, op_vid=op_vid)
     self.proxy.fill_snp_markers_set(set_vid, it.islice(mds, len(mds)), op_vid=op_vid)
     for sel in [None,
                 '(maker=="%s")&(model=="%s")' % (maker, model),
@@ -119,7 +120,8 @@ class TestMarkers(unittest.TestCase):
       self.assertEqual(snp_sets[0][0], set_vid)
       self.assertEqual(snp_sets[0][1], maker)
       self.assertEqual(snp_sets[0][2], model)
-      self.assertEqual(snp_sets[0][3], op_vid)
+      self.assertEqual(snp_sets[0][3], release)
+      self.assertEqual(snp_sets[0][4], op_vid)
     for sel in [None,
                 '(vid=="%s")' % set_vid,
                 '(op_vid=="%s")' % op_vid
