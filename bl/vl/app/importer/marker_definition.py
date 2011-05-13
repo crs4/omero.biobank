@@ -119,11 +119,11 @@ def make_parser_marker_definition(parser):
                       help="""context study label""")
 
   parser.add_argument('--source', type=str,
-                      help="""markers set source""")
+                      help="""marker definition source""")
   parser.add_argument('--context', type=str,
-                      help="""markers set context""")
+                      help="""marker definition context""")
   parser.add_argument('--release', type=str,
-                      help="""markers set release""")
+                      help="""marker definition release""")
 
 def import_marker_definition_implementation(args):
   if not (args.study and args.source and args.context and args.release):

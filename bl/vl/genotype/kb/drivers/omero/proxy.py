@@ -43,9 +43,12 @@ class Proxy(ProxyCore):
   SNP_SET_COLS = \
   [('string', 'vid', 'Set VID', len(vlu.make_vid()), None),
    ('string', 'marker_vid', 'Marker VID', len(vlu.make_vid()), None),
-   ('long', 'marker_indx', "Ordered position of this marker within the set", None),
-   ('bool', 'allele_flip', 'Is this technology flipping our A/B allele convention?', None),
-   ('string', 'op_vid', 'Last operation that modified this row', len(vlu.make_vid()), None)]
+   ('long', 'marker_indx',
+    "Ordered position of this marker within the set", None),
+   ('bool', 'allele_flip',
+    'Is this technology flipping our A/B allele convention?', None),
+   ('string', 'op_vid',
+    'Last operation that modified this row', len(vlu.make_vid()), None)]
 
   SNP_SET_DEF_COLS = \
   [('string', 'vid', 'Set VID', len(vlu.make_vid()), None),

@@ -47,7 +47,7 @@ class App(object):
     self.gm_by_object[self.gm["FEMALE"].id] = "FEMALE"
   #-----------------------------------------------------------------------
   def make_parser(self):
-    parser = argparse.ArgumentParser(description="A magic importer")
+    parser = argparse.ArgumentParser(description="Gender check utility")
     parser.add_argument('-H', '--host', type=str,
                         help='omero host system',
                         default='localhost')

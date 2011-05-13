@@ -1,3 +1,15 @@
+2011-05-13    <zag@manzanillo>
+
+	* bl/vl/app/exporter/markers_set.py (do_register): can dump
+	markers set definitions.
+
+2011-05-12    <zag@manzanillo>
+
+	* bl/vl/app/exporter/marker_definition.py (do_register): can dump
+	marker definitions.
+
+	* tools/exporter (main): Added an exporter utility.
+
 2011-05-11    <zag@manzanillo>
 
 	* bl/vl/app/importer/markers_set.py: Added new tool.

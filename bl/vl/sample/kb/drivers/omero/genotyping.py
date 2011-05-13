@@ -61,7 +61,7 @@ class SNPMarkersSet(Result, kb.SNPMarkersSet):
     else:
       ome_obj = ome_type()
       self.__setup__(ome_obj, maker, model, release, set_vid, **kw)
-    super(SNPMarkersSet, self).__init__(ome_obj)
+    super(SNPMarkersSet, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.maker is None:
