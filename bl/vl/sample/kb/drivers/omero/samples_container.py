@@ -36,7 +36,7 @@ class SamplesContainer(Result, kb.SamplesContainer):
     else:
       ome_obj = ome_type()
       self.__setup__(ome_obj, slots, barcode, virtual_container, **kw)
-    super(SamplesContainer, self).__init__(ome_obj)
+    super(SamplesContainer, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.slots is None:
@@ -75,7 +75,7 @@ class TiterPlate(SamplesContainer, kb.TiterPlate):
     else:
       ome_obj = ome_type()
       self.__setup__(ome_obj, rows, columns, barcode, virtual_container, **kw)
-    super(TiterPlate, self).__init__(ome_obj)
+    super(TiterPlate, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.rows is None:
@@ -105,7 +105,7 @@ class DataCollection(OmeroWrapper, kb.DataCollection):
     else:
       ome_obj = ome_type()
       self.__setup__(ome_obj, study, **kw)
-    super(DataCollection, self).__init__(ome_obj)
+    super(DataCollection, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.study is None:

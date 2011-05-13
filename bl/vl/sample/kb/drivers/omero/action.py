@@ -17,7 +17,7 @@ class ActionSetup(OmeroWrapper, kb.ActionSetup):
 
   OME_TABLE = "ActionSetup"
 
-  def __init__(self, from_=None, label=None):
+  def __init__(self, from_=None, label=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
@@ -27,14 +27,14 @@ class ActionSetup(OmeroWrapper, kb.ActionSetup):
       ome_obj = ome_type()
       ome_obj.vid = ort.rstring(vlu.make_vid())
       ome_obj.label = ort.rstring(label)
-    super(ActionSetup, self).__init__(ome_obj)
+    super(ActionSetup, self).__init__(ome_obj, **kw)
 
 #----------------------------------------------------------------------
 class Action(OmeroWrapper, kb.Action):
 
   OME_TABLE = "Action"
 
-  def __init__(self, from_=None):
+  def __init__(self, from_=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_action = from_
@@ -42,7 +42,7 @@ class Action(OmeroWrapper, kb.Action):
       ome_action = ome_type()
       ome_action.vid = ort.rstring(vlu.make_vid())
       ome_action.beginTime = vluo.time2rtime(time.time())
-    super(Action, self).__init__(ome_action)
+    super(Action, self).__init__(ome_action, **kw)
 
   def __handle_validation_errors__(self):
     if self.id is None:

@@ -47,7 +47,7 @@ class SamplesContainerSlot(Result, kb.Result):
       self.__setup__(ome_obj, sample, container, slot, **kw)
       # FIXME
       #ome_obj.contLabelUK = vluo.make_unique_key(container.id, label)
-    super(SamplesContainerSlot, self).__init__(ome_obj)
+    super(SamplesContainerSlot, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
     if self.sample is None:
@@ -63,9 +63,9 @@ class SamplesContainerSlot(Result, kb.Result):
 
   def __getattr__(self, name):
     if name == 'sample':
-      return Sample(getattr(self.ome_obj, name))
+      return Sample(getattr(self.ome_obj, name), proxy=self.proxy)
     elif name == 'container':
-      return SamplesContainer(getattr(self.ome_obj, name))
+      return SamplesContainer(getattr(self.ome_obj, name), proxy=self.proxy)
     else:
       return super(SamplesContainerSlot, self).__getattr__(name)
 

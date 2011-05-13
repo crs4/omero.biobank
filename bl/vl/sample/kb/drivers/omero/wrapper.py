@@ -28,7 +28,7 @@ class OmeroWrapper(object):
   def __get_if_needed__(self, name):
     proxy = self.__get_proxy__()
     if proxy and not self.ome_obj.loaded:
-      o = proxy.ome_operation("getQueryService", "get", self.OME_TABLE,
+      o = proxy.ome_operation("getQueryService", "find", self.OME_TABLE,
                               self.ome_obj.id._val)
       super(OmeroWrapper, self).__setattr__("ome_obj", o)
 

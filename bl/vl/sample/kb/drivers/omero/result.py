@@ -60,7 +60,7 @@ class Result(OmeroWrapper, kb.Result):
       # >>> type(a).__name__
       # 'ActionOnSampleI'
       # >>>
-      obj = Action(self.ome_obj.action)
+      obj = Action(self.ome_obj.action, proxy=self.proxy)
       return obj
     elif name == 'outcome':
       return self.ome_obj.outcome

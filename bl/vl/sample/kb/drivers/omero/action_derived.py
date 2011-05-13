@@ -36,7 +36,7 @@ class ActionOnSample(Action, kb.ActionOnSample):
 
   def __getattr__(self, name):
     if name == 'target':
-      return Sample(self.ome_obj.__getattr__(name))
+      return Sample(self.ome_obj.__getattr__(name), proxy=self.proxy)
     else:
       return super(ActionOnSample, self).__getattr__(name)
 
@@ -62,7 +62,7 @@ class ActionOnSamplesContainer(Action, kb.ActionOnSamplesContainer):
 
   def __getattr__(self, name):
     if name == 'target':
-      return SamplesContainer(self.ome_obj.__getattr__(name))
+      return SamplesContainer(self.ome_obj.__getattr__(name), proxy=self.proxy)
     else:
       return super(ActionOnSamplesContainer, self).__getattr__(name)
 
@@ -87,7 +87,8 @@ class ActionOnSamplesContainerSlot(Action, kb.ActionOnSamplesContainerSlot):
 
   def __getattr__(self, name):
     if name == 'target':
-      return SamplesContainerSlot(self.ome_obj.__getattr__(name))
+      return SamplesContainerSlot(self.ome_obj.__getattr__(name),
+                                  proxy=self.proxy)
     else:
       return super(ActionOnSamplesContainerSlot, self).__getattr__(name)
 
@@ -113,7 +114,7 @@ class ActionOnDataCollection(Action, kb.ActionOnDataCollection):
 
   def __getattr__(self, name):
     if name == 'target':
-      return DataCollection(self.ome_obj.__getattr__(name))
+      return DataCollection(self.ome_obj.__getattr__(name), proxy=self.proxy)
     else:
       return super(ActionOnDataCollection, self).__getattr__(name)
 
@@ -139,8 +140,7 @@ class ActionOnDataCollectionItem(Action, kb.ActionOnDataCollectionItem):
 
   def __getattr__(self, name):
     if name == 'target':
-      return DataCollectionItem(self.ome_obj.__getattr__(name))
+      return DataCollectionItem(self.ome_obj.__getattr__(name),
+                                proxy=self.proxy)
     else:
       return super(ActionOnDataCollectionItem, self).__getattr__(name)
-
-
