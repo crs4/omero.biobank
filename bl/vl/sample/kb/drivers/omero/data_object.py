@@ -24,7 +24,7 @@ class DataObject(OmeroWrapper, kb.DataObject):
         raise ValueError("DataObject sample mime_type path sha1 and size cannot be None")
       ome_obj = ome_type()
       # This is to pacify OriginalFile request for a .name
-      ome_obj.name = ort.wrap(sample.name)
+      ome_obj.name = ort.wrap(sample.label)
       ome_obj.sample = sample.ome_obj
       ome_obj.path = ort.wrap(path)
       ome_obj.mimetype = ort.wrap(mime_type)

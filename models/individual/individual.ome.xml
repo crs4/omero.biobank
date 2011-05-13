@@ -6,8 +6,12 @@
       <required name="vid" type="string" unique="true"/>
       <required name="gender" type="ome.model.vl.Gender"/>
       <optional name="father" type="ome.model.vl.Individual"/>
+      <optional name="fatherTrusted" type="boolean"/>
       <optional name="mother" type="ome.model.vl.Individual"/>
+      <optional name="motherTrusted" type="boolean"/>
+      <!-- action is the first action that produced the object -->
       <required name="action" type="ome.model.vl.Action"/>
+      <optional name="lastUpdate" type="ome.model.vl.ActionOnAction"/>
     </properties>
   </type>
 </types>

@@ -4,9 +4,9 @@
   <type id="ome.model.vl.ActionSetup">
     <properties>
       <required name="vid" type="string" unique="true"/>
-      <!-- this is supposed to be a json configuration string -->
-      <required name="label" type="text" unique="true"/>
-      <optional name="conf" type="text"/>
+      <required name="label" type="string" unique="true"/>
+      <!-- conf field must be a JSON configuration string -->
+      <required name="conf" type="text"/>
     </properties>
   </type>
 </types>

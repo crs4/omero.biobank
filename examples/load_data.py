@@ -474,8 +474,8 @@ class network_builder(object):
                                    '{"foo2": "foo"}')
     acat  = self.acat_map['PROCESSING']
     operator = 'Alfred E. Neumann'
-    #- FIXME DataCollection do not have a label attribute.
-    data_collection = self.skb.DataCollection(study=self.study)
+    data_collection = self.skb.DataCollection(study=self.study,
+                                              label='foo-%s' % time.time())
     data_collection = self.skb.save(data_collection)
     #-
     for e in self.enrollments:

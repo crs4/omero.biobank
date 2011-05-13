@@ -91,10 +91,11 @@ class DataCollection(OmeroWrapper, kb.DataCollection):
 
   OME_TABLE = "DataCollection"
 
-  def __setup__(self, ome_obj, study, **kw):
-    if study is None:
-      raise ValueError('DataCollection study cannot be None')
-    ome_obj.vid = ort.rstring(vlu.make_vid())
+  def __setup__(self, ome_obj, study, label, **kw):
+    if study is None or label is None:
+      raise ValueError('DataCollection study label cannot be None')
+    ome_obj.vid   = ort.rstring(vlu.make_vid())
+    ome_obj.label = ort.rstring(label)
     ome_obj.creationDate = vluo.time2rtime(time.time())
     ome_obj.study = study.ome_obj
 
@@ -115,7 +116,7 @@ class DataCollection(OmeroWrapper, kb.DataCollection):
 
   def __getattr__(self, name):
     if name == 'study':
-      return Study(getattr(self.ome_obj, name))
+      return Study(getattr(self.ome_obj, name), proxy=self.proxy)
     else:
       return super(DataCollection, self).__getattr__(name)
 

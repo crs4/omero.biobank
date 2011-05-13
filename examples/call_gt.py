@@ -64,7 +64,7 @@ class App(object):
     data_collections = self.skb.get_bio_samples(self.skb.DataCollection)
     self.data_collections = {}
     for dc in data_collections:
-      self.data_collections[dc.id] = dc
+      self.data_collections[dc.label] = dc
     self.logger.info('done pre-loading data collections')
     self.logger.info('there are %d DataCollection(s) in the kb' %
                      len(self.data_collections))

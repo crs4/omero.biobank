@@ -47,14 +47,44 @@ class Dumper(Core):
     super(Dumper, self).__init__(host, user, passwd)
 
   def dump(self, ofile):
-    self.logger.info("dump: start preloading data samples")
-    data_samples = self.skb.get_bio_samples(self.skb.DataSample)
-    self.logger.info("dump: finished preloading data samples")
-    for ds in data_samples:
-      action = ds.action
-      target = self.skb.SamplesContainerSlot(action.getTarget(), proxy=self.skb)
-      print ds.name, ds.contrastQC, target.label, target.container.label
+    #-- FIXME fork off as dump_affy
+    self.logger.info("dump: start preloading AffymetrixCel DataSamples")
+    data_samples = self.skb.get_bio_samples(self.skb.AffymetrixCel)
+    self.logger.info("dump: finished preloading AffymetrixCel DataSamples (%d found)" %
+                     len(data_samples))
+    #--
+    self.logger.info("dump: start preloading actions")
+    query = """select a from ActionOnSamplesContainerSlot a
+               join fetch a.target as t
+               where a.id in (select da.id
+                              from AffymetrixCel d
+                              join d.action as da)
+               """
+    actions = self.skb.find_all_by_query(query, {},
+                                         self.skb.ActionOnSamplesContainerSlot)
 
+    actions_by_omero_id = {}
+    for a in actions:
+      actions_by_omero_id[a.omero_id] = a
+
+    self.logger.info("dump: finished preloading Actions (%d found)" %
+                     len(actions))
+    #--
+    self.logger.info("dump: start preloading TiterPlate(s)")
+    titer_plates = self.skb.get_bio_samples(self.skb.TiterPlate)
+
+    titer_plate_by_omero_id = {}
+    for t in titer_plates:
+      titer_plate_by_omero_id[t.omero_id] = t
+
+    self.logger.info("dump: done preloading TiterPlate(s) (%d found)" %
+                     len(titer_plates))
+    #--
+    for ds in data_samples:
+      action = actions_by_omero_id[ds.action.omero_id]
+      target = action.target
+      plate = titer_plate_by_omero_id[target.container.omero_id]
+      print ds.name, ds.contrastQC, target.label, plate.label
 
 help_doc = """
 FIXME

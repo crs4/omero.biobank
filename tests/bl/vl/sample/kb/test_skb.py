@@ -98,7 +98,6 @@ class TestSKB(SKBObjectCreator, unittest.TestCase):
 
 
   def test_object_deletion(self):
-    "FIXME: we are using detai"
     conf, action = self.create_action_on_container()
     action = self.skb.save(action)
     self.check_object(action, conf, self.skb.ActionOnSamplesContainer)

@@ -4,20 +4,21 @@ Import of Data Collection
 
 Will read in a tsv file with the following columns::
 
-  study    data_sample_label
-  BSTUDY   a0390290
-  BSTUDY   a0390291
-  BSTUDY   a0390292
-  BSTUDY   a0390293
+  study    label data_sample_label
+  BSTUDY   dc-01 a0390290
+  BSTUDY   dc-01 a0390291
+  BSTUDY   dc-01 a0390292
+  BSTUDY   dc-01 0390293
   ....
 
-This will create a new DataCollection and link to it the DataSample
-object identified by data_sample_label.
+This will create a new DataCollection, whose label is defined by the
+label column, and link to it the DataSample object identified by
+data_sample_label.
 
 Record that point to an unknown (data_sample_label) will be noisily
-ignored. Previously seen collections will be noisily ignored too. No,
-it is not legal to use the importer to add items to a previously known
-collection.
+ignored and will abort the data collection loading. Previously seen
+collections will be noisily ignored too. No, it is not legal to use
+the importer to add items to a previously known collection.
 """
 
 from bl.vl.sample.kb import KBError
@@ -91,10 +92,19 @@ class Recorder(Core):
     data_samples = self.skb.get_bio_samples(self.skb.DataSample)
     self.data_samples = {}
     for ds in data_samples:
-      self.data_samples[ds.name] = ds
+      self.data_samples[ds.label] = ds
     self.logger.info('done prefetching DataSample(s)')
     self.logger.info('there are %d DataSample(s) in the kb' %
                      len(self.data_samples))
+    #--
+    self.logger.info('start prefetching DataCollection(s)')
+    data_collections = self.skb.get_bio_samples(self.skb.DataCollection)
+    self.data_collections = {}
+    for dc in data_collections:
+      self.data_collections[dc.label] = dc
+    self.logger.info('done prefetching DataCollection(s)')
+    self.logger.info('there are %d DataCollection(s) in the kb' %
+                     len(self.data_collections))
 
   @debug_wrapper
   def get_study_by_label(self, study_label):
@@ -120,44 +130,42 @@ class Recorder(Core):
     return action
 
   @debug_wrapper
-  def record(self, r):
-    try:
-      study = self.get_study_by_label(r['study'])
-      #-
-      data_sample_label = r['data_sample_label']
-      if not self.data_collection:
-        #FIXME data_collection does not have a label attribute!
-        data_collection = self.skb.DataCollection(study=study)
-        self.data_collection = self.skb.save(data_collection)
-      #-
-      if not self.data_samples.has_key(data_sample_label):
-        raise ValueError('ignoring %s because is unknown to the kb' %
-                         label)
-      #-
-      data_sample = self.data_samples[data_sample_label]
-      action = self.create_action_on_sample(study, data_sample, json.dumps(r))
+  def record_collection(self, label, data):
+    if self.data_collections.has_key(label):
+        self.logger.critical('collection %s is already in kb' %
+                             label)
+        sys.exit(1)
+    #--
+    study = self.default_study
+    if not study:
+      study_label = data[0]['study']
+      if not filter(lambda x : x['study']==study_label, data):
+        self.logger.critical('not uniform study for collection %s' %
+                             label)
+        sys.exit(1)
+      study = self.get_study_by_label(study_label)
+    #--
+    for x in data:
+      if not self.data_samples.has_key(x['data_sample_label']):
+        self.logger.critical('%s referred in collection %s does not exist.' %
+                             x['data_sample_label'], label)
+        sys.exit(1)
+    #--
+    data_collection = self.skb.DataCollection(study=study, label=label)
+    self.data_collection = self.skb.save(data_collection)
+
+    for x in data:
+      ds_label = x['data_sample_label']
+      data_sample = self.data_samples[ds_label]
+      action = self.create_action_on_sample(study, data_sample, json.dumps(x))
       action = self.skb.save(action)
       #-
       dc_it = self.skb.DataCollectionItem(data_collection=self.data_collection,
                                           data_sample=data_sample)
       dc_it.action = action
       self.skb.save(dc_it)
-      self.logger.info('saved  %s[%s]' % (self.data_collection.id,
-                                          data_sample_label))
-    except KeyError, e:
-      self.logger.warn('ignoring record %s because of missing value(%s)' %
-                       (r, e))
-      return
-    except ValueError, e:
-      self.logger.warn('ignoring record %s since %s' % (r, e))
-      return
-    except (KBError, NotImplementedError), e:
-      self.logger.warn('ignoring record %s because it triggers a KB error: %s'%
-                       (r, e))
-      return
-    except Exception, e:
-      self.logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
-      return
+      self.logger.info('saved  %s[%s]' % (self.data_collection.label,
+                                          ds_label))
 
   @debug_wrapper
   def create_action_on_sample(self, study, sample, description):
@@ -184,8 +192,15 @@ def import_data_collection_implementation(args):
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)
   f = csv.DictReader(args.ifile, delimiter='\t')
+  collections = {}
+  default_label = args.collection
   for r in f:
-    recorder.record(r)
+    if default_label:
+      collections.setdefault(default_label, []).append(r)
+    else:
+      collections.setdefault(r['label'], []).append(r)
+  for k in collections.keys():
+    recorder.record_collection(k, collections[k])
 
 def do_register(registration_list):
   registration_list.append(('data_collection', help_doc,

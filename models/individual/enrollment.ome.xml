@@ -6,7 +6,7 @@
       <required name="vid" type="string" unique="true"/>
       <required name="individual" type="ome.model.vl.Individual"/>
       <required name="study" type="ome.model.vl.Study"/>
-      <!-- StudyCode is the code assigned to an Individual inside each specific study -->
+      <!-- StudyCode is the code assignet to an Individual inside each specific study -->
       <required name="studyCode" type="string"/>
       <!-- Multi-field unique keys -->
       <!-- stCodeUK = STUDY-VID_STUDYCODE -->

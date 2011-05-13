@@ -9,10 +9,10 @@ logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger()
 
 class SKBObjectCreator(unittest.TestCase):
-  def __init__(self, name):
+  def __init__(self, label):
     self.skb = 'THIS_IS_A_DUMMY'
     self.kill_list = 'THIS_IS_A_DUMMY'
-    super(SKBObjectCreator, self).__init__(name)
+    super(SKBObjectCreator, self).__init__(label)
 
   def configure_object(self, o, conf):
     assert hasattr(o, "ome_obj")
@@ -118,24 +118,25 @@ class SKBObjectCreator(unittest.TestCase):
     return self.create_result(result=sample, action=action)
 
   def create_data_sample(self, action=None):
-    name = 'data-sample-name-%f' % time.time()
+    label = 'data-sample-label-%f' % time.time()
     dtype = self.dtype_map['GTRAW']
-    conf, sample = self.create_sample(sample=self.skb.DataSample(name=name, data_type= dtype),
+    conf, sample = self.create_sample(sample=self.skb.DataSample(label=label,
+                                                                 data_type= dtype),
                                       action=action)
-    conf['name'] = name
+    conf['label'] = label
     conf['dataType'] = dtype
     return conf, sample
 
   def create_affymetrix_cel(self, action=None):
-    name = 'affymetrix-cel-name-%f' % time.time()
+    label = 'affymetrix-cel-label-%f' % time.time()
     dtype = self.dtype_map['GTRAW']
     array_type = 'GenomeWideSNP_6'
-    sample = self.skb.AffymetrixCel(name=name,
+    sample = self.skb.AffymetrixCel(label=label,
                                     array_type=array_type,
                                     data_type= dtype)
     conf, sample = self.create_sample(sample=sample,
                                       action=action)
-    conf['name'] = name
+    conf['label'] = label
     conf['arrayType'] = array_type
     conf['dataType'] = dtype
     return conf, sample
@@ -156,13 +157,13 @@ class SKBObjectCreator(unittest.TestCase):
     conf, markers_set = self.create_snp_markers_set()
     markers_set = self.skb.save(markers_set)
     self.kill_list.append(markers_set)
-    name = 'genotype-data-sample-name-%f' % time.time()
+    label = 'genotype-data-sample-label-%f' % time.time()
     dtype = self.dtype_map['GTCALL']
-    conf, sample = self.create_sample(sample=self.skb.GenotypeDataSample(name=name,
+    conf, sample = self.create_sample(sample=self.skb.GenotypeDataSample(label=label,
                                                                          snp_markers_set=markers_set,
                                                                          data_type= dtype),
                                       action=action)
-    conf['name'] = name
+    conf['label'] = label
     conf['dataType'] = dtype
     return conf, sample
 
@@ -326,8 +327,10 @@ class SKBObjectCreator(unittest.TestCase):
     study = self.skb.save(study)
     self.kill_list.append(study)
     conf = {'description' : 'this is a fake description',
+            'label' : 'a-dc-label-%s' % time.time(),
             'study' : study}
-    data_collection = self.skb.DataCollection(study=study)
+    data_collection = self.skb.DataCollection(study=study,
+                                              label=conf['label'])
     self.configure_object(data_collection, conf)
     return conf, data_collection
 

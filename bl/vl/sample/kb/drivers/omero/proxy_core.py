@@ -147,6 +147,16 @@ class ProxyCore(object):
     return result
 
   @debug_boundary
+  def find_all_by_query(self, query, params, aklass):
+    xpars = {}
+    for k,v in params.iteritems():
+      xpars[k] = self.ome_wrap(*v) if type(v) == tuple else self.ome_wrap(v)
+    pars = self.ome_query_params(xpars)
+    result = self.ome_operation("getQueryService", "findAllByQuery",
+                                query, pars)
+    return None if result is None else [aklass(r, proxy=self) for r in result]
+
+  @debug_boundary
   def save(self, obj):
     """
     Save and return a kb object.
@@ -179,10 +189,11 @@ class ProxyCore(object):
       raise kb.KBError("object does not exist")
     return result
 
-  #---------------------------------------------------------------------------------
-  #---------------------------------------------------------------------------------
-  #---------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   #-- TABLES SUPPORT
+  #----------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
 
   @debug_boundary
   def _list_table_copies(self, table_name):

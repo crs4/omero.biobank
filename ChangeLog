@@ -1,5 +1,16 @@
 2011-05-13    <zag@manzanillo>
 
+	* tests/bl/vl/sample/kb/skb_object_creator.py (SKBObjectCreator.create_data_collection): 
+	Changed to the new DataCollection model.
+
+	* examples/load_data.py, examples/call_gt.py (App.preload):
+	Changed to the new DataCollection model.
+
+	* bl/vl/sample/kb/drivers/omero/samples_container.py (DataCollection):
+	Changed to the new DataCollection model.
+
+	* models/sample/data_collection.ome.xml: added a label field.
+
 	* bl/vl/app/exporter/markers_set.py (do_register): can dump
 	markers set definitions.
 

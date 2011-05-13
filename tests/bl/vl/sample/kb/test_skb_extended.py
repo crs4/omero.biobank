@@ -147,6 +147,24 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
       self.assertFalse(counts.has_key(r.path))
       counts[r.path] = 1
 
+  def test_find_all_by_query(self):
+    conf, data_sample = self.create_sample_chain()
+    data_sample = self.skb.save(data_sample)
+    self.kill_list.append(data_sample)
+    dss = self.skb.get_bio_samples(self.skb.DataSample)
+    query = """select a from ActionOnSample a
+               join fetch a.target t
+               where a.id in (select da.id
+                              from DataSample d
+                              join d.action as da
+                              )
+               """
+    res = self.skb.find_all_by_query(query, {}, self.skb.Action)
+    actions = {}
+    for a in res:
+      actions[a.omero_id] = a
+    for d in dss:
+      self.assertTrue(actions.has_key(d.action.omero_id))
 
 def suite():
   suite = unittest.TestSuite()
@@ -157,6 +175,7 @@ def suite():
   suite.addTest(TestSKBExtended('test_get_wells_of_plate'))
   suite.addTest(TestSKBExtended('test_get_dna_sample'))
   suite.addTest(TestSKBExtended('test_get_data_objects'))
+  suite.addTest(TestSKBExtended('test_find_all_by_query'))
   return suite
 
 if __name__ == '__main__':

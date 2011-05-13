@@ -20,7 +20,6 @@ class Device(OmeroWrapper, kb.Device):
     ome_obj.maker = ort.rstring(maker)
     ome_obj.model = ort.rstring(model)
     ome_obj.release = ort.rstring(release)
-    ome_obj.deviceUK = vluo.make_unique_key(label, maker, model, release)
 
   def __init__(self, from_=None, label=None, maker=None, model=None, release=None):
     ome_type = self.get_ome_type()
@@ -43,25 +42,6 @@ class Device(OmeroWrapper, kb.Device):
     else:
       super(Device, self).__handle_validation_errors__()
 
-  def __setattr__(self, name, value):
-    if name == 'label':
-      setattr(self.ome_obj, 'deviceUK',
-              vluo.make_unique_key(value, self.maker, self.model, self.release))
-      return super(Device, self).__setattr__(name, value)
-    elif name == 'maker':
-      setattr(self.ome_obj, 'deviceUK',
-              vluo.make_unique_key(self.label, value, self.model, self.release))
-      return super(Device, self).__setattr__(name, value)
-    elif name == 'model':
-      setattr(self.ome_obj, 'deviceUK',
-              vluo.make_unique_key(self.label, self.maker, value, self.release))
-      return super(Device, self).__setattr__(name, value)
-    elif name == 'release':
-      setattr(self.ome_obj, 'deviceUK',
-              vluo.make_unique_key(self.label, self.maker, self.model, value))
-      return super(Device, self).__setattr__(name, value)
-    else:
-      return super(Device, self).__setattr__(name, value)
 
 
 

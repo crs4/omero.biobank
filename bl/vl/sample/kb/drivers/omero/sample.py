@@ -120,25 +120,25 @@ class DataSample(Sample, kb.DataSample):
 
   OME_TABLE = "DataSample"
 
-  def __setup__(self, ome_obj, name, data_type, **kw):
-    if name is None or data_type is None:
-      raise ValueError('DataSample name and data_type cannot be None')
-    ome_obj.name = ort.rstring(name)
+  def __setup__(self, ome_obj, label, data_type, **kw):
+    if label is None or data_type is None:
+      raise ValueError('DataSample label and data_type cannot be None')
+    ome_obj.label = ort.rstring(label)
     ome_obj.dataType = data_type
     super(DataSample, self).__setup__(ome_obj, **kw)
 
-  def __init__(self, from_=None, name=None, data_type=None, **kw):
+  def __init__(self, from_=None, label=None, data_type=None, **kw):
     ome_type = self.get_ome_type()
     if not from_ is None:
       ome_obj = from_
     else:
       ome_obj = ome_type()
-      self.__setup__(ome_obj, name, data_type, **kw)
+      self.__setup__(ome_obj, label, data_type, **kw)
     super(DataSample, self).__init__(ome_obj, **kw)
 
   def __handle_validation_errors__(self):
-    if self.name is None:
-      raise kb.KBError("DataSample name can't be None")
+    if self.label is None:
+      raise kb.KBError("DataSample label can't be None")
     else:
       super(DataSample, self).__handle_validation_errors__()
 

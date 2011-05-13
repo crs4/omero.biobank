@@ -135,7 +135,7 @@ class Recorder(Core):
     data_samples = self.skb.get_bio_samples(self.skb.DataSample)
     self.data_samples = {}
     for ds in data_samples:
-      self.data_samples[ds.name] = ds
+      self.data_samples[ds.label] = ds
     self.logger.info('done prefetching DataSample(s)')
     self.logger.info('there are %d DataSample(s) in the kb' % len(self.data_samples))
 
@@ -188,7 +188,7 @@ class Recorder(Core):
       action = self.get_action(study, sample, name, maker, model, release)
       #-
       if maker == 'Affymetrix' and model  == 'GenomeWideSNP_6':
-        data_sample = self.skb.AffymetrixCel(name=label,
+        data_sample = self.skb.AffymetrixCel(label=label,
                                              array_type='GenomeWideSNP_6',
                                              data_type=self.dtype_map['GTRAW']) # FIXME this is stupid
         data_sample.action  = action
@@ -197,7 +197,7 @@ class Recorder(Core):
           data_sample.contrastQC = r['contrast_qc']
         data_sample = self.skb.save(data_sample)
         self.logger.info('saved data_sample %s[%s]' % (data_sample.__class__.__name__,
-                                                       data_sample.name))
+                                                       data_sample.label))
       else:
         raise ValueError('%s, %s not supported' % (maker, model))
 
@@ -234,8 +234,7 @@ class Recorder(Core):
     return  bio_sample
 
 help_doc = """
-import new data_sample definitions into a virgil system. It will also
-import actual datasets if so instructed.
+import new data_sample definitions into a virgil system.
 """
 
 def make_parser_data_sample(parser):

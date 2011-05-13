@@ -8,8 +8,6 @@
       <required name="maker" type="string"/>
       <required name="model" type="string"/>
       <required name="release" type="string"/>
-      <!-- label maker model release -->
-      <required name="deviceUK" type="string" unique="true"/>
     </properties>
   </type>
 </types>

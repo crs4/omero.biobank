@@ -95,7 +95,7 @@ class Recorder(Core):
     data_samples = self.skb.get_bio_samples(self.skb.DataSample)
     self.data_samples = {}
     for ds in data_samples:
-      self.data_samples[ds.name] = ds
+      self.data_samples[ds.label] = ds
     self.logger.info('done prefetching DataSample(s)')
     self.logger.info('there are %d DataSample(s) in the kb' %
                      len(self.data_samples))
