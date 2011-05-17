@@ -71,7 +71,8 @@ class Recorder(BioSampleRecorder):
     for bs in blood_samples:
       self.known_blood_samples[bs.label] = bs
     self.logger.info('done prefetching BloodSample(s)')
-    self.logger.info('there are %d BloodSample(s) in the kb' % (len(self.known_blood_samples)))
+    self.logger.info('there are %d BloodSample(s) in the kb'
+                     % (len(self.known_blood_samples)))
     #--
 
 
@@ -86,7 +87,8 @@ class Recorder(BioSampleRecorder):
   def create_blood_sample(self, enrollment, label, barcode,
                           initial_volume, current_volume, status):
     assert label and barcode and initial_volume >= current_volume
-    action = self.create_action(enrollment, description=json.dumps(self.input_rows[barcode]))
+    action = self.create_action(enrollment,
+                                description=json.dumps(self.input_rows[barcode]))
     #--
     sample = self.skb.BloodSample()
     sample.action, sample.outcome   = action, self.outcome_map['OK']
@@ -100,7 +102,8 @@ class Recorder(BioSampleRecorder):
 
   @debug_wrapper
   def record(self, r):
-    self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
+    self.logger.info('processing record[%d] (%s,%s),'
+                     % (self.record_counter, r['study'], r['label']))
     self.record_counter += 1
     if self.known_blood_samples.has_key(r['label']):
       self.logger.info('BloodSample %s is already in the kb' % r['label'])

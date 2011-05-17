@@ -8,10 +8,6 @@ Will read in a csv file with the following columns::
   study  label   plate_label row column dna_label volume
   ASTUDY p01.J02 p01         10  2      lab-89 0.1
 
-Default plate dimensions are provided with a flag
-
-  > import -v plate_well -i file.csv --plate-shape=32x48
-
 It will noisily ignore records that do not correspond to a valid plate_label or dna sample.
 
 """
@@ -22,6 +18,7 @@ from version import version
 
 import csv, json
 import time, sys
+import traceback
 
 #-----------------------------------------------------------------------------
 #FIXME this should be factored out....
@@ -129,14 +126,14 @@ class Recorder(Core):
                                                            i_study, label))
       #-
       if not self.titer_plates.has_key(plate_label):
-        self.logger.error('cannot load record[%d]: %s is not a known TiterPlate' %
-                          record_id, plate_label)
+        self.logger.error('cannot load rec[%d]: %s is not a known TiterPlate' %
+                          (record_id, plate_label))
         return
       plate = self.titer_plates[plate_label]
       #-
       if not self.dna_samples.has_key(dna_label):
-        self.logger.error('cannot load record[%d]: %s is not a known DNASample' %
-                          record_id, dna_label)
+        self.logger.error('cannot load rec[%d]: %s is not a known DNASample'
+                          % (record_id, dna_label))
         return
       dna_sample = self.dna_samples[dna_label]
       #-
@@ -188,6 +185,7 @@ class Recorder(Core):
       return
     except Exception, e:
       logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
+      logger.fatal('%s' % traceback.format_exc())
       return
 
   @debug_wrapper

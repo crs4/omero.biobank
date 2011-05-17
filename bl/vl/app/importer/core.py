@@ -32,8 +32,6 @@ class BadRecord(Exception):
   def __str__(self):
     return repr(self.msg)
 
-
-
 class Core(object):
   """
   The common set of methods used by the importer's modules.
@@ -55,7 +53,8 @@ class Core(object):
     device = self.skb.get_device(label)
     if not device:
       self.logger.debug('creating a device')
-      device = self.skb.Device(label=label, maker=maker, model=model, release=release)
+      device = self.skb.Device(label=label, maker=maker,
+                               model=model, release=release)
       device = self.skb.save(device)
     return device
 
@@ -92,7 +91,8 @@ class Core(object):
     try:
       return self.skb.save(action)
     except KBError, e:
-      msg = 'got an error: %s\n\taction: %s\n\tome_obj: %s' % (e, action, action.ome_obj)
+      msg = ('got an error: %s\n\taction: %s\n\tome_obj: %s'
+             % (e, action, action.ome_obj))
       self.logger.error(msg)
       raise KBError(msg)
 

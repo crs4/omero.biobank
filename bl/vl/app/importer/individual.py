@@ -17,12 +17,6 @@ will be noisily ignored.
 
 """
 
-from bl.vl.individual.pedigree  import import_pedigree
-
-from core import Core
-
-import csv
-
 #-----------------------------------------------------------------------------
 #FIXME this should be factored out....
 
@@ -42,6 +36,7 @@ def debug_wrapper(f):
   return debug_wrapper_wrapper
 #-----------------------------------------------------------------------------
 
+
 class Ind(object):
   """
   An utility class that quacks as expected by import_pedigree
@@ -58,11 +53,23 @@ class Ind(object):
   def is_female(self):
     return self.gender.upper() == 'FEMALE'
 
+  def __str__(self):
+    return '%s (%s) [%s, %s]' % (self.id, self.gender,
+                                 self.father if self.father else None,
+                                 self.mother if self.mother else None)
+
+
+from bl.vl.individual.pedigree  import import_pedigree
+import csv
+
+from core import Core
+
 class Recorder(Core):
   """
   An utility class that handles the actual recording into VL
   """
-  def __init__(self, study_label=None, host=None, user=None, passwd=None, keep_tokens=1):
+  def __init__(self, study_label=None, host=None, user=None, passwd=None,
+               keep_tokens=1):
     super(Recorder, self).__init__(host, user, passwd, keep_tokens)
     self.default_study = None
     if study_label:
@@ -94,8 +101,9 @@ class Recorder(Core):
       for e in known_enrollments:
         self.known_enrollments[e.studyCode] = e
       self.logger.info('done pre-loading known enrolled individuals')
-      self.logger.info('there are %d enrolled individuals in study %s' % (len(self.known_enrollments),
-                                                                          self.default_study.label))
+      self.logger.info('there are %d enrolled individuals in study %s'
+                       % (len(self.known_enrollments),
+                          self.default_study.label))
     #--
 
   @debug_wrapper
@@ -107,9 +115,12 @@ class Recorder(Core):
   @debug_wrapper
   def retrieve_enrollment(self, identifier):
     study_label, label = identifier
+    self.logger.info('importing (%s, %s)' % (study_label, label))
     if self.default_study and self.known_enrollments.has_key(label):
       study = self.default_study
       e = self.known_enrollments[label]
+      self.logger.info('using previously loaded enrollment (%s, %s)' %
+                       (study_label, label))
     else:
       study = self.default_study if self.default_study \
               else self.known_studies.setdefault(study_label,
@@ -175,6 +186,7 @@ def import_individual_implementation(args):
               None if r['mother'] == 'None' else (r['study'], r['mother']))
       yield i
   f = csv.DictReader(args.ifile, delimiter='\t')
+  print 'ready to go on file %s' % args.ifile.name
   import_pedigree(recorder, istream(f, recorder.input_rows))
 
 def do_register(registration_list):

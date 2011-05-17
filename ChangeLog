@@ -1,3 +1,10 @@
+2011-05-17    <zag@manzanillo>
+
+	* bl/vl/individual/pedigree.py (import_pedigree): people can have
+	children with more than one partner...
+	(import_pedigree): oops, forgot to properly mark
+	founder-non-founder families.
+
 2011-05-13    <zag@manzanillo>
 
 	* tests/bl/vl/sample/kb/skb_object_creator.py (SKBObjectCreator.create_data_collection): 

@@ -72,7 +72,7 @@ def dna_sample_conversion_rule(study, s, x):
 def titer_plate_conversion_rule_helper(study, label):
   global barcode_counter
   y = {'study' : study, 'label' : label, 'barcode' : barcode_counter,
-       'rows' : 32, 'columns' : 48, 'maker' : 'CRS4', 'model' : 'virtual'}
+       'rows' : 8, 'columns' : 12, 'maker' : 'CRS4', 'model' : 'virtual'}
   barcode_counter += 1
   return y
 
@@ -92,7 +92,7 @@ def titer_plate_conversion_rule(study, r):
 #----------------------------------------
 row_counters = {}
 column_counters = {}
-max_columns = 48
+max_columns = 12
 def convert_well_position(label, pos):
   pos = 'TBF' if pos == 'x' else pos
   if pos == 'TBF':

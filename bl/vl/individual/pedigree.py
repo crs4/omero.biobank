@@ -19,7 +19,7 @@ INDIVIDUAL_DEFINITION_DOC = """
 MAX_COMPLEXITY=19
 
 
-#--------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
 def import_pedigree(recorder, istream):
   """
@@ -55,24 +55,25 @@ def import_pedigree(recorder, istream):
   founders, non_founders, dandlings, couples, children = analyze(family)
   assert not dandlings
 
-  kids = {}
   visited = {}
+  kids = {}
   couples_by_partner = {}
 
   for c in couples:
     visited[c] = False
-    kids[c] = children[c[0]].union(children[c[1]])
+    kids[c] = children[c[0]].intersection(children[c[1]])
     couples_by_partner.setdefault(c[0], set()).add(c)
     couples_by_partner.setdefault(c[1], set()).add(c)
 
-  registered = []
+  wave = []
   for f in founders:
     register(f)
+    for c1 in couples_by_partner.get(f.id, []):
+      if visited[c1]:
+        wave.append(c1)
+      else:
+        visited[c1] = True
 
-  wave = []
-  for c in couples:
-    if by_id[c[0]][1] and by_id[c[1]][1]:
-      wave.append(c)
   while wave:
     new_wave = []
     for c in  wave:
