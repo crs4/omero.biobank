@@ -12,13 +12,13 @@ Will read in a tsv file with the following columns::
   ....
 
 This will create a new DataCollection, whose label is defined by the
-label column, and link to it the DataSample object identified by
-data_sample_label.
+label column, and link to it, using DataCollectionItem objects,
+the DataSample object identified by data_sample_label.
 
-Record that point to an unknown (data_sample_label) will be noisily
-ignored and will abort the data collection loading. Previously seen
-collections will be noisily ignored too. No, it is not legal to use
-the importer to add items to a previously known collection.
+Record that point to an unknown (data_sample_label) will abort the
+data collection loading. Previously seen collections will be noisily
+ignored too. No, it is not legal to use the importer to add items to a
+previously known collection.
 """
 
 from bl.vl.sample.kb import KBError
@@ -28,24 +28,6 @@ from version import version
 import csv, json
 import time, sys
 
-#-----------------------------------------------------------------------------
-#FIXME this should be factored out....
-
-import logging, time
-logger = logging.getLogger()
-counter = 0
-def debug_wrapper(f):
-  def debug_wrapper_wrapper(*args, **kv):
-    global counter
-    now = time.time()
-    counter += 1
-    logger.debug('%s[%d] in' % (f.__name__, counter))
-    res = f(*args, **kv)
-    logger.debug('%s[%d] out (%f)' % (f.__name__, counter, time.time() - now))
-    counter -= 1
-    return res
-  return debug_wrapper_wrapper
-#-----------------------------------------------------------------------------
 
 class Recorder(Core):
   """
@@ -55,17 +37,9 @@ class Recorder(Core):
   def __init__(self, study_label=None,
                host=None, user=None, passwd=None, keep_tokens=1,
                operator='Alfred E. Neumann'):
-    super(Recorder, self).__init__(host, user, passwd)
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
+                                   study_label=study_label)
     #FIXME this can probably go to core....
-    self.default_study = None
-    if study_label:
-      s = self.skb.get_study_by_label(study_label)
-      if not s:
-        raise ValueError('No known study with label %s' % study_label)
-      self.logger.info('Selecting %s[%d,%s] as default study' %
-                       (s.label, s.omero_id, s.id))
-      self.default_study = s
-    #-------------------------
     self.known_studies = {}
     self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
     self.asetup = self.get_action_setup('importer-version-%s-%s-%f' %
@@ -106,30 +80,7 @@ class Recorder(Core):
     self.logger.info('there are %d DataCollection(s) in the kb' %
                      len(self.data_collections))
 
-  @debug_wrapper
-  def get_study_by_label(self, study_label):
-    if self.default_study:
-      return self.default_study
-    return self.known_studies.setdefault(study_label,
-                                         super(Recorder, self)\
-                                         .get_study_by_label(study_label))
 
-  @debug_wrapper
-  def get_action(self, study, sample, name, maker, model, release):
-    device = self.get_device(name, maker, model, release)
-    asetup = self.get_action_setup('import-%s-%s' % (maker, model),
-                                   json.dumps({}))
-    if sample.__class__.__name__ == 'PlateWell':
-      action = self.create_action_on_sample_slot(study, sample, device, asetup,
-                                                 description='')
-    elif sample.__class__.__name__ == 'DNASample':
-      action = self.create_action_on_sample(study, sample, device, asetup,
-                                            description='')
-    else:
-      raise ValueError('sample [%s] is of the wrong type' % sample.label)
-    return action
-
-  @debug_wrapper
   def record_collection(self, label, data):
     if self.data_collections.has_key(label):
         self.logger.critical('collection %s is already in kb' %
@@ -139,7 +90,7 @@ class Recorder(Core):
     study = self.default_study
     if not study:
       study_label = data[0]['study']
-      if not filter(lambda x : x['study']==study_label, data):
+      if not filter(lambda x : x['study'] != study_label, data):
         self.logger.critical('not uniform study for collection %s' %
                              label)
         sys.exit(1)
@@ -167,7 +118,7 @@ class Recorder(Core):
       self.logger.info('saved  %s[%s]' % (self.data_collection.label,
                                           ds_label))
 
-  @debug_wrapper
+
   def create_action_on_sample(self, study, sample, description):
     return self.create_action_helper(self.skb.ActionOnSample, description,
                                      study, self.device, self.asetup,

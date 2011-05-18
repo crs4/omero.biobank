@@ -152,7 +152,10 @@ class Proxy(ProxyCore):
     return None if result is None else PlateWell(result, proxy=self)
 
   def get_data_collection_items(self, data_collection):
-    query = 'select dci from DataCollectionItem dci join dci.dataSet as c where c.vid = :c_id'
+    query = """select dci from DataCollectionItem dci
+                               join fetch dci.dataSample as ds
+                               join dci.dataSet as c
+               where c.vid = :c_id"""
     pars = self.ome_query_params({'c_id' : self.ome_wrap(data_collection.id)})
     result = self.ome_operation("getQueryService", "findAllByQuery", query, pars)
     logger.debug('get_data_collection_items results:[%d] %s' % (len(result), result))
@@ -169,7 +172,7 @@ class Proxy(ProxyCore):
     return None if result is None else aklass(result, proxy=self)
 
   def get_bio_samples(self, aklass):
-    query = 'select s from %s s' % aklass.OME_TABLE
+    query = 'select s from %s as s' % aklass.OME_TABLE
     result = self.ome_operation("getQueryService", "findAllByQuery", query, None)
     return [aklass(r, proxy=self) for r in result]
 
@@ -212,3 +215,8 @@ class Proxy(ProxyCore):
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else aklass(result, proxy=self)
 
+  def get_data_collection(self, label=None):
+    """
+    Get a DataCollection object stored in VL.
+    """
+    return self.get_bio_sample(DataCollection, label, None)

@@ -1,4 +1,18 @@
+2011-05-18    <zag@manzanillo>
+
+	* bl/vl/app/importer/data_collection.py (Recorder): moved
+	default_study handling to core.
+
+	* bl/vl/sample/kb/drivers/omero/dependency_tree.py
+	(DependencyTree): Added as a more general (albeit slower)
+	replacement to proxy_index indexing functions.
+
 2011-05-17    <zag@manzanillo>
+
+	* bl/vl/sample/kb/drivers/omero/proxy_core.py
+	(ProxyCore.find_all_by_query): Now we have a factory controlled
+	object wrapping. It is a hack, it should converge to the general
+	proxy class.
 
 	* bl/vl/individual/pedigree.py (import_pedigree): people can have
 	children with more than one partner...

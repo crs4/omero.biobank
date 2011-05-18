@@ -30,5 +30,6 @@ setup(name='bl_vl_genotype',
                 'bl.vl.app',
                 'bl.vl.app.importer',
                 'bl.vl.app.exporter',
+                'bl.vl.app.chipal',
                 ],
       )

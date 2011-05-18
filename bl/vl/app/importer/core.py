@@ -36,7 +36,8 @@ class Core(object):
   """
   The common set of methods used by the importer's modules.
   """
-  def __init__(self, host=None, user=None, passwd=None, keep_tokens=1):
+  def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
+               study_label=None):
     self.skb = sKB(driver='omero')(host, user, passwd, keep_tokens)
     self.ikb = iKB(driver='omero')(host, user, passwd, keep_tokens)
     self.gkb = gKB(driver='omero')(host, user, passwd, keep_tokens)
@@ -47,6 +48,15 @@ class Core(object):
     self.gender_map  = self.ikb.get_gender_table()
     self.logger = logger
     self.record_counter = 0
+    self.default_study = None
+    if study_label:
+      s = self.skb.get_study_by_label(study_label)
+      if not s:
+        raise ValueError('No known study with label %s' % study_label)
+      self.logger.info('Selecting %s[%d,%s] as default study' %
+                       (s.label, s.omero_id, s.id))
+      self.default_study = s
+
 
   @debug_wrapper
   def get_device(self, label, maker, model, release):
@@ -75,6 +85,8 @@ class Core(object):
     return asetup
 
   def get_study_by_label(self, label):
+    if self.default_study:
+      return self.default_study
     study = self.skb.get_study_by_label(label)
     if not study:
       study = self.skb.save(self.skb.Study(label=label))

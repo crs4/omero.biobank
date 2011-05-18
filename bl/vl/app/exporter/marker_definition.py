@@ -14,25 +14,6 @@ import csv, json
 import time, sys
 import itertools as it
 
-#-----------------------------------------------------------------------------
-#FIXME this should be factored out....
-
-import logging, time
-logger = logging.getLogger()
-counter = 0
-def debug_wrapper(f):
-  def debug_wrapper_wrapper(*args, **kv):
-    global counter
-    now = time.time()
-    counter += 1
-    logger.debug('%s[%d] in' % (f.__name__, counter))
-    res = f(*args, **kv)
-    logger.debug('%s[%d] out (%f)' % (f.__name__, counter, time.time() - now))
-    counter -= 1
-    return res
-  return debug_wrapper_wrapper
-#-----------------------------------------------------------------------------
-
 class Dumper(Core):
   """
   An utility class that handles the actual dumping of marker definitions
@@ -44,7 +25,7 @@ class Dumper(Core):
     FIXME
     """
     self.logger = logger
-    super(Dumper, self).__init__(host, user, passwd)
+    super(Dumper, self).__init__(host, user, passwd, keep_tokens=keep_tokens)
     #--
 
   def dump_snp_marker_definitions(self, source, context, release, ofile):
