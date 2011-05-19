@@ -58,7 +58,6 @@ def blood_sample_conversion_rule(study, y, x):
 
 def dna_sample_conversion_rule(study, s, x):
   global barcode_counter
-  print barcode_counter
   y= {'study' : study, 'label' : '%s-dna-%s' % (study, x['Sample_Name']),
       'barcode' : '%s-%06d' % (study, barcode_counter),
       'blood_sample_label' : s['label'],
@@ -95,12 +94,14 @@ column_counters = {}
 max_columns = 12
 def convert_well_position(label, pos):
   pos = 'TBF' if pos == 'x' else pos
+  flag = False
   if pos == 'TBF':
+    flag = True
     c = column_counters.setdefault(label, 0)
     r = row_counters.setdefault(label, 0)
     if c == max_columns:
       r += 1
-      column_counters[label] = 0
+      column_counters[label] = 1
       row_counters[label] = r
       c = 0
     else:
@@ -114,6 +115,8 @@ def convert_well_position(label, pos):
       c = int(pos[0:-1])
   else:
     raise ValueError('cannot convert %s %s' % (label, pos))
+  if flag:
+    print 'label:', label, 'pos:', pos, 'row:', r, 'col:', c
   return (r, c)
 
 def plate_well_conversion_rule_helper(study, s, plate_label, plate_well):

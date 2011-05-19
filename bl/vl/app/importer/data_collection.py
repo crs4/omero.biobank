@@ -82,6 +82,8 @@ class Recorder(Core):
 
 
   def record_collection(self, label, data):
+    self.logger.info('start loading collection %s %d items' %
+                     (label, len(data)))
     if self.data_collections.has_key(label):
         self.logger.critical('collection %s is already in kb' %
                              label)
@@ -90,21 +92,23 @@ class Recorder(Core):
     study = self.default_study
     if not study:
       study_label = data[0]['study']
-      if not filter(lambda x : x['study'] != study_label, data):
+      if filter(lambda x : x['study'] != study_label, data):
         self.logger.critical('not uniform study for collection %s' %
                              label)
         sys.exit(1)
       study = self.get_study_by_label(study_label)
     #--
+    self.logger.info('start loading actual data')
     for x in data:
       if not self.data_samples.has_key(x['data_sample_label']):
         self.logger.critical('%s referred in collection %s does not exist.' %
-                             x['data_sample_label'], label)
+                             (x['data_sample_label'], label))
         sys.exit(1)
     #--
     data_collection = self.skb.DataCollection(study=study, label=label)
     self.data_collection = self.skb.save(data_collection)
 
+    self.logger.info('start loading actual data')
     for x in data:
       ds_label = x['data_sample_label']
       data_sample = self.data_samples[ds_label]
@@ -117,7 +121,7 @@ class Recorder(Core):
       self.skb.save(dc_it)
       self.logger.info('saved  %s[%s]' % (self.data_collection.label,
                                           ds_label))
-
+    self.logger.info('done loading')
 
   def create_action_on_sample(self, study, sample, description):
     return self.create_action_helper(self.skb.ActionOnSample, description,
