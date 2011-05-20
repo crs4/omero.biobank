@@ -1,0 +1,48 @@
+"""
+
+FIXME
+
+"""
+import argparse
+import csv
+import sys
+
+
+def make_parser():
+  parser = argparse.ArgumentParser(description="""
+  A tvs file splitter
+  """)
+  parser.add_argument('-i', '--ifile', type=argparse.FileType('r'),
+                        help='the input tsv file',
+                        default=sys.stdin)
+  parser.add_argument('-r', '--ofile-root', type=str,
+                        help='the output tsv filename root',
+                        default='extracted-')
+  parser.add_argument('-n', '--lines-per-chunk', type=int,
+                        help='the number of lines per chunk', default=1000)
+  return parser
+
+
+def main():
+  parser = make_parser()
+  args = parser.parse_args()
+  #-
+  f = csv.DictReader(args.ifile, delimiter='\t')
+  #-
+  lines = [r for r in f]
+  lines_per_chunk = args.lines_per_chunk
+  to_be_written = len(lines)
+  #-
+  chunk_counter = 0
+  while len(lines) > 0:
+    o = csv.DictWriter(open('%s_%03d.tsv' % (args.ofile_root, chunk_counter), 'w'),
+                       fieldnames=f.fieldnames, delimiter='\t')
+    o.writeheader()
+    for r in lines[:lines_per_chunk]:
+      o.writerow(r)
+    lines = lines[lines_per_chunk:]
+    chunk_counter += 1
+
+
+main()
+

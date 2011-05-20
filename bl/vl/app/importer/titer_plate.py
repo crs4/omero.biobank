@@ -156,8 +156,8 @@ def make_parser_titer_plate(parser):
   parser.add_argument('-S', '--study', type=str,
                       help="""default conxtest study label.
                       It will over-ride the study column value""")
-  parser.add_argument('-s', '--plate-shape', type=str, default="8x12",
-                      help="""plate shape expressed as <rows>x<cols>, e.g. 8x12 (default value).""")
+  parser.add_argument('-s', '--plate-shape', type=str,
+                      help="""plate shape expressed as <rows>x<cols>, e.g. 8x12""")
 
 
 def import_titer_plate_implementation(args):

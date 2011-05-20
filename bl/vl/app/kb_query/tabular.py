@@ -1,5 +1,5 @@
 """
-Extract chipal friendly data from VL
+Extract data in tabular form from KB
 ====================================
 
 FIXME
@@ -18,10 +18,10 @@ import itertools as it
 
 import logging
 
-class Dumper(Core):
+class Tabular(Core):
   """
-  An utility class that handles the actual dumping of marker definitions
-  into VL.
+  An utility class that handles the dumping of tabular
+  specification data from the KB.
   """
 
   SUPPORTED_DATA_PROTOCOLS = ['file', 'hdfs']
@@ -36,7 +36,7 @@ class Dumper(Core):
     FIXME
     """
     self.logger = logging.getLogger()
-    super(Dumper, self).__init__(host, user, passwd, keep_tokens=keep_tokens)
+    super(Tabular, self).__init__(host, user, passwd, keep_tokens=keep_tokens)
     if data_collection_label:
       self.data_collection = self.skb.get_data_collection(data_collection_label)
     else:
@@ -46,6 +46,7 @@ class Dumper(Core):
 
     self.preferred_data_protocol = preferred_data_protocol
 
+    #FIXME this is omero specific
     self.gm = self.ikb.get_gender_table()
     self.gm_by_object = {}
     self.gm_by_object[self.gm["MALE"].id] = "MALE"
@@ -64,8 +65,8 @@ class Dumper(Core):
 
     self.logger.info('start prefetching DataObject')
     q = "select o from DataObject as o join fetch o.sample as s"
-    objs = self.skb.find_all_by_query(q, {},
-                                      lambda x, proxy : self.skb.DataObject(x, proxy=self.skb))
+    factory = lambda x, proxy : self.skb.DataObject(x, proxy=self.skb)
+    objs = self.skb.find_all_by_query(q, {}, factory)
     ds_to_do = {}
     for o in objs:
       ds_to_do.setdefault(o.sample.id, []).append(o)
@@ -145,31 +146,33 @@ class Dumper(Core):
 
 #-------------------------------------------------------------------------
 help_doc = """
-Extract chipal friendly data from VL.
+Extract data from the KB in tabular form.
 """
 
-def make_parser_extract(parser):
+def make_parser_tabular(parser):
   parser.add_argument('--data-collection', type=str,
                       help="data collection label")
+  parser.add_argument('--study', type=str,
+                      help="study label")
   parser.add_argument('--preferred-data-protocol', type=str,
-                      choices=Dumper.SUPPORTED_DATA_PROTOCOLS,
+                      choices=Tabular.SUPPORTED_DATA_PROTOCOLS,
                       help="""try, if possible, to provide
                       data object paths that use this protocol""")
   parser.add_argument('--fields-set', type=str,
-                      choices=Dumper.SUPPORTED_FIELDS_SETS,
+                      choices=Tabular.SUPPORTED_FIELDS_SETS,
                       help="""choose all the fields listed in this set""")
 
-def import_extract_implementation(args):
+def import_tabular_implementation(args):
   #--
-  dumper = Dumper(host=args.host, user=args.user, passwd=args.passwd,
-                  keep_tokens=args.keep_tokens,
-                  data_collection_label=args.data_collection,
-                  preferred_data_protocol=args.preferred_data_protocol)
-  dumper.dump(args.fields_set, args.ofile)
+  tabular = Tabular(host=args.host, user=args.user, passwd=args.passwd,
+                    keep_tokens=args.keep_tokens,
+                    data_collection_label=args.data_collection,
+                    preferred_data_protocol=args.preferred_data_protocol)
+  tabular.dump(args.fields_set, args.ofile)
 
 def do_register(registration_list):
-  registration_list.append(('extract', help_doc,
-                            make_parser_extract,
-                            import_extract_implementation))
+  registration_list.append(('tabular', help_doc,
+                            make_parser_tabular,
+                            import_tabular_implementation))
 
 

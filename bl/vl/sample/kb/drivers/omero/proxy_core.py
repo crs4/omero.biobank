@@ -183,8 +183,8 @@ class ProxyCore(object):
     try:
       result = self.ome_operation("getUpdateService", "deleteObject",
                                     kb_obj.ome_obj)
-    except omero.ApiUsageException:
-      raise kb.KBError("trying to delete non-persistent object")
+    except omero.ApiUsageException, e:
+      raise kb.KBError("trying to delete non-persistent object %s", e)
     except omero.ValidationException:
       raise kb.KBError("object does not exist")
     return result

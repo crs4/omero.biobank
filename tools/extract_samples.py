@@ -67,27 +67,6 @@ def dna_sample_conversion_rule(study, s, x):
   barcode_counter += 1
   return [y]
 
-
-def titer_plate_conversion_rule_helper(study, label):
-  global barcode_counter
-  y = {'study' : study, 'label' : label, 'barcode' : barcode_counter,
-       'rows' : 8, 'columns' : 12, 'maker' : 'CRS4', 'model' : 'virtual'}
-  barcode_counter += 1
-  return y
-
-known_plates = {}
-def titer_plate_conversion_rule(study, r):
-  pfields = ['Affymetrix_Plate_Pula', 'Affymetrix_Plate_Lanusei', 'Affymetrix_Plate_USA',
-             'Illumina_Plate', 'Illumina_dup_Plate']
-  tps = []
-  for k in pfields:
-    if r.has_key(k) and not r[k] == 'x':
-      label = r[k]
-      if not known_plates.has_key(label):
-        tps.append(titer_plate_conversion_rule_helper(study, r[k]))
-        known_plates[label] = 1
-  return tps
-
 #----------------------------------------
 row_counters = {}
 column_counters = {}
@@ -96,7 +75,6 @@ def convert_well_position(label, pos):
   pos = 'TBF' if pos == 'x' else pos
   flag = False
   if pos == 'TBF':
-    flag = True
     c = column_counters.setdefault(label, 0)
     r = row_counters.setdefault(label, 0)
     if c == max_columns:
@@ -109,14 +87,14 @@ def convert_well_position(label, pos):
   elif len(pos) <=3:
     if pos[0].isalpha():
       r = ord(pos[0]) - ord('A')
-      c = int(pos[1:])
+      c = int(pos[1:]) - 1
     else:
       r = ord(pos[-1]) - ord('A')
-      c = int(pos[0:-1])
+      c = int(pos[0:-1]) - 1
+    row_counters[label] = max(r, row_counters.setdefault(label, 0))
+    column_counters[label] = max(c, column_counters.setdefault(label, 0))
   else:
     raise ValueError('cannot convert %s %s' % (label, pos))
-  if flag:
-    print 'label:', label, 'pos:', pos, 'row:', r, 'col:', c
   return (r, c)
 
 def plate_well_conversion_rule_helper(study, s, plate_label, plate_well):
@@ -124,7 +102,7 @@ def plate_well_conversion_rule_helper(study, s, plate_label, plate_well):
        'plate_label' : plate_label,
        }
   y['row'], y['column'] = convert_well_position(plate_label, plate_well)
-  y['label'] = '%s:[%d,%d]' % (plate_label, y['row'], y['column'])
+  y['label'] = '%s:[%s,%d]' % (plate_label, chr(ord('A') + y['row']), y['column'] + 1)
   return y
 
 def plate_well_conversion_rule(study, dna, x):
@@ -132,16 +110,16 @@ def plate_well_conversion_rule(study, dna, x):
 
   if not x['Affymetrix_Plate_Pula'] == 'x':
     samples['Affy_Pula']= plate_well_conversion_rule_helper(study, dna,
-                                                       x['Affymetrix_Plate_Pula'],
-                                                       x['Well_Pula'])
+                                                            'PULA-' + x['Affymetrix_Plate_Pula'],
+                                                            x['Well_Pula'])
   if not x['Affymetrix_Plate_Lanusei'] == 'x':
     samples['Affy_Lanusei'] = plate_well_conversion_rule_helper(study, dna,
-                                                           x['Affymetrix_Plate_Lanusei'],
-                                                           x['Well_Lanusei'])
+                                                                'LANUSEI-' + x['Affymetrix_Plate_Lanusei'],
+                                                                x['Well_Lanusei'])
   if not x['Affymetrix_Plate_USA'] == 'x':
     samples['Affy_USA'] = plate_well_conversion_rule_helper(study, dna,
-                                                       x['Affymetrix_Plate_USA'],
-                                                       x['Well_USA'])
+                                                            'USA-' + x['Affymetrix_Plate_USA'],
+                                                            x['Well_USA'])
   if not x['Illumina_Plate'] == 'x':
     samples['Illumina'] = plate_well_conversion_rule_helper(study, dna,
                                                             x['Illumina_Plate'],
@@ -152,6 +130,36 @@ def plate_well_conversion_rule(study, dna, x):
                                                                 'TBF')
 
   return samples
+
+
+#-------------------------------------------------------------------------
+def titer_plate_conversion_rule_helper(study, label):
+  global barcode_counter
+  rows, columns = row_counters[label] + 1, column_counters[label] + 1
+
+  if rows > 8 or columns > 12:
+    rows = 16
+    columns = 24
+  else:
+    rows = 8
+    columns = 12
+
+  print 'plate %s rows: %s columns:%s' % (label, rows, columns)
+  y = {'study' : study, 'label' : label, 'barcode' : barcode_counter,
+       'rows' : rows, 'columns' : columns, 'maker' : 'CRS4', 'model' : 'virtual'}
+  barcode_counter += 1
+  return y
+
+def titer_plate_conversion_rule(study):
+  pfields = ['Affymetrix_Plate_Pula', 'Affymetrix_Plate_Lanusei', 'Affymetrix_Plate_USA',
+             'Illumina_Plate', 'Illumina_dup_Plate']
+  tps = []
+  for label in row_counters.keys():
+    tps.append(titer_plate_conversion_rule_helper(study, label))
+  return tps
+#-------------------------------------------------------------------------
+
+
 
 def data_sample_conversion_rule_helper(study, sample,
                                        data_sample_name, device_maker,
@@ -311,13 +319,12 @@ def main():
     blood_samples.extend(bss)
     dns = dna_sample_conversion_rule(args.study, bss[0], x)
     dna_samples.extend(dns)
-    tps = titer_plate_conversion_rule(args.study, x)
-    titer_plates.extend(tps)
     pws = plate_well_conversion_rule(args.study, dns[0], x)
     plate_wells.extend(pws.values())
     dss = data_sample_conversion_rule(args.study, dns[0], pws, x)
     data_samples.extend(dss)
   #-
+  titer_plates = titer_plate_conversion_rule(args.study)
   dump_(args.ofile_root + 'blood_samples.tsv', blood_samples,
         fieldnames='study label barcode individual_label initial_volume current_volume status'.split())
   dump_(args.ofile_root + 'dna_samples.tsv', dna_samples,

@@ -171,10 +171,15 @@ class Proxy(ProxyCore):
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else aklass(result, proxy=self)
 
+  #FIXME this is used everywhere as if it were get_objects
   def get_bio_samples(self, aklass):
+    return self.get_objects(aklass)
+
+  def get_objects(self, aklass):
     query = 'select s from %s as s' % aklass.OME_TABLE
     result = self.ome_operation("getQueryService", "findAllByQuery", query, None)
     return [aklass(r, proxy=self) for r in result]
+
 
   def get_data_objects(self, data_sample):
     query = """select d
