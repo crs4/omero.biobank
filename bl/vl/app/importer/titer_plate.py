@@ -163,13 +163,16 @@ def make_parser_titer_plate(parser):
 def import_titer_plate_implementation(args):
   # FIXME it is very likely that the following can be directly
   # implemented as a validation function in the parser definition above.
-  try:
-    plate_shape = tuple(map(int, args.plate_shape.split('x')))
-    if len(plate_shape) != 2:
-      raise ValueError('')
-  except ValueError, e:
-    logger.fatal('illegal value for plate-shape %s' % args.plate_shape)
-    sys.exit(1)
+  if args.plate_shape:
+    try:
+      plate_shape = tuple(map(int, args.plate_shape.split('x')))
+      if len(plate_shape) != 2:
+        raise ValueError('')
+    except ValueError, e:
+      logger.fatal('illegal value for plate-shape %s' % args.plate_shape)
+      sys.exit(1)
+  else:
+    plate_shape = None
   recorder = Recorder(args.study, plate_shape=plate_shape,
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)

@@ -1,3 +1,18 @@
+2011-05-23    <zag@manzanillo>
+
+	* bl/vl/sample/kb/drivers/omero/samples_container.py
+	(DataCollection.__setup__): label disabled.
+
+	* bl/vl/app/importer/data_collection.py (Recorder.__init__):
+	disabled data_collection.label as a temporary measure before we
+	sync the server on the new models.
+
+2011-05-21    <zag@manzanillo>
+
+	* bl/vl/app/importer/data_sample.py
+	(import_data_sample_implementation): added a default-contrast-qc
+	flag.
+
 2011-05-18    <zag@manzanillo>
 
 	* bl/vl/app/importer/data_collection.py (Recorder): moved

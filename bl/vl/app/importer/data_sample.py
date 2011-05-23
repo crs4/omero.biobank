@@ -60,7 +60,8 @@ class Recorder(Core):
   metadata into VL, including the potential actual saving of datasets.
   """
   def __init__(self, study_label=None,
-               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
+               host=None, user=None, passwd=None, keep_tokens=1,
+               operator='Alfred E. Neumann', message=None):
     """
     FIXME
 
@@ -89,7 +90,8 @@ class Recorder(Core):
                                         json.dumps({'study' : study_label,
                                                     'operator' : operator,
                                                     'host' : host,
-                                                    'user' : user}))
+                                                    'user' : user,
+                                                    'message' : message}))
     self.acat  = self.acat_map['IMPORT']
     self.operator = operator
     #
@@ -165,11 +167,17 @@ class Recorder(Core):
   def record(self, r):
     self.logger.debug('\tworking on %s' % r)
     try:
-      study = self.get_study_by_label(r['study'])
-      #-
       name, maker, model, release = r['device_name'], r['device_maker'], \
                                     r['device_model'], r['device_release']
       label, sample_label = r['label'], r['sample_label']
+      #-
+      if self.data_samples.has_key(label):
+        self.logger.warn('DataSample with same name %s in kb, ignoring this record' %
+                         label)
+        return
+
+      study = self.get_study_by_label(r['study'])
+      #-
       if maker == 'Affymetrix' and model == 'GenomeWideSNP_6':
         if self.plate_wells_by_label.has_key(sample_label):
           sample = self.plate_wells_by_label[sample_label]
@@ -179,11 +187,6 @@ class Recorder(Core):
       #-
       if not sample:
         raise ValueError('could not find a sample with label %s' % sample_label)
-      #-
-      if self.data_samples.has_key(label):
-        self.logger.warn('DataSample with same name %s in kb, ignoring this record' %
-                         label)
-        return
       #-
       action = self.get_action(study, sample, name, maker, model, release)
       #-
@@ -241,13 +244,21 @@ def make_parser_data_sample(parser):
   parser.add_argument('-S', '--study', type=str,
                       help="""default conxtest study label.
                       It will over-ride the study column value""")
+  parser.add_argument('--default-contrast-qc', type=float,
+                      help="""if contrastQC is not defined, assign this value""")
 
 def import_data_sample_implementation(args):
+  # FIXME we should find a clean way to record command-line options
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
-                      keep_tokens=args.keep_tokens)
+                      keep_tokens=args.keep_tokens,
+                      message='default-contrast-qc=%s' % args.default_contrast_qc)
   f = csv.DictReader(args.ifile, delimiter='\t')
   for r in f:
+    if (args.default_contrast_qc
+        and  (not r.has_key('contrastQC')
+              or r['contrastQC'] == 'None')):
+      r['contrastQC']  = args.default_contrast_qc
     recorder.record(r)
 
 def do_register(registration_list):

@@ -56,7 +56,6 @@ class Recorder(Core):
                                                     'user' : user}))
     self.acat  = self.acat_map['IMPORT']
     self.operator = operator
-    self.data_collection = None
     #
     self.input_rows = {}
     self.counter = 0
@@ -74,8 +73,9 @@ class Recorder(Core):
     self.logger.info('start prefetching DataCollection(s)')
     data_collections = self.skb.get_bio_samples(self.skb.DataCollection)
     self.data_collections = {}
+    #FIXME
     for dc in data_collections:
-      self.data_collections[dc.label] = dc
+      self.data_collections[dc.id] = dc
     self.logger.info('done prefetching DataCollection(s)')
     self.logger.info('there are %d DataCollection(s) in the kb' %
                      len(self.data_collections))
@@ -92,22 +92,23 @@ class Recorder(Core):
     study = self.default_study
     if not study:
       study_label = data[0]['study']
-      if filter(lambda x : x['study'] != study_label, data):
+      ff = filter(lambda x : x['study'] != study_label, data)
+      if ff:
         self.logger.critical('not uniform study for collection %s' %
                              label)
         sys.exit(1)
       study = self.get_study_by_label(study_label)
     #--
-    self.logger.info('start loading actual data')
     for x in data:
       if not self.data_samples.has_key(x['data_sample_label']):
         self.logger.critical('%s referred in collection %s does not exist.' %
                              (x['data_sample_label'], label))
         sys.exit(1)
     #--
+    self.logger.info('registering DataCollection label=%r' % label)
     data_collection = self.skb.DataCollection(study=study, label=label)
-    self.data_collection = self.skb.save(data_collection)
-
+    data_collection = self.skb.save(data_collection)
+    self.logger.info('DataCollection vid=%r' % data_collection.id)
     self.logger.info('start loading actual data')
     for x in data:
       ds_label = x['data_sample_label']
@@ -115,11 +116,12 @@ class Recorder(Core):
       action = self.create_action_on_sample(study, data_sample, json.dumps(x))
       action = self.skb.save(action)
       #-
-      dc_it = self.skb.DataCollectionItem(data_collection=self.data_collection,
+      dc_it = self.skb.DataCollectionItem(data_collection=data_collection,
                                           data_sample=data_sample)
       dc_it.action = action
       self.skb.save(dc_it)
-      self.logger.info('saved  %s[%s]' % (self.data_collection.label,
+      #FIXME using .id not .label
+      self.logger.info('saved  %s[%s]' % (data_collection.id,
                                           ds_label))
     self.logger.info('done loading')
 
@@ -149,10 +151,12 @@ def import_data_collection_implementation(args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   collections = {}
   default_label = args.collection
-  for r in f:
-    if default_label:
-      collections.setdefault(default_label, []).append(r)
-    else:
+  if default_label:
+    collections[default_label] = []
+    for r in f:
+      collections[default_label].append(r)
+  else:
+    for r in f:
       collections.setdefault(r['label'], []).append(r)
   for k in collections.keys():
     recorder.record_collection(k, collections[k])

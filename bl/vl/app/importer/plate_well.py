@@ -8,7 +8,8 @@ Will read in a csv file with the following columns::
   study  label   plate_label row column dna_label volume
   ASTUDY p01.J02 p01         10  2      lab-89 0.1
 
-It will noisily ignore records that do not correspond to a valid plate_label or dna sample.
+It will noisily ignore records that: (a) do not correspond to a valid
+plate_label or dna sample; (b) are already in the kb.
 
 """
 
@@ -105,9 +106,7 @@ class Recorder(Core):
     # FIXME this method has a funny name
     pws = self.skb.get_bio_samples(self.skb.PlateWell)
     for pw in pws:
-      k = (self.titer_plates_by_omero_id[pw.container.omero_id],
-           pw.slotPosition)
-      self.plate_wells[k] = pw
+      self.plate_wells[pw.label] = pw
     self.logger.info('done prefetching PlateWell(s)')
     self.logger.info('there are %d PlateWell(s) in the kb' % len(self.plate_wells))
 
@@ -138,9 +137,9 @@ class Recorder(Core):
       dna_sample = self.dna_samples[dna_label]
       #-
       slot = plate.columns * row + column
-      if self.plate_wells.has_key((plate_label, slot)):
-        self.logger.warn('will not load record %d, is already (%s, %d) in the kb' %
-                         (record_id, plate_label, slot))
+      if self.plate_wells.has_key(label):
+        self.logger.warn('will not load record %d, is already (%s, %s) in the kb' %
+                         (record_id, plate_label, label))
         return
       study = self.default_study if self.default_study \
               else self.known_studies.setdefault(i_study,

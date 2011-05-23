@@ -1,7 +1,7 @@
 label	ref_genome	chromosome	pos	strand	allele	copies
 rs12265218	hg18	1	1	True	A	1
 rs11981089	hg18	1	100	True	B	1
-rs7625376	hg18	2	1	True	A	1 
+rs7625376	hg18	2	1	True	A	1
 rs741592	hg18	3	1	False	A	2
 rs741592	hg18	3	1000	False	A	2
 rs8078079	hg18	3	2000	True	A	1

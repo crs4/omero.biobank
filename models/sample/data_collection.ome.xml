@@ -5,6 +5,7 @@
   <type id="ome.model.vl.DataCollection">
     <properties>
       <required name="vid" type="string" unique="true"/>
+      <required name="label" type="string" unique="true"/>
       <required name="creationDate" type="timestamp"/>
       <required name="study" type="ome.model.vl.Study"/>
       <optional name="description" type="text"/>
