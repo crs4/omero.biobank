@@ -134,21 +134,21 @@ class TestIKB(SKBObjectCreator, unittest.TestCase):
     conf, data_sample = self.create_sample_chain(root_action=action)
     return conf, data_sample
 
-  def test_get_individual_chain(self):
-    conf, data_sample = self.create_individual_sample_chain()
-    data_sample = self.skb.save(data_sample)
-    self.kill_list.append(data_sample)
-    #-
-    root = self.skb.get_root(data_sample)
-    self.assertTrue(isinstance(root, self.ikb.Individual))
-    self.assertEqual(type(root), self.ikb.Individual)
-    #-
-    blood_samples = self.skb.get_descendants(root, self.skb.BloodSample)
-    for bs in blood_samples:
-      self.assertEqual(type(bs), self.skb.BloodSample)
-    dna_samples =  self.skb.get_descendants(root, self.skb.DNASample)
-    for ds in dna_samples:
-      self.assertEqual(type(ds), self.skb.DNASample)
+  # def test_get_individual_chain(self):
+  #   conf, data_sample = self.create_individual_sample_chain()
+  #   data_sample = self.skb.save(data_sample)
+  #   self.kill_list.append(data_sample)
+  #   #-
+  #   root = self.skb.get_root(data_sample)
+  #   self.assertTrue(isinstance(root, self.ikb.Individual))
+  #   self.assertEqual(type(root), self.ikb.Individual)
+  #   #-
+  #   blood_samples = self.skb.get_descendants(root, self.skb.BloodSample)
+  #   for bs in blood_samples:
+  #     self.assertEqual(type(bs), self.skb.BloodSample)
+  #   dna_samples =  self.skb.get_descendants(root, self.skb.DNASample)
+  #   for ds in dna_samples:
+  #     self.assertEqual(type(ds), self.skb.DNASample)
 
   def test_plate_well_dna(self):
     individual, dna_sample = self.create_individual_blood_dna_chain()
@@ -168,7 +168,6 @@ def suite():
   suite.addTest(TestIKB('test_with_parents'))
   suite.addTest(TestIKB('test_enrollment'))
   suite.addTest(TestIKB('test_action_on_individual'))
-  suite.addTest(TestIKB('test_get_individual_chain'))
   return suite
 
 if __name__ == '__main__':

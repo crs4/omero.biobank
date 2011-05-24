@@ -74,6 +74,7 @@ class Markers(Core):
     self.logger.info('done preloading related markers')
     #--
     if load_aligment:
+      selector = '|'.join(["(marker_vid=='%s')" % k for k in mrk_vids])
       snp_algns = self.gkb.get_snp_alignments(selector=selector)
     else:
       snp_algns = False
@@ -103,10 +104,9 @@ class Markers(Core):
     tsv.writeheader()
     for m in mrks:
       vid = m['marker_vid']
-      # marker_vid ref_genome chromosome pos global_pos strand allele copies op_vid
       rec = vid_to_algns[vid]
       r = {'marker_vid' : vid,
-           'rs_label' : vid_to_def[vid],
+           'rs_label' : vid_to_def[vid][0],
            'ref_genome' : rec[1],
            'chromosome' : rec[2],
            'pos' : rec[3],
@@ -125,7 +125,7 @@ class Markers(Core):
     """
     mrk_set_vid, mrks, mrk_defs, _ = self.preload()
 
-    vid_to_mask = dict([ x for x in it.izip(mrk_defs['vid'],
+    vid_to_def = dict([ x for x in it.izip(mrk_defs['vid'],
                                             it.izip(mrk_defs['mask'],
                                                     mrk_defs['rs_label']))])
     #--

@@ -188,7 +188,11 @@ class Recorder(Core):
       if not sample:
         raise ValueError('could not find a sample with label %s' % sample_label)
       #-
+      # FIXME speed-up
+      #study.unload()
+      #sample.unload()
       action = self.get_action(study, sample, name, maker, model, release)
+      #action.unload()
       #-
       if maker == 'Affymetrix' and model  == 'GenomeWideSNP_6':
         data_sample = self.skb.AffymetrixCel(label=label,

@@ -45,21 +45,21 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
     except:
       pass
 
-  def test_sample_chain(self):
-    conf, sample = self.create_sample_chain()
-    sample = self.skb.save(sample)
-    self.kill_list.append(sample)
-    root = self.skb.get_root(sample)
-    self.assertEqual(root.__class__, self.skb.BloodSample)
-    #-
-    derived = self.skb.get_descendants(root)
-    self.assertTrue(len(derived), 2)
-    derived = self.skb.get_descendants(root, self.skb.DataSample)
-    self.assertTrue(len(derived), 1)
-    self.assertTrue(derived[0].__class__, self.skb.DataSample)
-    derived = self.skb.get_descendants(root, self.skb.DNASample)
-    self.assertTrue(len(derived), 1)
-    self.assertTrue(derived[0].__class__, self.skb.DNASample)
+  # def test_sample_chain(self):
+  #   conf, sample = self.create_sample_chain()
+  #   sample = self.skb.save(sample)
+  #   self.kill_list.append(sample)
+  #   root = self.skb.get_root(sample)
+  #   self.assertEqual(root.__class__, self.skb.BloodSample)
+  #   #-
+  #   derived = self.skb.get_descendants(root)
+  #   self.assertTrue(len(derived), 2)
+  #   derived = self.skb.get_descendants(root, self.skb.DataSample)
+  #   self.assertTrue(len(derived), 1)
+  #   self.assertTrue(derived[0].__class__, self.skb.DataSample)
+  #   derived = self.skb.get_descendants(root, self.skb.DNASample)
+  #   self.assertTrue(len(derived), 1)
+  #   self.assertTrue(derived[0].__class__, self.skb.DNASample)
 
 
   def test_get_device(self):
@@ -168,7 +168,6 @@ class TestSKBExtended(SKBObjectCreator, unittest.TestCase):
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(TestSKBExtended('test_sample_chain'))
   suite.addTest(TestSKBExtended('test_get_device'))
   suite.addTest(TestSKBExtended('test_get_devices'))
   suite.addTest(TestSKBExtended('test_get_titer_plates'))

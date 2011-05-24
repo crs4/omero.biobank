@@ -3,6 +3,7 @@
 <types>
   <type id="ome.model.vl.Sample" superclass="ome.model.vl.Result">
     <properties>
+      <required name="label" type="string" unique="true"/>
     </properties>
   </type>
 </types>

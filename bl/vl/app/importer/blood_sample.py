@@ -90,9 +90,9 @@ class Recorder(BioSampleRecorder):
     action = self.create_action(enrollment,
                                 description=json.dumps(self.input_rows[barcode]))
     #--
-    sample = self.skb.BloodSample()
+    #-- FIXME why are we not passing barcode too?
+    sample = self.skb.BloodSample(label=label)
     sample.action, sample.outcome   = action, self.outcome_map['OK']
-    sample.label = label
     sample.barcode  = barcode
     sample.initialVolume = initial_volume
     sample.currentVolume = current_volume

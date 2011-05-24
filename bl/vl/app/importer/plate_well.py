@@ -46,7 +46,8 @@ class Recorder(Core):
   into VL.
   """
   def __init__(self, study_label=None, volume=None,  update_volume=False,
-               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
+               host=None, user=None, passwd=None, keep_tokens=1,
+               operator='Alfred E. Neumann'):
     """
     FIXME
     """
@@ -81,6 +82,11 @@ class Recorder(Core):
     #
     self.input_rows = {}
     self.counter = 0
+    #--
+    # FIXME -- speed up
+    self.device.unload()
+    self.asetup.unload()
+
     #--
     self.logger.info('start prefetching DNASample(s)')
     dna_samples = self.skb.get_bio_samples(self.skb.DNASample)
@@ -148,6 +154,15 @@ class Recorder(Core):
       if pw:
         self.logger.warn('not loading PlateWell[%s, %s]. Is already in KB.' % (i_study, label))
         return
+
+      # FIXME -- speed up
+      dna_sample.__set_proxy__(self.skb)
+      dna_sample.unload()
+      study.__set_proxy__(self.skb)
+      study.unload()
+      plate.__set_proxy__(self.skb)
+      plate.unload()
+      #
       if self.update_volume:
         current_volume = dna_sample.current_volume
         if current_volume < delta_volume:
@@ -172,7 +187,7 @@ class Recorder(Core):
                                container=plate, sample=dna_sample,
                                label=label, row=row, column=column,
                                volume=delta_volume, description=json.dumps(r))
-        self.logger.info('saved plate_well (%s,%s),' % (study.label, label))
+        self.logger.info('saved plate_well %s,' % (label))
     except KeyError, e:
       self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
       return
@@ -190,8 +205,12 @@ class Recorder(Core):
   @debug_wrapper
   def create_plate_well(self, study, container, sample,
                         label, row, column, volume, description=''):
+
     action = self.create_action_on_sample(study, sample,
                                           description=description)
+
+    action.unload()
+
     plate_well = self.skb.PlateWell(sample=sample, container=container,
                                     row=row, column=column,
                                     volume=volume)

@@ -19,6 +19,9 @@ class OmeroWrapper(object):
     self.__set_proxy__(kw.get('proxy', None))
     super(OmeroWrapper, self).__setattr__("ome_obj", ome_obj)
 
+  def unload(self):
+    self.ome_obj.unload()
+
   def __set_proxy__(self, proxy):
     super(OmeroWrapper, self).__setattr__("proxy", proxy)
 

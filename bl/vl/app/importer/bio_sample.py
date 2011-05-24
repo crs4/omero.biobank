@@ -41,13 +41,15 @@ class BioSampleRecorder(Core):
       s = self.skb.get_study_by_label(study_label)
       if not s:
         raise ValueError('No known study with label %s' % study_label)
-      self.logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
+      self.logger.info('Selecting %s[%d,%s] as default study'
+                       % (s.label, s.omero_id, s.id))
       self.default_study = s
     self.initial_volume = initial_volume
     self.current_volume = current_volume
     self.known_studies = {}
     self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
-    self.asetup = self.get_action_setup('importer-version-%s-%s-%f' % (version, klass_name, time.time()),
+    self.asetup = self.get_action_setup('importer-version-%s-%s-%f'
+                                        % (version, klass_name, time.time()),
                                         # FIXME the json below should
                                         # record the app version, and the
                                         # parameters used.  unclear if we
@@ -65,6 +67,11 @@ class BioSampleRecorder(Core):
     #
     self.input_rows = {}
     self.counter = 0
+    #FIXME -- speed up attempt --
+    self.device.unload()
+    self.asetup.unload()
+    self.acat.unload()
+
 
   @debug_wrapper
   def record_helper(self, klass, r):

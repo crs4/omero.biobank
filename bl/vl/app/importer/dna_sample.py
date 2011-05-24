@@ -51,7 +51,8 @@ class Recorder(BioSampleRecorder):
   An utility class that handles the actual recording of DNASample(s) into VL
   """
   def __init__(self, study_label=None, initial_volume=None, current_volume=None,
-               host=None, user=None, passwd=None, keep_tokens=1, operator='Alfred E. Neumann'):
+               host=None, user=None, passwd=None, keep_tokens=1,
+               operator='Alfred E. Neumann'):
     super(Recorder, self).__init__('DNASample',
                                    study_label, initial_volume, current_volume,
                                    host, user, passwd, keep_tokens, operator)
@@ -62,7 +63,8 @@ class Recorder(BioSampleRecorder):
     for bs in blood_samples:
       self.blood_samples[bs.label] = bs
     self.logger.info('done prefetching BloodSample(s)')
-    self.logger.info('there are %d BloodSample(s) in the kb' % len(self.blood_samples))
+    self.logger.info('there are %d BloodSample(s) in the kb'
+                     % len(self.blood_samples))
     #--
     self.logger.info('start prefetching DNASample(s)')
     dna_samples = self.skb.get_bio_samples(self.skb.DNASample)
@@ -84,11 +86,13 @@ class Recorder(BioSampleRecorder):
                         initial_volume, current_volume, status,
                         nanodrop, qp230260, qp230280):
     assert label and barcode and initial_volume >= current_volume
-    action = self.create_action(study, blood_sample, description=json.dumps(self.input_rows[barcode]))
+    description=json.dumps(self.input_rows[barcode])
+    action = self.create_action(study, blood_sample, description=description)
+    # FIXME -- speed up attempt
+    action.unload()
     #--
-    sample = self.skb.DNASample()
+    sample = self.skb.DNASample(label=label)
     sample.action, sample.outcome   = action, self.outcome_map['OK']
-    sample.label = label
     sample.barcode  = barcode
     sample.initialVolume = initial_volume
     sample.currentVolume = current_volume
@@ -98,11 +102,10 @@ class Recorder(BioSampleRecorder):
     sample.qp230280 = qp230280
 
     self.logger.debug('\tsaving dna_sample(>%s<,>%s<)' % (sample.label,
-                                                     sample.barcode))
+                                                          sample.barcode))
 
     sample = self.skb.save(sample)
-    self.logger.info('created a DNASample record (%s, %s) extracted from BloodSample with label %s' %
-                     (study.label, sample.label, blood_sample.label))
+    self.logger.info('created a DNASample record (%s)' % (sample.label))
     return sample
 
   @debug_wrapper
@@ -135,6 +138,9 @@ class Recorder(BioSampleRecorder):
                          (r['study'], r['label'], r['blood_sample_label']))
         return
 
+      # FIXME -- speed up attemp
+      study.unload()
+      blood_sample.unload()
       self.create_dna_sample(study, blood_sample, label, barcode,
                              initial_volume, current_volume, status,
                              nanodrop, qp230260, qp230280)

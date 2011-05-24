@@ -80,7 +80,7 @@ def debug_boundary(f):
 # import bl.vl.app.exporter.dna_sample
 # import bl.vl.app.exporter.titer_plate
 # import bl.vl.app.exporter.plate_well
-import bl.vl.app.exporter.data_sample
+# import bl.vl.app.exporter.data_sample
 # import bl.vl.app.exporter.data_object
 # import bl.vl.app.exporter.data_collection
 import bl.vl.app.exporter.marker_definition
@@ -95,7 +95,7 @@ class App(object):
     # bl.vl.app.exporter.dna_sample.do_register(self.supported_submodules)
     # bl.vl.app.exporter.titer_plate.do_register(self.supported_submodules)
     # bl.vl.app.exporter.plate_well.do_register(self.supported_submodules)
-    bl.vl.app.exporter.data_sample.do_register(self.supported_submodules)
+    # bl.vl.app.exporter.data_sample.do_register(self.supported_submodules)
     # bl.vl.app.exporter.data_object.do_register(self.supported_submodules)
     # bl.vl.app.exporter.data_collection.do_register(self.supported_submodules)
     bl.vl.app.exporter.marker_definition.do_register(self.supported_submodules)

@@ -17,6 +17,21 @@ class Sample(Result, kb.Sample):
   OME_TABLE = "Sample"
 
 
+  def __setup__(self, ome_obj, label, **kw):
+    if label is None:
+      raise ValueError('Sample label cannot be None')
+    ome_obj.label = ort.rstring(label)
+    super(Sample, self).__setup__(ome_obj, **kw)
+
+  def __init__(self, from_=None, label=None, **kw):
+    ome_type = self.get_ome_type()
+    if not from_ is None:
+      ome_obj = from_
+    else:
+      ome_obj = ome_type()
+      self.__setup__(ome_obj, label, **kw)
+    super(Sample, self).__init__(ome_obj, **kw)
+
 #------------------------------------------------------------
 class SamplesContainerSlot(Result, kb.Result):
 
@@ -123,9 +138,9 @@ class DataSample(Sample, kb.DataSample):
   def __setup__(self, ome_obj, label, data_type, **kw):
     if label is None or data_type is None:
       raise ValueError('DataSample label and data_type cannot be None')
-    ome_obj.label = ort.rstring(label)
+    # FIXME now we are using name, but the model should have 'label'
     ome_obj.dataType = data_type
-    super(DataSample, self).__setup__(ome_obj, **kw)
+    super(DataSample, self).__setup__(ome_obj, label, **kw)
 
   def __init__(self, from_=None, label=None, data_type=None, **kw):
     ome_type = self.get_ome_type()

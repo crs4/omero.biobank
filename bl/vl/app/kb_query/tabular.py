@@ -42,7 +42,7 @@ class Tabular(Core):
     else:
       self.data_collection = None
 
-    assert preferred_data_protocol in self.SUPPORTED_DATA_PROTOCOLS
+    assert  preferred_data_protocol in self.SUPPORTED_DATA_PROTOCOLS
 
     self.preferred_data_protocol = preferred_data_protocol
 
@@ -65,7 +65,7 @@ class Tabular(Core):
 
     self.logger.info('start prefetching DataObject')
     q = "select o from DataObject as o join fetch o.sample as s"
-    factory = lambda x, proxy : self.skb.DataObject(x, proxy=self.skb)
+    factory = lambda x, proxy : self.skb.DataObject(x, proxy=proxy)
     objs = self.skb.find_all_by_query(q, {}, factory)
     ds_to_do = {}
     for o in objs:
@@ -97,7 +97,7 @@ class Tabular(Core):
       if ds_to_do.has_key(ds.id):
         for do in ds_to_do[ds.id]:
           r = {'dc_id' : dc_id,
-               'item_id' : do.id,
+               'item_id' : do.sample.id,
                'gender' : gender,
                'path' : do.path,
                'mimetype' : do.mimetype,
@@ -156,6 +156,7 @@ def make_parser_tabular(parser):
                       help="study label")
   parser.add_argument('--preferred-data-protocol', type=str,
                       choices=Tabular.SUPPORTED_DATA_PROTOCOLS,
+                      default='file',
                       help="""try, if possible, to provide
                       data object paths that use this protocol""")
   parser.add_argument('--fields-set', type=str,

@@ -114,7 +114,8 @@ class SKBObjectCreator(unittest.TestCase):
     return conf, result
 
   def create_sample(self, sample=None, action=None):
-    sample = sample if sample else self.skb.Sample()
+    label = 'sample-label-%f' % time.time()
+    sample = sample if sample else self.skb.Sample(label=label)
     return self.create_result(result=sample, action=action)
 
   def create_data_sample(self, action=None):
@@ -194,26 +195,33 @@ class SKBObjectCreator(unittest.TestCase):
              'currentVolume' : 0.8,
              'status' : self.sstatus_map['USABLE']}
     if sample is None:
-      sample = self.skb.BioSample()
+      sample = self.skb.BioSample(label=sconf['label'])
     conf, bio_sample = self.create_sample(sample=sample, action=action)
     self.configure_object(sample, sconf)
     conf.update(sconf)
     return conf, sample
 
   def create_blood_sample(self, action=None):
-    return self.create_bio_sample(sample=self.skb.BloodSample(), action=action)
+    label = 'blood-sample-label-%f' % time.time()
+    return self.create_bio_sample(sample=self.skb.BloodSample(label=label),
+                                  action=action)
 
   def create_dna_sample(self, action=None):
-    sconf = {'nanodropConcentration' : 33,
+    label = 'dna-sample-label-%f' % time.time()
+    sconf = {'label' : label,
+             'nanodropConcentration' : 33,
              'qp230260'  : 0.33,
              'qp230280'  : 0.44}
-    conf, dna_sample = self.create_bio_sample(sample=self.skb.DNASample(), action=action)
+    conf, dna_sample = self.create_bio_sample(sample=self.skb.DNASample(label=label),
+                                              action=action)
     self.configure_object(dna_sample, sconf)
     conf.update(sconf)
     return conf, dna_sample
 
   def create_serum_sample(self, action=None):
-    return self.create_bio_sample(sample=self.skb.SerumSample(), action=action)
+    label = 'serum-sample-label-%f' % time.time()
+    return self.create_bio_sample(sample=self.skb.SerumSample(label=label),
+                                  action=action)
 
   def create_sample_chain(self, root_action=None):
     conf, blood_sample = self.create_blood_sample(action=root_action)

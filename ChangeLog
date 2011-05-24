@@ -1,3 +1,19 @@
+2011-05-24    <zag@manzanillo>
+
+	* tests/bl/vl/individual/kb/test_ikb.py
+	(TestIKB.create_individual_sample_chain): disabled since it was
+	using get_root.
+
+	* tests/bl/vl/sample/kb/test_skb_extended.py
+	(TestSKBExtended.check_object): disabled. It will not work, since
+	we have dropped proxy_indexed.
+
+	* bl/vl/sample/kb/drivers/omero/sample.py (DataSample): patched to
+	map label to name. This is a bug in the DataSample model.
+
+	* bl/vl/sample/kb/drivers/omero/wrapper.py (OmeroWrapper.unload):
+	Added support for omero object unloading. It is an experiment.
+
 2011-05-23    <zag@manzanillo>
 
 	* bl/vl/sample/kb/drivers/omero/samples_container.py

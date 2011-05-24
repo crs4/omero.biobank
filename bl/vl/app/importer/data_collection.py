@@ -75,7 +75,7 @@ class Recorder(Core):
     self.data_collections = {}
     #FIXME
     for dc in data_collections:
-      self.data_collections[dc.id] = dc
+      self.data_collections[dc.label] = dc
     self.logger.info('done prefetching DataCollection(s)')
     self.logger.info('there are %d DataCollection(s) in the kb' %
                      len(self.data_collections))
@@ -121,7 +121,7 @@ class Recorder(Core):
       dc_it.action = action
       self.skb.save(dc_it)
       #FIXME using .id not .label
-      self.logger.info('saved  %s[%s]' % (data_collection.id,
+      self.logger.info('saved  %s[%s]' % (data_collection.label,
                                           ds_label))
     self.logger.info('done loading')
 

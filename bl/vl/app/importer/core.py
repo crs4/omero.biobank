@@ -97,7 +97,8 @@ class Core(object):
                            study, device, asetup, acat, operator, target=None):
     action = aklass()
     action.setup, action.device, action.actionCategory = asetup, device, acat
-    action.operator, action.context, action.description = operator, study, description
+    action.operator, action.context, action.description = (operator, study,
+                                                           description)
     if target:
       action.target = target
     try:
