@@ -147,22 +147,27 @@ class Recorder(Core):
       action = self.create_import_action(study,
                                          description=self.input_rows[identifier])
       i = self.ikb.Individual(gender=self.gender_map[gender.upper()])
+      action.unload()
       i.action = action
       if father:
         # FIXME: this is disabled, since father does not automatically load field objects
         # if not father.gender == self.gender_map['MALE']:
         #   raise ValueError('putative father of %s is not male' % label)
+        # FIXME
+        father.unload()
         i.father = father
       if mother:
         # FIXME: this is disabled, since father does not automatically load field objects
         # if not mother.gender == self.gender_map['FEMALE']:
         #   raise ValueError('putative mother of %s is not female' % label)
+        mother.unload()
         i.mother = mother
       i = self.ikb.save(i)
+      i.unload()
       e = self.ikb.Enrollment(study=study, individual=i,
                               study_code=identifier[1])
       e = self.ikb.save(e)
-    return e.individual
+    return i
 
 help_doc = """
 import new individual definitions into a virgil system and register

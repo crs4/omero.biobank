@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+
+Vessel Derived Objects
+======================
+
+There are object that model liquid containers.
+They keep track of what fliud they contain and its usability status, 
+as well the actual amount of fluid available.
+
+-->
+
+<types>
+
+  <enum id="ome.model.vl.VesselContent">
+    <entry name="EMPTY"/>
+    <entry name="BLOOD"/>
+    <entry name="SERUM"/>
+    <entry name="DNA"/>
+  </enum>
+
+  <enum id="ome.model.vl.VesselStatus">
+    <entry name="UNUSED"/>
+    <entry name="UNKNOWN"/>
+    <entry name="UNUSABLE"/>
+    <entry name="DESTROYED"/>
+    <entry name="CONTENTUSABLE"/>
+    <entry name="CONTENTCORRUPTED"/>
+  </enum>
+
+  <type id="ome.model.vl.Vessel">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="activationDate" type="timestamp"/>
+      <optional name="destructionDate" type="timestamp"/>
+      <!-- we should be assigning measuring units explicitely it is ml
+           here and everywhere -->
+      <required name="currentVolume" type="float"/>
+      <required name="initialVolume" type="float"/>
+      <required name="content" type="ome.model.vl.VesselContent"/>
+      <required name="status" type="ome.model.vl.VesselStatus"/>
+      <required name="action" type="ome.model.vl.Action"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.Tube" superclass="ome.model.vl.Vessel">
+    <properties>
+      <required name="label" type="string" unique="true"/>
+      <!-- there could be a tube with NO BARCODE -->
+      <optional name="barcode" type="string" unique="true"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.PlateWell" superclass="ome.model.vl.Vessel">
+    <properties>
+      <required name="label" type="string"/>
+      <required name="slot" type="int"/>
+      <required name="container" type="ome.model.vl.TiterPlate"/>
+      <!-- container.label, label -->
+      <required name="containerSlotLabelUK" type="string" unique="true"/>
+      <!-- container.label, slot -->
+      <required name="containerSlotIndexUK" type="string" unique="true"/>
+    </properties>
+  </type>
+
+  
+</types>

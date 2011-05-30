@@ -1,3 +1,9 @@
+2011-05-26    <zag@manzanillo>
+
+	* models/sample/dna_sample.ome.xml: Removed all the nanodrop
+	details, they should be provided as a DataResult produced by a
+	NanoDrop device.
+
 2011-05-24    <zag@manzanillo>
 
 	* tests/bl/vl/individual/kb/test_ikb.py

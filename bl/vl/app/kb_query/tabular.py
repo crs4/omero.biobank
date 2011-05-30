@@ -84,7 +84,7 @@ class Tabular(Core):
                                              self.skb.DataSample])
     data_samples, ds_to_do = self.pre_load_data()
     #--
-    fnames = 'dc_id item_id path gender mimetype size sha1'.split()
+    fnames = 'dc_id item_id data_sample_label path gender mimetype size sha1'.split()
     tsv = csv.DictWriter(ofile, fnames, delimiter='\t')
     tsv.writeheader()
     #--
@@ -97,6 +97,7 @@ class Tabular(Core):
       if ds_to_do.has_key(ds.id):
         for do in ds_to_do[ds.id]:
           r = {'dc_id' : dc_id,
+               'data_sample_label' : do.sample.label,
                'item_id' : do.sample.id,
                'gender' : gender,
                'path' : do.path,

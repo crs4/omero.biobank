@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+
+Models for Object Collections
+=============================
+
+
+-->
+
+<types>
+  <!-- Collection has already been used by omero -->
+  <type id="ome.model.vl.VLCollection">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="label" type="string" unique="true"/>
+      <required name="creationDate" type="timestamp"/>
+      <!-- -->
+      <required name="action" type="ome.model.vl.Action"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.Container" superclass="ome.model.vl.VLCollection">
+    <properties>
+      <optional name="barcode" type="string" unique="true"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.SlottedContainer" superclass="ome.model.vl.Container">
+    <properties>
+      <required name="numberOfSlots" type="int"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.TiterPlate" superclass="ome.model.vl.SlottedContainer">
+    <properties>
+      <required name="rows" type="int"/>
+      <required name="columns" type="int"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.DataCollection" superclass="ome.model.vl.VLCollection">
+    <properties>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.DataCollectionItem">
+    <properties>
+      <required name="dataSample"     type="ome.model.vl.DataSample"/>      
+      <required name="dataCollection" type="ome.model.vl.DataCollection"/>      
+    </properties>
+  </type>
+
+</types>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+
+Action Definition
+=================
+
+-->
+
+<types>
+
+  <type id="ome.model.vl.Study">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="label" type="string" unique="true"/>
+      <required name="startDate" type="timestamp"/>
+      <optional name="endDate" type="timestamp"/>
+      <optional name="description" type="string"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.Device">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="label" type="string" unique="true"/>
+      <required name="maker" type="string"/>
+      <required name="model" type="string"/>
+      <required name="release" type="string"/>
+      <optional name="physicalLocation" type="string"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.ActionSetup">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="label" type="string" unique="true"/>
+      <!-- conf field must be a JSON configuration string -->
+      <required name="conf" type="text"/>
+    </properties>
+  </type>
+
+  <enum id="ome.model.vl.ActionCategory">
+    <entry name="IMPORT"/> <!-- e.g., db loading -->
+    <entry name="CREATION"/> <!-- e.g., creating a new data collection -->
+    <entry name="EXTRACTION"/> <!-- e.g., extract fluid from one container -->
+    <entry name="UPDATE"/>     <!-- e.g., updating a field value -->
+    <entry name="MEASURE"/>    <!-- e.g., genotype measure -->
+    <entry name="PROCESSING"/> <!-- e.g., genotype call -->
+  </enum>
+
+  <type id="ome.model.vl.Action">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="beginTime" type="timestamp"/>
+      <optional name="endTime" type="timestamp"/>
+      <optional name="setup" type="ome.model.vl.ActionSetup"/>
+      <optional name="device" type="ome.model.vl.Device"/>
+      <required name="actionCategory" type="ome.model.vl.ActionCategory"/>
+      <!--TODO create an operator schema or use the user schema
+           provided by omero -->
+      <required name="operator" type="string"/>
+      <!-- context field refers to a Study and it is used to know in
+           which context the action was performed -->
+      <required name="context" type="ome.model.vl.Study"/>
+      <optional name="description" type="text"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.ActionOnVessel" 
+	superclass="ome.model.vl.Action">
+    <properties>
+      <required name="target" type="ome.model.vl.Vessel"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.ActionOnDataSample" 
+	superclass="ome.model.vl.Action">
+    <properties>
+      <required name="target" type="ome.model.vl.DataSample"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.ActionOnDataCollectionItem" 
+	superclass="ome.model.vl.Action">
+    <properties>
+      <required name="target" type="ome.model.vl.DataCollectionItem"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.ActionOnAction" 
+	superclass="ome.model.vl.Action">
+    <properties>
+      <required name="target" type="ome.model.vl.Action"/>
+    </properties>
+  </type>
+
+</types>

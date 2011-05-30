@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+
+  <enum id="ome.model.vl.DataSampleStatus">
+    <entry name="UNKNOWN"/>
+    <entry name="DESTROYED"/>
+    <entry name="CORRUPTED"/>
+    <entry name="USABLE"/>
+  </enum>
+
+  <type id="ome.model.vl.DataSample">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="creationDate" type="timestamp"/>
+      <required name="status" type="ome.model.vl.DataSampleStatus"/>
+      <required name="action" type="ome.model.vl.Action"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.DataObject" 
+	superclass="ome.model.core.OriginalFile">
+    <properties>
+      <required name="sample" type="ome.model.vl.DataSample"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.GenotypingMeasure" 
+	superclass="ome.model.vl.DataSample">
+    <properties>
+    </properties>
+  </type>
+
+  <enum id="ome.model.vl.AffymetrixCellArrayType">
+    <entry name="UNKNOWN"/>
+    <entry name="GenomeWideSNP_6"/>
+  </enum>
+
+  <type id="ome.model.vl.AffymetrixCel"
+	superclass="ome.model.vl.GenotypingMeasure">
+    <properties>
+      <required name="arrayType" type="ome.model.vl.AffymetrixCellArrayType"/>
+      <optional name="celID"     type="string" unique="true"/>
+    </properties>
+  </type>
+
+</types>
