@@ -147,8 +147,8 @@ class CoreOmeroWrapper(object):
   def save(self):
     return self.proxy.save(self)
 
-  def load(self):
-    pass
+  def reload(self):
+    self.proxy.reload_object(self)
 
   @property
   def id(self):

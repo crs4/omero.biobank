@@ -157,6 +157,16 @@ class ProxyCore(object):
     o.ome_obj = res
     o.proxy = self
 
+
+  def reload_object(self, o):
+    res = self.ome_operation("getQueryService", "get",
+                             o.OME_TABLE, o.omero_id)
+    if not res:
+      raise ValueError('cannot update %s by example'  % o)
+    o.ome_obj = res
+    o.proxy = self
+
+
   @debug_boundary
   def save(self, obj):
     """
@@ -173,6 +183,27 @@ class ProxyCore(object):
       logger.error('omero.ValidationException object: %s' % type(obj))
     obj.ome_obj = result
     return obj
+
+  @debug_boundary
+  def save_array(self, array):
+    """
+    Save and return an array of kb object.
+    """
+    try:
+      result = self.ome_operation("getUpdateService", "saveAndReturnArray",
+                                  [obj.ome_obj for obj in array])
+      # # FIXME: this is baroque, does it really help?
+      # result = self.ome_operation("getQueryService", "get",
+      #                             obj.OME_TABLE, result.id._val)
+    except omero.ValidationException, e:
+      msg = 'omero.ValidationException: %s' % e.message
+      logger.error('omero.ValidationException: %s' % e.message)
+      raise kb.KBError(msg)
+    if len(result) != len(array):
+      raise kb.KBError('bad return array len')
+    for o, v in it.izip(array, result):
+      o.ome_obj = v
+    return array
 
   @debug_boundary
   def delete(self, kb_obj):

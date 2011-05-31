@@ -6,6 +6,7 @@ from proxy_core import ProxyCore
 from wrapper import ObjectFactory, MetaWrapper
 
 import action
+import vessels
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 

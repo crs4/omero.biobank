@@ -1,15 +1,23 @@
+import omero.model as om
+import omero.rtypes as ort
+
+
+import bl.vl.utils as vu
+import bl.vl.utils.ome_utils as vou
 import wrapper as wp
 
-from action import Action
-from containers import TiterPlate
+from action import Action, assing_vid_and_timestamp
+from objects_collections import TiterPlate
 
 class VesselContent(wp.OmeroWrapper):
   OME_TABLE = 'VesselContent'
-  __fields__ = []
+  __enums__ = ["EMPTY", "BLOOD", "SERUM", "DNA"]
+
 
 class VesselStatus(wp.OmeroWrapper):
   OME_TABLE = 'VesselStatus'
-  __fields__ = []
+  __enums__ = ["UNUSED", "UNKNOWN", "UNUSABLE", "DESTROYED",
+               "CONTENTUSABLE", "CONTENTCORRUPTED"]
 
 class Vessel(wp.OmeroWrapper):
   OME_TABLE = 'Vessel'
@@ -21,6 +29,10 @@ class Vessel(wp.OmeroWrapper):
                 ('content', VesselContent, wp.REQUIRED),
                 ('status', VesselStatus, wp.REQUIRED),
                 ('action', Action, wp.REQUIRED)]
+
+  def __preprocess_conf__(self, conf):
+    return assing_vid_and_timestamp(conf, time_stamp_field='activationDate')
+
 
 class Tube(Vessel):
   OME_TABLE = 'Tube'
@@ -39,8 +51,8 @@ class PlateWell(Vessel):
     if not 'containerSlotLabelUK' in conf:
       clabel = conf['container'].label
       label   = conf['label']
-      conf['containerSlotLabelUK'] = vluo.make_unique_key(clabel, label)
+      conf['containerSlotLabelUK'] = vou.make_unique_key(clabel, label)
     if not 'containerSlotIndexUK' in conf:
       clabel = conf['container'].label
       slot   = conf['slot']
-      conf['containerSlotIndexUK'] = vluo.make_unique_key(clabel, slot)
+      conf['containerSlotIndexUK'] = vou.make_unique_key(clabel, '%04d' % slot)
