@@ -8,7 +8,7 @@ import bl.vl.utils.ome_utils as vou
 import wrapper as wp
 
 
-def preprocess_conf( conf):
+def assing_vid_and_start_date( conf):
   if not 'vid' in conf:
     conf['vid'] = vu.make_vid()
   if not 'startDate' in conf:
@@ -25,7 +25,7 @@ class Study(wp.OmeroWrapper):
                 ('description', wp.STRING, wp.OPTIONAL)]
 
   def __preprocess_conf__(self, conf):
-    return preprocess_conf(conf)
+    return assing_vid_and_start_date(conf)
 
 
 class Device(wp.OmeroWrapper):
@@ -39,7 +39,8 @@ class Device(wp.OmeroWrapper):
 
 class ActionCategory(wp.OmeroWrapper):
   OME_TABLE = 'ActionCategory'
-  __fields__ = []
+  __enums__ = ['IMPORT', 'CREATION', 'EXTRACTION', 'UPDATE', 'MEASURE',
+               'PROCESSING']
 
 class ActionSetup(wp.OmeroWrapper):
   OME_TABLE = 'ActionSetup'
@@ -61,6 +62,4 @@ class Action(wp.OmeroWrapper):
                 ('description', wp.TEXT, wp.OPTIONAL)]
 
   def __preprocess_conf__(self, conf):
-    return preprocess_conf(conf)
-
-
+    return assing_vid_and_start_date(conf)

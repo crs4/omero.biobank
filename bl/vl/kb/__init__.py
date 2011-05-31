@@ -17,8 +17,7 @@ def KnowledgeBase(driver):
     __import__(driver_table[driver])
     driver_module = sys.modules[driver_table[driver]]
   except KeyError, e:
-    print 'Driver %s is unknown' % driver
-    assert(False)
+    raise ValueError('Driver %s is unknown' % driver)
   return driver_module.driver
 
 #--

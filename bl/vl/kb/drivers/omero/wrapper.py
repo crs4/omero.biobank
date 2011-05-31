@@ -6,26 +6,44 @@ import bl.vl.utils.ome_utils as vluo
 
 """
 
+Omero Objects Wrapping
+======================
+
 Expected Usage
 --------------
 
+We expect to be able to do::
 
-class Action(OmeroWrapper):
-  __fields__ = []
+  class Action(OmeroWrapper):
+    __fields__ = []
 
-factory.create(Action, {'vid' : ort.rstring(vluo.make_vid()),
-                          'beginTime' : vluo.time2rtime(time.time())})
+  factory.create(Action, {'vid' : ort.rstring(vluo.make_vid()),
+                            'beginTime' : vluo.time2rtime(time.time())})
 
-will use
+  factory.wrap(ome_objj)
 
-a = Action(ome_obj=None, proxy, {'vid' : ort.rstring(vluo.make_vid()),
-                                 'beginTime' : vluo.time2rtime(time.time())})
+under the hood it will use::
 
-factory.wrap(ome_obj)
+  a = Action(ome_obj=None, proxy)
+  a.configure({ ....})
 
-will decide to use Action and then use
 
-a = Action(ome_obj=ome_obj, proxy, None)
+Enums handling
+--------------
+
+We expect to be able to do::
+
+  a = factory.create(Action, {'actionCategory' : ActionCategory.IMPORT, ...})
+
+under the hood, the ActionCategory.IMPORT object is an intance of MagicEnum::
+
+  ActionCategory.IMPORT = MagicEnum(ActionCategory, 'IMPORT')
+
+which is expected to be recognized by proxy an
+
+
+
+
 
 """
 
@@ -88,6 +106,8 @@ class CoreOmeroWrapper(object):
     if type(tcode) == type:
       if not isinstance(v, tcode):
         raise ValueError('type(%s) != %s' % (v, tcode))
+      if tcode.is_enum():
+        tcode.map_enums_values(self.proxy)
       return v.ome_obj
     elif tcode in WRAPPING:
       return WRAPPING[tcode](v)
@@ -109,6 +129,10 @@ class CoreOmeroWrapper(object):
     else:
       # We cannot be here.....
       raise ValueError('illegal tcode value: %s' % tcode)
+
+
+  def is_mapped(self):
+    return self.ome_obj.id is not None
 
   def is_upcastable(self):
     pass
@@ -185,6 +209,8 @@ class MetaWrapper(type):
     return getter
 
   def __new__(meta, name, bases, attrs):
+    if not attrs.has_key('__fields__'):
+      attrs['__fields__'] = []
     attrs['__fields__'] = MetaWrapper.normalize_fields(attrs['__fields__'])
     attrs['__init__']   = MetaWrapper.make_initializer(bases[0])
     attrs['__config__'] = MetaWrapper.make_configurator(bases[0],
@@ -196,8 +222,16 @@ class MetaWrapper(type):
     klass = type.__new__(meta, name, bases, attrs)
     if klass.OME_TABLE:
       meta.__KNOWN_OME_KLASSES__[klass.get_ome_type()] = klass
+    if klass.is_enum():
+      enums = []
+      for l in klass.__enums__:
+        print 'processing %s' % l
+        o = klass(ome_obj=None, proxy=None)
+        o.ome_obj.value = ort.wrap(l)
+        enums.append(o)
+        setattr(klass, l, o)
+      klass.__enums__ = enums
     return klass
-
 
 class ObjectFactory(object):
   def __init__(self, proxy):
@@ -216,11 +250,24 @@ class OmeroWrapper(CoreOmeroWrapper):
   """
   All kb.drivers.omero classes should derive from this class.
   """
-
+  __enums__ = []
   __fields__ = []
   __metaclass__ = MetaWrapper
 
   OME_TABLE = None
+
+
+  @classmethod
+  def is_enum(klass):
+    return len(klass.__enums__) > 0
+
+  @classmethod
+  def map_enums_values(klass, proxy):
+    assert klass.is_enum()
+    for o in klass.__enums__:
+      if not o.is_mapped():
+        proxy.update_by_example(o)
+
 
   def __preprocess_conf__(self, conf):
     return conf
