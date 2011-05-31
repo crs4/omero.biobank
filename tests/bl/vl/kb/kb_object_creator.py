@@ -23,7 +23,7 @@ class KBObjectCreator(unittest.TestCase):
   def create_study(self):
     pars = {'label' : 'foobar_%f' % time.time(),
             'description' : 'this is a fake desc'}
-    s = self.kb.ObjectFactory().create(self.kb.Study, pars)
+    s = self.kb.factory.create(self.kb.Study, pars)
     pars['id'] = s.id
     return pars, s
 
@@ -33,16 +33,16 @@ class KBObjectCreator(unittest.TestCase):
             'model' : 'foomodel',
             'release' : '%f' % time.time(),
             'physicalLocation' : 'HERE_THERE_EVERYWHERE'}
-    device = self.kb.ObjectFactory().create(self.kb.Device, pars)
-    pars['id'] = device.id
+    device = self.kb.factory.create(self.kb.Device, conf)
+    conf['id'] = device.id
     return conf, device
 
   def create_action_setup(self, action_setup=None):
     conf = {'label' : 'asetup-%f' % time.time(),
             'conf' : '{"param1": "foo"}'}
     action_setup = (action_setup if action_setup
-                    else self.kb.ObjectFactory().create(self.kb.ActionSetup,
-                                                        conf))
+                    else self.kb.factory.create(self.kb.ActionSetup,
+                                                conf))
     conf['id'] = action_setup.id
     return conf, action_setup
 
@@ -58,15 +58,14 @@ class KBObjectCreator(unittest.TestCase):
     #--
     conf = {'setup' : asetup,
             'device': device,
-            'actionCategory' : self.acat_map['ACQUISITION'],
+            'actionCategory' : self.kb.ActionCategory.IMPORT,
             'operator' : 'Alfred E. Neumann',
             'context'  : study,
             'description' : 'description ...',
             'target' : target
             }
     action_klass = action_klass if action_klass else self.kb.Action
-    action = action if action else self.kb.ObjectFactory().create(action_klass,
-                                                                  conf)
+    action = self.kb.factory.create(action_klass, conf)
     return conf, action
 
   def create_action_on_vessel(self, vessel=None):

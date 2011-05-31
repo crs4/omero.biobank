@@ -20,8 +20,7 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     self.kill_list = []
 
   def setUp(self):
-    self.kb = kb(driver='omero')(OME_HOST, OME_USER, OME_PASS, OME_KEEP)
-    self.acat_map    = self.kb.get_action_category_map()
+    self.kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASS, OME_KEEP)
 
   def tearDown(self):
     self.kill_list.reverse()
@@ -64,7 +63,7 @@ class TestKB(KBObjectCreator, unittest.TestCase):
 
   def test_device(self):
     conf, d = self.create_device()
-    self.kill_list.appen(d.save())
+    self.kill_list.append(d.save())
     self.check_object(d, conf, self.kb.Device)
 
   def test_device_ops(self):

@@ -61,6 +61,7 @@ TIMESTAMP = 'timestamp'
 WRAPPING = {TIMESTAMP : ort.rtime,
             VID       : ort.rstring,
             STRING    : ort.rstring,
+            TEXT      : ort.rstring,
             FLOAT     : ort.rfloat,
             INT       : ort.rint,
             BOOLEAN   : ort.rbool}
@@ -103,7 +104,7 @@ class CoreOmeroWrapper(object):
                            (self.__class__.__name__, name))
 
   def to_omero(self, tcode, v):
-    if type(tcode) == type:
+    if isinstance(tcode, type):
       if not isinstance(v, tcode):
         raise ValueError('type(%s) != %s' % (v, tcode))
       if tcode.is_enum():
@@ -225,7 +226,6 @@ class MetaWrapper(type):
     if klass.is_enum():
       enums = []
       for l in klass.__enums__:
-        print 'processing %s' % l
         o = klass(ome_obj=None, proxy=None)
         o.ome_obj.value = ort.wrap(l)
         enums.append(o)
