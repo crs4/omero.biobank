@@ -7,6 +7,8 @@ from wrapper import ObjectFactory, MetaWrapper
 
 import action
 import vessels
+import data_samples
+import actions_on_target
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 

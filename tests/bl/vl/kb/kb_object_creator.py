@@ -79,7 +79,7 @@ class KBObjectCreator(unittest.TestCase):
     if not data_sample:
       vconf, data_sample = self.create_data_sample()
       self.kill_list.append(data_sample.save())
-    return self.create_action(action_klass=self.kb.ActionOnVessel,
+    return self.create_action(action_klass=self.kb.ActionOnDataSample,
                               target=data_sample)
 
   def create_action_on_data_collection_item(self, dc_item=None):
@@ -96,53 +96,115 @@ class KBObjectCreator(unittest.TestCase):
     return self.create_action(action_klass=self.kb.ActionOnAction,
                               target=action)
 
-  def create_result(self, result=None, action=None):
-    result = result if result is not None else self.kb.Result()
-    #-
-    conf, study = self.create_study()
-    study = self.kb.save(study)
-    self.kill_list.append(study)
-    #-
-    if action is None:
-      conf, action = self.create_action()
-      action = self.kb.save(action)
-      self.kill_list.append(action)
-    #-
-    conf = {'action' : action,
-            'outcome' : self.outcome_map['OK'],
-            'notes'  : 'this is a note'}
-    self.configure_object(result, conf)
-    return conf, result
+  #----------------------------------------------------------------------
+  def create_vessel_conf_helper(self, action=None):
+    if not action:
+      aconf, action = self.create_action()
+      self.kill_list.append(action.save())
+    #--
+    conf = {
+      'currentVolume' : 0.2,
+      'initialVolume' : 0.2,
+      'content'       : self.kb.VesselContent.BLOOD,
+      'status'        : self.kb.VesselStatus.CONTENTUSABLE,
+      'action'        : action
+      }
+    return conf
 
-  def create_sample(self, sample=None, action=None):
-    label = 'sample-label-%f' % time.time()
-    sample = sample if sample else self.kb.Sample(label=label)
-    return self.create_result(result=sample, action=action)
+  def create_vessel(self, action=None):
+    conf = self.create_vessel_conf_helper(action)
+    v = self.kb.factory.create(self.kb.Vessel, conf)
+    return conf, v
+
+  def create_tube(self, action=None):
+    conf = self.create_vessel_conf_helper(action)
+    conf['label'] = 'tl-%s'  % time.time()
+    v = self.kb.factory.create(self.kb.Tube, conf)
+    return conf, v
+
+  #----------------------------------------------------------------------
+  def create_data_sample_conf_helper(self, action=None):
+    if not action:
+      aconf, action = self.create_action()
+      self.kill_list.append(action.save())
+    #--
+    conf = {
+      'status' : self.kb.DataSampleStatus.USABLE,
+      'action' : action
+      }
+    return conf
 
   def create_data_sample(self, action=None):
-    label = 'data-sample-label-%f' % time.time()
-    dtype = self.dtype_map['GTRAW']
-    conf, sample = self.create_sample(sample=self.kb.DataSample(label=label,
-                                                                 data_type= dtype),
-                                      action=action)
-    conf['label'] = label
-    conf['dataType'] = dtype
-    return conf, sample
+    conf = self.create_data_sample_conf_helper(action)
+    ds = self.kb.factory.create(self.kb.DataSample, conf)
+    return conf, ds
 
   def create_affymetrix_cel(self, action=None):
-    label = 'affymetrix-cel-label-%f' % time.time()
-    dtype = self.dtype_map['GTRAW']
-    array_type = 'GenomeWideSNP_6'
-    sample = self.kb.AffymetrixCel(label=label,
-                                    array_type=array_type,
-                                    data_type= dtype)
-    conf, sample = self.create_sample(sample=sample,
-                                      action=action)
-    conf['label'] = label
-    conf['arrayType'] = array_type
-    conf['dataType'] = dtype
-    return conf, sample
+    conf = self.create_data_sample_conf_helper(action)
+    conf['arrayType'] = self.kb.AffymetrixCelArrayType.GenomeWideSNP_6
+    ds = self.kb.factory.create(self.kb.AffymetrixCel, conf)
+    return conf, ds
 
+  def create_data_object(self, data_sample=None):
+    if not data_sample:
+      dconf, data_sample = self.create_data_sample()
+      self.kill_list.append(data_sample.save())
+    conf = {'sample' : data_sample}
+    do = self.kb.factory.create(self.kb.DataObject, conf)
+    return conf, do
+
+  #----------------------------------------------------------------------
+  def create_collection_conf_helper(self, action=None):
+    if not action:
+      aconf, action = self.create_action()
+      self.kill_list.append(action.save())
+    #--
+    conf = {
+      'label'  : 'col-%s' % time.time(),
+      'action' : action
+      }
+    return conf
+
+  def create_container(self, action=None):
+    conf = self.create_collection_conf_helper(action)
+    conf['barcode'] =  '9898989-%s' % time.time()
+    c = self.kb.factory.create(self.kb.Container, conf)
+    return conf, c
+
+  def create_slotted_container(self, action=None):
+    conf = self.create_collection_conf_helper(action)
+    conf['numberOfSlots'] =  16
+    conf['barcode'] =  '9898989-%s' % time.time()
+    c = self.kb.factory.create(self.kb.SlottedContainer, conf)
+    return conf, c
+
+  def create_titer_plate(self, action=None):
+    conf = self.create_collection_conf_helper(action)
+    conf['rows'] =  8
+    conf['columns'] =  12
+    conf['barcode'] =  '9898989-%s' % time.time()
+    c = self.kb.factory.create(self.kb.TiterPlate, conf)
+    return conf, c
+
+  def create_data_collection(self, action=None):
+    conf = self.create_collection_conf_helper(action)
+    c = self.kb.factory.create(self.kb.DataCollection, conf)
+    return conf, c
+
+  def create_data_collection_item(self, data_collection=None,
+                                  data_sample=None):
+    if not data_collection:
+      dconf, data_collection = self.create_data_collection()
+      self.kill_list.append(data_collection.save())
+    if not data_sample:
+      dconf, data_sample = self.create_data_sample()
+      self.kill_list.append(data_sample.save())
+    conf = {'dataSample' : data_sample,
+            'dataCollection' : data_collection}
+    dci = self.kb.factory.create(self.kb.DataCollectionItem, conf)
+    return conf, dci
+
+  #----------------------------------------------------------------------
   def create_snp_markers_set(self, action=None):
     conf = {'maker' : 'snp-foomaker',
             'model' : 'snp-foomodel',
@@ -154,224 +216,3 @@ class KBObjectCreator(unittest.TestCase):
     conf.update(sconf)
     return conf, res
 
-
-  def create_genotype_data_sample(self, action=None):
-    conf, markers_set = self.create_snp_markers_set()
-    markers_set = self.kb.save(markers_set)
-    self.kill_list.append(markers_set)
-    label = 'genotype-data-sample-label-%f' % time.time()
-    dtype = self.dtype_map['GTCALL']
-    conf, sample = self.create_sample(sample=self.kb.GenotypeDataSample(label=label,
-                                                                         snp_markers_set=markers_set,
-                                                                         data_type= dtype),
-                                      action=action)
-    conf['label'] = label
-    conf['dataType'] = dtype
-    return conf, sample
-
-
-  def create_data_object(self, data_sample=None, action=None):
-    if not data_sample:
-      conf, data_sample = self.create_data_sample(action=action)
-      data_sample = self.kb.save(data_sample)
-      self.kill_list.append(data_sample)
-
-    conf = {'sample' : data_sample,
-            'mimetype' : 'x-application/foo',
-            'path'     : 'file:/usr/share/%s/foo.dat' % time.time(),
-            'sha1'     : 'this should be a sha1',
-            'size'     :  100
-            }
-    do = self.kb.DataObject(sample=conf['sample'],
-                             mime_type=conf['mimetype'],
-                             path=conf['path'],
-                             sha1=conf['sha1'],
-                             size=conf['size'])
-    return conf, do
-
-  def create_bio_sample(self, sample=None, action=None):
-    sconf = {'label' : 'bio-sample-lab-label-%f' % time.time(),
-             'barcode'  : 'bio-sample-barcode-%f' % time.time(),
-             'initialVolume' : 1.0,
-             'currentVolume' : 0.8,
-             'status' : self.sstatus_map['USABLE']}
-    if sample is None:
-      sample = self.kb.BioSample(label=sconf['label'])
-    conf, bio_sample = self.create_sample(sample=sample, action=action)
-    self.configure_object(sample, sconf)
-    conf.update(sconf)
-    return conf, sample
-
-  def create_blood_sample(self, action=None):
-    label = 'blood-sample-label-%f' % time.time()
-    return self.create_bio_sample(sample=self.kb.BloodSample(label=label),
-                                  action=action)
-
-  def create_dna_sample(self, action=None):
-    label = 'dna-sample-label-%f' % time.time()
-    sconf = {'label' : label,
-             'nanodropConcentration' : 33,
-             'qp230260'  : 0.33,
-             'qp230280'  : 0.44}
-    conf, dna_sample = self.create_bio_sample(sample=self.kb.DNASample(label=label),
-                                              action=action)
-    self.configure_object(dna_sample, sconf)
-    conf.update(sconf)
-    return conf, dna_sample
-
-  def create_serum_sample(self, action=None):
-    label = 'serum-sample-label-%f' % time.time()
-    return self.create_bio_sample(sample=self.kb.SerumSample(label=label),
-                                  action=action)
-
-  def create_sample_chain(self, root_action=None):
-    conf, blood_sample = self.create_blood_sample(action=root_action)
-    blood_sample = self.kb.save(blood_sample)
-    self.kill_list.append(blood_sample)
-    #-
-    conf, action = self.create_action_on_sample(sample=blood_sample)
-    action = self.kb.save(action)
-    self.kill_list.append(action)
-    #-
-    conf, dna_sample = self.create_dna_sample(action=action)
-    dna_sample = self.kb.save(dna_sample)
-    self.kill_list.append(dna_sample)
-    #-
-    conf, action2 = self.create_action_on_sample(sample=dna_sample)
-    action2 = self.kb.save(action2)
-    self.kill_list.append(action2)
-    #-
-    conf, data_sample = self.create_data_sample(action=action2)
-    return conf, data_sample
-
-  def create_samples_container(self, result=None):
-    sconf = {'label' : 'sc-lab_label-%f' % time.time(),
-             'barcode'  : 'sc-barcode-%s' % time.time(),
-             'virtualContainer' : False,
-             'slots' : 96}
-    result = result if result is not None \
-                    else self.kb.SamplesContainer(slots=sconf['slots'],
-                                                   barcode=sconf['barcode'])
-    conf, container = self.create_result(result=result)
-    sconf['slots'] = result.slots
-    self.configure_object(container, sconf)
-    conf.update(sconf)
-    return conf, container
-
-  def create_titer_plate(self):
-    sconf = {'label' : 'tp-lab_label-%f' % time.time(),
-            'barcode'  : 'tp-barcode-%s' % time.time(),
-            'virtualContainer' : False,
-            'rows' : 4,
-            'columns' : 4}
-    titer_plate = self.kb.TiterPlate(rows=sconf['rows'],
-                                      columns=sconf['columns'],
-                                      barcode=sconf['barcode'],
-                                      virtual_container=sconf['virtualContainer'])
-    conf, titer_plate = self.create_result(result=titer_plate)
-    self.configure_object(titer_plate, sconf)
-    conf.update(sconf)
-    return conf, titer_plate
-
-  def create_action_on_container(self):
-    conf, target = self.create_samples_container()
-    target = self.kb.save(target)
-    self.kill_list.append(target)
-    conf, action = self.create_action(action=self.kb.ActionOnSamplesContainer(), target=target)
-    return conf, action
-
-  def create_container_slot(self, container=None):
-    conf, sample = self.create_bio_sample()
-    sample = self.kb.save(sample)
-    self.kill_list.append(sample)
-    #-
-    conf, container = self.create_samples_container()
-    container = self.kb.save(container)
-    self.kill_list.append(container)
-    #-
-    sconf = { 'sample' : sample, 'container' : container, 'slotPosition' : 3}
-    container_slot = self.kb.SamplesContainerSlot(sample=sconf['sample'],
-                                                   container=sconf['container'],
-                                                   slot=sconf['slotPosition'])
-    conf, container_slot = self.create_result(result=container_slot)
-    conf.update(sconf)
-    conf['id'] = container_slot.id
-    return conf, container_slot
-
-  def create_plate_well(self, sample=None, container=None, label=None, row=1, column=2):
-    if sample is None:
-      conf, sample = self.create_bio_sample()
-      sample = self.kb.save(sample)
-      self.kill_list.append(sample)
-    #-
-    if container is None:
-      conf, container = self.create_titer_plate()
-      container = self.kb.save(container)
-      self.kill_list.append(container)
-    #-
-    if label is None:
-      label = container.label + '.%03d%03d' % (row, column)
-    sconf = {'label' : label, 'sample' : sample, 'container' : container,
-             'row' : row, 'column' : column, 'volume' : 0.23}
-    container_slot = self.kb.PlateWell(sample=sconf['sample'],
-                                        container=sconf['container'],
-                                        row=sconf['row'],
-                                        column=sconf['column'],
-                                        volume=sconf['volume'])
-    container_slot.label = sconf['label']
-    conf, container_slot = self.create_result(result=container_slot)
-    conf.update(sconf)
-    conf['id'] = container_slot.id
-    return conf, container_slot
-
-  def create_action_on_container_slot(self):
-    conf, target = self.create_container_slot()
-    target = self.kb.save(target)
-    self.kill_list.append(target)
-    conf, action = self.create_action(action=self.kb.ActionOnSamplesContainerSlot(), target=target)
-    return conf, action
-
-  def create_data_collection(self):
-    conf, study = self.create_study()
-    study = self.kb.save(study)
-    self.kill_list.append(study)
-    conf = {'description' : 'this is a fake description',
-            'label' : 'a-dc-label-%s' % time.time(),
-            'study' : study}
-    data_collection = self.kb.DataCollection(study=study,
-                                              label=conf['label'])
-    self.configure_object(data_collection, conf)
-    return conf, data_collection
-
-  def create_data_collection_item(self):
-    conf, data_collection = self.create_data_collection()
-    data_collection = self.kb.save(data_collection)
-    self.kill_list.append(data_collection)
-    #-
-    conf, sample = self.create_data_sample()
-    sample = self.kb.save(sample)
-    self.kill_list.append(sample)
-    #-
-    conf = {'dataSample' : sample, 'dataSet' : data_collection}
-    item = self.kb.DataCollectionItem(data_sample=conf['dataSample'],
-                                       data_collection= conf['dataSet'])
-    sconf, item = self.create_result(result=item)
-    conf['id'] = item.id
-    conf.update(sconf)
-    return conf, item
-
-  def create_action_on_data_collection(self):
-    conf, target = self.create_data_collection()
-    target = self.kb.save(target)
-    self.kill_list.append(target)
-    conf, action = self.create_action(action=self.kb.ActionOnDataCollection(),
-                                      target=target)
-    return conf, action
-
-  def create_action_on_data_collection_item(self):
-    conf, target = self.create_data_collection_item()
-    target = self.kb.save(target)
-    self.kill_list.append(target)
-    conf, action = self.create_action(action=self.kb.ActionOnDataCollectionItem(),
-                                      target=target)
-    return conf, action

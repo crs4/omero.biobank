@@ -28,6 +28,11 @@ class TiterPlate(SlottedContainer):
   __fields__ = [('rows', wp.INT, wp.REQUIRED),
                 ('columns', wp.INT, wp.REQUIRED)]
 
+  def __preprocess_conf__(self, conf):
+    if not 'numberOfSlots' in conf:
+      conf['numberOfSlots'] = conf['rows'] * conf['columns']
+    return super(TiterPlate, self).__preprocess_conf__(conf)
+
 class DataCollection(VLCollection):
   OME_TABLE = 'DataCollection'
   __fields__ = []

@@ -87,12 +87,30 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     self.kill_list.append(action.save())
     self.check_object(action, conf, self.kb.Action)
 
+  def test_action_on_vessel(self):
+    conf, action = self.create_action_on_vessel()
+    self.kill_list.append(action.save())
+    self.check_object(action, conf, self.kb.ActionOnVessel)
+
+  def test_action_on_data_sample(self):
+    conf, action = self.create_action_on_data_sample()
+    self.kill_list.append(action.save())
+    self.check_object(action, conf, self.kb.ActionOnDataSample)
+
+  def test_action_on_data_collection_item(self):
+    conf, action = self.create_action_on_data_collection_item()
+    self.kill_list.append(action.save())
+    self.check_object(action, conf, self.kb.ActionOnDataSample)
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_study'))
   suite.addTest(TestKB('test_device'))
   suite.addTest(TestKB('test_action_setup'))
   suite.addTest(TestKB('test_action'))
+  suite.addTest(TestKB('test_action_on_vessel'))
+  suite.addTest(TestKB('test_action_on_data_sample'))
+  suite.addTest(TestKB('test_action_on_data_collection_item'))
   return suite
 
 if __name__ == '__main__':

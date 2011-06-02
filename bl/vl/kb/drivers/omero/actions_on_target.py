@@ -1,7 +1,7 @@
 from action        import Action
 from vessels       import Vessel
 from data_samples  import DataSample
-from collections   import DataCollectionItem
+from objects_collections   import DataCollectionItem
 
 class ActionOnVessel(Action):
   OME_TABLE = 'ActionOnVessel'

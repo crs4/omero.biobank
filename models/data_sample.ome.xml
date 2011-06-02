@@ -31,7 +31,7 @@
     </properties>
   </type>
 
-  <enum id="ome.model.vl.AffymetrixCellArrayType">
+  <enum id="ome.model.vl.AffymetrixCelArrayType">
     <entry name="UNKNOWN"/>
     <entry name="GenomeWideSNP_6"/>
   </enum>
@@ -39,7 +39,7 @@
   <type id="ome.model.vl.AffymetrixCel"
 	superclass="ome.model.vl.GenotypingMeasure">
     <properties>
-      <required name="arrayType" type="ome.model.vl.AffymetrixCellArrayType"/>
+      <required name="arrayType" type="ome.model.vl.AffymetrixCelArrayType"/>
       <optional name="celID"     type="string" unique="true"/>
     </properties>
   </type>
