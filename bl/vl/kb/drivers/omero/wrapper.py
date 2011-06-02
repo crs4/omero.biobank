@@ -53,6 +53,7 @@ VID      = 'vid'
 STRING   = 'string'
 BOOLEAN  = 'boolean'
 INT      = 'int'
+LONG     = 'long'
 FLOAT    = 'float'
 TEXT     = 'text'
 TIMESTAMP = 'timestamp'
@@ -64,6 +65,7 @@ WRAPPING = {TIMESTAMP : ort.rtime,
             TEXT      : ort.rstring,
             FLOAT     : ort.rfloat,
             INT       : ort.rint,
+            LONG      : ort.rlong,
             BOOLEAN   : ort.rbool}
 
 

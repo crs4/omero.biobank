@@ -12,6 +12,7 @@
   <type id="ome.model.vl.DataSample">
     <properties>
       <required name="vid" type="string" unique="true"/>
+      <required name="label" type="string" unique="true"/>
       <required name="creationDate" type="timestamp"/>
       <required name="status" type="ome.model.vl.DataSampleStatus"/>
       <required name="action" type="ome.model.vl.Action"/>

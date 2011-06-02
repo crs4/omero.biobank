@@ -10,6 +10,7 @@ class DataSampleStatus(wp.OmeroWrapper):
 class DataSample(wp.OmeroWrapper):
   OME_TABLE = 'DataSample'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
+                ('label', wp.STRING, wp.REQUIRED),
                 ('creationDate', wp.TIMESTAMP, wp.REQUIRED),
                 ('status', DataSampleStatus, wp.REQUIRED),
                 ('action', Action, wp.REQUIRED)]
@@ -20,8 +21,17 @@ class DataSample(wp.OmeroWrapper):
 
 class DataObject(wp.OmeroWrapper):
   OME_TABLE = 'DataObject'
-  __fields__ = [('sample', DataSample, wp.REQUIRED)]
+  __fields__ = [('sample', DataSample, wp.REQUIRED),
+                 # following fields come from OriginalFile
+                ('name',   wp.STRING,  wp.REQUIRED),
+                ('path',   wp.STRING,  wp.REQUIRED),
+                ('mimetype', wp.STRING, wp.REQUIRED),
+                ('sha1',   wp.STRING, wp.REQUIRED),
+                ('size',   wp.LONG,    wp.REQUIRED)]
 
+  def __preprocess_conf__(self, conf):
+    conf['name'] = conf['sample'].vid
+    return conf
 
 class GenotypingMeasure(DataSample):
   OME_TABLE = 'GenotypingMeasure'

@@ -129,6 +129,7 @@ class KBObjectCreator(unittest.TestCase):
       self.kill_list.append(action.save())
     #--
     conf = {
+      'label'  : 'ds-label-%s' % time.time(),
       'status' : self.kb.DataSampleStatus.USABLE,
       'action' : action
       }
@@ -149,7 +150,12 @@ class KBObjectCreator(unittest.TestCase):
     if not data_sample:
       dconf, data_sample = self.create_data_sample()
       self.kill_list.append(data_sample.save())
-    conf = {'sample' : data_sample}
+    conf = {'sample' : data_sample,
+            'path'   : 'hdfs://a.path',
+            'mimetype' : 'x-affy/cel',
+            'sha1'     : '3u2398989',
+            'size'     : 19209092L,
+            }
     do = self.kb.factory.create(self.kb.DataObject, conf)
     return conf, do
 
