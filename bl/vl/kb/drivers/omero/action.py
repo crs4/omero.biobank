@@ -3,18 +3,9 @@ import omero.rtypes as ort
 
 import time
 
-import bl.vl.utils as vu
-import bl.vl.utils.ome_utils as vou
+from utils import assign_vid_and_timestamp
+
 import wrapper as wp
-
-
-def assing_vid_and_timestamp(conf, time_stamp_field='startDate'):
-  if not 'vid' in conf:
-    conf['vid'] = vu.make_vid()
-  if not time_stamp_field in conf:
-    conf[time_stamp_field] = vou.time2rtime(time.time())
-  return conf
-
 
 class Study(wp.OmeroWrapper):
   OME_TABLE = 'Study'
@@ -25,7 +16,7 @@ class Study(wp.OmeroWrapper):
                 ('description', wp.STRING, wp.OPTIONAL)]
 
   def __preprocess_conf__(self, conf):
-    return assing_vid_and_timestamp(conf, time_stamp_field='startDate')
+    return assign_vid_and_timestamp(conf, time_stamp_field='startDate')
 
 
 
@@ -63,4 +54,4 @@ class Action(wp.OmeroWrapper):
                 ('description', wp.TEXT, wp.OPTIONAL)]
 
   def __preprocess_conf__(self, conf):
-    return assing_vid_and_timestamp(conf, time_stamp_field='beginTime')
+    return assign_vid_and_timestamp(conf, time_stamp_field='beginTime')

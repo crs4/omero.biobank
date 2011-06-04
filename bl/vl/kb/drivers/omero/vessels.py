@@ -2,11 +2,11 @@ import omero.model as om
 import omero.rtypes as ort
 
 
-import bl.vl.utils as vu
-import bl.vl.utils.ome_utils as vou
 import wrapper as wp
 
-from action import Action, assing_vid_and_timestamp
+from action import Action
+from utils import assign_vid_and_timestamp, make_unique_key
+
 from objects_collections import TiterPlate
 
 class VesselContent(wp.OmeroWrapper):
@@ -31,7 +31,7 @@ class Vessel(wp.OmeroWrapper):
                 ('action', Action, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
-    return assing_vid_and_timestamp(conf, time_stamp_field='activationDate')
+    return assign_vid_and_timestamp(conf, time_stamp_field='activationDate')
 
 
 class Tube(Vessel):
@@ -51,8 +51,8 @@ class PlateWell(Vessel):
     if not 'containerSlotLabelUK' in conf:
       clabel = conf['container'].label
       label   = conf['label']
-      conf['containerSlotLabelUK'] = vou.make_unique_key(clabel, label)
+      conf['containerSlotLabelUK'] = make_unique_key(clabel, label)
     if not 'containerSlotIndexUK' in conf:
       clabel = conf['container'].label
       slot   = conf['slot']
-      conf['containerSlotIndexUK'] = vou.make_unique_key(clabel, '%04d' % slot)
+      conf['containerSlotIndexUK'] = make_unique_key(clabel, '%04d' % slot)

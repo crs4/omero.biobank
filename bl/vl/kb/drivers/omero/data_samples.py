@@ -1,6 +1,8 @@
 import wrapper as wp
 
-from action import Action, assing_vid_and_timestamp
+from action import Action
+
+from utils import assign_vid_and_timestamp
 
 class DataSampleStatus(wp.OmeroWrapper):
   OME_TABLE = 'DataSampleStatus'
@@ -16,7 +18,7 @@ class DataSample(wp.OmeroWrapper):
                 ('action', Action, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
-    return assing_vid_and_timestamp(conf, time_stamp_field='creationDate')
+    return assign_vid_and_timestamp(conf, time_stamp_field='creationDate')
 
 
 class DataObject(wp.OmeroWrapper):

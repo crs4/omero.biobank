@@ -57,6 +57,8 @@ LONG     = 'long'
 FLOAT    = 'float'
 TEXT     = 'text'
 TIMESTAMP = 'timestamp'
+#
+SELF_TYPE = 'self-type'
 
 
 WRAPPING = {TIMESTAMP : ort.rtime,
@@ -186,6 +188,7 @@ class MetaWrapper(type):
       conf = self.__preprocess_conf__(conf)
       for k, t in fields.iteritems():
         if k is 'vid': #
+          # FIXME are we not setting this in conf?
           setattr(ome_obj, k, self.to_omero(STRING, vlu.make_vid()))
         elif k in conf:
           setattr(ome_obj, k, self.to_omero(t[0], conf[k]))
@@ -225,6 +228,11 @@ class MetaWrapper(type):
     klass = type.__new__(meta, name, bases, attrs)
     if klass.OME_TABLE:
       meta.__KNOWN_OME_KLASSES__[klass.get_ome_type()] = klass
+      #-- FIXME SELF_TYPE patch
+      fields = attrs['__fields__']
+      for k in fields:
+        if fields[k][0] == SELF_TYPE:
+          fields[k] = (klass,) + fields[k][1:]
     if klass.is_enum():
       enums = []
       for l in klass.__enums__:

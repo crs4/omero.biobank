@@ -1,6 +1,8 @@
 import wrapper as wp
 
-from action import Action, assing_vid_and_timestamp
+from action import Action
+
+from utils import assign_vid_and_timestamp
 
 from data_samples import DataSample
 
@@ -12,7 +14,7 @@ class VLCollection(wp.OmeroWrapper):
                 ('action', Action, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
-    return assing_vid_and_timestamp(conf, time_stamp_field='creationDate')
+    return assign_vid_and_timestamp(conf, time_stamp_field='creationDate')
 
 class Container(VLCollection):
   OME_TABLE = 'Container'

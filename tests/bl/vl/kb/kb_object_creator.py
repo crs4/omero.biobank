@@ -211,6 +211,36 @@ class KBObjectCreator(unittest.TestCase):
     return conf, dci
 
   #----------------------------------------------------------------------
+  def create_individual(self, action=None, gender=None, father=None, mother=None):
+    if not action:
+      aconf, action = self.create_action()
+      self.kill_list.append(action.save())
+    conf = {'gender' : gender if gender else self.kb.Gender.MALE,
+            'action' : action}
+    if father:
+      conf['father'] = father
+    if mother:
+      conf['mother'] = mother
+
+    ind = self.kb.factory.create(self.kb.Individual, conf)
+    return conf, ind
+
+  def create_enrollment(self, study=None, individual=None, st_code=None):
+    if not study:
+      sconf, study = self.create_study()
+      self.kill_list.append(study.save())
+    if not individual:
+      iconf, individual = self.create_individual()
+      self.kill_list.append(individual.save())
+    if not st_code:
+      st_code = 'st-code-%s' % time.time()
+    conf = {'study' : study,
+            'individual' : individual,
+            'studyCode'  : st_code}
+    e = self.kb.factory.create(self.kb.Enrollment, conf)
+    return conf, e
+
+  #----------------------------------------------------------------------
   def create_snp_markers_set(self, action=None):
     conf = {'maker' : 'snp-foomaker',
             'model' : 'snp-foomodel',

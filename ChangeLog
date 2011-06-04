@@ -1,3 +1,7 @@
+2011-06-04    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/utils.py: created.
+
 2011-05-26    <zag@manzanillo>
 
 	* models/sample/dna_sample.ome.xml: Removed all the nanodrop
