@@ -31,8 +31,8 @@ class Device(wp.OmeroWrapper):
 
 class ActionCategory(wp.OmeroWrapper):
   OME_TABLE = 'ActionCategory'
-  __enums__ = ['IMPORT', 'CREATION', 'EXTRACTION', 'UPDATE', 'MEASURE',
-               'PROCESSING']
+  __enums__ = ['IMPORT', 'CREATION', 'EXTRACTION', 'UPDATE',
+               'ALIQUOTING', 'MEASUREMENT', 'PROCESSING']
 
 class ActionSetup(wp.OmeroWrapper):
   OME_TABLE = 'ActionSetup'

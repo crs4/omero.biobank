@@ -20,6 +20,7 @@ will be noisily ignored.
 #-----------------------------------------------------------------------------
 #FIXME this should be factored out....
 
+import itertools as it
 import logging, time
 logger = logging.getLogger()
 counter = 0
@@ -69,35 +70,45 @@ class Recorder(Core):
   An utility class that handles the actual recording into VL
   """
   def __init__(self, study_label=None, host=None, user=None, passwd=None,
-               keep_tokens=1):
+               keep_tokens=1, batch_size=1000):
     super(Recorder, self).__init__(host, user, passwd, keep_tokens)
     self.default_study = None
     if study_label:
-      s = self.skb.get_study_by_label(study_label)
-      if not s:
-        s = self.skb.save(self.skb.Study(label=study_label))
-      self.default_study = s
+      self.default_study = self.get_study(study_label)
+
+    self.individuals_to_be_saved = []
+    self.enrollments_to_be_saved = []
+    self.chunk_size = batch_size
     self.known_studies = {}
-    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
-    self.asetup = self.get_action_setup('import-prog-%f' % time.time(),
-                                        # FIXME the json below should
-                                        # record the app version, and the
-                                        # parameters used.  unclear if we
-                                        # need to register the file we load
-                                        # data from, since it is, most
-                                        # likely, a transient object.
-                                        '{"foo2": "foo"}')
-    self.acat  = self.acat_map['IMPORT']
-    # FIXME this should be detected from the env.
-    self.operator = 'Alfred E. Neumann'
+    device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
+    asetup = self.get_action_setup('import-prog-%f' % time.time(),
+                                   # FIXME the json below should
+                                   # record the app version, and the
+                                   # parameters used.  unclear if we
+                                   # need to register the file we load
+                                   # data from, since it is, most
+                                   # likely, a transient object.
+                                   '{"foo2": "foo"}')
+    acat  = self.kb.ActionCategory.IMPORT
+    operator = 'Alfred E. Neumann'
+
+    self.action = self.kb.factory.create(self.kb.Action,
+                                         {'setup' : asetup,
+                                          'device' : device,
+                                          'actionCategory' : acat,
+                                          'operator' : operator,
+                                          'context' : self.default_study,
+                                          })
+    #-- FIXME what happens if we do not have individuals to save?
+    self.action.save()
     #
     self.input_rows = {}
     self.counter = 0
     #--
     self.known_enrollments = {}
     if self.default_study:
-      self.logger.info('start pre-loading known enrolled individuala')
-      known_enrollments = self.ikb.get_enrolled(self.default_study)
+      self.logger.info('start pre-loading known enrolled individuals')
+      known_enrollments = self.kb.get_enrolled(self.default_study)
       for e in known_enrollments:
         self.known_enrollments[e.studyCode] = e
       self.logger.info('done pre-loading known enrolled individuals')
@@ -107,15 +118,30 @@ class Recorder(Core):
     #--
 
   @debug_wrapper
-  def create_import_action(self, study, description=''):
-    return self.create_action_helper(self.skb.Action, description,
-                                     study, self.device,
-                                     self.asetup, self.acat, self.operator)
+  def dump_out(self):
+    self.logger.debug('\tthere are %s records to save' %
+                      len(self.individuals_to_be_saved))
+    self.kb.save_array(self.individuals_to_be_saved)
+    for i, e in it.izip(self.individuals_to_be_saved,
+                        self.enrollments_to_be_saved):
+      e.individual = i
+    self.kb.save_array(self.enrollments_to_be_saved)
+    self.individuals_to_be_saved = []
+    self.enrollments_to_be_saved = []
+    self.logger.debug('\tdone')
+
+
+  @debug_wrapper
+  def clean_up(self):
+    self.dump_out()
 
   @debug_wrapper
   def retrieve_enrollment(self, identifier):
     study_label, label = identifier
     self.logger.info('importing (%s, %s)' % (study_label, label))
+
+    assert study_label == self.default_study.label
+
     if self.default_study and self.known_enrollments.has_key(label):
       study = self.default_study
       e = self.known_enrollments[label]
@@ -124,8 +150,8 @@ class Recorder(Core):
     else:
       study = self.default_study if self.default_study \
               else self.known_studies.setdefault(study_label,
-                                                 self.get_study_by_label(study_label))
-      e = self.ikb.get_enrollment(study_label=study.label, ind_label=label)
+                                                 self.get_study(study_label))
+      e = self.kb.get_enrollment(study, ind_label=label)
     return study, e
 
 
@@ -136,37 +162,34 @@ class Recorder(Core):
 
   @debug_wrapper
   def record(self, identifier, gender, father, mother):
+    gender_map = {'MALE' : self.kb.Gender.MALE,
+                  'FEMALE' : self.kb.Gender.FEMALE}
+
     self.logger.info('importing %s %s %s %s' % (identifier, gender,
                                                 father.id if father else None,
                                                 mother.id if mother else None))
     study, e = self.retrieve_enrollment(identifier)
-    if not e:
-      self.logger.info('creating %s %s %s %s' % (identifier, gender,
-                                                 father.id if father else None,
-                                                 mother.id if mother else None))
-      action = self.create_import_action(study,
-                                         description=self.input_rows[identifier])
-      i = self.ikb.Individual(gender=self.gender_map[gender.upper()])
-      action.unload()
-      i.action = action
-      if father:
-        # FIXME: this is disabled, since father does not automatically load field objects
-        # if not father.gender == self.gender_map['MALE']:
-        #   raise ValueError('putative father of %s is not male' % label)
-        # FIXME
-        father.unload()
-        i.father = father
-      if mother:
-        # FIXME: this is disabled, since father does not automatically load field objects
-        # if not mother.gender == self.gender_map['FEMALE']:
-        #   raise ValueError('putative mother of %s is not female' % label)
-        mother.unload()
-        i.mother = mother
-      i = self.ikb.save(i)
-      i.unload()
-      e = self.ikb.Enrollment(study=study, individual=i,
-                              study_code=identifier[1])
-      e = self.ikb.save(e)
+    if e:
+      return
+    self.logger.info('creating %s %s %s %s' % (identifier, gender,
+                                               father.id if father else None,
+                                               mother.id if mother else None))
+    conf = {'gender' : gender_map[gender.upper()],
+            'action' : self.action}
+    if father:
+      conf['father'] = father
+    if mother:
+      conf['mother'] = mother
+    i = self.kb.factory.create(self.kb.Individual, conf)
+    e = self.kb.factory.create(self.kb.Enrollment,
+                               {'study' : self.default_study,
+                                'individual' : i,
+                                'studyCode': identifier[1]})
+    #--
+    self.individuals_to_be_saved.append(i)
+    self.enrollments_to_be_saved.append(e)
+    if len(self.individuals_to_be_saved) >= self.chunk_size:
+      self.dump_out()
     return i
 
 help_doc = """
@@ -177,10 +200,14 @@ def make_parser_individual(parser):
   parser.add_argument('-S', '--study', type=str,
                       help="""Default study to enroll into.
                       It will over-ride the study column value""")
+  parser.add_argument('-N', '--batch-size', type=int,
+                      help="""Size of the batch of individuals
+                      to be processed in parallel (if possible)""",
+                      default=1000)
 
 def import_individual_implementation(args):
   recorder = Recorder(args.study, args.host, args.user, args.passwd,
-                      args.keep_tokens)
+                      args.keep_tokens, args.batch_size)
   def istream(f, input_rows):
     for r in f:
       k = (r['study'], r['label'])
@@ -193,6 +220,8 @@ def import_individual_implementation(args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   print 'ready to go on file %s' % args.ifile.name
   import_pedigree(recorder, istream(f, recorder.input_rows))
+  recorder.clean_up()
+
 
 def do_register(registration_list):
   registration_list.append(('individual', help_doc,

@@ -14,86 +14,7 @@ Import Utility
 
 The purpose of this utility is to import in vl externally generated data.
 
-Data objects
-------------
-
-This is the basic import facility.
-
-
-Import of individuals collections
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-
-Will read in a tsv file with the following columns::
-
-  study label gender   father mother
-  xxx   id2   male   id4    id5
-  xxx   id3   female None   None
-  ....
-
-A study with label ''xxx'' will be automatically generated if missing,
-and the individuals will be enrolled in the given study. It is not
-possible to import the same individual twice, and the related file rows will be noisily
-ignored.
-
-.. FIXME ref to individual doc
-
-
-
-Import of blood samples
-,,,,,,,,,,,,,,,,,,,,,,,
-
-
-Will read in a tsv file with the following columns::
-
-  study label bslabel bsbarcode initial_volume current_volume status
-  xxx   id2   bs01    328989238 20             20             USABLE
-  xxx   id3   bs03    328989228 20             20             USABLE
-  ....
-
-.. FIXME ref to blood_sample doc
-
-
-Import of DNA samples
-,,,,,,,,,,,,,,,,,,,,,,,
-
-Will read in a csv file with the following columns::
-
-  bslabel bsbarcode dnalabel dnabarcode initial_volume current_volume \
-     nanodrop_concentration qp230260 qp230280 status
-  bs01    328989238 dn01      3989328   20             20            USABLE
-  bs03    328989228 dn02      2389898   20             20            USABLE
-  ....
-
-Record that point to an unknown (bslabel, bsbarcode) pair will be noisily
-ignored. The same will happen to records that have the same dnalabel or
-dnabarcode of a previously seen dna sample.
-
-.. FIXME ref to dna_sample doc
-
-Import of PlateWells
-,,,,,,,,,,,,,,,,,,,,
-
-
-Will read in a csv file with the following columns::
-
-  plate_label plate_barcode row column dnalabel dnabarcode volume
-  p01         2390920       10  2      d01      3289892389 0.1
-
-Default plate dimensions are provided with a flag
-
-  > import -v PlateWell -i file.csv --plate-shape=30x32
-
-Each import should have flags with the device description....
-
-
-Import of Raw GT result files
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-Will read in a tsv file with the following columns::
-
-  study  label    type            plate_barcode row column QC path
-  BSTUDY AAAA.CEL AffymetrixCel   2849823098429 22  22     0.33       file:/ELS/els6/...
+FIXME documentations should be extracted from imported modules..
 
 """
 
@@ -103,7 +24,8 @@ import logging, time
 LOG_FILENAME = 'importer.log'
 logging.basicConfig(filename=LOG_FILENAME,
                     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    level=logging.INFO)
+                    level=logging.DEBUG)
+#                    level=logging.INFO)
 
 logger = logging.getLogger()
 
@@ -136,12 +58,12 @@ import bl.vl.app.importer.blood_sample
 import bl.vl.app.importer.dna_sample
 import bl.vl.app.importer.titer_plate
 import bl.vl.app.importer.plate_well
-import bl.vl.app.importer.data_sample
-import bl.vl.app.importer.data_object
-import bl.vl.app.importer.data_collection
-import bl.vl.app.importer.marker_definition
-import bl.vl.app.importer.marker_alignment
-import bl.vl.app.importer.markers_set
+# import bl.vl.app.importer.data_sample
+# import bl.vl.app.importer.data_object
+# import bl.vl.app.importer.data_collection
+# import bl.vl.app.importer.marker_definition
+# import bl.vl.app.importer.marker_alignment
+# import bl.vl.app.importer.markers_set
 
 
 
@@ -153,12 +75,13 @@ class App(object):
     bl.vl.app.importer.dna_sample.do_register(self.supported_submodules)
     bl.vl.app.importer.titer_plate.do_register(self.supported_submodules)
     bl.vl.app.importer.plate_well.do_register(self.supported_submodules)
-    bl.vl.app.importer.data_sample.do_register(self.supported_submodules)
-    bl.vl.app.importer.data_object.do_register(self.supported_submodules)
-    bl.vl.app.importer.data_collection.do_register(self.supported_submodules)
-    bl.vl.app.importer.marker_definition.do_register(self.supported_submodules)
-    bl.vl.app.importer.marker_alignment.do_register(self.supported_submodules)
-    bl.vl.app.importer.markers_set.do_register(self.supported_submodules)
+    # bl.vl.app.importer.data_sample.do_register(self.supported_submodules)
+    # bl.vl.app.importer.data_object.do_register(self.supported_submodules)
+    # bl.vl.app.importer.data_collection.do_register(self.supported_submodules)
+    # bl.vl.app.importer.marker_definition.do_register(self.supported_submodules)
+    # bl.vl.app.importer.marker_alignment.do_register(self.supported_submodules)
+    # bl.vl.app.importer.markers_set.do_register(self.supported_submodules)
+
 
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic importer")

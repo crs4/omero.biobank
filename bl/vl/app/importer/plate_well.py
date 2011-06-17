@@ -5,18 +5,34 @@ Import of PlateWells
 
 Will read in a csv file with the following columns::
 
-  study  label   plate_label row column dna_label volume
-  ASTUDY p01.J02 p01         10  2      lab-89 0.1
+  study plate_label label row column bio_sample_label used_volume current_volume
+  ASTDY p01         J01   10  1      lab-88           0.1         0.1
+  ASTDY p01         J02   10  2      lab-89           0.1         0.1
 
-It will noisily ignore records that: (a) do not correspond to a valid
-plate_label or dna sample; (b) are already in the kb.
+Each row will be interpreted as follows.
+Add a PlateWell to the plate identified by plate_label, The PlateWell
+will have, within that plate, the unique identifier label. If row and
+column (optional) are provided, it will use that location. If they are
+not, it will deduce them from label (e.g., J01 -> row=10,
+column=1). Missing labels will be generated as
 
+       '%s%03d' % (chr(row + ord('A') - 1), column)
+
+Badly formed label will bring the rejection of the record. The same
+will happen if label, row and column are inconsistent.  The well will
+be filled by current_volume material produced by removing used_volume
+material taken from the bio material contained in the vessel
+identified by bio_sample_label. Row and Column are base 1.
+
+FIXME: currently there is no way to specialize the action performed,
+it will always be marked as an ActionCategory.ALIQUOTING.
 """
 
 from bl.vl.sample.kb import KBError
 from core import Core, BadRecord
 from version import version
 
+import itertools as it
 import csv, json
 import time, sys
 import traceback
@@ -45,202 +61,235 @@ class Recorder(Core):
   An utility class that handles the actual recording of PlateWell(s)
   into VL.
   """
-  def __init__(self, study_label=None, volume=None,  update_volume=False,
+  def __init__(self, study_label=None,
+               used_volume=None,  current_volume=False,
                host=None, user=None, passwd=None, keep_tokens=1,
-               operator='Alfred E. Neumann'):
+               batch_size=1000, operator='Alfred E. Neumann'):
     """
     FIXME
     """
     super(Recorder, self).__init__(host, user, passwd, keep_tokens)
-    self.volume = float(volume) if volume else volume
-    self.update_volume = update_volume
-    #FIXME this can probably go to core....
-    self.default_study = None
-    if study_label:
-      s = self.skb.get_study_by_label(study_label)
-      if not s:
-        raise ValueError('No known study with label %s' % study_label)
-      self.logger.info('Selecting %s[%d,%s] as default study' % (s.label, s.omero_id, s.id))
-      self.default_study = s
-    self.known_studies = {}
-    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
-    self.asetup = self.get_action_setup('importer-version-%s-%s-%f' % (version, "PlateWell", time.time()),
-                                        # FIXME the json below should
-                                        # record the app version, and the
-                                        # parameters used.  unclear if we
-                                        # need to register the file we load
-                                        # data from, since it is, most
-                                        # likely, a transient object.
-                                        json.dumps({'study' : study_label,
-                                                    'volume' : volume,
-                                                    'update_volume' : update_volume,
-                                                    'operator' : operator,
-                                                    'host' : host,
-                                                    'user' : user}))
-    self.acat  = self.acat_map['IMPORT']
+    self.used_volume    = used_volume
+    self.current_volume = current_volume
+    self.batch_size = batch_size
     self.operator = operator
-    #
-    self.input_rows = {}
-    self.counter = 0
+    self.device = self.get_device(label='importer.plate_well',
+                                  maker='CRS4', model='importer', release='0.1')
+    self.asetup = self.get_action_setup('importer.plate_well',
+                                        {'used_volume' : used_volume,
+                                         'current_volume' : current_volume,
+                                         'study_label' : study_label,
+                                         'operator' : operator})
+    self.known_barcodes = []
+    self.known_plates = {}
+    self.known_tubes = {}
+
+  #--
+  def build_well_full_label(self, clabel, wlabel):
+    return ':'.join([clabel, wlabel])
+  #--
+  def record(self, records):
+    def records_by_chunk(batch_size, records):
+      offset = 0
+      while len(records[offset:]) > 0:
+        yield records[offset:offset+batch_size]
+        offset += batch_size
     #--
-    # FIXME -- speed up
-    self.device.unload()
-    self.asetup.unload()
-
+    if not records:
+      self.logger.warn('no records')
+      return
+    self.choose_relevant_study(records)
+    self.preload_plates()
+    self.preload_tubes()
     #--
-    self.logger.info('start prefetching DNASample(s)')
-    dna_samples = self.skb.get_bio_samples(self.skb.DNASample)
-    self.dna_samples = {}
-    for ds in dna_samples:
-      self.dna_samples[ds.label] = ds
-    self.logger.info('done prefetching DNASample(s)')
-    self.logger.info('there are %d DNASample(s) in the kb' % len(self.dna_samples))
-    #-
-    self.logger.info('start prefetching TiterPlate(s)')
-    # FIXME this method has a funny name
-    self.titer_plates = {}
-    self.titer_plates_by_omero_id = {}
-    tps = self.skb.get_bio_samples(self.skb.TiterPlate)
-    for tp in tps:
-      self.titer_plates[tp.label] = tp
-      self.titer_plates_by_omero_id[tp.omero_id] = tp
-    self.logger.info('done prefetching TiterPlate(s)')
-    self.logger.info('there are %d TiterPlate(s) in the kb' % len(self.titer_plates))
-    #-
-    self.plate_wells = {}
-    self.logger.info('start prefetching PlateWell(s)')
-    # FIXME this method has a funny name
-    pws = self.skb.get_bio_samples(self.skb.PlateWell)
-    for pw in pws:
-      self.plate_wells[pw.label] = pw
-    self.logger.info('done prefetching PlateWell(s)')
-    self.logger.info('there are %d PlateWell(s) in the kb' % len(self.plate_wells))
+    records = self.do_consistency_checks(records)
+    for i, c in enumerate(records_by_chunk(self.batch_size, records)):
+      self.logger.info('start processing chunk %d' % i)
+      self.process_chunk(c)
+      self.logger.info('done processing chunk %d' % i)
 
-  @debug_wrapper
-  def record(self, r):
-    record_id = self.record_counter
-    self.record_counter += 1
-    self.logger.debug('\tworking on %s' % r)
-    try:
-      i_study, label, plate_label, dna_label = \
-               r['study'], r['label'], r['plate_label'], r['dna_label']
-      row, column  = map(int, [r['row'], r['column']])
-      delta_volume = self.volume if self.volume else float(r['volume'])
-      #-
-      self.logger.info('processing record[%d] (%s,%s),' % (record_id,
-                                                           i_study, label))
-      #-
-      if not self.titer_plates.has_key(plate_label):
-        self.logger.error('cannot load rec[%d]: %s is not a known TiterPlate' %
-                          (record_id, plate_label))
-        return
-      plate = self.titer_plates[plate_label]
-      #-
-      if not self.dna_samples.has_key(dna_label):
-        self.logger.error('cannot load rec[%d]: %s is not a known DNASample'
-                          % (record_id, dna_label))
-        return
-      dna_sample = self.dna_samples[dna_label]
-      #-
-      slot = plate.columns * row + column
-      if self.plate_wells.has_key(label):
-        self.logger.warn('will not load record %d, is already (%s, %s) in the kb' %
-                         (record_id, plate_label, label))
-        return
-      study = self.default_study if self.default_study \
-              else self.known_studies.setdefault(i_study,
-                                                 self.get_study_by_label(i_study))
-      pw = self.skb.get_well_of_plate(plate=plate, row=row, column=column)
-      if pw:
-        self.logger.warn('not loading PlateWell[%s, %s]. Is already in KB.' % (i_study, label))
-        return
-
-      # FIXME -- speed up
-      dna_sample.__set_proxy__(self.skb)
-      dna_sample.unload()
-      study.__set_proxy__(self.skb)
-      study.unload()
-      plate.__set_proxy__(self.skb)
-      plate.unload()
-      #
-      if self.update_volume:
-        current_volume = dna_sample.current_volume
-        if current_volume < delta_volume:
-          raise ValueError('dna_sample.current_volume(%f) < requested plate_well volume(%f)' % \
-                           (current_volume, delta_volume))
-        self.create_plate_well(study=study,
-                               container=plate, sample=dna_sample,
-                               label=label,
-                               row=row, column=column,
-                               volume=delta_volume, description=json.dumps(r))
-        self.logger.info('saved plate_well (%s,%s),' % (study.label, label))
-        old_current_volume = dna_sample.current_volume
-        current_volume -= delta_volume
-        dna_sample.current_volume = current_volume
-        self.skb.save(dna_sample)
-        self.logger.info('updated volume of dna_sample %s from %f to %f' % (dna_sample.label,
-                                                                            old_current_volume,
-                                                                            current_volume))
-
-      else:
-        self.create_plate_well(study=study,
-                               container=plate, sample=dna_sample,
-                               label=label, row=row, column=column,
-                               volume=delta_volume, description=json.dumps(r))
-        self.logger.info('saved plate_well %s,' % (label))
-    except KeyError, e:
-      self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
+  def choose_relevant_study(self, records):
+    if self.default_study:
       return
-    except ValueError, e:
-      logger.warn('ignoring record %s since %s' % (r, e))
-      return
-    except (KBError, NotImplementedError), e:
-      logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
-      return
-    except Exception, e:
-      logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
-      logger.fatal('%s' % traceback.format_exc())
-      return
+    study_label = records[0]['study']
+    for r in records:
+      if r['study'] != study_label:
+        m = 'all records should have the same study label'
+        self.logger.critical(m)
+        raise ValueError(m)
+    self.default_study = self.get_study(study_label)
 
-  @debug_wrapper
-  def create_plate_well(self, study, container, sample,
-                        label, row, column, volume, description=''):
+  def preload_plates(self):
+    self.logger.info('start prefetching plates')
+    plates = self.kb.get_containers(klass=self.kb.TiterPlate)
+    for p in plates:
+      self.known_plates[p.label] = p
+      if hasattr(p, 'barcode') and p.barcode is not None:
+        self.known_barcodes.append(p.barcode)
+    self.logger.info('there are %d TiterPlate(s) in the kb'
+                     % (len(self.known_plates)))
 
-    action = self.create_action_on_sample(study, sample,
-                                          description=description)
+  def preload_labelled_vessels(self, klass, content, preloaded):
+    vessels = self.kb.get_vessels(klass, content)
+    for v in vessels:
+      if hasattr(v, 'label'):
+        if isinstance(v, self.kb.PlateWell):
+          #FIXME should we check that v.container is an actual TiterPlate?
+          plate = v.container
+          plate.reload() # Do we really need to do this? We have
+                         # already preloaded all Plates...
+          label = self.build_well_full_label(plate.label, v.label)
+        else:
+          label = v.label
+        preloaded[label] = v
+      if hasattr(v, 'barcode') and v.barcode is not None:
+        self.known_barcodes.append(v.barcode)
 
-    action.unload()
+  def preload_tubes(self):
+    self.logger.info('start prefetching vessels')
+    self.preload_labelled_vessels(klass=self.kb.Vessel,
+                                  content=None,
+                                  preloaded=self.known_tubes)
+    self.logger.info('there are %d labelled Vessel(s) in the kb'
+                     % (len(self.known_tubes)))
 
-    plate_well = self.skb.PlateWell(sample=sample, container=container,
-                                    row=row, column=column,
-                                    volume=volume)
-    plate_well.label  = label
-    plate_well.action = action
-    plate_well.outcome = self.outcome_map['OK']
-    return self.skb.save(plate_well)
+  #----------------------------------------------------------------
+  def build_well_label(self, r):
+    if 'row' in r and 'column' in r:
+      row, column = int(r['row']), int(r['column'])
+      # row and column are BASE 1 !
+      label = '%s%02d' % (chr(row + ord('A') - 1), column)
+    else:
+      label = r['label']
+    return label
 
-  @debug_wrapper
-  def create_action_on_sample(self, study, sample, description=''):
-    return self.create_action_helper(self.skb.ActionOnSample, description,
-                                     study, self.device,
-                                     self.asetup, self.acat, self.operator,
-                                     sample)
+  def find_well_coords(self, r):
+    if 'row' in r and 'column' in r:
+      row, column = int(r['row']), int(r['column'])
+    else:
+      # FIXME this is ugly, but who cares...
+      label = r['label']
+      for i in range(len(label)-1, 0, -1):
+        if not label[i].isdigit():
+          break
+      column = int(label[i+1:])
+      label = label[:i+1]
+      row  = 0
+      base = 1
+      for x in label[::-1]:
+        row += (ord(x)-ord('A') + 1) * base
+        base *= 26
+    return row, column
 
+  def do_consistency_checks(self, records):
+    self.logger.info('start consistency checks')
+    #--
+    good_records = []
+    for i, r in enumerate(records):
+      reject = ' Rejecting import line %d.' % i
+      if 'plate_label' not in r or ':' in r['plate_label']:
+        f = 'missing/bad plate_label in record.' + reject
+        self.logger.error(f)
+        continue
+      if 'label' not in r and ('row' not in r or 'column' not in r
+                               or not r['row'].isdigit()
+                               or not r['column'].isdigit()):
+        f = 'missing/bad label/row/column in record.' + reject
+        self.logger.error(f)
+        continue
+      label_from_coords = self.build_well_label(r)
+      row, column = self.find_well_coords(r)
+      if 'label' in r and not r['label'] == label_from_coords:
+        f = 'inconsistent label/row/column in record.' + reject
+        self.logger.error(f)
+        continue
+      label = self.build_well_full_label(r['plate_label'], label_from_coords)
+      if label in self.known_tubes:
+        f = 'there is a pre-existing vessel with label %s.' + reject
+        self.logger.warn(f % label)
+        continue
+      if r['plate_label'] not in self.known_plates:
+        f = 'there is no known plate with label %s.' + reject
+        self.logger.error(f % r['plate_label'])
+        continue
+      plate = self.known_plates[r['plate_label']]
+      if not 0 < row <= plate.rows:
+        f = 'well row is inconsistent with plate[%s].rows.' + reject
+        self.logger.error(f % r['plate_label'])
+        continue
+      if not 0 < column <= plate.columns:
+        f = 'well column is inconsistent than plate[%s].columns.' + reject
+        self.logger.error(f % r['plate_label'])
+        continue
+      if r['bio_sample_label'] not in self.known_tubes:
+        f = 'there is no known bio_sample with label %s.' + reject
+        self.logger.error(f % r['bio_sample_label'])
+        continue
+      if not r.has_key('current_volume') and not self.current_volume:
+        f = 'undefined current_volume for %s.' + reject
+        self.logger.error(f % r['label'])
+        continue
+      if not r.has_key('used_volume') and not self.used_volume:
+        f = 'undefined used_volume for %s.' + reject
+        self.logger.error(f % r['label'])
+        continue
+      current_volume = float(r.get('current_volume', self.current_volume))
+      used_volume = float(r.get('used_volume', self.used_volume))
+      if current_volume > used_volume:
+        m = 'current_volume[%s] > used_volume[%s].' + reject
+        self.logger.error(m % (r['current_volume'], r['used_volume']))
+        continue
+      good_records.append(r)
+    self.logger.info('done consistency checks')
+    #--
+    return good_records
 
-  @debug_wrapper
-  def get_titer_plate(self, study, label):
-    # currently study is ignored.
-    titer_plate = self.skb.get_titer_plate(label=label)
-    if not titer_plate:
-      raise ValueError('cannot find a plate with label <%s>' % label)
-    return titer_plate
-
-  @debug_wrapper
-  def get_dna_sample(self, label):
-    dna_sample = self.skb.get_dna_sample(label=label)
-    if not dna_sample:
-      raise ValueError('cannot find a dna sample with label <%s>' % label)
-    return dna_sample
+  def process_chunk(self, chunk):
+    actions = []
+    for r in chunk:
+      target = self.known_tubes[r['bio_sample_label']]
+      acat = self.kb.ActionCategory.ALIQUOTING
+      # FIXME we are not registering details on the amount extracted...
+      conf = {'setup' : self.asetup,
+              'device': self.device,
+              'actionCategory' : acat,
+              'operator' : self.operator,
+              'context'  : self.default_study,
+              'target' : target
+              }
+      actions.append(self.kb.factory.create(self.kb.ActionOnVessel, conf))
+    self.kb.save_array(actions)
+    #--
+    wells = []
+    for a,r in it.izip(actions, chunk):
+      # FIXME we need to do this, otherwise the next save will choke.
+      a.unload()
+      current_volume = float(r.get('current_volume', self.current_volume))
+      # FIXME we are not really checking that used_volume is ok.
+      # FIXME we are not updating the target current volume.
+      used_volume = float(r.get('used_volume', self.used_volume))
+      plate = self.known_plates[r['plate_label']]
+      well_label = self.build_well_label(r)
+      row, column = self.find_well_coords(r)
+      slot = (row - 1)* plate.columns + column
+      conf = {
+        'label'         : r['label'],
+        'currentVolume' : current_volume,
+        'initialVolume' : current_volume,
+        'content'       : self.kb.VesselContent.DNA,
+        'status'        : self.kb.VesselStatus.CONTENTUSABLE,
+        'action'        : a,
+        'container'     : plate,
+        'label'         : well_label,
+        'slot'          : slot
+        }
+      wells.append(self.kb.factory.create(self.kb.PlateWell, conf))
+    #--
+    self.kb.save_array(wells)
+    #--
+    for w in wells:
+      self.logger.info('saved %s[%s] as %s.'
+                       % (w.container.label, w.label, w.id))
 
 help_doc = """
 import new plate_well definitions into a virgil system.
@@ -250,22 +299,29 @@ def make_parser_plate_well(parser):
   parser.add_argument('-S', '--study', type=str,
                       help="""default conxtest study label.
                       It will over-ride the study column value""")
-  parser.add_argument('-V', '--volume', type=float,
-                      help="""default volume of fluid assigned to a plate well.
-                      It will over-ride the volume column value""")
-  parser.add_argument('--update-volume', action='store_true', default=False,
-                      help="""if set, it will subract the amount required by the plate well row from the
-                              referenced dna sample vial""")
+  parser.add_argument('-V', '--used-volume', type=float,
+                      help="""default volume of fluid taken from the source
+                      bio_sample. It will over-ride the used_volume
+                      column value""")
+  parser.add_argument('-C', '--current-volume', type=float,
+                      help="""default volume of fluid put in the well.""")
 
 def import_plate_well_implementation(args):
   # FIXME it is very likely that the following can be directly
   # implemented as a validation function in the parser definition above.
-  recorder = Recorder(args.study, volume=args.volume, update_volume=args.update_volume,
+  recorder = Recorder(args.study,
+                      used_volume=args.used_volume,
+                      current_volume=args.current_volume,
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)
+  #--
   f = csv.DictReader(args.ifile, delimiter='\t')
-  for r in f:
-    recorder.record(r)
+  logger.info('start processing file %s' % args.ifile.name)
+  records = [r for r in f]
+  recorder.record(records)
+  logger.info('done processing file %s' % args.ifile.name)
+  #--
+
 
 def do_register(registration_list):
   registration_list.append(('plate_well', help_doc,

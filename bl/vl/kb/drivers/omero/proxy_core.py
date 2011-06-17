@@ -52,7 +52,7 @@ import logging
 #LOG_FILENAME = 'proxy_core.log'
 logging.basicConfig(#filename=LOG_FILENAME,
                     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    level=logging.WARN)
+                    level=logging.INFO)
 
 logger = logging.getLogger("proxy_core")
 
@@ -160,9 +160,9 @@ class ProxyCore(object):
 
   def reload_object(self, o):
     res = self.ome_operation("getQueryService", "get",
-                             o.OME_TABLE, o.omero_id)
+                             o.get_ome_table(), o.omero_id)
     if not res:
-      raise ValueError('cannot update %s by example'  % o)
+      raise ValueError('cannot get %s'  % o)
     o.ome_obj = res
     o.proxy = self
 

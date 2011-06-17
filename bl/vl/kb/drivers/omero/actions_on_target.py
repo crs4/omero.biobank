@@ -3,6 +3,7 @@ from vessels       import Vessel
 from data_samples  import DataSample
 from objects_collections   import DataCollectionItem
 
+
 class ActionOnVessel(Action):
   OME_TABLE = 'ActionOnVessel'
   __fields__ = [('target', Vessel, 'required')]

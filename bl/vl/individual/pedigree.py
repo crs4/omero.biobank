@@ -53,8 +53,9 @@ def import_pedigree(recorder, istream):
     by_id[x.id] = (x, i)
 
   founders, non_founders, dandlings, couples, children = analyze(family)
-  assert not dandlings
-
+  if dandlings:
+    raise ValueError('there are %d dandlings: %s' %
+                     (len(dandlings), dandlings))
   visited = {}
   kids = {}
   couples_by_partner = {}
@@ -75,6 +76,8 @@ def import_pedigree(recorder, istream):
         visited[c1] = True
 
   while wave:
+    # FIXME this is a dirty trick...
+    recorder.dump_out()
     new_wave = []
     for c in  wave:
       for k in kids[c]:

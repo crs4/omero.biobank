@@ -28,6 +28,11 @@ class Individual(wp.OmeroWrapper):
   def __preprocess_conf__(self, conf):
     return assign_vid(conf)
 
+class ActionOnIndividual(Action):
+  OME_TABLE = 'ActionOnIndividual'
+  __fields__ = [('target', Individual, 'required')]
+
+
 class Enrollment(wp.OmeroWrapper):
   OME_TABLE = 'Enrollment'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),

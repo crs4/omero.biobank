@@ -54,10 +54,22 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     self.kill_list.append(e.save())
     self.check_object(e, conf, self.kb.Enrollment)
 
+  def test_enrollment_ops(self):
+    conf, e = self.create_enrollment()
+    e.save()
+    study = e.study
+    xe = self.kb.get_enrollment(study, conf['studyCode'])
+    self.assertTrue(not xe is None)
+    self.assertEqual(xe.id, e.id)
+    self.kb.delete(e)
+    self.assertEqual(self.kb.get_enrollment(study, conf['studyCode']),
+                     None)
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_individual'))
   suite.addTest(TestKB('test_enrollment'))
+  suite.addTest(TestKB('test_enrollment_ops'))
   return suite
 
 if __name__ == '__main__':

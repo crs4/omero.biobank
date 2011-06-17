@@ -54,24 +54,38 @@ reconstruct the missing SNP reads.
  3. Plan optimal computational strategy
  4. Record results as actions
 
+This amounts to 
+
+  #. query the kb for all individuals present in a study
+
+  #. check if the individual has been genotyped and, in the latter
+     case, if there have been too many miscall
+
+  #. 
+
+
 
 Collect individual by study
 ---------------------------
 
+
+
 .. code-block:: Python
 
-   import bl.lib.genotype.kb as kb
-   import bl.lib.genotype.pedigree as ped
+   import bl.vl.kb as kb
+   import bl.vl.genotype.pedigree as ped
 
    people = kb.get_individuals_in_study(study)
+
    not_genotyped = []
    print 'genotyping stats:'
-   snp_array = kb.get_spn_array('AFFYMETRIX_6.0')
+   ms = kb.get_marker_set(...)
+   
+   dt = kb.compute_dependency_tree()
    for p in people:
-     if p.genotyped_on_array(snp_array):
-       g = p.get_genotype(snp_array)[0]
-       if g.missing_calls > eps * len(snp_array):
-         not_genotyped.append(p)
+     ds = dt.get_connected(p, kb.GenotypeDataSample)
+     if len(ds) == 0:
+       not_genotyped.append(p)
    founders, non_founders, couples, children = ped.analyze(people)
    families = ped.split_disjoint(ped.propagate_family(not_genotyped.append, 
                                                       children), children)
@@ -79,6 +93,8 @@ Collect individual by study
 Find optimal cluster size
 -------------------------
 
+   
+ 
 
   
 Select relevant pedigrees

@@ -1,31 +1,49 @@
 """
-Import of DNA samples
-=====================
+Import of dna samples
+=======================
 
-Will read in a csv file with the following columns::
 
-  study label  barcode blood_sample_label initial_volume current_volume status nanodrop qp230260 qp230280
-  xxx   dn01   2903902 bs-label 9.5 6.5 40 0.4 0.5 USABLE
+Will read in a tsv file with the following columns::
+
+  study label barcode   bio_sample_label used_volume current_volume status
+  xxx   dna01 328989238 id2              40             20             USABLE
+  xxx   dna03 328989228 id3              40             20             USABLE
   ....
 
-Volume units are FIXME ml
-Records that point to an unknown blood_sample_label will be noisily
-ignored. The same will happen to records that have the same label or
-barcode of a previously seen dna sample.
+Where the label is the label on the vessel containing the dna_sample,
+barcode is its (optional) barcode, bio_sample_label is the label of
+the vessel that contained the biological sample from which the dna was
+either extracted or siphoned out.
 
-Study defines the context in which the import occurred, the blood
-sample is identified by its label, which is enforced to be unique
-(as far as BloodSample samples are concerned) in VL. In the same way,
-the imported sample will be uniquely identified by its barcode. The
-sample label will be set to the string <study>-<label>, which will be
-enforced to be unique too within VL.
+FIXME: does the following make sense?
+
+In default, if the content of the object indicated by the
+bio_sample_label is VesselContent.DNA the connecting action will be
+marked as ActionCategory.ALIQUOTING. Otherwise, the the connecting
+action will be marked as ActionCategory.EXTRACTION.
+
+The column `used_volume` indicates the amount, in volume (ml), of the
+bio sample that was used to generate the `current_volume` (ml) of the
+new dna sample.
+
+Consistency checks will be performed on the used/transferred volume, and
+the source vessel volume will be updated. [FIXME, not implemented yet]
+
+Status should be one of the values listed in the enum
+ome.model.vl.VesselStatus. FIXME add a link
+
+Records that point to an unknown (bio_sample_label)
+pair will be noisily ignored. The same will happen to records that
+have the same label or barcode of a previously seen dna sample.
+
+Study defines the context in which the import occurred.
 
 """
+from core import Core, BadRecord
 
-from bl.vl.sample.kb import KBError
-from bio_sample import BioSampleRecorder, BadRecord
+import csv, json
 
-import csv, json, sys
+import itertools as it
 
 #-----------------------------------------------------------------------------
 #FIXME this should be factored out....
@@ -46,148 +64,190 @@ def debug_wrapper(f):
   return debug_wrapper_wrapper
 #-----------------------------------------------------------------------------
 
-class Recorder(BioSampleRecorder):
-  """
-  An utility class that handles the actual recording of DNASample(s) into VL
-  """
-  def __init__(self, study_label=None, initial_volume=None, current_volume=None,
+class Recorder(Core):
+  def __init__(self, study_label=None,
+               used_volume=None, current_volume=None,
                host=None, user=None, passwd=None, keep_tokens=1,
-               operator='Alfred E. Neumann'):
-    super(Recorder, self).__init__('DNASample',
-                                   study_label, initial_volume, current_volume,
-                                   host, user, passwd, keep_tokens, operator)
+               batch_size=1000, operator='Alfred E. Neumann'):
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
+                                   study_label)
+    self.used_volume    = used_volume
+    self.current_volume = current_volume
+    self.batch_size = batch_size
+    self.operator = operator
+    self.device = self.get_device(label='importer.dna_sample',
+                                  maker='CRS4', model='importer', release='0.1')
+    self.asetup = self.get_action_setup('importer.dna_sample',
+                                        {'used_volume' : used_volume,
+                                         'current_volume' : current_volume,
+                                         'study_label' : study_label,
+                                         'operator' : operator})
+
+  def record(self, records):
+    def records_by_chunk(batch_size, records):
+      offset = 0
+      while len(records[offset:]) > 0:
+        yield records[offset:offset+batch_size]
+        offset += batch_size
     #--
-    self.logger.info('start prefetching BloodSample(s)')
-    blood_samples = self.skb.get_bio_samples(self.skb.BloodSample)
-    self.blood_samples = {}
-    for bs in blood_samples:
-      self.blood_samples[bs.label] = bs
-    self.logger.info('done prefetching BloodSample(s)')
-    self.logger.info('there are %d BloodSample(s) in the kb'
-                     % len(self.blood_samples))
-    #--
-    self.logger.info('start prefetching DNASample(s)')
-    dna_samples = self.skb.get_bio_samples(self.skb.DNASample)
-    self.dna_samples = {}
-    for ds in dna_samples:
-      self.dna_samples[ds.label] = ds
-    self.logger.info('done prefetching DNASample(s)')
-    self.logger.info('there are %d DNASample(s) in the kb' % len(self.dna_samples))
-
-  @debug_wrapper
-  def create_action(self, study, blood_sample, description=''):
-    return self.create_action_helper(self.skb.ActionOnSample, description,
-                                     study, self.device,
-                                     self.asetup, self.acat, self.operator,
-                                     blood_sample)
-
-  @debug_wrapper
-  def create_dna_sample(self, study, blood_sample, label, barcode,
-                        initial_volume, current_volume, status,
-                        nanodrop, qp230260, qp230280):
-    assert label and barcode and initial_volume >= current_volume
-    description=json.dumps(self.input_rows[barcode])
-    action = self.create_action(study, blood_sample, description=description)
-    # FIXME -- speed up attempt
-    action.unload()
-    #--
-    sample = self.skb.DNASample(label=label)
-    sample.action, sample.outcome   = action, self.outcome_map['OK']
-    sample.barcode  = barcode
-    sample.initialVolume = initial_volume
-    sample.currentVolume = current_volume
-    sample.status = self.sstatus_map[status.upper()]
-    sample.nanodropConcentration = nanodrop
-    sample.qp230260 = qp230260
-    sample.qp230280 = qp230280
-
-    self.logger.debug('\tsaving dna_sample(>%s<,>%s<)' % (sample.label,
-                                                          sample.barcode))
-
-    sample = self.skb.save(sample)
-    self.logger.info('created a DNASample record (%s)' % (sample.label))
-    return sample
-
-  @debug_wrapper
-  def record(self, r):
-    self.logger.info('processing record[%d] (%s,%s),' % (self.record_counter, r['study'], r['label']))
-    self.record_counter += 1
-    self.logger.debug('\tworking on %s' % r)
-
-    if self.dna_samples.has_key(r['label']):
-      self.logger.warn('DNASample with same label %s in kb, ignoring this record' % r['label'])
+    if not records:
+      self.logger.warn('no records')
       return
+    self.choose_relevant_study(records)
+    self.preload_tubes()
+    #--
+    records = self.do_consistency_checks(records)
+    for i, c in enumerate(records_by_chunk(self.batch_size, records)):
+      self.logger.info('start processing chunk %d' % i)
+      self.process_chunk(c)
+      self.logger.info('done processing chunk %d' % i)
 
-    klass = self.skb.DNASample
-    try:
-      study, label, barcode, initial_volume, current_volume, status = \
-             self.record_helper(klass.__name__, r)
-      blood_sample_label = r['blood_sample_label']
-      nanodrop, qp230260, qp230280 = [r[k] for k in 'nanodrop qp230260 qp230280'.split()]
-      nanodrop = int(nanodrop)
-      qp230260 = float(qp230260)
-      qp230280 = float(qp230280)
+  def choose_relevant_study(self, records):
+    if self.default_study:
+      return
+    study_label = records[0]['study']
+    for r in records:
+      if r['study'] != study_label:
+        m = 'all records should have the same study label'
+        self.logger.critical(m)
+        raise ValueError(m)
+    self.default_study = self.get_study(study_label)
 
-      if self.blood_samples.has_key(blood_sample_label):
-        blood_sample = self.blood_samples[blood_sample_label]
-        self.logger.info('using prefetched BloodSample[%s]' % blood_sample_label)
+  def preload_labelled_vessels(self, klass, content, preloaded):
+    vessels = self.kb.get_vessels(klass, content)
+    for v in vessels:
+      if hasattr(v, 'label'):
+        preloaded[v.label] = v
+
+  def preload_tubes(self):
+    self.logger.info('start prefetching vessels')
+    self.known_tubes = {}
+    self.preload_labelled_vessels(klass=self.kb.Vessel,
+                                  content=None,
+                                  preloaded=self.known_tubes)
+    self.logger.info('there are %d labelled Vessel(s) in the kb'
+                     % (len(self.known_tubes)))
+
+  #----------------------------------------------------------------
+
+  def do_consistency_checks(self, records):
+    self.logger.info('start consistency checks')
+    #--
+    good_records = []
+    reject = 'Rejecting import.'
+    for r in records:
+      # if self.known_barcodes.has_key(r['barcode']):
+      # m = ('there is a pre-existing object with barcode %s. '
+      #       + 'Rejecting import.')
+      #   self.logger.warn(m % r['barcode'])
+      #   continue
+      if self.known_tubes.has_key(r['label']):
+        f = 'there is a pre-existing tube with label %s. ' + reject
+        self.logger.warn(f % r['label'])
+        continue
+      if not self.known_tubes.has_key(r['bio_sample_label']):
+        f = 'there is no known bio_sample with label %s. ' + reject
+        self.logger.warn(f % r['bio_sample_label'])
+        continue
+      if not r.has_key('current_volume') and not self.current_volume:
+        f = 'undefined current_volume for %s. ' + reject
+        self.logger.warn(f % r['label'])
+        continue
+      if not r.has_key('used_volume') and not self.used_volume:
+        f = 'undefined used_volume for %s. ' + reject
+        self.logger.warn(f % r['label'])
+        continue
+      current_volume = float(r.get('current_volume', self.current_volume))
+      used_volume = float(r.get('used_volume', self.used_volume))
+      if current_volume > used_volume:
+        m = '(%s) current_volume[%s] > used_volume[%s]. ' + reject
+        self.logger.warn(m % (r['label'],
+                              r['current_volume'], r['used_volume']))
+        continue
+      good_records.append(r)
+    self.logger.info('done consistency checks')
+    #--
+    return good_records
+
+  def process_chunk(self, chunk):
+    actions = []
+    for r in chunk:
+      target = self.known_tubes[r['bio_sample_label']]
+      if target.content == self.kb.VesselContent.DNA:
+        acat = self.kb.ActionCategory.ALIQUOTING
       else:
-        blood_sample = self.skb.get_blood_sample(label=blood_sample_label)
-      if not blood_sample:
-        self.logger.warn('ignoring record (%s, %s) because there is not a blood_sample with label %s' %
-                         (r['study'], r['label'], r['blood_sample_label']))
-        return
-
-      # FIXME -- speed up attemp
-      study.unload()
-      blood_sample.unload()
-      self.create_dna_sample(study, blood_sample, label, barcode,
-                             initial_volume, current_volume, status,
-                             nanodrop, qp230260, qp230280)
-
-    except BadRecord, msg:
-      self.logger.warn('ignoring record %s: %s' % (r, msg))
-      return
-    except KeyError, e:
-      self.logger.warn('ignoring record %s because of missing value(%s)' % (r, e))
-      return
-    except ValueError, e:
-      self.logger.warn('ignoring record %s because of conversion errors(%s)' % (r, e))
-      return
-    except (KBError, NotImplementedError), e:
-      self.logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
-      return
-    except Exception, e:
-      self.logger.error('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
-      return
-
-help_doc = """
-import new dna sample definitions into a virgil system and attach
-them to previously registered blood samples.
-"""
+        acat = self.kb.ActionCategory.EXTRACTION
+      # FIXME we are not registering details on the amount extracted...
+      conf = {'setup' : self.asetup,
+              'device': self.device,
+              'actionCategory' : acat,
+              'operator' : self.operator,
+              'context'  : self.default_study,
+              'target' : target
+              }
+      actions.append(self.kb.factory.create(self.kb.ActionOnVessel, conf))
+    self.kb.save_array(actions)
+    #--
+    vessels = []
+    for a,r in it.izip(actions, chunk):
+      # FIXME we need to do this, otherwise the next save will choke.
+      a.unload()
+      current_volume = float(r.get('current_volume', self.current_volume))
+      # FIXME we are not really checking that used_volume is ok.
+      # FIXME we are not updating the target current volume.
+      used_volume = float(r.get('used_volume', self.used_volume))
+      conf = {
+        'label'         : r['label'],
+        'currentVolume' : current_volume,
+        'initialVolume' : current_volume,
+        'content'       : self.kb.VesselContent.DNA,
+        'status'        : self.kb.VesselStatus.CONTENTUSABLE,
+        'action'        : a,
+        }
+      if r.has_key('barcode'):
+        conf['barcode'] = r['barcode']
+      vessels.append(self.kb.factory.create(self.kb.Tube, conf))
+    #--
+    self.kb.save_array(vessels)
 
 def make_parser_dna_sample(parser):
   parser.add_argument('-S', '--study', type=str,
-                      help="""default study assumed for the reference individuals.
-                      It will over-ride the study column value""")
-  parser.add_argument('-V', '--initial-volume', type=float,
-                      help="""default initial volume assigned to the blood sample.
-                      It will over-ride the initial_volume column value""")
-  parser.add_argument('-C', '--current-volume', type=float,
-                      help="""default current volume assigned to the blood sample.
-                      It will over-ride the initial_volume column value.""")
-
+                      help="""default study used as context
+                      for the import action.  It will
+                      over-ride the study column value.""")
+  parser.add_argument('--used-volume', type=float,
+                      help="""default amount of source volume used to generate
+                      the dna sample.  It will over-ride the used_volume
+                      column value.""")
+  parser.add_argument('--current-volume', type=float,
+                      help="""default current volume assigned to
+                      the dna sample.
+                      It will over-ride the current_volume column value.""")
+  parser.add_argument('-N', '--batch-size', type=int,
+                      help="""Size of the batch of individuals
+                      to be processed in parallel (if possible)""",
+                      default=1000)
 
 def import_dna_sample_implementation(args):
+  if args.used_volume:
+    logger.warn('FIXME used-volume flag is currently disabled.')
   recorder = Recorder(args.study,
-                      initial_volume=args.initial_volume, current_volume=args.current_volume,
+                      used_volume=args.used_volume,
+                      current_volume=args.current_volume,
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)
-  logger.info('start processing file %s' % args.ifile.name)
+  #--
   f = csv.DictReader(args.ifile, delimiter='\t')
-  for r in f:
-    recorder.record(r)
+  logger.info('start processing file %s' % args.ifile.name)
+  records = [r for r in f]
+  recorder.record(records)
   logger.info('done processing file %s' % args.ifile.name)
+  #--
+
+help_doc = """
+import new dna sample definitions into a virgil system and attach
+them to previously registered bio samples.
+"""
 
 def do_register(registration_list):
   registration_list.append(('dna_sample', help_doc,

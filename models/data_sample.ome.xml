@@ -45,4 +45,29 @@
     </properties>
   </type>
 
+  <!-- ***********************************************************-->
+  <type id="ome.model.vl.SNPMarkersSet">
+    <!--
+	this is merely a link to the actual snp_markers_set definition 
+	sitting in an omero table.
+    -->
+    <properties>
+      <required name="maker"    type="string"/>
+      <required name="model"    type="string"/>
+      <required name="release"  type="string"/>
+      <!-- FIXME It could actually be better to explicitely point to a
+           DataObject that refers to the set... -->
+      <required name="markersSetVID"  type="string" unique="true"/>
+      <!-- maker model release -->
+      <required name="snpMarkersSetUK" type="string" unique="true"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.GenotypeDataSample" 
+	superclass="ome.model.vl.DataSample">
+    <properties>
+      <required name="snpMarkersSet"  type="ome.model.vl.SNPMarkersSet" />
+    </properties>
+  </type>
+
 </types>

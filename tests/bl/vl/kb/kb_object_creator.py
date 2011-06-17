@@ -146,6 +146,23 @@ class KBObjectCreator(unittest.TestCase):
     ds = self.kb.factory.create(self.kb.AffymetrixCel, conf)
     return conf, ds
 
+  def create_snp_markers_set(self):
+    conf = {'maker' : 'maker-%s' % time.time(),
+            'model' : 'model-%s' % time.time(),
+            'release' : 'release-%s' % time.time(),
+            'markersSetVID' : 'V-%s' % time.time()
+            }
+    sms = self.kb.factory.create(self.kb.SNPMarkersSet, conf)
+    return conf, sms
+
+  def create_genotype_data_sample(self, action=None):
+    conf = self.create_data_sample_conf_helper(action)
+    sconf, sms = self.create_snp_markers_set()
+    self.kill_list.append(sms.save())
+    conf['snpMarkersSet'] = sms
+    gds = self.kb.factory.create(self.kb.GenotypeDataSample, conf)
+    return conf, gds
+
   def create_data_object(self, data_sample=None):
     if not data_sample:
       dconf, data_sample = self.create_data_sample()
@@ -239,16 +256,4 @@ class KBObjectCreator(unittest.TestCase):
             'studyCode'  : st_code}
     e = self.kb.factory.create(self.kb.Enrollment, conf)
     return conf, e
-
-  #----------------------------------------------------------------------
-  def create_snp_markers_set(self, action=None):
-    conf = {'maker' : 'snp-foomaker',
-            'model' : 'snp-foomodel',
-            'release' : 'snp-rel-%f' % time.time(),
-            'markersSetVID' : vlu.make_vid()}
-    result = self.kb.SNPMarkersSet(maker=conf['maker'], model=conf['model'], release=conf['release'],
-                                    set_vid=conf['markersSetVID'])
-    sconf, res = self.create_result(result=result, action=action)
-    conf.update(sconf)
-    return conf, res
 

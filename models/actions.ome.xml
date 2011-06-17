@@ -42,9 +42,11 @@ Action Definition
   <enum id="ome.model.vl.ActionCategory">
     <entry name="IMPORT"/> <!-- e.g., db loading -->
     <entry name="CREATION"/> <!-- e.g., creating a new data collection -->
-    <entry name="EXTRACTION"/> <!-- e.g., extract fluid from one container -->
+    <entry name="EXTRACTION"/> <!-- e.g., extract dna from a biosample -->
     <entry name="UPDATE"/>     <!-- e.g., updating a field value -->
-    <entry name="MEASURE"/>    <!-- e.g., genotype measure -->
+    <entry name="ALIQUOTING"/> <!-- e.g., aliquoting from one vessel 
+                                          to another -->
+    <entry name="MEASUREMENT"/>    <!-- e.g., genotype measure -->
     <entry name="PROCESSING"/> <!-- e.g., genotype call -->
   </enum>
 
@@ -70,6 +72,13 @@ Action Definition
 	superclass="ome.model.vl.Action">
     <properties>
       <required name="target" type="ome.model.vl.Vessel"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.ActionOnIndividual" 
+	superclass="ome.model.vl.Action">
+    <properties>
+      <required name="target" type="ome.model.vl.Individual"/>
     </properties>
   </type>
 

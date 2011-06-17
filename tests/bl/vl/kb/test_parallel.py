@@ -44,40 +44,24 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     except:
       pass
 
-  def test_data_sample(self):
-    conf, ds = self.create_data_sample()
-    self.kill_list.append(ds.save())
-    self.check_object(ds, conf, self.kb.DataSample)
+  def test_parallel_save(self):
+    aconf, action = self.create_action()
+    self.kill_list.append(action.save())
 
-  def test_affymetrix_cel(self):
-    conf, ds = self.create_affymetrix_cel()
-    self.kill_list.append(ds.save())
-    self.check_object(ds, conf, self.kb.AffymetrixCel)
-
-  def test_snp_markers_set(self):
-    conf, sms = self.create_snp_markers_set()
-    self.kill_list.append(sms.save())
-    self.check_object(sms, conf, self.kb.SNPMarkersSet)
-
-  def test_genotype_data_sample(self):
-    conf, gds = self.create_genotype_data_sample()
-    self.kill_list.append(gds.save())
-    self.check_object(gds, conf, self.kb.GenotypeDataSample)
-
-  def test_data_object(self):
-    conf, do = self.create_data_object()
-    self.kill_list.append(do.save())
-    self.check_object(do, conf, self.kb.DataObject)
-
-
+    N = 1000
+    people = []
+    for i in range(N):
+      conf, i = self.create_individual(action=action,
+                                       gender=self.kb.Gender.MALE)
+      self.kill_list.append(i)
+      people.append(i)
+    start =  time.time()
+    self.kb.save_array(people)
+    print' \n\ttime needed to save %s object: %s' % (N, time.time() - start)
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(TestKB('test_data_sample'))
-  suite.addTest(TestKB('test_affymetrix_cel'))
-  suite.addTest(TestKB('test_snp_markers_set'))
-  suite.addTest(TestKB('test_genotype_data_sample'))
-  suite.addTest(TestKB('test_data_object'))
+  suite.addTest(TestKB('test_parallel_save'))
   return suite
 
 if __name__ == '__main__':

@@ -1,7 +1,5 @@
-from bl.vl.sample.kb     import KBError
-from bl.vl.sample.kb     import KnowledgeBase as sKB
-from bl.vl.individual.kb import KnowledgeBase as iKB
-from bl.vl.genotype.kb   import KnowledgeBase as gKB
+from bl.vl.kb     import KBError
+from bl.vl.kb     import KnowledgeBase as KB
 
 import json
 
@@ -38,34 +36,28 @@ class Core(object):
   """
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None):
-    self.skb = sKB(driver='omero')(host, user, passwd, keep_tokens)
-    self.ikb = iKB(driver='omero')(host, user, passwd, keep_tokens)
-    self.gkb = gKB(driver='omero')(host, user, passwd, keep_tokens)
-    self.acat_map    = self.skb.get_action_category_table()
-    self.outcome_map = self.skb.get_result_outcome_table()
-    self.sstatus_map = self.skb.get_sample_status_table()
-    self.dtype_map   = self.skb.get_data_type_table()
-    self.gender_map  = self.ikb.get_gender_table()
+    self.kb = KB(driver='omero')(host, user, passwd, keep_tokens)
     self.logger = logger
     self.record_counter = 0
     self.default_study = None
     if study_label:
-      s = self.skb.get_study_by_label(study_label)
+      s = self.kb.get_study(study_label)
       if not s:
         raise ValueError('No known study with label %s' % study_label)
       self.logger.info('Selecting %s[%d,%s] as default study' %
                        (s.label, s.omero_id, s.id))
       self.default_study = s
 
-
   @debug_wrapper
   def get_device(self, label, maker, model, release):
-    device = self.skb.get_device(label)
+    device = self.kb.get_device(label)
     if not device:
       self.logger.debug('creating a device')
-      device = self.skb.Device(label=label, maker=maker,
-                               model=model, release=release)
-      device = self.skb.save(device)
+      device = self.kb.factory.create(self.kb.Device,
+                                      {'maker' : maker,
+                                       'model' : model,
+                                       'release' : release,
+                                       'label' : label}).save()
     return device
 
   @debug_wrapper
@@ -75,37 +67,22 @@ class Core(object):
     :type  label: str
     :param conf:
     :type conf:  a python dict amenable to be json-ized
-    :rtype: a skb.ActionSetup proxy to a saved ActionSetup object in VL
+    :rtype: a kb.ActionSetup proxy to a saved ActionSetup object in VL
     """
-    asetup = self.skb.get_action_setup_by_label(label=label)
+    asetup = self.kb.get_action_setup(label)
     if not asetup:
-      asetup = self.skb.ActionSetup(label=label)
-      asetup.conf = json.dumps(conf)
-      asetup = self.skb.save(asetup)
+      asetup = self.kb.factory.create(self.kb.ActionSetup,
+                                      {'label' : label,
+                                       'conf'  : json.dumps(conf)}).save()
     return asetup
 
-  def get_study_by_label(self, label):
+  def get_study(self, label):
     if self.default_study:
       return self.default_study
-    study = self.skb.get_study_by_label(label)
+    study = self.kb.get_study(label)
+    print 'study: ', study
     if not study:
-      study = self.skb.save(self.skb.Study(label=label))
+      study = self.kb.factory.create(self.kb.Study,
+                                     {'label' : label}).save()
     return study
-
-  @debug_wrapper
-  def create_action_helper(self, aklass, description,
-                           study, device, asetup, acat, operator, target=None):
-    action = aklass()
-    action.setup, action.device, action.actionCategory = asetup, device, acat
-    action.operator, action.context, action.description = (operator, study,
-                                                           description)
-    if target:
-      action.target = target
-    try:
-      return self.skb.save(action)
-    except KBError, e:
-      msg = ('got an error: %s\n\taction: %s\n\tome_obj: %s'
-             % (e, action, action.ome_obj))
-      self.logger.error(msg)
-      raise KBError(msg)
 

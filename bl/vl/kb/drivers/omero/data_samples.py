@@ -2,7 +2,7 @@ import wrapper as wp
 
 from action import Action
 
-from utils import assign_vid_and_timestamp
+from utils import assign_vid_and_timestamp, make_unique_key
 
 class DataSampleStatus(wp.OmeroWrapper):
   OME_TABLE = 'DataSampleStatus'
@@ -48,6 +48,24 @@ class AffymetrixCel(GenotypingMeasure):
   __fields__ = [('arrayType', AffymetrixCelArrayType, wp.REQUIRED),
                 ('celID',     wp.STRING,              wp.OPTIONAL)]
 
+
+class SNPMarkersSet(wp.OmeroWrapper):
+  OME_TABLE = 'SNPMarkersSet'
+  __fields__ = [('maker', wp.STRING, wp.REQUIRED),
+                ('model', wp.STRING, wp.REQUIRED),
+                ('release', wp.STRING, wp.REQUIRED),
+                ('markersSetVID', wp.VID, wp.REQUIRED),
+                ('snpMarkersSetUK', wp.STRING, wp.REQUIRED)]
+
+  def __preprocess_conf__(self, conf):
+    if not 'snpMarkersSetUK' in conf:
+      conf['snpMarkersSetUK'] = make_unique_key(conf['maker'], conf['model'],
+                                                conf['release'])
+    return conf
+
+class GenotypeDataSample(DataSample):
+  OME_TABLE = 'GenotypeDataSample'
+  __fields__ = [('snpMarkersSet', SNPMarkersSet, wp.REQUIRED)]
 
 
 

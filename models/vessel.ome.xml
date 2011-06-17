@@ -24,7 +24,7 @@ as well the actual amount of fluid available.
     <entry name="UNUSED"/>
     <entry name="UNKNOWN"/>
     <entry name="UNUSABLE"/>
-    <entry name="DESTROYED"/>
+    <entry name="DISCARDED"/>
     <entry name="CONTENTUSABLE"/>
     <entry name="CONTENTCORRUPTED"/>
   </enum>
@@ -34,8 +34,8 @@ as well the actual amount of fluid available.
       <required name="vid" type="string" unique="true"/>
       <required name="activationDate" type="timestamp"/>
       <optional name="destructionDate" type="timestamp"/>
-      <!-- we should be assigning measuring units explicitely it is ml
-           here and everywhere -->
+      <!-- It is ml here and everywhere. We should be assigning
+           measuring units explicitely.  -->
       <required name="currentVolume" type="float"/>
       <required name="initialVolume" type="float"/>
       <required name="content" type="ome.model.vl.VesselContent"/>
@@ -54,7 +54,12 @@ as well the actual amount of fluid available.
 
   <type id="ome.model.vl.PlateWell" superclass="ome.model.vl.Vessel">
     <properties>
+      <!-- note that label is expected to be unique within a plate.
+           E.g., A05. The actual constraint is imposed by
+           containerSlotLabelUK. -->
       <required name="label" type="string"/>
+      <!-- FIXME we are not using row, column probably only because of
+           historical reasons.-->
       <required name="slot" type="int"/>
       <required name="container" type="ome.model.vl.TiterPlate"/>
       <!-- container.label, label -->

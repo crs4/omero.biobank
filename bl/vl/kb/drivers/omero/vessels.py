@@ -16,7 +16,7 @@ class VesselContent(wp.OmeroWrapper):
 
 class VesselStatus(wp.OmeroWrapper):
   OME_TABLE = 'VesselStatus'
-  __enums__ = ["UNUSED", "UNKNOWN", "UNUSABLE", "DESTROYED",
+  __enums__ = ["UNUSED", "UNKNOWN", "UNUSABLE", "DISCARDED",
                "CONTENTUSABLE", "CONTENTCORRUPTED"]
 
 class Vessel(wp.OmeroWrapper):
@@ -48,6 +48,7 @@ class PlateWell(Vessel):
                 ('containerSlotIndexUK', wp.STRING, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
+    super(PlateWell, self).__preprocess_conf__(conf)
     if not 'containerSlotLabelUK' in conf:
       clabel = conf['container'].label
       label   = conf['label']
@@ -56,3 +57,4 @@ class PlateWell(Vessel):
       clabel = conf['container'].label
       slot   = conf['slot']
       conf['containerSlotIndexUK'] = make_unique_key(clabel, '%04d' % slot)
+    return conf

@@ -53,12 +53,12 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     conf, s = self.create_study()
     s.save()
     #--
-    xs = self.kb.get_study(label=conf['label'])
+    xs = self.kb.get_study(conf['label'])
     self.assertTrue(not xs is None)
     self.assertEqual(xs.id, s.id)
     self.assertEqual(xs.label, s.label)
     self.kb.delete(s)
-    self.assertEqual(self.kb.get_study(label=conf['label']),
+    self.assertEqual(self.kb.get_study(conf['label']),
                      None)
 
   def test_device(self):
@@ -70,11 +70,11 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     conf, d = self.create_device()
     d.save()
     #--
-    xs = self.kb.get_device(label=conf['label'])
+    xs = self.kb.get_device(conf['label'])
     self.assertTrue(not xs is None)
     self.check_object(xs, conf, self.kb.Device)
     self.kb.delete(d)
-    self.assertEqual(self.kb.get_device(label=conf['label']),
+    self.assertEqual(self.kb.get_device(conf['label']),
                      None)
 
   def test_action_setup(self):
@@ -105,7 +105,9 @@ class TestKB(KBObjectCreator, unittest.TestCase):
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_study'))
+  suite.addTest(TestKB('test_study_ops'))
   suite.addTest(TestKB('test_device'))
+  suite.addTest(TestKB('test_device_ops'))
   suite.addTest(TestKB('test_action_setup'))
   suite.addTest(TestKB('test_action'))
   suite.addTest(TestKB('test_action_on_vessel'))

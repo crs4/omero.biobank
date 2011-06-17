@@ -71,7 +71,7 @@ WRAPPING = {TIMESTAMP : ort.rtime,
             BOOLEAN   : ort.rbool}
 
 
-def ome_wrap(self, v, wtype=None):
+def ome_wrap(v, wtype=None):
   return WRAPPING[wtype](v) if wtype else ort.wrap(v)
 
 
@@ -121,8 +121,8 @@ class CoreOmeroWrapper(object):
       raise ValueError('illegal tcode value: %s' % tcode)
 
   def from_omero(self, tcode, v):
-    if type(tcode) == type:
-      o = self.proxy.object_factory.wrap(v)
+    if isinstance(tcode, type):
+      o = self.proxy.factory.wrap(v)
       if not isinstance(o, tcode):
         raise ValueError('inconsistent type result type(%s) for %s' %
                          (type(o), tcode))
