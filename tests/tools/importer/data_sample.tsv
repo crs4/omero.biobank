@@ -1,7 +1,7 @@
-study	label	contrastQC	sample_label	device_maker	device_model	device_release	device_name
-BSTUDY	foobar-00	2.48	P001.A00	Affymetrix	GenomeWideSNP_6	1.0	Pula-machine-1
-BSTUDY	foobar-01	2.48	P001.A01	Affymetrix	GenomeWideSNP_6	1.0	Pula-machine-1
-BSTUDY	foobar-02	2.48	P002.A02	Affymetrix	GenomeWideSNP_6	1.0	Pula-machine-1
-BSTUDY	foobar-03	2.48	P003.A03	Affymetrix	GenomeWideSNP_6	1.0	Pula-machine-1
-BSTUDY	foobar-04	2.48	P004.A04	Affymetrix	GenomeWideSNP_6	1.0	Pula-machine-1
-BSTUDY	foobar-05	2.48	P004.A05	Affymetrix	GenomeWideSNP_6	1.0	Pula-machine-1
+study	label	sample_label	device_label	options
+BSTUDY	foobar-00	P001:A01	chip001	celID=829898,scanner=pula01
+BSTUDY	foobar-01	P001:A02	chip002	celID=320093,scanner=pula01
+BSTUDY	foobar-02	P002:A03	chip003	celID=320094,scanner=pula01
+BSTUDY	foobar-03	P003:E04	chip004	celID=320095,scanner=pula01
+BSTUDY	foobar-04	P004:A05	chip005	celID=320096,scanner=pula01
+BSTUDY	foobar-05	P004:B06	chip006	celID=320097,scanner=pula01

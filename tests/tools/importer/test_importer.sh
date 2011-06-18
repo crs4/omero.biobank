@@ -1,12 +1,14 @@
 IMPORTER='../../../tools/importer -P romeo'
 
 
-${IMPORTER} -i individual.tsv individual
+${IMPORTER} -i individual.tsv individual -S BSTUDY
 ${IMPORTER} -i blood_sample.tsv blood_sample
 ${IMPORTER} -i dna_sample.tsv dna_sample
 ${IMPORTER} -i titer_plate.tsv titer_plate
 ${IMPORTER} -i plate_well.tsv plate_well
+${IMPORTER} -i devices.tsv device
 ${IMPORTER} -i data_sample.tsv data_sample
+exit
 ${IMPORTER} -i data_object.tsv data_object
 ${IMPORTER} -i data_collection.tsv data_collection
 

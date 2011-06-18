@@ -58,6 +58,13 @@ class Proxy(ProxyCore):
     result = self.ome_operation("getQueryService", "findByQuery", query, pars)
     return None if result is None else self.factory.wrap(result)
 
+  def get_objects(self, klass):
+    query = "select o from %s o" % klass.get_ome_table()
+    pars = None
+    results = self.ome_operation('getQueryService', 'findAllByQuery', query,
+                                 pars)
+    return [self.factory.wrap(o) for o in results]
+
   def get_enrolled(self, study):
     query = """select e
                from Enrollment e join fetch e.study as s

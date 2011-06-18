@@ -218,7 +218,6 @@ def import_individual_implementation(args):
               None if r['mother'] == 'None' else (r['study'], r['mother']))
       yield i
   f = csv.DictReader(args.ifile, delimiter='\t')
-  print 'ready to go on file %s' % args.ifile.name
   import_pedigree(recorder, istream(f, recorder.input_rows))
   recorder.clean_up()
 
