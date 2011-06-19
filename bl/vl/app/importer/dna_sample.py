@@ -209,6 +209,8 @@ class Recorder(Core):
       vessels.append(self.kb.factory.create(self.kb.Tube, conf))
     #--
     self.kb.save_array(vessels)
+    for v in vessels:
+      self.logger.info('saved %s as %s.' % (v.label, v.id))
 
 def make_parser_dna_sample(parser):
   parser.add_argument('-S', '--study', type=str,

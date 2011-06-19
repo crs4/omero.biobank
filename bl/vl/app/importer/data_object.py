@@ -14,14 +14,13 @@ ignored. The same will happen to records that have the same path of a
 previously seen data_object
 
 """
-
-
-from bl.vl.sample.kb import KBError
 from core import Core, BadRecord
-from version import version
 
 import csv, json
-import time, sys
+
+import itertools as it
+
+SUPPORTED_MIME_TYPES = ['x-vl/affymetrix-cel']
 
 #-----------------------------------------------------------------------------
 #FIXME this should be factored out....
@@ -43,178 +42,153 @@ def debug_wrapper(f):
 #-----------------------------------------------------------------------------
 
 class Recorder(Core):
-  """
-  An utility class that handles the actual recording of DataObject(s)
-  metadata into VL, including the potential copying of datasets.
-  """
-  def __init__(self, study_label=None, data_dir=None, copy_data_objects=False,
+  def __init__(self, study_label=None,
                host=None, user=None, passwd=None, keep_tokens=1,
-               operator='Alfred E. Neumann'):
-    """
-    FIXME
-
-    :param data_dir:
-    :type data_dir:
-    """
-    super(Recorder, self).__init__(host, user, passwd)
-    self.data_dir = data_dir
-    self.copy_data_objects = copy_data_objects
-    #FIXME this can probably go to core....
-    self.default_study = None
-    if study_label:
-      s = self.skb.get_study_by_label(study_label)
-      if not s:
-        raise ValueError('No known study with label %s' % study_label)
-      self.logger.info('Selecting %s[%d,%s] as default study' %
-                       (s.label, s.omero_id, s.id))
-      self.default_study = s
-    #-------------------------
-    self.known_studies = {}
-    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
-    self.asetup = self.get_action_setup('importer-version-%s-%s-%f' %
-                                        (version, "DataSample", time.time()),
-                                        # FIXME the json below should
-                                        # record the app version, and the
-                                        # parameters used.  unclear if we
-                                        # need to register the file we load
-                                        # data from, since it is, most
-                                        # likely, a transient object.
-                                        json.dumps({'study' : study_label,
-                                                    'data_dir' : self.data_dir,
-                                                    'copy_data_objects' : self.copy_data_objects,
-                                                    'operator' : operator,
-                                                    'host' : host,
-                                                    'user' : user}))
-    self.acat  = self.acat_map['IMPORT']
+               batch_size=1000, operator='Alfred E. Neumann'):
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
+                                   study_label)
+    self.batch_size = batch_size
     self.operator = operator
-    #
-    self.input_rows = {}
-    self.counter = 0
-    #-------------------------------------------------------------------------
-    self.logger.info('start prefetching DataSample(s)')
-    data_samples = self.skb.get_bio_samples(self.skb.DataSample)
-    self.data_samples = {}
-    for ds in data_samples:
-      self.data_samples[ds.label] = ds
-    self.logger.info('done prefetching DataSample(s)')
-    self.logger.info('there are %d DataSample(s) in the kb' %
-                     len(self.data_samples))
-    #-------------------------------------------------------------------------
-    self.logger.info('start prefetching DataObject(s)')
-    data_objects = self.skb.get_bio_samples(self.skb.DataObject)
-    self.data_objects = {}
-    for do in data_objects:
-      self.data_objects[do.path] = do
-    self.logger.info('done prefetching DataObject(s)')
-    self.logger.info('there are %d DataObject(s) in the kb' %
-                     len(self.data_objects))
+    self.device = self.get_device(label='importer.data_object',
+                                  maker='CRS4', model='importer', release='0.1')
+    self.asetup = self.get_action_setup('importer.data_object',
+                                        {'study_label' : study_label,
+                                         'operator' : operator})
+    self.known_data_objects = {}
+    self.known_data_samples = {}
 
-  @debug_wrapper
-  def get_study_by_label(self, study_label):
+  def record(self, records):
+    def records_by_chunk(batch_size, records):
+      offset = 0
+      while len(records[offset:]) > 0:
+        yield records[offset:offset+batch_size]
+        offset += batch_size
+    #--
+    if not records:
+      self.logger.warn('no records')
+      return
+    self.choose_relevant_study(records)
+    self.preload_data_samples()
+    self.preload_data_objects()
+    #--
+    records = self.do_consistency_checks(records)
+    for i, c in enumerate(records_by_chunk(self.batch_size, records)):
+      self.logger.info('start processing chunk %d' % i)
+      self.process_chunk(c)
+      self.logger.info('done processing chunk %d' % i)
+
+  def choose_relevant_study(self, records):
     if self.default_study:
-      return self.default_study
-    return self.known_studies.\
-           setdefault(study_label, super(Recorder, self).\
-                      get_study_by_label(study_label))
-
-  @debug_wrapper
-  def get_action(self, study, sample, name, maker, model, release):
-    device = self.get_device(name, maker, model, release)
-    asetup = self.get_action_setup('import-%s-%s' % (maker, model),
-                                   json.dumps({}))
-    if sample.__class__.__name__ == 'PlateWell':
-      action = self.create_action_on_sample_slot(study, sample, device, asetup,
-                                                 description='')
-    elif sample.__class__.__name__ == 'DNASample':
-      action = self.create_action_on_sample(study, sample, device, asetup,
-                                            description='')
-    else:
-      raise ValueError('sample [%s] is of the wrong type' % sample.label)
-    return action
-
-  @debug_wrapper
-  def record(self, r):
-    self.logger.debug('\tworking on %s' % r)
-    try:
-      study = self.get_study_by_label(r['study'])
-      path, data_sample_label, mimetype, size, sha1 = (
-        r['path'], r['data_sample_label'], r['mimetype'], r['size'], r['sha1']
-        )
-      size = int(size)
-      #-
-      if self.data_objects.has_key(path):
-        raise ValueError('We already have a DataObject with path %s in the kb' %
-                         path)
-      if not self.data_samples.has_key(data_sample_label):
-        raise ValueError('Cannot find a DataSample with label %s in the kb' %
-                         data_sample_label)
-      data_sample = self.data_samples[data_sample_label]
-      data_object = self.skb.DataObject(sample=data_sample,
-                                        mime_type=mimetype,
-                                        path=path,
-                                        size=size,
-                                        sha1=sha1)
-      self.skb.save(data_object)
-      self.logger.info('Saving DataObject with path %s in the kb' % path)
-    except KeyError, e:
-      self.logger.warn('ignoring record %s because of missing value(%s)' %
-                       (r, e))
       return
-    except ValueError, e:
-      self.logger.warn('ignoring record %s since %s' % (r, e))
-      return
-    except (KBError, NotImplementedError), e:
-      self.logger.warn('ignoring record %s because it triggers a KB error: %s' % (r, e))
-      return
-    except Exception, e:
-      self.logger.fatal('INTERNAL ERROR WHILE PROCESSING %s (%s)' % (r, e))
-      return
+    study_label = records[0]['study']
+    for r in records:
+      if r['study'] != study_label:
+        m = 'all records should have the same study label'
+        self.logger.critical(m)
+        raise ValueError(m)
+    self.default_study = self.get_study(study_label)
 
-  @debug_wrapper
-  def create_action_on_sample(self, study, sample, device, asetup, description):
-    return self.create_action_helper(self.skb.ActionOnSample, description,
-                                     study, device, asetup,
-                                     self.acat, self.operator, sample)
+  def preload_data_objects(self):
+    self.logger.info('start prefetching data objects')
+    ds = self.kb.get_objects(self.kb.DataObject)
+    for d in ds:
+      self.known_data_objects[d.path] = d
+    self.logger.info('there are %d DataObject(s) in the kb'
+                     % (len(self.known_data_objects)))
 
-  @debug_wrapper
-  def create_action_on_sample_slot(self, study, sample_slot, device, asetup, description):
-    return self.create_action_helper(self.skb.ActionOnSamplesContainerSlot, description,
-                                     study, device, asetup, self.acat, self.operator,
-                                     sample_slot)
+  def preload_data_samples(self):
+    self.logger.info('start prefetching data samples')
+    ds = self.kb.get_objects(self.kb.DataSample)
+    for d in ds:
+      self.known_data_samples[d.label] = d
+    self.logger.info('there are %d DataSample(s) in the kb'
+                     % (len(self.known_data_samples)))
 
-  @debug_wrapper
-  def get_bio_sample(self, label):
-    bio_sample = self.skb.get_bio_sample(label=label)
-    if not bio_sample:
-      raise ValueError('cannot find a sample with label <%s>' % label)
-    return  bio_sample
+  #----------------------------------------------------------------
 
-help_doc = """
-import new data_object definitions into a virgil system. It will also
-import actual datasets if so instructed.
-"""
+  def do_consistency_checks(self, records):
+    self.logger.info('start consistency checks')
+    #--
+    good_records = []
+    for i, r in enumerate(records):
+      reject = ' Rejecting import of record %d.' % i
+      if r['path'] in self.known_data_objects:
+        f = 'there is a pre-existing data_object with path %s. ' + reject
+        self.logger.warn(f % r['path'])
+        continue
+      if not r['data_sample_label'] in self.known_data_samples:
+        f = 'there is no known data_sample with label %s. ' + reject
+        self.logger.error(f % r['data_sample_label'])
+        continue
+      k = 'mimetype'
+      if not k in r:
+        f = 'missing field %s.' + reject
+        self.logger.error(f % k)
+        continue
+      k = 'size'
+      if not k in r:
+        f = 'missing field %s.' + reject
+        self.logger.error(f % k)
+        continue
+      k = 'sha1'
+      if not k in r:
+        f = 'missing field %s.' + reject
+        self.logger.error(f % k)
+        continue
+      if r['mimetype'] not in SUPPORTED_MIME_TYPES:
+        f = 'unknown mimetype %s.' + reject
+        self.logger.error(f % r['mimetype'])
+        continue
+      if not r['size'].isdigit():
+        f = 'bad size value %s.' + reject
+        self.logger.error(f % r['size'])
+        continue
+      good_records.append(r)
+    self.logger.info('done consistency checks')
+    #--
+    return good_records
+
+  def process_chunk(self, chunk):
+    data_objects = []
+    for r in chunk:
+      sample = self.known_data_samples[r['data_sample_label']]
+      conf = {'path' : r['path'],
+              'mimetype' : r['mimetype'],
+              'size' : int(r['size']),
+              'sample' : sample,
+              'sha1' : r['sha1']}
+      data_objects.append(self.kb.factory.create(self.kb.DataObject, conf))
+    #--
+    self.kb.save_array(data_objects)
+    for do in data_objects:
+      self.logger.info('saved %s[%s,%s] as attached to %s' %
+                       (do.path, do.mimetype, do.size, do.sample.label))
 
 def make_parser_data_object(parser):
   parser.add_argument('-S', '--study', type=str,
-                      help="""default conxtest study label.
-                      It will over-ride the study column value""")
-  parser.add_argument('-d', '--data-dir', type=str,
-                      help="""directory that contains the data object files""")
-  parser.add_argument('--copy-data-objects', action='store_true', default=False,
-                      help="""if set, copies datasets in VL repositories""")
+                      help="""default study used as context
+                      for the import action.  It will
+                      over-ride the study column value.""")
 
 def import_data_object_implementation(args):
-  recorder = Recorder(args.study, data_dir=args.data_dir,
-                      copy_data_objects=args.copy_data_objects,
+  recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)
+  #--
   f = csv.DictReader(args.ifile, delimiter='\t')
-  for r in f:
-    recorder.record(r)
+  logger.info('start processing file %s' % args.ifile.name)
+  records = [r for r in f]
+  recorder.record(records)
+  logger.info('done processing file %s' % args.ifile.name)
+  #--
+
+help_doc = """
+import new data object definitions into a virgil system and attach
+them to previously registered data samples.
+"""
 
 def do_register(registration_list):
   registration_list.append(('data_object', help_doc,
                             make_parser_data_object,
                             import_data_object_implementation))
-
 

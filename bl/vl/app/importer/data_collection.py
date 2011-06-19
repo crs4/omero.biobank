@@ -7,11 +7,11 @@ Will read in a tsv file with the following columns::
   study    label data_sample_label
   BSTUDY   dc-01 a0390290
   BSTUDY   dc-01 a0390291
-  BSTUDY   dc-01 a0390292
-  BSTUDY   dc-01 0390293
+  BSTUDY   dc-02 a0390292
+  BSTUDY   dc-02 0390293
   ....
 
-This will create a new DataCollection, whose label is defined by the
+This will create new DataCollection(s), whose label is defined by the
 label column, and link to it, using DataCollectionItem objects,
 the DataSample object identified by data_sample_label.
 
@@ -21,147 +21,160 @@ ignored too. No, it is not legal to use the importer to add items to a
 previously known collection.
 """
 
-from bl.vl.sample.kb import KBError
 from core import Core, BadRecord
-from version import version
 
 import csv, json
-import time, sys
 
+import itertools as it
+
+#-----------------------------------------------------------------------------
+#FIXME this should be factored out....
+
+import logging, time
+logger = logging.getLogger()
+counter = 0
+def debug_wrapper(f):
+  def debug_wrapper_wrapper(*args, **kv):
+    global counter
+    now = time.time()
+    counter += 1
+    logger.debug('%s[%d] in' % (f.__name__, counter))
+    res = f(*args, **kv)
+    logger.debug('%s[%d] out (%f)' % (f.__name__, counter, time.time() - now))
+    counter -= 1
+    return res
+  return debug_wrapper_wrapper
+#-----------------------------------------------------------------------------
 
 class Recorder(Core):
-  """
-  An utility class that handles the actual recording of a DataCollection
-  metadata into VL.
-  """
   def __init__(self, study_label=None,
                host=None, user=None, passwd=None, keep_tokens=1,
-               operator='Alfred E. Neumann'):
-    super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
-                                   study_label=study_label)
-    #FIXME this can probably go to core....
-    self.known_studies = {}
-    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
-    self.asetup = self.get_action_setup('importer-version-%s-%s-%f' %
-                                        (version, "DataSample", time.time()),
-                                        # FIXME the json below should
-                                        # record the app version, and the
-                                        # parameters used.  unclear if we
-                                        # need to register the file we load
-                                        # data from, since it is, most
-                                        # likely, a transient object.
-                                        json.dumps({'study' : study_label,
-                                                    'operator' : operator,
-                                                    'host' : host,
-                                                    'user' : user}))
-    self.acat  = self.acat_map['IMPORT']
+               batch_size=1000, operator='Alfred E. Neumann'):
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
+                                   study_label)
+    self.batch_size = batch_size
     self.operator = operator
-    #
-    self.input_rows = {}
-    self.counter = 0
-    #--------------------------------------------------------------------
+    self.device = self.get_device(label='importer.data_collection',
+                                  maker='CRS4', model='importer', release='0.1')
+    self.known_data_samples = {}
+    self.known_data_collections = {}
+
+  def record(self, records):
     #--
-    self.logger.info('start prefetching DataSample(s)')
-    data_samples = self.skb.get_bio_samples(self.skb.DataSample)
-    self.data_samples = {}
-    for ds in data_samples:
-      self.data_samples[ds.label] = ds
-    self.logger.info('done prefetching DataSample(s)')
-    self.logger.info('there are %d DataSample(s) in the kb' %
-                     len(self.data_samples))
+    if not records:
+      self.logger.warn('no records')
+      return
+    self.choose_relevant_study(records)
+    self.preload_data_samples()
+    self.preload_data_collections()
     #--
-    self.logger.info('start prefetching DataCollection(s)')
-    data_collections = self.skb.get_bio_samples(self.skb.DataCollection)
-    self.data_collections = {}
-    #FIXME
-    for dc in data_collections:
-      self.data_collections[dc.label] = dc
-    self.logger.info('done prefetching DataCollection(s)')
-    self.logger.info('there are %d DataCollection(s) in the kb' %
-                     len(self.data_collections))
-
-
-  def record_collection(self, label, data):
-    self.logger.info('start loading collection %s %d items' %
-                     (label, len(data)))
-    if self.data_collections.has_key(label):
-        self.logger.critical('collection %s is already in kb' %
-                             label)
-        sys.exit(1)
+    by_dc_label = {}
+    for r in records:
+      by_dc_label.setdefault(r['label'], []).append(r)
     #--
-    study = self.default_study
-    if not study:
-      study_label = data[0]['study']
-      ff = filter(lambda x : x['study'] != study_label, data)
-      if ff:
-        self.logger.critical('not uniform study for collection %s' %
-                             label)
-        sys.exit(1)
-      study = self.get_study_by_label(study_label)
+    for k in by_dc_label:
+      if k in self.known_data_collections:
+        self.logger.warn('data collection %s is already in VL, rejecting' % k)
+      else:
+        records = self.do_consistency_checks(k, by_dc_label[k])
+        if records:
+          self.process_chunk(records, k)
+
+  def choose_relevant_study(self, records):
+    if self.default_study:
+      return
+    study_label = records[0]['study']
+    for r in records:
+      if r['study'] != study_label:
+        m = 'all records should have the same study label'
+        self.logger.critical(m)
+        raise ValueError(m)
+    self.default_study = self.get_study(study_label)
+
+  def preload_data_samples(self):
+    self.logger.info('start prefetching data samples')
+    ds = self.kb.get_objects(self.kb.DataSample)
+    for d in ds:
+      self.known_data_samples[d.label] = d
+    self.logger.info('there are %d DataSample(s) in the kb'
+                     % (len(self.known_data_samples)))
+
+  def preload_data_collections(self):
+    self.logger.info('start prefetching data collections')
+    ds = self.kb.get_objects(self.kb.DataCollection)
+    for d in ds:
+      self.known_data_collections[d.label] = d
+    self.logger.info('there are %d DataCollection(s) in the kb'
+                     % (len(self.known_data_collections)))
+
+  #----------------------------------------------------------------
+
+  def do_consistency_checks(self, k, records):
+    self.logger.info('start consistency checks %s' % k)
     #--
-    for x in data:
-      if not self.data_samples.has_key(x['data_sample_label']):
-        self.logger.critical('%s referred in collection %s does not exist.' %
-                             (x['data_sample_label'], label))
-        sys.exit(1)
+    for r in records:
+      if not r['data_sample_label'] in self.known_data_samples:
+        self.logger.error('bad data_sample_label (%s) in %s. Rejecting it' %
+                          (r['data_sample_data'], r['label']))
+        return []
+    self.logger.info('done consistency checks %s' % k)
     #--
-    self.logger.info('registering DataCollection label=%r' % label)
-    data_collection = self.skb.DataCollection(study=study, label=label)
-    data_collection = self.skb.save(data_collection)
-    self.logger.info('DataCollection vid=%r' % data_collection.id)
-    self.logger.info('start loading actual data')
-    for x in data:
-      ds_label = x['data_sample_label']
-      data_sample = self.data_samples[ds_label]
-      action = self.create_action_on_sample(study, data_sample, json.dumps(x))
-      action = self.skb.save(action)
-      #-
-      dc_it = self.skb.DataCollectionItem(data_collection=data_collection,
-                                          data_sample=data_sample)
-      dc_it.action = action
-      self.skb.save(dc_it)
-      #FIXME using .id not .label
-      self.logger.info('saved  %s[%s]' % (data_collection.label,
-                                          ds_label))
-    self.logger.info('done loading')
+    return records
 
-  def create_action_on_sample(self, study, sample, description):
-    return self.create_action_helper(self.skb.ActionOnSample, description,
-                                     study, self.device, self.asetup,
-                                     self.acat, self.operator, sample)
-
-
-
-help_doc = """
-import new data_collections definitions into a virgil system.
-"""
+  def process_chunk(self, chunk, dc_label):
+    asetup = self.get_action_setup('importer.data_collection',
+                                   {'study_label' : self.default_study.label,
+                                    'operator' : self.operator,
+                                    'data_collection_label' : dc_label})
+    #--
+    conf = {'setup' : asetup,
+            'device': self.device,
+            'actionCategory' : self.kb.ActionCategory.PROCESSING,
+            'operator' : self.operator,
+            'context'  : self.default_study,
+            }
+    action = self.kb.factory.create(self.kb.Action, conf).save()
+    #--
+    dc_conf = {'label' : dc_label,
+               'action' : action,
+               }
+    dc = self.kb.factory.create(self.kb.DataCollection, dc_conf).save()
+    #--
+    dc_items = []
+    for r in chunk:
+      ds_label = r['data_sample_label']
+      dci_conf = {'dataSample' : self.known_data_samples[ds_label],
+                  'dataCollection' : dc
+                  }
+      dc_items.append(self.kb.factory.create(self.kb.DataCollectionItem,
+                                             dci_conf))
+    #--
+    self.kb.save_array(dc_items)
 
 def make_parser_data_collection(parser):
   parser.add_argument('-S', '--study', type=str,
-                      help="""default context study label.
-                      It will over-ride the study column value""")
-  parser.add_argument('-C', '--collection', type=str,
-                      help="""default collection label.
-                      It will over-ride the label column value""")
+                      help="""default study used as context
+                      for the import action.  It will
+                      over-ride the study column value.""")
 
 def import_data_collection_implementation(args):
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
                       keep_tokens=args.keep_tokens)
+  #--
   f = csv.DictReader(args.ifile, delimiter='\t')
-  collections = {}
-  default_label = args.collection
-  if default_label:
-    collections[default_label] = []
-    for r in f:
-      collections[default_label].append(r)
-  else:
-    for r in f:
-      collections.setdefault(r['label'], []).append(r)
-  for k in collections.keys():
-    recorder.record_collection(k, collections[k])
+  logger.info('start processing file %s' % args.ifile.name)
+  records = [r for r in f]
+  recorder.record(records)
+  logger.info('done processing file %s' % args.ifile.name)
+  #--
+
+help_doc = """
+import a new data collection definition into a virgil system.
+"""
 
 def do_register(registration_list):
   registration_list.append(('data_collection', help_doc,
                             make_parser_data_collection,
                             import_data_collection_implementation))
+
