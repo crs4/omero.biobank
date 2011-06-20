@@ -53,37 +53,28 @@ class Recorder(Core):
     FIXME
     """
     self.logger = logger
-    super(Recorder, self).__init__(host, user, passwd)
+    super(Recorder, self).__init__(host, user, passwd, study_label=study_label)
     #--
-    s = self.skb.get_study_by_label(study_label)
-    if not s:
-      self.logger.critical('No known study with label %s' % study_label)
-      sys.exit(1)
-    self.study = s
-    #-------------------------
-    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
-    self.asetup = self.get_action_setup('importer-version-%s-%s-%f' %
-                                        (version, "SNPMarkersSet", time.time()),
-                                        # FIXME the json below should
-                                        # record the app version, and the
-                                        # parameters used.  unclear if we
-                                        # need to register the file we load
-                                        # data from, since it is, most
-                                        # likely, a transient object.
-                                        json.dumps({'operator' : operator,
-                                                    'host' : host,
-                                                    'user' : user}))
-    self.acat  = self.acat_map['IMPORT']
-    self.operator = operator
-
-  def create_action(self, description):
-    return self.create_action_helper(self.skb.Action, description,
-                                     self.study, self.device, self.asetup,
-                                     self.acat, self.operator, None)
-
+    device_label = ('importer.marker_definition.SNP-markers-set-%s' %
+                    (version))
+    device = self.get_device(label=device_label,
+                             maker='CRS4', model='importer', release='0.1')
+    asetup = self.get_action_setup('importer.markers_set',
+                                   {'study_label' : study_label,
+                                    'operator' : operator})
+    acat  = self.kb.ActionCategory.IMPORT
+    self.action = self.kb.factory.create(self.kb.Action,
+                                         {'setup' : asetup,
+                                          'device' : device,
+                                          'actionCategory' : acat,
+                                          'operator' : operator,
+                                          'context' : self.default_study,
+                                          })
+    #-- FIXME what happens if we do not have markers to save?
+    self.action.save()
 
   def save_snp_markers_set(self, maker, model, release, ifile):
-    if self.gkb.snp_markers_set_exists(maker, model, release):
+    if self.kb.snp_markers_set_exists(maker, model, release):
       self.logger.warn('markers_set (%s,%s,%s) is already in kb, not loading.' %
                        (maker, model, release))
       return
@@ -98,19 +89,18 @@ class Recorder(Core):
     #-
     self.logger.info('start preloading related markers')
     selector = '|'.join(["(rs_label == '%s')" % k for k in rs_labels])
-    markers = self.gkb.get_snp_marker_definitions(selector=selector)
+    markers = self.kb.get_snp_marker_definitions(selector=selector)
     if len(markers) != len(records):
-      self.logger.warn('no enough markers defined in kb, not loading.')
+      self.logger.warn('some markers are not listed in kb, rejecting.')
       return
     rs_to_vid = dict([ x for x in it.izip(markers['rs_label'], markers['vid'])])
     self.logger.info('done preloading related markers')
     #--
     pars = {'maker' : maker, 'model': model, 'release' : release,
             'filename' : ifile.name}
-    action = self.create_action(description=json.dumps(pars))
     #--
     self.logger.info('start creating markers set')
-    set_vid = self.gkb.add_snp_markers_set(maker, model, release, action.id)
+    set_vid = self.kb.add_snp_markers_set(maker, model, release, self.action.id)
     self.logger.info('done creating markers set')
     #--
     self.logger.info('start loading markers in marker set')
@@ -120,19 +110,20 @@ class Recorder(Core):
         x['allele_flip'] = {'False' : False, 'True' : True}[x['allele_flip']]
         x['marker_indx'] = int(x['marker_indx'])
         yield x
-    n = self.gkb.fill_snp_markers_set(set_vid, snp_set_item(records), action.id)
+    n = self.kb.fill_snp_markers_set(set_vid, snp_set_item(records),
+                                     self.action.id)
     assert n == len(records)
     self.logger.info('done loading markers in marker set')
     #--
     self.logger.info('start creating gdo repository')
-    self.gkb.create_gdo_repository(set_vid, len(records))
+    self.kb.create_gdo_repository(set_vid, len(records))
     self.logger.info('done creating gdo repository')
     #--
     self.logger.info('start creating SNPMarkersSet')
-    snp_markers_set = self.skb.SNPMarkersSet(maker=maker, model=model, release=release,
-                                             set_vid=set_vid)
-    snp_markers_set.action = action
-    snp_markers_set = self.skb.save(snp_markers_set)
+    conf = {'maker' : maker, 'model' : model, 'release' : release,
+            'markersSetVID' : set_vid,
+            'action' : self.action}
+    mset = self.kb.factory.create(self.kb.SNPMarkersSet, conf).save()
     self.logger.info('done creating SNPMarkersSet')
     #--
 
@@ -159,8 +150,7 @@ def import_markers_set_implementation(args):
     sys.exit(1)
   #--
   recorder = Recorder(args.study,
-                      host=args.host, user=args.user, passwd=args.passwd,
-                      keep_tokens=args.keep_tokens)
+                      host=args.host, user=args.user, passwd=args.passwd)
   recorder.save_snp_markers_set(args.maker, args.model, args.release,
                                 args.ifile)
 

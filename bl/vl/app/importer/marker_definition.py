@@ -50,37 +50,31 @@ class Recorder(Core):
     FIXME
     """
     self.logger = logger
-    super(Recorder, self).__init__(host, user, passwd)
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
+                                   study_label)
     #--
-    s = self.skb.get_study_by_label(study_label)
-    if not s:
-      self.logger.critical('No known study with label %s' % study_label)
-      sys.exit(1)
-    self.study = s
-    #-------------------------
-    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
-    self.asetup = self.get_action_setup('importer-version-%s-%s-%f' %
-                                        (version, "SNPMarkersSet", time.time()),
-                                        # FIXME the json below should
-                                        # record the app version, and the
-                                        # parameters used.  unclear if we
-                                        # need to register the file we load
-                                        # data from, since it is, most
-                                        # likely, a transient object.
-                                        json.dumps({'operator' : operator,
-                                                    'host' : host,
-                                                    'user' : user}))
-    self.acat  = self.acat_map['IMPORT']
-    self.operator = operator
+    device_label = ('importer.marker_definition.SNP-marker-definition-%s' %
+                    (version))
+    device = self.get_device(label=device_label,
+                             maker='CRS4', model='importer', release='0.1')
+    asetup = self.get_action_setup('importer.marker_definition',
+                                   {'study_label' : study_label,
+                                    'operator' : operator})
+    acat  = self.kb.ActionCategory.IMPORT
+    self.action = self.kb.factory.create(self.kb.Action,
+                                         {'setup' : asetup,
+                                          'device' : device,
+                                          'actionCategory' : acat,
+                                          'operator' : operator,
+                                          'context' : self.default_study,
+                                          })
+    #-- FIXME what happens if we do not have markers to save?
+    self.action.save()
 
-  def create_action(self, description):
-    return self.create_action_helper(self.skb.Action, description,
-                                     self.study, self.device, self.asetup,
-                                     self.acat, self.operator, None)
 
   def save_snp_marker_definitions(self, source, context, release, ifile):
     self.logger.info('start preloading known markers defs from kb')
-    known_markers = self.gkb.get_snp_marker_definitions()
+    known_markers = self.kb.get_snp_marker_definitions()
     if len(known_markers) > 0:
       known_markers = known_markers['rs_label']
 
@@ -93,22 +87,19 @@ class Recorder(Core):
         x['source'] = source
         x['context'] = context
         x['release'] = context
-        if len(known_markers) > 0 and not (x['rs_label'] != known_markers).all():
-          self.logger.warn('marker with rs_label %s is already in kb skipping it.' %
+        if (len(known_markers) > 0
+            and not (x['rs_label'] != known_markers).all()):
+          self.logger.warn('marker with rs_label %s is in kb, skipping it.' %
                            x['rs_label'])
           continue
         cnt[0] += 1
         yield x
     tsv = csv.DictReader(ifile, delimiter='\t')
-    #--
-    pars = {'source' : source, 'context': context, 'release' : release,
-            'filename' : ifile.name}
-    action = self.create_action(description=json.dumps(pars))
     self.logger.info('start loading markers defs from %s' % ifile.name)
-    self.gkb.add_snp_marker_definitions(ns(tsv, cnt), op_vid=action.id)
+    self.kb.add_snp_marker_definitions(ns(tsv, cnt), op_vid=self.action.id)
     self.logger.info('done loading markers defs there were %s new markers.' % cnt[0])
 
-#------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
 help_doc = """
 import new marker definitions into VL.
@@ -116,6 +107,7 @@ import new marker definitions into VL.
 
 def make_parser_marker_definition(parser):
   parser.add_argument('-S', '--study', type=str,
+                      default='default_study',
                       help="""context study label""")
 
   parser.add_argument('--source', type=str,

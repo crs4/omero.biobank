@@ -13,7 +13,9 @@ import data_samples
 import actions_on_target
 import individual
 
-import wrapper as wp
+
+from genotyping import GenotypingAdapter
+from modeling   import ModelingAdapter
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 
@@ -30,95 +32,90 @@ class Proxy(ProxyCore):
     for k in KOK:
       klass = KOK[k]
       setattr(self, klass.get_ome_table(), klass)
+    #-- setup adapters
+    self.gadpt = GenotypingAdapter(self)
+    self.madpt = ModelingAdapter(self)
 
-
-  # UTILITY FUNCTIONS
-  # =================
+  # MODELING related utility functions
+  # ==================================
 
   def get_device(self, label):
-    """
-    """
-    query = 'select d from Device d where d.label = :label'
-    pars = self.ome_query_params({'label' : wp.ome_wrap(label, wp.STRING)})
-    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
-    return None if result is None else self.factory.wrap(result)
+    return self.madpt.get_device(label)
 
   def get_action_setup(self, label):
-    query = 'select a from ActionSetup a where a.label = :label'
-    pars = self.ome_query_params({'label' : wp.ome_wrap(label, wp.STRING)})
-    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
-    return None if result is None else self.factory.wrap(result)
+    return self.madpt.get_action_setup(label)
 
   def get_study(self, label):
     """
     Return the study object labeled 'label' or None if nothing matches 'label'.
     """
-    query = 'select st from Study st where st.label = :label'
-    pars = self.ome_query_params({'label' : wp.ome_wrap(label, wp.STRING)})
-    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
-    return None if result is None else self.factory.wrap(result)
+    return self.madpt.get_study(label)
 
   def get_objects(self, klass):
-    query = "select o from %s o" % klass.get_ome_table()
-    pars = None
-    results = self.ome_operation('getQueryService', 'findAllByQuery', query,
-                                 pars)
-    return [self.factory.wrap(o) for o in results]
+    return self.madpt.get_objects(klass)
 
   def get_enrolled(self, study):
-    query = """select e
-               from Enrollment e join fetch e.study as s
-               where s.label = :slabel
-               """
-    pars = self.ome_query_params({'slabel' :
-                                  wp.ome_wrap(study.label, wp.STRING)})
-    result = self.ome_operation("getQueryService", "findAllByQuery",
-                                query, pars)
-    return [self.factory.wrap(e) for e in result]
+    return self.madpt.get_enrolled(study)
 
   def get_enrollment(self, study, ind_label):
-    query = """select e
-               from Enrollment e join fetch e.study as s
-               where e.studyCode = :ilabel and s.id = :sid
-               """
-    pars = self.ome_query_params({'ilabel' : wp.ome_wrap(ind_label),
-                                  'sid'    : wp.ome_wrap(study.omero_id)})
-    result = self.ome_operation("getQueryService", "findByQuery", query, pars)
-    return None if result is None else self.factory.wrap(result)
+    return self.madpt.get_enrollment(study, ind_label)
 
   def get_vessels(self, klass=vessels.Vessel, content=None):
-    if not issubclass(klass, self.Vessel):
-      raise ValueError('klass should be a subclass of Vessel')
-    if not content:
-      query = "select v from %s v" % klass.get_ome_table()
-      pars = None
-    elif isinstance(content, self.VesselContent):
-      # FIXME uhmm, there is something conceptually broken in the enum
-      # handling...
-      value = content.ome_obj.value._val
-      query = """select v from %s v join fetch v.content as c
-                 where c.value = :cvalue
-              """ % klass.get_ome_table()
-      pars = self.ome_query_params({'cvalue' : wp.ome_wrap(value)})
-    else:
-      raise ValueError('content should be an instance of VesselContent')
-    results = self.ome_operation('getQueryService', 'findAllByQuery', query,
-                                 pars)
-    return [self.factory.wrap(v) for v in results]
+    return self.madpt.get_vessels(klass, content)
 
   def get_containers(self, klass=objects_collections.Container):
-    if not issubclass(klass, self.Container):
-      raise ValueError('klass should be a subclass of Container')
-    query = "select v from %s v" % klass.get_ome_table()
-    pars = None
-    results = self.ome_operation('getQueryService', 'findAllByQuery', query,
-                                 pars)
-    return [self.factory.wrap(v) for v in results]
+    return self.madpt.get_containers(klass)
+
+  # GENOTYPING related utility functions
+  # ====================================
 
 
+  def delete_snp_marker_defitions_table(self):
+    self.delete_table(self.gadpt.SNP_MARKER_DEFINITIONS_TABLE)
 
+  def create_snp_marker_definitions_table(self):
+    self.gadpt.create_snp_marker_definitions_table()
 
+  def delete_snp_alignments_table(self):
+    self.delete_table(self.gadpt.SNP_ALIGNMENT_TABLE)
 
+  def create_snp_alignment_table(self):
+    self.gadpt.create_snp_alignment_table()
 
+  def delete_snp_markers_set_table(self):
+    self.delete_table(self.gadpt.SNP_SET_DEF_TABLE)
+
+  def create_snp_markers_set_table(self):
+    self.gadpt.create_snp_markers_set_table()
+
+  def delete_snp_set_table(self):
+    self.delete_table(self.gadpt.SNP_SET_TABLE)
+
+  def create_snp_set_table(self):
+    self.gadpt.create_snp_set_table()
+
+  def add_snp_marker_definitions(self, stream, op_vid, batch_size=50000):
+    return self.gadpt.add_snp_marker_definitions(stream, op_vid, batch_size)
+
+  def get_snp_marker_definitions(self, selector=None, batch_size=50000):
+    return self.gadpt.get_snp_marker_definitions(selector, batch_size)
+
+  def add_snp_alignments(self, stream, op_vid, batch_size=50000):
+    return self.gadpt.add_snp_alignments(stream, op_vid, batch_size)
+
+  def snp_markers_set_exists(self, maker, model, release):
+    return self.madpt.snp_markers_set_exists(maker, model, release)
+
+  def get_snp_markers_set(self, maker, model, release):
+    return self.madpt.get_snp_markers_set(maker, model, release)
+
+  def add_snp_markers_set(self, maker, model, release, op_vid):
+    return self.gadpt.add_snp_markers_set(maker, model, release, op_vid)
+
+  def fill_snp_markers_set(self, set_vid, stream, op_vid, batch_size=50000):
+    return self.gadpt.fill_snp_markers_set(set_vid, stream, op_vid, batch_size)
+
+  def create_gdo_repository(self, set_vid, N):
+    return self.gadpt.create_gdo_repository(set_vid, N)
 
 

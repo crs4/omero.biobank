@@ -54,37 +54,30 @@ class Recorder(Core):
     FIXME
     """
     self.logger = logger
-    super(Recorder, self).__init__(host, user, passwd)
+    super(Recorder, self).__init__(host, user, passwd, study_label=study_label)
     #--
-    s = self.skb.get_study_by_label(study_label)
-    if not s:
-      self.logger.critical('No known study with label %s' % study_label)
-      sys.exit(1)
-    self.study = s
-    #-------------------------
-    self.device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
-    self.asetup = self.get_action_setup('importer-version-%s-%s-%f' %
-                                        (version, "SNPMarkersSet", time.time()),
-                                        # FIXME the json below should
-                                        # record the app version, and the
-                                        # parameters used.  unclear if we
-                                        # need to register the file we load
-                                        # data from, since it is, most
-                                        # likely, a transient object.
-                                        json.dumps({'operator' : operator,
-                                                    'host' : host,
-                                                    'user' : user}))
-    self.acat  = self.acat_map['IMPORT']
-    self.operator = operator
-
-  def create_action(self, description):
-    return self.create_action_helper(self.skb.Action, description,
-                                     self.study, self.device, self.asetup,
-                                     self.acat, self.operator, None)
+    #--
+    device_label = ('importer.marker_definition.SNP-marker-definition-%s' %
+                    (version))
+    device = self.get_device(label=device_label,
+                             maker='CRS4', model='importer', release='0.1')
+    asetup = self.get_action_setup('importer.marker_alignment',
+                                   {'study_label' : study_label,
+                                    'operator' : operator})
+    acat  = self.kb.ActionCategory.IMPORT
+    self.action = self.kb.factory.create(self.kb.Action,
+                                         {'setup' : asetup,
+                                          'device' : device,
+                                          'actionCategory' : acat,
+                                          'operator' : operator,
+                                          'context' : self.default_study,
+                                          })
+    #-- FIXME what happens if we do not have markers to save?
+    self.action.save()
 
   def save_snp_marker_alignments(self, ref_genome, message, ifile):
     self.logger.info('start preloading known markers defs from kb')
-    known_markers = self.gkb.get_snp_marker_definitions()
+    known_markers = self.kb.get_snp_marker_definitions()
     if len(known_markers) > 0:
       known_markers = dict(it.izip(known_markers['label'],
                                    known_markers['vid']))
@@ -114,13 +107,12 @@ class Recorder(Core):
     pars = {'message' : message,
             'ref_genome' : ref_genome,
             'filename' : ifile.name}
-    action = self.create_action(description=json.dumps(pars))
     self.logger.info('start loading marker alignments from %s' % ifile.name)
-    self.gkb.add_snp_alignments(ns(tsv, cnt), op_vid=action.id)
+    self.kb.add_snp_alignments(ns(tsv, cnt), op_vid=self.action.id)
     self.logger.info('done loading marker alignments. There were %s new alignments.'
                      % cnt[0])
 
-#------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 help_doc = """
 import new markers alignments into VL.
@@ -142,7 +134,7 @@ def import_marker_alignment_implementation(args):
     raise ValueError(msg)
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
-                      keep_tokens=args.keep_tokens)
+                      keep_tokens=1)
   recorder.save_snp_marker_alignments(args.ref_genome, args.message, args.ifile)
 
 def do_register(registration_list):
