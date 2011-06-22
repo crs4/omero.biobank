@@ -29,6 +29,7 @@ logger.addHandler(ch)
 import argparse
 import csv
 import sys
+import random
 
 study = 'TEST01'
 
@@ -40,13 +41,17 @@ def individual_conversion_rule(study, x):
     y['gender'] = 'male'
   elif x['Submitted_Gender'] == '2':
     y['gender'] = 'female'
+  else:
+    y['gender'] = 'unknown'
   y['father'] = x['Father'] if not (x['Father'] == '0'
                                     or x['Father'] == 'x'
                                     or x['Father'] == ''
+                                    or x['Father'] == 'TBF'
                                     ) else 'None'
   y['mother'] = x['Mother'] if not (x['Mother'] == '0'
                                     or x['Mother'] == 'x'
                                     or x['Mother'] == ''
+                                    or x['Mother'] == 'TBF'
                                     ) else 'None'
   return y
 
@@ -79,6 +84,10 @@ def load_individuals(args, stream):
         logger.error('Inconsistent parental info between records for %s.' % k)
         logger.error('Removing record (%s) for %s.' % (y, k))
         continue
+      if y['gender'] == 'unknown':
+        y['gender'] = random.sample(['male', 'female'], 1)[0]
+        logger.error('Unknown gender for %s' % y['label'])
+        logger.info('Forcing gender for %s to %s.' % (y['label'], y['gender']))
       if not (individuals[k]['gender'] == y['gender']):
         logger.error('Inconsistent gender between records for %s.' % k)
         logger.error('Removing record (%s) for %s.' % (y, k))

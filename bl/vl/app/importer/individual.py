@@ -165,6 +165,11 @@ class Recorder(Core):
     gender_map = {'MALE' : self.kb.Gender.MALE,
                   'FEMALE' : self.kb.Gender.FEMALE}
 
+    # FIXME quick hack to support reloading...
+    if father:
+      father.reload()
+    if mother:
+      mother.reload()
     self.logger.info('importing %s %s %s %s' % (identifier, gender,
                                                 father.id if father else None,
                                                 mother.id if mother else None))

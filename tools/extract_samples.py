@@ -4,15 +4,16 @@ Extracts sample records from a 'Ilena format' tsv file.
 
 from one row, it will generate:
 
-   * a record that can map to a BloodSample
-   * a record that can map to a DNASampleRecord
+   * a record that can map to a Vessel containg Blood
+   * a record that can map to a Vessel containg DNA
    * multiple PlateWell records
    * multiple AffymetrixCel, IlluminaXXX and IlluminaHiseq records
 
 all records will be linked together using (study, label)
-tuples. Barcodes are expected to be unique, however.
+tuples.
 
-to accomodate ''importer'' importing strategy, we will split the output in 'per sample type' files.
+To accomodate ''importer'' importing strategy, we will split the
+output in 'per sample type' files.
 
 """
 #---------------------------------------------------------------
@@ -48,9 +49,7 @@ barcode_counter = 0
 def blood_sample_conversion_rule(study, y, x):
   global barcode_counter
   y= {'study' : study, 'label' : '%s-bs-%s' % (study, x['Sample_Name']),
-      'barcode' : '%s-%06d' % (study, barcode_counter),
       'individual_label' : y['label'],
-      'initial_volume': 20,
       'current_volume': 20,
       'status': 'USABLE'}
   barcode_counter += 1
@@ -59,9 +58,8 @@ def blood_sample_conversion_rule(study, y, x):
 def dna_sample_conversion_rule(study, s, x):
   global barcode_counter
   y= {'study' : study, 'label' : '%s-dna-%s' % (study, x['Sample_Name']),
-      'barcode' : '%s-%06d' % (study, barcode_counter),
-      'blood_sample_label' : s['label'],
-      'initial_volume': 20, 'current_volume': 20,
+      'bio_sample_label' : s['label'],
+      'used_volume': 20, 'current_volume': 20,
       'nanodrop': 50, 'qp230260': 0.333, 'qp230280': 0.44,
       'status': 'USABLE'}
   barcode_counter += 1
@@ -95,14 +93,16 @@ def convert_well_position(label, pos):
     column_counters[label] = max(c, column_counters.setdefault(label, 0))
   else:
     raise ValueError('cannot convert %s %s' % (label, pos))
-  return (r, c)
+  return (r+1, c+1)
 
 def plate_well_conversion_rule_helper(study, s, plate_label, plate_well):
-  y = {'study' : study, 'volume':  0.1, 'dna_label' : s['label'],
+  y = {'study' : study,
+       'used_volume':  0.1, 'current_volume' : 0.1,
+       'bio_sample_label' : s['label'],
        'plate_label' : plate_label,
        }
   y['row'], y['column'] = convert_well_position(plate_label, plate_well)
-  y['label'] = '%s:[%s,%d]' % (plate_label, chr(ord('A') + y['row']), y['column'] + 1)
+  y['label'] = '%s%02d' % (chr(ord('A') + y['row'] - 1), y['column'])
   return y
 
 def plate_well_conversion_rule(study, dna, x):
@@ -161,16 +161,19 @@ def titer_plate_conversion_rule(study):
 
 
 
-def data_sample_conversion_rule_helper(study, sample,
+def data_sample_conversion_rule_helper(study,
+                                       plate,
+                                       sample,
                                        data_sample_name, device_maker,
                                        device_model, device_release,
                                        device_name, specific=None):
   y = {'study' : study,
+       'plate_label' : plate,
        'label' : data_sample_name,
-       'sample_label' : sample['label'],
        'device_maker' : device_maker,
        'device_model' : device_model,
        'device_release' : device_release,
+       'sample_label' : sample['label'],
        'device_name'  : device_name,
        }
   if specific:
@@ -180,43 +183,57 @@ def data_sample_conversion_rule_helper(study, sample,
 def data_sample_conversion_rule_driver(study, dna_sample, plate_wells, x):
   samples = []
   if not x['Illumina_1M'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study, plate_wells['Illumina'],
+    samples.append(data_sample_conversion_rule_helper(study,
+                                                      x['Illumina_Plate'],
+                                                      plate_wells['Illumina'],
                                                       x['Illumina_1M'],
                                                       'Illumina', 'Human1M', '1.0',
                                                       'PortoConte-1'))
 
   if not x['Illumina_1M_duplicates'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study, plate_wells['Illumina_dup'],
+    samples.append(data_sample_conversion_rule_helper(study,
+                                                      x['Illumina_dup_Plate'],
+                                                      plate_wells['Illumina_dup'],
                                                       x['Illumina_1M_duplicates'],
                                                       'Illumina', 'Human1M', '1.0',
                                                       'PortoConte-1'))
 
   if not x['Affy_Pula'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study, plate_wells['Affy_Pula'],
+    samples.append(data_sample_conversion_rule_helper(study,
+                                                      'PULA-' + x['Affymetrix_Plate_Pula'],
+                                                      plate_wells['Affy_Pula'],
                                                       x['Affy_Pula'],
                                                       'Affymetrix', 'GenomeWideSNP_6', '1.0',
                                                       'Pula-1',
                                                       specific={'contrastQC' : x['cQC_Pula']}))
 
   if not x['Affy_Lanusei'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study, plate_wells['Affy_Lanusei'],
+    samples.append(data_sample_conversion_rule_helper(study,
+                                                      'LANUSEI-' + x['Affymetrix_Plate_Lanusei'],
+                                                      plate_wells['Affy_Lanusei'],
                                                       x['Affy_Lanusei'],
                                                       'Affymetrix', 'GenomeWideSNP_6', '1.0',
                                                       'Lanusei-1',
                                                       specific={'contrastQC' : x['cQC_Lanusei']}))
   if not x['Affy_USA'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study, plate_wells['Affy_USA'],
+    samples.append(data_sample_conversion_rule_helper(study,
+                                                      'USA-' + x['Affymetrix_Plate_USA'],
+                                                      plate_wells['Affy_USA'],
                                                       x['Affy_USA'],
                                                       'Affymetrix', 'GenomeWideSNP_6', '1.0',
                                                       'Affymetrix-inc-X',
                                                       specific={'contrastQC' : x['cQC_USA']}))
   if not x['Solexa_Sequencing_ID'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study, dna_sample,
+    samples.append(data_sample_conversion_rule_helper(study,
+                                                      None,
+                                                      dna_sample,
                                                       x['Solexa_Sequencing_ID'],
                                                       'Illumina', 'HiSeq_2000', '1.0',
                                                       'Pula-hiseq-1'))
   if not x['Sanger_Sequencing_ID'] == 'x':
-     samples.append(data_sample_conversion_rule_helper(study, dna_sample,
+     samples.append(data_sample_conversion_rule_helper(study,
+                                                       None,
+                                                       dna_sample,
                                                        x['Sanger_Sequencing_ID'],
                                                        'Applied Biosystems', 'Prism_XXX', '50.0',
                                                        'PortoConte-sanger-1'))
@@ -326,30 +343,76 @@ def main():
   #-
   titer_plates = titer_plate_conversion_rule(args.study)
   dump_(args.ofile_root + 'blood_samples.tsv', blood_samples,
-        fieldnames='study label barcode individual_label initial_volume current_volume status'.split())
-  dump_(args.ofile_root + 'dna_samples.tsv', dna_samples,
-        fieldnames='study label barcode blood_sample_label initial_volume current_volume status nanodrop qp230260 qp230280'.split())
+        fieldnames='study label individual_label current_volume status'.split())
+  #-----
+  def fix_dna_sample(x):
+    y = {}
+    for k in 'study label bio_sample_label used_volume current_volume status'.split():
+      y[k] = x[k]
+    return y
+  def fix_dna_measure(x):
+    y = {}
+    for k in 'study bio_sample_label nanodrop qp230260 qp230280'.split():
+      y[k] = x[k]
+    y['bio_sample_label'] = x['label']
+    return y
 
+  dump_(args.ofile_root + 'dna_samples.tsv',
+        map(fix_dna_sample, dna_samples),
+        fieldnames='study label bio_sample_label used_volume current_volume status'.split())
+  dump_(args.ofile_root + 'dna_sample_measures.tsv',
+        map(fix_dna_measure, dna_samples),
+        fieldnames='study bio_sample_label nanodrop qp230260 qp230280'.split())
+  #--
   dump_(args.ofile_root + 'titer_plates.tsv', titer_plates,
         fieldnames='study label barcode rows columns maker model'.split())
   #-
   dump_(args.ofile_root + 'plate_wells.tsv', plate_wells,
-        fieldnames='study label plate_label row column dna_label volume'.split())
+        fieldnames='study label plate_label row column bio_sample_label used_volume current_volume'.split())
   #--
+  affy_cels = [x for x in data_samples
+               if x['device_maker'] == 'Affymetrix'
+               and x['device_model'] == 'GenomeWideSNP_6']
+  #-- Dump virtual chips as devices
+  def virtual_affy_chip(x):
+    global barcode_counter
+    y = {}
+    y['label'] = 'chip_'+ x['label']
+    y['maker'] = 'Affymetrix'
+    y['model'] = 'Genome-Wide Human SNP Array'
+    y['release'] = '6.0'
+    y['location'] = 'None'
+    y['barcode'] = barcode_counter
+    barcode_counter += 1
+    return y
+  dump_(args.ofile_root + 'devices.tsv', map(virtual_affy_chip, affy_cels),
+        fieldnames='label barcode maker model release location'.split())
+  #-- Dump cels
+  def patch_affy(x):
+    y = {}
+    y['study'] = x['study']
+    y['label'] = x['label']
+    y['sample_label'] = x['plate_label'] + ':' + x['sample_label']
+    y['device_label'] = 'chip_'+ x['label']
+    y['options'] = 'scanner=%s' % x['device_name']
+    return y
   dump_(args.ofile_root + 'affy_gw.tsv',
-        [x for x in data_samples
-         if x['device_maker'] == 'Affymetrix' and x['device_model'] == 'GenomeWideSNP_6'],
-        fieldnames='study label contrastQC sample_label device_maker device_model device_release device_name'.split())
-  dump_(args.ofile_root + 'illumina_hu1M.tsv',
-        [x for x in data_samples
-         if x['device_maker'] == 'Illumina' and x['device_model'] == 'Human1M'],
-        fieldnames='study label sample_label device_maker device_model device_release device_name'.split())
-  dump_(args.ofile_root + 'illumina_hiseq.tsv',
-        [x for x in data_samples
-         if x['device_maker'] == 'Illumina' and x['device_model'] == 'HiSeq_2000'],
-        fieldnames='study label sample_label device_maker device_model device_release device_name'.split())
-  dump_(args.ofile_root + 'abi-prism.tsv',
-        [x for x in data_samples
-         if x['device_maker'] == 'Applied Biosystems' and x['device_model'] == 'Prism_XXX'],
-        fieldnames='study label sample_label device_maker device_model device_release device_name'.split())
+        map(patch_affy, affy_cels),
+        fieldnames='study label sample_label device_label options'.split())
+  #--
+
+#   dump_(args.ofile_root + 'illumina_hu1M.tsv',
+#         [x for x in data_samples
+#          if x['device_maker'] == 'Illumina' and x['device_model'] == 'Human1M'],
+#         fieldnames='study label sample_label device_maker device_model device_release device_name'.split())
+#   dump_(args.ofile_root + 'illumina_hiseq.tsv',
+#         [x for x in data_samples
+#          if x['device_maker'] == 'Illumina' and x['device_model'] == 'HiSeq_2000'],
+#         fieldnames='study label sample_label device_maker device_model device_release device_name'.split())
+#   dump_(args.ofile_root + 'abi-prism.tsv',
+#         [x for x in data_samples
+#          if x['device_maker'] == 'Applied Biosystems' and x['device_model'] == 'Prism_XXX'],
+#         fieldnames='study label sample_label device_maker device_model device_release device_name'.split())
+
+
 main()
