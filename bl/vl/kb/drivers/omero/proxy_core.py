@@ -148,7 +148,7 @@ class ProxyCore(object):
     pars = self.ome_query_params(xpars)
     result = self.ome_operation("getQueryService", "findAllByQuery",
                                 query, pars)
-    return None if result is None else [factory.wrap(r) for r in result]
+    return [] if result is None else [factory.wrap(r) for r in result]
 
   def update_by_example(self, o):
     res = self.ome_operation('getQueryService', 'findByExample', o.ome_obj)

@@ -36,6 +36,12 @@ class Proxy(ProxyCore):
     self.gadpt = GenotypingAdapter(self)
     self.madpt = ModelingAdapter(self)
 
+
+  # High level ops
+  # ==============
+  def find_all_by_query(self, query, params):
+    return super(Proxy, self).find_all_by_query(query, params, self.factory)
+
   # MODELING related utility functions
   # ==================================
 
@@ -50,6 +56,16 @@ class Proxy(ProxyCore):
     Return the study object labeled 'label' or None if nothing matches 'label'.
     """
     return self.madpt.get_study(label)
+
+  def get_data_collection(self, label):
+    """
+    Return the DataCollection object labeled 'label'
+    or None if nothing matches 'label'.
+    """
+    return self.madpt.get_data_collection(label)
+
+  def get_data_collection_items(self, dc):
+    return self.madpt.get_data_collection_items(dc)
 
   def get_objects(self, klass):
     return self.madpt.get_objects(klass)

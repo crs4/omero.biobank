@@ -13,6 +13,8 @@ class DependencyTree(object):
 
   """
   def __init__(self, kb, logger=logging.getLogger()):
+    obj_klasses = [kb.Individual, kb.Vessel, kb.DataSample,
+                   kb.VLCollection]
     def base_ome_class(klass):
       "FIXME hardwired to Omero"
       kbase = klass.__bases__[0]
@@ -29,24 +31,20 @@ class DependencyTree(object):
     self.logger.info('start pre-fetching graph data')
     #--------------------------------------------------------
     actions = kb.get_objects(self.kb.Action)
-    targets = [a.target for a in actions if hasattr(a, 'target')]
-    tklasses = set([t.__class__ for t in targets if t is not None])
-    #--
-    # DEBUG
-    jf = open('junk.txt', 'w')
     #--
     action_by_oid = {}
+    self.logger.info('-- start pre-fetching action data')
     for a in actions:
       assert a.omero_id not in action_by_oid
       action_by_oid[a.omero_id] = a
-      jf.write('action (%s, %s)\n' % (a.__class__, a.omero_id))
     self.logger.info('-- done pre-fetching action data')
     #--
     objs = []
-    for k in tklasses:
+    self.logger.info('-- start pre-fetching objs data')
+    for k in obj_klasses:
       objs.extend(kb.get_objects(k))
-      self.logger.info('-- done pre-fetching %s' % k)
-    self.logger.info('done pre-fetching objs data')
+      self.logger.info('-- -- done pre-fetching %s' % k)
+    self.logger.info('-- done pre-fetching objs data')
     #--
     #--
     nodes, edges = [], []
@@ -55,7 +53,6 @@ class DependencyTree(object):
     for o in objs:
       obj_by_id[o.id] = o
       obj_by_oid[okey(o)] = o
-      jf.write('object (%s, %s)\n' % (okey(o), o.id))
     #-
     self.logger.info('done mapping objs nodes')
 
@@ -65,20 +62,13 @@ class DependencyTree(object):
       if hasattr(a, 'target') and a.target.omero_id in obj_by_oid:
         k = a.omero_id
         action_oid_to_object[k] = obj_by_oid[okey(a.target)]
-        jf.write('action to object (%s, %s)\n' % (k, okey(a.target)))
 
     for o in objs:
       nodes.append(o.id)
       a = action_by_oid[o.action.omero_id]
       if hasattr(a, 'target'):
-        jf.write('re-fetching okey(a.target): %s\n' % (okey(a.target),))
-        jf.flush()
         x, y = o, obj_by_oid[okey(a.target)]
-        xlabel = 'NOLABEL' if not hasattr(x, 'label') else x.label
-        ylabel = 'NOLABEL' if not hasattr(y, 'label') else y.label
-        jf.write('%s -> %s\n' % (xlabel, ylabel))
         edges.append((x.id, y.id))
-    jf.close()
     gr = graph()
     gr.add_nodes(nodes)
     for e in edges:

@@ -6,10 +6,10 @@ FIXME
 
 """
 
-from bl.vl.app.importer.core import Core, BadRecord
-from version import version
+from bl.vl.kb.dependency import DependencyTree
 
-from bl.vl.kb import DependencyTree
+from bl.vl.app.importer.core import Core
+from version import version
 
 import csv, json
 import time, sys
@@ -28,6 +28,7 @@ class Tabular(Core):
 
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
+               study_label=None,
                data_collection_label=None,
                preferred_data_protocol=None,
                operator='Alfred E. Neumann'):
@@ -36,8 +37,11 @@ class Tabular(Core):
     """
     self.logger = logging.getLogger()
     super(Tabular, self).__init__(host, user, passwd,
-                                  keep_tokens=keep_tokens,
-                                  study_label='TEST01')
+                                  keep_tokens=keep_tokens)
+    self.default_study = None
+    if study_label:
+      self.default_study = self.get_study(study_label)
+
     if data_collection_label:
       self.data_collection = self.kb.get_data_collection(data_collection_label)
     else:
@@ -47,6 +51,9 @@ class Tabular(Core):
 
     self.preferred_data_protocol = preferred_data_protocol
 
+    #FIXME we need to do this to sync with the DB idea of the enums.
+    self.kb.Gender.map_enums_values(self.kb)
+
   def pre_load_data(self):
     self.logger.info('start prefetching DataSample')
     if self.data_collection:
@@ -54,13 +61,12 @@ class Tabular(Core):
                       for dci
                       in self.kb.get_data_collection_items(self.data_collection)]
     else:
-      data_samples = self.kb.get_bio_samples(self.skb.AffymetrixCel)
+      data_samples = self.kb.get_objects(self.kb.AffymetrixCel)
     self.logger.info('done prefetching DataSample')
 
     self.logger.info('start prefetching DataObject')
     q = "select o from DataObject as o join fetch o.sample as s"
-    factory = lambda x, proxy : self.skb.DataObject(x, proxy=proxy)
-    objs = self.skb.find_all_by_query(q, {}, factory)
+    objs = self.kb.find_all_by_query(q, {})
     ds_to_do = {}
     for o in objs:
       ds_to_do.setdefault(o.sample.id, []).append(o)
@@ -68,14 +74,20 @@ class Tabular(Core):
 
     return data_samples, ds_to_do
 
+  # FIXME this is an hack...
+  def gender_str(self, g):
+    if g.omero_id == self.kb.Gender.MALE.omero_id:
+      return 'MALE'
+    elif g.omero_id == self.kb.Gender.FEMALE.omero_id:
+      return 'FEMALE'
+    else:
+      assert 0
+
   def dump_call_gt(self, ofile):
     if not self.data_collection:
       raise ValueError('data_collection %s is not known to KB' % self.data_collection)
     #--
-    dt = DependencyTree(self.skb, self.ikb, [self.ikb.Individual,
-                                             self.skb.BioSample,
-                                             self.skb.PlateWell,
-                                             self.skb.DataSample])
+    dt = DependencyTree(self.kb)
     data_samples, ds_to_do = self.pre_load_data()
     #--
     fnames = 'dc_id item_id data_sample_label path gender mimetype size sha1'.split()
@@ -84,16 +96,16 @@ class Tabular(Core):
     #--
     dc_id = self.data_collection.id
     for ds in data_samples:
-      v = dt.get_connected(ds, self.ikb.Individual)
+      v = dt.get_connected(ds, self.kb.Individual)
       assert len(v) == 1
       i = v[0]
-      gender = self.gm_by_object[i.gender.id]
+      # FIXME this is bad
       if ds_to_do.has_key(ds.id):
         for do in ds_to_do[ds.id]:
           r = {'dc_id' : dc_id,
                'data_sample_label' : do.sample.label,
                'item_id' : do.sample.id,
-               'gender' : gender,
+               'gender' : self.gender_str(i.gender),
                'path' : do.path,
                'mimetype' : do.mimetype,
                'size' : do.size,
@@ -104,11 +116,7 @@ class Tabular(Core):
 
 
   def dump_gender_check(self, ofile):
-    dt = DependencyTree(self.kb, [self.kb.Individual,
-                                  self.kb.BioSample,
-                                  self.kb.PlateWell,
-                                             self.skb.DataSample])
-
+    dt = DependencyTree(self.kb)
     data_samples, ds_to_do = self.pre_load_data()
 
     fnames = 'individual_id gender path mimetype size sha1'.split()
@@ -117,12 +125,11 @@ class Tabular(Core):
     #--
     for ds in data_samples:
       v = dt.get_connected(ds)
-      i = filter(lambda x: type(x) == self.ikb.Individual, v)[0]
-      gender = self.gm_by_object[i.gender.id]
+      i = filter(lambda x: type(x) == self.kb.Individual, v)[0]
       if ds_to_do.has_key(ds.id):
         for do in ds_to_do[ds.id]:
           r = {'individual_id' : i.id,
-               'gender' : gender,
+               'gender' : self.gender_str(i.gender),
                'path' : do.path,
                'mimetype' : do.mimetype,
                'size' : do.size,
@@ -147,7 +154,7 @@ Extract data from the KB in tabular form.
 def make_parser_tabular(parser):
   parser.add_argument('--data-collection', type=str,
                       help="data collection label")
-  parser.add_argument('--study', type=str,
+  parser.add_argument('--study-label', type=str,
                       help="study label")
   parser.add_argument('--preferred-data-protocol', type=str,
                       choices=Tabular.SUPPORTED_DATA_PROTOCOLS,
@@ -162,6 +169,7 @@ def import_tabular_implementation(args):
   #--
   tabular = Tabular(host=args.host, user=args.user, passwd=args.passwd,
                     keep_tokens=args.keep_tokens,
+                    study_label=args.study_label,
                     data_collection_label=args.data_collection,
                     preferred_data_protocol=args.preferred_data_protocol)
   tabular.dump(args.fields_set, args.ofile)

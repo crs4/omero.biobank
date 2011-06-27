@@ -31,6 +31,18 @@ class ModelingAdapter(object):
                                    query, pars)
     return None if result is None else self.kb.factory.wrap(result)
 
+
+  def get_data_collection(self, label):
+    """
+    Return the DataCollection object labeled 'label' or
+    None if nothing matches 'label'.
+    """
+    query = 'select dc from DataCollection dc where dc.label = :label'
+    pars = self.kb.ome_query_params({'label' : wp.ome_wrap(label, wp.STRING)})
+    result = self.kb.ome_operation("getQueryService", "findByQuery",
+                                   query, pars)
+    return None if result is None else self.kb.factory.wrap(result)
+
   def get_objects(self, klass):
     query = "select o from %s o" % klass.get_ome_table()
     pars = None
@@ -48,6 +60,19 @@ class ModelingAdapter(object):
     result = self.kb.ome_operation("getQueryService", "findAllByQuery",
                                    query, pars)
     return [self.kb.factory.wrap(e) for e in result]
+
+  def get_data_collection_items(self, dc):
+    query = """select i
+               from DataCollectionItem i
+               join fetch i.dataSample as s
+               join fetch i.dataCollection as dc
+               where dc.id  = :dcid
+               """
+    pars = self.kb.ome_query_params({'dcid' :
+                                     wp.ome_wrap(dc.omero_id, wp.LONG)})
+    result = self.kb.ome_operation("getQueryService", "findAllByQuery",
+                                   query, pars)
+    return [self.kb.factory.wrap(i) for i in result]
 
   def get_enrollment(self, study, ind_label):
     query = """select e
