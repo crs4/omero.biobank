@@ -133,6 +133,15 @@ class Recorder(Core):
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
     #--
+    k_map = {}
+    for r in records:
+      if r['label'] in k_map:
+        self.logger.error('multiple record for the same label: %s. Rejecting.'
+                          % r['label'])
+      else:
+        k_map[r['label']] = r
+    records = k_map.values()
+    #--
     good_records = []
     reject = 'Rejecting import.'
     for r in records:

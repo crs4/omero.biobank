@@ -6,11 +6,10 @@ FIXME
 
 """
 
-from bl.vl.sample.kb import KBError
 from bl.vl.app.importer.core import Core, BadRecord
 from version import version
 
-from bl.vl.sample.kb.drivers.omero.dependency_tree import DependencyTree
+from bl.vl.kb import DependencyTree
 
 import csv, json
 import time, sys
@@ -36,9 +35,11 @@ class Tabular(Core):
     FIXME
     """
     self.logger = logging.getLogger()
-    super(Tabular, self).__init__(host, user, passwd, keep_tokens=keep_tokens)
+    super(Tabular, self).__init__(host, user, passwd,
+                                  keep_tokens=keep_tokens,
+                                  study_label='TEST01')
     if data_collection_label:
-      self.data_collection = self.skb.get_data_collection(data_collection_label)
+      self.data_collection = self.kb.get_data_collection(data_collection_label)
     else:
       self.data_collection = None
 
@@ -46,21 +47,14 @@ class Tabular(Core):
 
     self.preferred_data_protocol = preferred_data_protocol
 
-    #FIXME this is omero specific
-    self.gm = self.ikb.get_gender_table()
-    self.gm_by_object = {}
-    self.gm_by_object[self.gm["MALE"].id] = "MALE"
-    self.gm_by_object[self.gm["FEMALE"].id] = "FEMALE"
-
-
   def pre_load_data(self):
     self.logger.info('start prefetching DataSample')
     if self.data_collection:
       data_samples = [dci.dataSample
                       for dci
-                      in self.skb.get_data_collection_items(self.data_collection)]
+                      in self.kb.get_data_collection_items(self.data_collection)]
     else:
-      data_samples = self.skb.get_bio_samples(self.skb.AffymetrixCel)
+      data_samples = self.kb.get_bio_samples(self.skb.AffymetrixCel)
     self.logger.info('done prefetching DataSample')
 
     self.logger.info('start prefetching DataObject')
@@ -110,9 +104,9 @@ class Tabular(Core):
 
 
   def dump_gender_check(self, ofile):
-    dt = DependencyTree(self.skb, self.ikb, [self.ikb.Individual,
-                                             self.skb.BioSample,
-                                             self.skb.PlateWell,
+    dt = DependencyTree(self.kb, [self.kb.Individual,
+                                  self.kb.BioSample,
+                                  self.kb.PlateWell,
                                              self.skb.DataSample])
 
     data_samples, ds_to_do = self.pre_load_data()

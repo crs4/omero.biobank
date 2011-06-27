@@ -149,12 +149,18 @@ class Recorder(Core):
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
     #--
+    k_map = {}
     good_records = []
     for i, r in enumerate(records):
       reject = ' Rejecting import of row %d.' % i
       if r['label'] in self.known_data_samples:
         f = 'there is a pre-existing DataSample with label %s.' + reject
         self.logger.warn(f % r['label'])
+        continue
+      if r['label'] in k_map:
+        f = ('there is a pre-existing DataSample with label %s.(in this batch)'
+             + reject)
+        self.logger.error(f % r['label'])
         continue
       if (not r['sample_label'] in self.known_tubes and
           not r['sample_label'] in self.known_data_samples):
@@ -180,6 +186,7 @@ class Recorder(Core):
           f = 'illegal options string.' + reject
           self.logger.error(f)
           continue
+      k_map[r['label']] = r
       good_records.append(r)
     self.logger.info('done consistency checks')
     #--

@@ -184,6 +184,8 @@ class Recorder(Core):
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
     #--
+    k_map = {}
+    #--
     good_records = []
     for i, r in enumerate(records):
       reject = ' Rejecting import line %d.' % i
@@ -207,6 +209,11 @@ class Recorder(Core):
       if label in self.known_tubes:
         f = 'there is a pre-existing vessel with label %s.' + reject
         self.logger.warn(f % label)
+        continue
+      if label in k_map:
+        f = ('there is a pre-existing vessel with label %s (in this batch).'
+             + reject)
+        self.logger.error(f % label)
         continue
       if r['plate_label'] not in self.known_plates:
         f = 'there is no known plate with label %s.' + reject
@@ -239,6 +246,7 @@ class Recorder(Core):
         m = 'current_volume[%s] > used_volume[%s].' + reject
         self.logger.error(m % (r['current_volume'], r['used_volume']))
         continue
+      k_map[label] = r
       good_records.append(r)
     self.logger.info('done consistency checks')
     #--

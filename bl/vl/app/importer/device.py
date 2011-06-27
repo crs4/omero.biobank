@@ -93,6 +93,7 @@ class Recorder(Core):
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
+    k_map = {}
     #--
     good_records = []
     for i, r in enumerate(records):
@@ -101,9 +102,14 @@ class Recorder(Core):
         m = 'there is a pre-existing object with barcode %s.' + reject
         self.logger.warn(m % r['barcode'])
         continue
-      if self.known_devices.has_key(r['label']):
+      if r['label'] in self.known_devices:
         f = 'there is a pre-existing device with label %s.' + reject
         self.logger.warn(f % r['label'])
+        continue
+      if r['label'] in k_map:
+        f = ('there is a pre-existing device with label %s. (in this batch)'
+             + reject)
+        self.logger.error(f % r['label'])
         continue
       k = 'maker'
       if not k in r:
@@ -120,6 +126,7 @@ class Recorder(Core):
         f = 'missing %s.' + reject
         self.logger.error(f % k)
         continue
+      k_map['label'] = r
       good_records.append(r)
     self.logger.info('done consistency checks')
     #--
