@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<types>
-  <type id="ome.model.vl.Sample" superclass="ome.model.vl.Result">
-    <properties>
-      <required name="label" type="string" unique="true"/>
-    </properties>
-  </type>
-</types>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<types>
-  <type id="ome.model.vl.DataSample" superclass="ome.model.vl.Sample">
-    <properties>
-      <required name="dataType" type="ome.model.vl.DataType"/>
-    </properties>
-  </type>
-</types>
