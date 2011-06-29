@@ -171,7 +171,7 @@ class GenotypingAdapter(object):
            'probs' :  pstr, 'confidence' : cstr}
     self.kb.add_table_row(table_name, row)
     # return (vid, mimetype, path)
-    return row['vid']
+    return (table_name, row['vid'])
 
   def __normalize_size(self, string, size):
     return string + chr(0) * (size - len(string))

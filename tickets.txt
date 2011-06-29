@@ -1,0 +1,51 @@
+* we often do interconmnected sequences of operations, e.g.,
+  add_gdo_data_object which should logically be atomic transactions
+  but are not handled as such.
+
+* once for all, we should decide what is the proper 'name' for the
+  project. I guess that we could converge to virgil that provides 'bl'
+  extensions to 'omero', thus 'omero-bioland' and thus 'bl' instead of 'vl' and
+  mimetype 'x-vl/xxx' -> 'x-bl/xxx'
+
+* gender handling is still a mess. We should add something magic to
+  the enums so that, e.g., individual.gender.label returns MALE
+  FEMALE. Currently we are using ad hoc solutions.
+
+* importer is not handling error/warning messages uniformly.
+
+* the importer modules have lots of code that can be factored out to
+  core
+
+* not all the importers provide record line information in the
+  error/warn messages
+
+* in the importers no use is done of the used_volume information.
+
+* in importer.plate_well is assumed that the well will always contain DNA.
+
+* PlateWell does not have row, column, but only slot. Should it really?.
+
+* No actual tests for import corner cases and failures.
+
+* the way wrapper is implemented, everytime one does, say
+
+     pwell.container
+
+  gets a new wrapper of the same ome_obj. Thus, doing
+  
+  pwell.container.reload()
+  pwell.container.label
+
+  will not work, since the reload is replacing the ome_obj of the
+  container object that was generated in the first line, but not the
+  one that it is actually contained inside pwell.
+  The obvious work around is to do:
+
+  plate = pwell.container
+  plate.reload()
+  plate.label
+  #in fact
+  assert id(plate.ome_obj) != id(pwell.container.ome_obj)
+
+  we could fix this, but I am not sure that it is worthwhile. 
+

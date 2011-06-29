@@ -31,6 +31,32 @@ class ModelingAdapter(object):
                                    query, pars)
     return None if result is None else self.kb.factory.wrap(result)
 
+  def get_vessel(self, label):
+    """
+    Return the Vessel object labeled 'label' or None if nothing matches 'label'.
+    a label 'foo:A1' is interpreted as well 'A1' of plate 'foo'.
+    """
+    parts = label.split(':')
+    if len(parts) == 1:
+      query = 'select t from Tube t where t.label = :label'
+      pars = self.kb.ome_query_params({'label' : wp.ome_wrap(label, wp.STRING)})
+      result = self.kb.ome_operation("getQueryService", "findByQuery",
+                                     query, pars)
+      return None if result is None else self.kb.factory.wrap(result)
+    elif len(parts) == 2:
+      query = """select pw from PlateWell pw join fetch pw.container as ct
+                 where pw.label = :wlabel and ct.label = :clabel
+                 """
+      pars = self.kb.ome_query_params({'clabel' : wp.ome_wrap(parts[0],
+                                                              wp.STRING),
+                                       'wlabel' : wp.ome_wrap(parts[1],
+                                                              wp.STRING),
+                                       })
+      result = self.kb.ome_operation("getQueryService", "findByQuery",
+                                     query, pars)
+      return None if result is None else self.kb.factory.wrap(result)
+    else:
+      raise ValueError('Bad label %s value' % label)
 
   def get_data_collection(self, label):
     """

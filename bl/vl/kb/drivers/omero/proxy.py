@@ -13,6 +13,8 @@ import data_samples
 import actions_on_target
 import individual
 
+import hashlib
+
 
 from genotyping import GenotypingAdapter
 from modeling   import ModelingAdapter
@@ -76,6 +78,9 @@ class Proxy(ProxyCore):
   def get_enrollment(self, study, ind_label):
     return self.madpt.get_enrollment(study, ind_label)
 
+  def get_vessel(self, label):
+    return self.madpt.get_vessel(label)
+
   def get_vessels(self, klass=vessels.Vessel, content=None):
     return self.madpt.get_vessels(klass, content)
 
@@ -123,7 +128,15 @@ class Proxy(ProxyCore):
     return self.madpt.snp_markers_set_exists(maker, model, release)
 
   def get_snp_markers_set(self, maker, model, release):
+    "returns a SNPMarkersSet object"
     return self.madpt.get_snp_markers_set(maker, model, release)
+
+  def get_snp_markers_set_content(self, snp_markers_set, batch_size=50000):
+    selector = '(vid=="%s")' % snp_markers_set.markersSetVID
+    msetc = self.gadpt.get_snp_markers_set(selector, batch_size)
+    selector = '|'.join(['(vid=="%s")' % mv for mv in msetc['marker_vid']])
+    mdefs = self.gadpt.get_snp_marker_definitions(selector)
+    return mdefs, msetc
 
   def add_snp_markers_set(self, maker, model, release, op_vid):
     return self.gadpt.add_snp_markers_set(maker, model, release, op_vid)
@@ -131,7 +144,47 @@ class Proxy(ProxyCore):
   def fill_snp_markers_set(self, set_vid, stream, op_vid, batch_size=50000):
     return self.gadpt.fill_snp_markers_set(set_vid, stream, op_vid, batch_size)
 
+  def get_snp_alignments(self, selector=None, batch_size=50000):
+    return self.gadpt.get_snp_alignments(selector, batch_size)
+
   def create_gdo_repository(self, set_vid, N):
     return self.gadpt.create_gdo_repository(set_vid, N)
 
+  # Utility functions builld as composition of the above
+  # ====================================================
+
+  def add_gdo_data_object(self, avid, sample, probs, confs):
+    """
+    FIXME
+    """
+    # if not isinstance(action, self.Action):
+    #   raise ValueError('action should be an instance of Action')
+    if not isinstance(sample, self.GenotypeDataSample):
+      raise ValueError('sample should be an instance of GenotypeDataSample')
+    # FIXME we delegate to gadpt checking that probs and confs have the
+    #       right numpy dtype.
+    mset = sample.snpMarkersSet
+    tname, vid = self.gadpt.add_gdo(mset.markersSetVID, probs, confs, avid)
+
+    size = 0
+    sha1 = hashlib.sha1()
+    s = probs.tostring();  size += len(s) ; sha1.update(s)
+    s = confs.tostring();  size += len(s) ; sha1.update(s)
+
+    conf = {'sample' : sample,
+            'path'   : 'table:%s/vid=%s' % (tname, vid),
+            'mimetype' : 'x-bl/gdo-table',
+            'sha1'   : sha1.hexdigest(),
+            'size'   : size,
+            }
+    gds = self.factory.create(self.DataObject, conf).save()
+    return gds
+
+
+  def get_gdo_iterator(self, mset, batch_size=100):
+    """
+    FIXME this is the basic object, we should have some support for
+    selection.
+    """
+    return self.gadpt.get_gdo_iterator(mset.markersSetVID, batch_size)
 

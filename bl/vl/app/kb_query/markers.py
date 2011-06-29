@@ -8,11 +8,10 @@ Extract in tabular form data from KB
 
 """
 
-from bl.vl.sample.kb import KBError
-from bl.vl.app.importer.core import Core, BadRecord
+from bl.vl.app.importer.core import Core
 from version import version
 
-from bl.vl.sample.kb.drivers.omero.dependency_tree import DependencyTree
+from bl.vl.kb.dependency import DependencyTree
 
 import csv, json
 import time, sys
@@ -56,30 +55,25 @@ class Markers(Core):
     self.logger.info('start preloading related markers')
     #--
     maker, model, release = self.markers_set
-    selector = ("(maker=='%s')&(model=='%s')&(release=='%s')" %
-                (maker, model, release))
-    #--
-    mrk_set = self.gkb.get_snp_markers_sets(selector=selector)
-    if not mrk_set:
+    mset = self.kb.get_snp_markers_set(maker, model, release)
+    if not mset:
       raise ValueError('unknown markers_set')
     #--
-    mrk_set_vid = mrk_set['vid'][0]
-    selector = "(vid=='%s')" % mrk_set_vid
-    mrks = self.gkb.get_snp_markers_set(selector=selector)
+    mrks = self.kb.get_snp_markers_set_content(mset)
     mrk_vids = mrks['marker_vid']
     #--
     selector = '|'.join(["(vid=='%s')" % k for k in mrk_vids])
-    mrk_defs = self.gkb.get_snp_marker_definitions(selector=selector)
+    mrk_defs = self.kb.get_snp_marker_definitions(selector=selector)
     assert len(mrk_defs) == len(mrk_vids)
     self.logger.info('done preloading related markers')
     #--
     if load_aligment:
       selector = '|'.join(["(marker_vid=='%s')" % k for k in mrk_vids])
-      snp_algns = self.gkb.get_snp_alignments(selector=selector)
+      snp_algns = self.kb.get_snp_alignments(selector=selector)
     else:
       snp_algns = False
     #--
-    return mrk_set_vid, mrks, mrk_defs, snp_algns
+    return mset, mrks, mrk_defs, snp_algns
 
   def dump_alignment(self, ofile):
     """
@@ -88,7 +82,7 @@ class Markers(Core):
        marker_vid rs_label ref_genome chromosome pos global_pos strand allele copies
     """
 
-    mrk_set_vid, mrks, mrk_defs, snp_algns = self.preload(True)
+    mset, mrks, mrk_defs, snp_algns = self.preload(True)
 
     vid_to_algns = {}
     for x in snp_algns:
@@ -123,7 +117,7 @@ class Markers(Core):
 
        marker_vid rs_label mask
     """
-    mrk_set_vid, mrks, mrk_defs, _ = self.preload()
+    mset, mrks, mrk_defs, _ = self.preload()
 
     vid_to_def = dict([ x for x in it.izip(mrk_defs['vid'],
                                             it.izip(mrk_defs['mask'],
@@ -148,7 +142,7 @@ class Markers(Core):
 
       markers_set_vid label rs_label marker_indx allele_flip
     """
-    mrk_set_vid, mrks, mrk_defs, _ = self.preload()
+    mset, mrks, mrk_defs, _ = self.preload()
     vid_to_def = dict([ x for x in it.izip(mrk_defs['vid'],
                                            it.izip(mrk_defs['rs_label'],
                                                    mrk_defs['label']))])
@@ -158,7 +152,7 @@ class Markers(Core):
     tsv.writeheader()
     for m in mrks:
       mdef = vid_to_def[m['marker_vid']]
-      r = {'markers_set_vid' : mrk_set_vid,
+      r = {'markers_set_vid' : mset.markersSetVID,
            'label' :    mdef[0],
            'rs_label' : mdef[1],
            'marker_indx' : m['marker_indx'],
@@ -167,17 +161,15 @@ class Markers(Core):
       tsv.writerow(r)
 
   def count_markers(self, ms):
-    selector = "(vid=='%s')" % ms.markersSetVID
-    return len(self.gkb.get_snp_markers_set(selector=selector))
+    return len(self.kb.get_snp_markers_set_content(ms))
 
   def dump_markers_sets(self, ofile):
-    mss = self.skb.get_objects(self.skb.SNPMarkersSet)
-    fieldnames = 'vid maker model release set_vid size'.split()
+    mss = self.kb.get_objects(self.kb.SNPMarkersSet)
+    fieldnames = 'maker model release set_vid size'.split()
     tsv = csv.DictWriter(ofile, fieldnames, delimiter='\t')
     tsv.writeheader()
     for ms in mss:
-      r = {'vid' : ms.id,
-           'maker' : ms.maker, 'model' : ms.model, 'release' : ms.release,
+      r = {'maker' : ms.maker, 'model' : ms.model, 'release' : ms.release,
            'set_vid' : ms.markersSetVID, 'size' : self.count_markers(ms)}
       tsv.writerow(r)
 

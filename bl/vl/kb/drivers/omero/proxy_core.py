@@ -366,6 +366,7 @@ class ProxyCore(object):
   @debug_boundary
   def add_table_row(self, table_name, row):
     if hasattr(row, 'dtype'):
+      # handle rows provided as numpy objects
       dtype = row.dtype
       row = dict([(k, convert_from_numpy(row[k])) for k in dtype.names])
     def stream(row):
@@ -383,7 +384,8 @@ class ProxyCore(object):
 
   @debug_boundary
   def add_table_rows_from_stream(self, table_name, stream, batch_size=10000):
-    self.__extend_table(table_name, self.__load_batch, stream, batch_size)
+    return self.__extend_table(table_name, self.__load_batch, stream,
+                               batch_size)
 
   @debug_boundary
   def __extend_table(self, table_name, batch_loader, records_stream, batch_size=10000):
