@@ -116,14 +116,15 @@ class Tabular(Core):
 
     data_samples, ds_to_do = self.pre_load_data()
 
-    fnames = ['individual_id', 'gender', 'data_sample_label',
-              'data_sample_id', 'path', 'mimetype', 'size', 'sha1']
+    fnames = ['individual_id', 'gender', 'data_sample_label', 'data_sample_id',
+              'path', 'contrast_qc', 'mimetype', 'size', 'sha1']
     tsv = csv.DictWriter(ofile, fnames, delimiter='\t')
     tsv.writeheader()
     #--
     for ds in data_samples:
       data_sample_label = ds.label
       data_sample_id = ds.id
+      contrast_qc = ds.contrastQC
       v = dt.get_connected(ds)
       i = filter(lambda x: type(x) == self.ikb.Individual, v)[0]
       gender = self.gm_by_object[i.gender.id]
@@ -134,6 +135,7 @@ class Tabular(Core):
                'data_sample_label' : data_sample_label,
                'data_sample_id' : data_sample_id,
                'path' : do.path,
+               'contrast_qc' : contrast_qc,
                'mimetype' : do.mimetype,
                'size' : do.size,
                'sha1' : do.sha1}
