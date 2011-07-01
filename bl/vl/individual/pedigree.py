@@ -52,10 +52,10 @@ def import_pedigree(recorder, istream):
       i = recorder.record(x.id, x.gender, father, mother)
     by_id[x.id] = (x, i)
 
-  founders, non_founders, dandlings, couples, children = analyze(family)
-  if dandlings:
-    raise ValueError('there are %d dandlings: %s' %
-                     (len(dandlings), dandlings))
+  founders, non_founders, dangling, couples, children = analyze(family)
+  if dangling:
+    raise ValueError('there are %d dangling individual IDs: %s' %
+                     (len(dangling), dangling))
   visited = {}
   kids = {}
   couples_by_partner = {}
@@ -125,8 +125,8 @@ def analyze(family):
       children.setdefault(i.father, set()).add(i)
       children.setdefault(i.mother, set()).add(i)
       couples.add((i.father, i.mother))
-  dandlings = set(children.keys()) - set([x.id for x in (founders + non_founders)])
-  return (founders, non_founders, list(dandlings), list(couples), children)
+  dangling = set(children) - set([x.id for x in (founders + non_founders)])
+  return (founders, non_founders, list(dangling), list(couples), children)
 
 def compute_bit_complexity(family):
   """
@@ -263,19 +263,3 @@ def split_family(family, max_complexity=MAX_COMPLEXITY):
     cbn = compute_bit_complexity(f)
     fams.append(f)
   return fams
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
