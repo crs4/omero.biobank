@@ -12,7 +12,7 @@ importer -i markers.tsv marker_definition --source='Affymetrix' --context='Genom
 
 """
 
-from bl.vl.sample.kb import KBError
+from bl.vl.kb import KBError
 from core import Core, BadRecord
 from version import version
 
