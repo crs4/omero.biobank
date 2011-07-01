@@ -14,7 +14,7 @@ importer -i taqman.tsv markers_set --maker='CRS4' --model='TaqMan.ms01' --releas
 
 """
 
-from bl.vl.sample.kb import KBError
+from bl.vl.kb import KBError
 from core import Core, BadRecord
 from version import version
 

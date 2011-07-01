@@ -17,7 +17,7 @@ FIXME this starts to become somewhat baroque. How does one write in an
 action that it has used chip xxx on scanner yyy?
 """
 
-from bl.vl.sample.kb import KBError
+from bl.vl.kb import KBError
 from core import Core, BadRecord
 from version import version
 

@@ -28,7 +28,7 @@ FIXME: currently there is no way to specialize the action performed,
 it will always be marked as an ActionCategory.ALIQUOTING.
 """
 
-from bl.vl.sample.kb import KBError
+from bl.vl.kb import KBError
 from core import Core, BadRecord
 from version import version
 
