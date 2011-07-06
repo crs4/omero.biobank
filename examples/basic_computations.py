@@ -54,6 +54,9 @@ class App(object):
     if not mset:
       raise ValueError('SNPMarkersSet[%s,%s,%s] has not been defined.'
                        % (maker, model, release))
+    # projector = (np.arange(0, 100), np.array([101, 109]), np.arange(110,N))
+    # selector = kb.build_selector(
+    # s = self.kb.get_gdo_iterator(mset, selector, projector)
     s = self.kb.get_gdo_iterator(mset)
     #--
     start = time.clock()

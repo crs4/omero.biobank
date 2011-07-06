@@ -98,6 +98,7 @@ class ProxyCore(object):
     self.session_keep_tokens = session_keep_tokens
     self.transaction_tokens = 0
     self.current_session = None
+    self.logger = logger
 
   def __del__(self):
     if self.current_session:
@@ -179,8 +180,8 @@ class ProxyCore(object):
       # result = self.ome_operation("getQueryService", "get",
       #                             obj.OME_TABLE, result.id._val)
     except omero.ValidationException, e:
-      logger.error('omero.ValidationException: %s' % e.message)
-      logger.error('omero.ValidationException object: %s' % type(obj))
+      self.logger.error('omero.ValidationException: %s' % e.message)
+      self.logger.error('omero.ValidationException object: %s' % type(obj))
     obj.ome_obj = result
     return obj
 
@@ -197,7 +198,7 @@ class ProxyCore(object):
       #                             obj.OME_TABLE, result.id._val)
     except omero.ValidationException, e:
       msg = 'omero.ValidationException: %s' % e.message
-      logger.error('omero.ValidationException: %s' % e.message)
+      self.logger.error('omero.ValidationException: %s' % e.message)
       raise kb.KBError(msg)
     if len(result) != len(array):
       raise kb.KBError('bad return array len')
@@ -422,14 +423,14 @@ class ProxyCore(object):
     try:
       t = self._get_table(s, table_name)
       idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
-      logger.debug('\tselector %s results in %s' % (selector, idxs))
+      self.logger.debug('\tselector %s results in %s' % (selector, idxs))
       if not len(idxs) == 1:
         raise ValueError('selector %s does not result in a single row selection' % selector)
-      logger.debug('\tselected idx: %s' % idxs)
+      self.logger.debug('\tselected idx: %s' % idxs)
       data = t.readCoordinates(idxs)
-      logger.debug('\tdata read: %s' % data)
+      self.logger.debug('\tdata read: %s' % data)
       self.__update_data_contents(data, row)
-      logger.debug('\tupdated data: %s' % data)
+      self.logger.debug('\tupdated data: %s' % data)
       t.update(data)
     finally:
       self.disconnect()

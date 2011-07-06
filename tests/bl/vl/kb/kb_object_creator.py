@@ -68,6 +68,13 @@ class KBObjectCreator(unittest.TestCase):
     action = self.kb.factory.create(action_klass, conf)
     return conf, action
 
+  def create_action_on_individual(self, individual=None):
+    if not individual:
+      conf, individual = self.create_individual()
+      self.kill_list.append(individual.save())
+    return self.create_action(action_klass=self.kb.ActionOnIndividual,
+                              target=individual)
+
   def create_action_on_vessel(self, vessel=None):
     if not vessel:
       vconf, vessel = self.create_vessel()

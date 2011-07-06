@@ -1,6 +1,7 @@
 
 # This is actually used in the meta class magic
 import omero.model as om
+import bl.vl.utils as vlu
 
 from proxy_core import ProxyCore
 
@@ -18,6 +19,7 @@ import hashlib
 
 from genotyping import GenotypingAdapter
 from modeling   import ModelingAdapter
+from eav        import EAVAdapter
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 
@@ -37,7 +39,12 @@ class Proxy(ProxyCore):
     #-- setup adapters
     self.gadpt = GenotypingAdapter(self)
     self.madpt = ModelingAdapter(self)
+    self.eadpt = EAVAdapter(self)
 
+  def __check_type(self, fname, ftype, val):
+    if not isinstance(val, ftype):
+      msg = 'bad type for %s(%s)' % (fname, val)
+      raise ValueError(msg)
 
   # High level ops
   # ==============
@@ -150,7 +157,7 @@ class Proxy(ProxyCore):
   def create_gdo_repository(self, set_vid, N):
     return self.gadpt.create_gdo_repository(set_vid, N)
 
-  # Utility functions builld as composition of the above
+  # Utility functions built as composition of the above
   # ====================================================
 
   def add_gdo_data_object(self, avid, sample, probs, confs):
@@ -188,3 +195,79 @@ class Proxy(ProxyCore):
     """
     return self.gadpt.get_gdo_iterator(mset.markersSetVID, batch_size)
 
+  # EVA related utility functions
+  # =============================
+
+  def add_ehr_record(self, action, timestamp, archetype, rec):
+    """
+
+    FIXME multi fields rec will be exploded in a group of records all
+    with the same (assuemed to be unique within KB) group id.
+
+    :param action: action that generated this record
+    :type action: ActionOnIndividual
+
+    :param timestamp: when this record was collected, in millisecond
+                      since the Epoch
+    :type timestamp: long
+
+    :param archetype: a legal archetype id, e.g.,
+                      ``openEHR-EHR-EVALUATION.problem-diagnosis.v1``
+    :type archetype:  str
+
+    :param rec: key (at field code) and values for this specific archetype
+                instance, e.g.::
+
+                  {'at0002.1' :
+                  'terminology://apps.who.int/classifications/apps/gE10.htm#E10'
+                  }
+
+    :type rec: dict
+
+    """
+    self.__check_type('action', self.ActionOnIndividual, action)
+    self.__check_type('rec', dict, rec)
+    action.reload()
+    a_id = action.id
+    target = action.target
+    target.reload()
+    i_id = target.id
+    # FIXME NO CHECKS for archetypes consistency
+    g_id = vlu.make_vid()
+    for k in rec:
+      row = {'timestamp' : timestamp,
+             'i_vid' : i_id,
+             'a_vid' : a_id,
+             'valid' : True,
+             'g_vid' : g_id,
+             'archetype' : archetype,
+             'field'     : k,
+             'value'     : rec[k]}
+      self.eadpt.add_eav_record_row(row)
+
+  def get_ehr_records(self, selector):
+    rows = self.eadpt.get_eav_record_rows(selector)
+    if len(rows) == 0:
+      return rows
+    rows.sort(order='g_vid')
+    # FIXME this is getting baroque
+    recs = []
+    g_vid = None
+    x = {}
+    fields = {}
+    for r in rows:
+      if not r[3]:
+        continue
+      if g_vid != r[4]:
+        if g_vid:
+          x['fields'] = fields
+          recs.append(x)
+        g_vid = r[4]
+        x = {'timestamp'  : r[0],
+             'i_id'      : r[1],
+             'a_id'      : r[2],
+             'archetype' : r[5]}
+        fields = {}
+      fields[r[6]] = self.eadpt.decode_field_value(r[7],
+                                                   r[8], r[9], r[10], r[11])
+    return recs

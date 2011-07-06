@@ -1,3 +1,12 @@
+2011-07-06    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/proxy.py (Proxy.add_ehr_record): Added
+	interface to eav.py
+
+	* tests/bl/vl/kb/test_eav.py: Added.
+
+	* bl/vl/kb/drivers/omero/eav.py: Added.
+
 2011-07-06    <simleo@neuron.crs4.it>
 
 	* bl/vl/app/kb_query/markers.py (Markers): fixed dump_mapping.
