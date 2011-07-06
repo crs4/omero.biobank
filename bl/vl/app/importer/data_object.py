@@ -9,10 +9,9 @@ Will read in a tsv file with the following columns::
    TEST01 file:/share/fs/v039303.cel CA_03030.CEL x-vl/affymetrix-cel 39090 E909090
   ....
 
-Record that point to an unknown (data_sample_label) will be noisily
+Records that point to an unknown (data_sample_label) will be noisily
 ignored. The same will happen to records that have the same path of a
 previously seen data_object
-
 """
 from core import Core, BadRecord
 
@@ -191,4 +190,3 @@ def do_register(registration_list):
   registration_list.append(('data_object', help_doc,
                             make_parser_data_object,
                             import_data_object_implementation))
-

@@ -45,14 +45,33 @@ class Markers(Core):
     self.definition_source = self.to_tuple(definition_source)
     self.markers_set = self.to_tuple(markers_set)
 
-  def preload(self, load_aligment=False):
-    if not self.markers_set:
-      raise ValueError('markers-set should be provided')
+  def preload(self, load_alignment=False):
+    if not self.markers_set and self.definition_source:
+      return self.preload_from_source(load_alignment)
+    else:
+      return self.preload_from_marker_set(load_alignment)
 
-    if self.definition_source:
-      pass
+  def preload_from_source(self, load_alignment):
+    self.logger.info('start preloading markers from source')
+    #--
+    source, context, release = self.definition_source
+    selector = ('(source=="%s") & (context=="%s") & (release=="%s")'
+                % self.definition_source)
+    mrk_defs = self.kb.get_snp_marker_definitions(selector=selector)
+    self.logger.info('done preloading related markers')
+    #--
+    if load_alignment:
+      selector = '|'.join(["(marker_vid=='%s')" % k for k in mrk_vids])
+      snp_algns = self.kb.get_snp_alignments(selector=selector)
+    else:
+      snp_algns = False
+    #--
+    mset = None
+    mrks = None
+    return mset, mrks, mrk_defs, snp_algns
 
-    self.logger.info('start preloading related markers')
+  def preload_from_marker_set(self, load_alignment):
+    self.logger.info('start preloading markers from markers set')
     #--
     maker, model, release = self.markers_set
     mset = self.kb.get_snp_markers_set(maker, model, release)
@@ -67,7 +86,7 @@ class Markers(Core):
     assert len(mrk_defs) == len(mrk_vids)
     self.logger.info('done preloading related markers')
     #--
-    if load_aligment:
+    if load_alignment:
       selector = '|'.join(["(marker_vid=='%s')" % k for k in mrk_vids])
       snp_algns = self.kb.get_snp_alignments(selector=selector)
     else:
@@ -140,24 +159,15 @@ class Markers(Core):
     """
     dumps
 
-      markers_set_vid label rs_label marker_indx allele_flip
+      vid mask
     """
-    mset, mrks, mrk_defs, _ = self.preload()
-    vid_to_def = dict([ x for x in it.izip(mrk_defs['vid'],
-                                           it.izip(mrk_defs['rs_label'],
-                                                   mrk_defs['label']))])
-    #--
-    fieldnames = 'markers_set_vid label rs_label marker_indx allele_flip'.split()
+    _, _, mrk_defs, _ = self.preload()
+    fieldnames = 'vid mask'.split()
     tsv = csv.DictWriter(ofile, fieldnames, delimiter='\t')
     tsv.writeheader()
-    for m in mrks:
-      mdef = vid_to_def[m['marker_vid']]
-      r = {'markers_set_vid' : mset.markersSetVID,
-           'label' :    mdef[0],
-           'rs_label' : mdef[1],
-           'marker_indx' : m['marker_indx'],
-           'allele_flip' : 'True' if m['allele_flip'] else 'False',
-           }
+    for vid, mask in it.izip(mrk_defs['vid'], mrk_defs['mask']):      
+      r = {'vid': vid,
+           'mask': mask}
       tsv.writerow(r)
 
   def count_markers(self, ms):
@@ -174,9 +184,8 @@ class Markers(Core):
       tsv.writerow(r)
 
   def dump(self, fields_set, ofile):
-    if not self.markers_set:
+    if not (self.markers_set or self.definition_source):
       return self.dump_markers_sets(ofile)
-
     assert fields_set in self.SUPPORTED_FIELDS_SETS
     if fields_set == 'definition':
       return self.dump_definition(ofile)
@@ -201,16 +210,14 @@ def make_parser_markers(parser):
                       help="""choose all the fields listed in this set""")
 
 def import_markers_implementation(args):
-  #--
   markers = Markers(host=args.host, user=args.user, passwd=args.passwd,
                     keep_tokens=args.keep_tokens,
                     definition_source=args.definition_source,
                     markers_set=args.markers_set)
   markers.dump(args.fields_set, args.ofile)
 
+
 def do_register(registration_list):
   registration_list.append(('markers', help_doc,
                             make_parser_markers,
                             import_markers_implementation))
-
-

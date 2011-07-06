@@ -1,3 +1,11 @@
+2011-07-06    <simleo@neuron.crs4.it>
+
+	* bl/vl/app/kb_query/markers.py (Markers): fixed dump_mapping.
+
+	* bl/vl/app/importer/marker_definition.py
+	(Recorder.save_snp_marker_definitions.ns): fixed a bug where
+	context was also saved as 'release'.
+
 2011-06-04    <zag@manzanillo>
 
 	* bl/vl/kb/drivers/omero/utils.py: created.

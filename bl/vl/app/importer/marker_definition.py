@@ -86,7 +86,7 @@ class Recorder(Core):
       for x in stream:
         x['source'] = source
         x['context'] = context
-        x['release'] = context
+        x['release'] = release
         if (len(known_markers) > 0
             and not (x['rs_label'] != known_markers).all()):
           self.logger.warn('marker with rs_label %s is in kb, skipping it.' %
