@@ -1,3 +1,13 @@
+* there is an inconsistence in how we label the individual id in the
+  eav ehr table (i_vid) and in the output of get_ehr_records (i_id).
+  The root of all this naming problems is our using obj.id to get
+  obj.ome_obj.vid I think that it would be better if we changed obj.id
+  to obj.vid and get over with it.
+
+* eav record should have slots for all basic openEHR classes, e.g.,
+  DV_CODED_TEXT, DV_QUANTITY so that it will be easier to
+  automatically map archetypes to eav records.
+
 * we often do interconmnected sequences of operations, e.g.,
   add_gdo_data_object which should logically be atomic transactions
   but are not handled as such.

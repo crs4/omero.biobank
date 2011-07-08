@@ -1,0 +1,7 @@
+study	individual_label	timestamp	diagnosis
+BSTUDY	I001	1310057541608	exclusion-problem_diagnosis
+BSTUDY	I002	1310057541608	icd10-cm:G35
+BSTUDY	I003	1310057541608	icd10-cm:E10
+BSTUDY	I004	1310057541608	icd10-cm:E10
+BSTUDY	I005	1310057541608	icd10-cm:G35
+BSTUDY	I006	1310057541608	exclusion-problem_diagnosis

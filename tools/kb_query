@@ -42,12 +42,14 @@ logger.addHandler(ch)
 #---------------------------------------------------------------
 import bl.vl.app.kb_query.tabular
 import bl.vl.app.kb_query.markers
+import bl.vl.app.kb_query.ehr
 
 class App(object):
   def __init__(self):
     self.supported_submodules = []
     bl.vl.app.kb_query.tabular.do_register(self.supported_submodules)
     bl.vl.app.kb_query.markers.do_register(self.supported_submodules)
+    bl.vl.app.kb_query.ehr.do_register(self.supported_submodules)
 
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic kb_query app")

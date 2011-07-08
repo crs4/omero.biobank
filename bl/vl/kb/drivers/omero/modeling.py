@@ -78,7 +78,9 @@ class ModelingAdapter(object):
 
   def get_enrolled(self, study):
     query = """select e
-               from Enrollment e join fetch e.study as s
+               from Enrollment e
+               join fetch e.study as s
+               join fetch e.individual as i
                where s.label = :slabel
                """
     pars = self.kb.ome_query_params({'slabel' :
