@@ -1,3 +1,9 @@
+* actually, this whole thing of using internally vid to reference
+  objects is kind of silly. We may as well use their omero_id when we
+  known what they are. For instance, i_vid and a_vid in eav ehr table
+  could be replaced directly with the Individual omero_id and the
+  Action omero_id.
+
 * there is an inconsistence in how we label the individual id in the
   eav ehr table (i_vid) and in the output of get_ehr_records (i_id).
   The root of all this naming problems is our using obj.id to get

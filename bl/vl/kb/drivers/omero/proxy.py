@@ -20,6 +20,7 @@ import hashlib
 from genotyping import GenotypingAdapter
 from modeling   import ModelingAdapter
 from eav        import EAVAdapter
+from ehr        import EHR
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 
@@ -245,7 +246,7 @@ class Proxy(ProxyCore):
              'value'     : rec[k]}
       self.eadpt.add_eav_record_row(row)
 
-  def get_ehr_records(self, selector):
+  def get_ehr_records(self, selector=None):
     rows = self.eadpt.get_eav_record_rows(selector)
     if len(rows) == 0:
       return rows
@@ -271,3 +272,14 @@ class Proxy(ProxyCore):
       fields[r[6]] = self.eadpt.decode_field_value(r[7],
                                                    r[8], r[9], r[10], r[11])
     return recs
+
+  def get_ehr_iterator(self, selector=None):
+    "Get an iterator on all the ehr selected by selector."
+    # FIXME this is a quick and dirty implementation.
+    recs = self.get_ehr_records(selector)
+    by_individual = {}
+    for r in recs:
+      by_individual.setdefault(r['i_id'], []).append(r)
+    for k,v in by_individual.iteritems():
+      yield (k, EHR(v))
+
