@@ -14,6 +14,7 @@ class Gender(wp.OmeroWrapper):
   OME_TABLE = 'Gender'
   __enums__ = ['MALE', 'FEMALE']
 
+
 class Individual(wp.OmeroWrapper):
   OME_TABLE = 'Individual'
   __fields__ = [('vid',   wp.VID, wp.REQUIRED),

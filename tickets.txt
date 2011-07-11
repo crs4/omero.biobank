@@ -25,7 +25,8 @@
 
 * gender handling is still a mess. We should add something magic to
   the enums so that, e.g., individual.gender.label returns MALE
-  FEMALE. Currently we are using ad hoc solutions.
+  FEMALE. Currently we are using ad hoc solutions. For the same token,
+  it should be possible to say i.gender == kb.Gender.MALE
 
 * importer is not handling error/warning messages uniformly.
 

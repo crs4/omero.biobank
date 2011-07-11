@@ -91,6 +91,14 @@ class CoreOmeroWrapper(object):
     super(CoreOmeroWrapper, self).__setattr__('ome_obj', ome_obj)
     super(CoreOmeroWrapper, self).__setattr__('proxy', proxy)
 
+
+  def __eq__(self, obj):
+    if type(obj) != self.__class__:
+      return False
+    return ( type(obj.ome_obj) == type(self.ome_obj)
+             and
+             obj.omero_id == self.omero_id)
+
   def __config__(self, ome_obj, conf):
     pass
 

@@ -76,9 +76,9 @@ class Tabular(Core):
 
   # FIXME this is an hack...
   def gender_str(self, g):
-    if g.omero_id == self.kb.Gender.MALE.omero_id:
+    if g == self.kb.Gender.MALE:
       return 'MALE'
-    elif g.omero_id == self.kb.Gender.FEMALE.omero_id:
+    elif g == self.kb.Gender.FEMALE:
       return 'FEMALE'
     else:
       assert 0
