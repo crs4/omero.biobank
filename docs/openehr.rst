@@ -53,7 +53,7 @@ A possible strategy is to have an EAV row that will have the following columns::
                                          magnitude(double) [e.g., 120.0]
                                          precision(float) [e.g., 0.2]
 
-units is expressed using the units syntax described in 6.2.8.
+units is expressed using the units syntax described in OpenEHR Data Types Information Model v1.0.2, section 6.2.8.
 
 The obvious thing to do would be to use stuctured 'columns'
 
@@ -75,7 +75,7 @@ DV_QUANTITY
 ,,,,,,,,,,,
 
 OpenEHR Data Types Information Model v1.0.2
-6.2.7 DV_QUANTITY Class
+6.2.7 DV_QUANTITY Class::
 
 
   ELEMENT[at0004] occurrences matches {0..1} matches {	-- Systolic
@@ -92,4 +92,3 @@ OpenEHR Data Types Information Model v1.0.2
        >
    }
   }
-

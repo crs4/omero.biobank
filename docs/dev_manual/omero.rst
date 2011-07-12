@@ -1,20 +1,5 @@
-
-The data management and remoting facilities in OMERO are required
-across life sciences research. As an example, OMERO has been
-customised to support large scale, high-resolution Genome Wide
-Association Studies (GWAS) of human autoimmune diseases11 simply by
-adding specialized model types pertaining to genotyping and clinical
-health records, thus allowing the use of OMERO's metadata management
-and remoting facilities for a completely different application
-(Fig. 5A). The GWAS version of OMERO is designed to manage, organized
-in an individual centric manner, all the available information - e.g.,
-clinical ER, available genotyping datasets - and to build on-demand
-derived information, such as input datafiles for the analysis
-programs, e.g., ped format files. To guarantee reproducibility and
-chain of custody, new objects are saved together with the actions that
-produced them and the context on which the latter operated.
-
---------------------------- NEW TEXT BELOW ---------------------------
+How do we use Omero
+===================
 
 The GWAS version of OMERO uses extensively OmeroTable to handle
 genotyping related information, with tables used to handle: snp
@@ -50,9 +35,6 @@ and re-sequencing applications [2 2011 refs] usable by institutions
 that do not yet use Omero.  It should be pointed out that for
 massive... glue to below...
 
-
---------------------END OF NEW TEXT-------------------------------
-
 This problem is not only limited to analysis with large datasets, but
 also appears in compute-intensive problems.  As an example, an
 important component of the computational support for GWAS studies is
@@ -87,10 +69,3 @@ directly reading metadata from the raw data files (so-called, ped
 files, 20 GB each) takes many hours.  This is important when these
 calculations are run on shared computational resources or on fee-based
 resources in the cloud.
-
-
-
-How do we use Omero
-===================
-
-

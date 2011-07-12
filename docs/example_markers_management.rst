@@ -1,5 +1,5 @@
 
-Example: snp marker management
+Example: SNP marker management
 ==============================
 
 This document describes how it is possible to use the
@@ -17,11 +17,10 @@ The following is a list of the typical steps.
     GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT
 
    with the mask subdivided in two flanking regions and the possible
-   alleles values at the SNP position.  We will follow the convention
+   allele values at the SNP position.  We will follow the convention
    that the first allele in the pair is allele A and the second allele
    B.  This should be true everywhere, so it should be handled in the
    genotype data loading phase in case of inconsistent conventions.
-
 
 #. All SNP definitions are saved in a central table with the following
    columns::
@@ -31,10 +30,9 @@ The following is a list of the typical steps.
     V00909032  affymetrix gene6.0 SNP_A-1780419 rs6576700 GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT V233903
     ...
    
-    where the ``op_vid`` column stores the vid of the last operation that touched this row.
+   where the ``op_vid`` column stores the vid of the last operation that touched this row.
 
-
-#. To be useful, SNP need to be aligned to a reference genome. This
+#. To be useful, SNPs need to be aligned to a reference genome. This
    information is saved in another table with the following columns::
 
     marker_vid ref_genome chromosome pos    global_pos  strand allele copies op_vid
@@ -47,21 +45,22 @@ The following is a list of the typical steps.
    reference, while pos is the position of the SNP and allele is the
    matched allele at that position. Note that we are using the A/B
    convention, so the actual base seen at that position needs to be
-   inferred by the snp mask in the definition table. The rationale is
+   inferred by the SNP mask in the definition table. The rationale is
    that all the information is relative to a line in the alignment
    table. If there are multiple hits, there will be multiple rows, but
-   each row will have the copies column set to the number of hits.  No
-   allignement will be marked by assigning 0 to the copies column.
+   each row will have the copies column set to the number of hits.
+   SNPs that failed to align unambiguously will have a row with the
+   chromosome, position and number of copies set to 0.
    The align_vid column keeps track of the operation that generated
    the aligment.  It is unclear if we want to mantain more labeling
    information...  The global_pos column provides a sortable
-   coordinate for the snp position it is currently defined as::
+   coordinate for the SNP position. It is currently defined as::
    
      global_pos = chromosome * 10**10 + pos
 
-   where chromosome should be one of range(1,23) and 23 (X) and 24 (Y). 
+   where chromosome should be one of range(1, 23) and 23 (X) and 24 (Y). 
 
-4. Markers are usually collected in set corresponding, for instance,
+4. Markers are usually collected in sets corresponding, for instance,
    to the markers used by a specific genotyping technology.
 
    vid      maker       model  marker_vid  marker_indx allele_flip op_vid
@@ -86,9 +85,9 @@ Operations that need to be supported
 Upload a new set of markers
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-.. code-block:: Python
+.. code-block:: python
 
-   import bl.vl.genotype.kb as kb
+   import bl.vl.kb as kb
    import csv
 
    fname = 'new_markers.tsv'
@@ -99,12 +98,12 @@ Upload a new set of markers
    kb.close()
 
    
-Align markers to a new reference genoma
+Align markers to a new reference genome
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-.. code-block:: Python
+.. code-block:: python
 
-   import bl.lib.genotype.kb as kb
+   import bl.lib.kb as kb
 
    kb.open(HOST, USERNAME, PASSWD)
    mrks = kb.open_marker_definition_stream(source='affymetrix', context='GW6.0')
@@ -124,9 +123,9 @@ Align markers to a new reference genoma
 Order a set of markers by their coordinates
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-.. code-block:: Python
+.. code-block:: python
 
-   import bl.lib.genotype.kb as kb
+   import bl.lib.kb as kb
 
    kb.open(HOST, USERNAME, PASSWD)
 
@@ -134,28 +133,17 @@ Order a set of markers by their coordinates
    mrks_aligns  = kb.get_snp_positions(mrks_ids, ref_genome='hg19', copies=1)
    # one way
    mrks_alings.sort(order=['chromosome', 'position'])
-   # a possibly faster wat
+   # a possibly faster way
    mrks_alings.sort(order=['global_pos'])
 
 
- 
 Actual implementation
 ---------------------
 
-In the directory examples it is possible to find a working
+In the ``examples`` directory you can find a working
 implementation of what was described above:
 
 FIXME: make the definition titles actual links.
-
-``create_snp_tables.py``
-
-     a script that will create all the needed support
-     infrastructure. It will remove anything defined before.
-
-
-``load_markers.py``
-
-     a script that will load the definition of a set of SNP markers.
 
 ``load_genotypes.py``
 
@@ -165,11 +153,3 @@ FIXME: make the definition titles actual links.
 
      a script that will show how to do basic computations on the
      previously loaded genotypes.
-   
-
-
-   
-
-
-
- 
