@@ -11,6 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   import
    example_algo
    example_markers_management
    howto_definining_a_markers_set
