@@ -11,11 +11,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   import
-   example_algo
-   example_markers_management
-   howto_definining_a_markers_set
-   openehr
+   introduction
+   managed_data/index
+   usage_examples/index
    dev_manual/index
 
 Indices and tables

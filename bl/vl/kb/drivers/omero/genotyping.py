@@ -12,6 +12,7 @@ class GenotypingAdapter(object):
   SNP_ALIGNMENT_TABLE  = 'snp_alignment.h5'
   SNP_SET_DEF_TABLE    = 'snp_set_def.h5'
   SNP_SET_TABLE        = 'snp_set.h5'
+  SNP_MASK_SIZE        = 251
 
   SNP_MARKER_DEFINITIONS_COLS = \
   [('string', 'vid',    'This marker VID', len(vlu.make_vid()), None),
@@ -20,7 +21,9 @@ class GenotypingAdapter(object):
    ('string', 'release', 'Release within the context.', 16, None),
    ('string', 'label', 'Label of marker in the definition context.', 16, None),
    ('string', 'rs_label', 'dbSNP_id if available', 16, None),
-   ('string', 'mask', 'SNP definition mask in the format <FLANK>[A/B]<FLANK>', 69, None),
+   ('string', 'mask',
+    """SNP definition mask in the format <FLANK>[A/B]<FLANK>. It expected to be
+    on the Illumina convention TOP strand.""", 69, None),
    ('string', 'op_vid', 'Last operation that modified this row',
     len(vlu.make_vid()), None)]
 

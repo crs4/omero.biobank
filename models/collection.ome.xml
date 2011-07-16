@@ -20,9 +20,22 @@ Models for Object Collections
     </properties>
   </type>
 
+<!-- This will be enabled in 0.4
+  <enum id="ome.model.vl.ContainerStatus">
+    <entry name="INSTOCK"/>
+    <entry name="UNUSABLE"/>
+    <entry name="UNKNOWN"/>
+    <entry name="INPREPARATION"/>
+    <entry name="READY"/>
+    <entry name="DISCARDED"/>
+  </enum>
+-->
+
   <type id="ome.model.vl.Container" superclass="ome.model.vl.VLCollection">
     <properties>
       <optional name="barcode" type="string" unique="true"/>
+      <!-- will be enabled in 0.4 -->
+      <!-- required name="status" type="ome.model.vl.ContainerStatus"/ -->
     </properties>
   </type>
 

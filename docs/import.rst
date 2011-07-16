@@ -1,5 +1,5 @@
-How to import data
-==================
+How to import data into VL
+==========================
 
 See ``tests/tools/importer`` for examples of input data files.
 
@@ -77,6 +77,9 @@ Import digital data
 
 Import marker definitions
 -------------------------
+
+FIXME the importer will convert the input marker definition sequences
+Illumina convention TOP strand FIXME ref. illumina techrep.
 
 .. code-block:: bash
 

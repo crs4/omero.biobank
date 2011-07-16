@@ -65,7 +65,6 @@ Step 1: create a tsv file
 
 Create a tsv file, that we will call `ms_def.tsv`,  with the following columns::
 
-
    rs_label	marker_indx	allele_flip
    rs12265218	0	False
    rs11981089	1	False

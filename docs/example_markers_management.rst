@@ -19,8 +19,9 @@ The following is a list of the typical steps.
    with the mask subdivided in two flanking regions and the possible
    allele values at the SNP position.  We will follow the convention
    that the first allele in the pair is allele A and the second allele
-   B.  This should be true everywhere, so it should be handled in the
-   genotype data loading phase in case of inconsistent conventions.
+   B.  This convention will be true for all markers. Genoytping
+   technology related swaps between allele definitions will be handled
+   in the appropriate MarkersSet definitions, see below.
 
 #. All SNP definitions are saved in a central table with the following
    columns::
@@ -58,15 +59,16 @@ The following is a list of the typical steps.
    
      global_pos = chromosome * 10**10 + pos
 
-   where chromosome should be one of range(1, 23) and 23 (X) and 24 (Y). 
+   where chromosome should be one of range(1, 23) and 23 (X), 24 (Y)
+   and 25(MT).
 
 4. Markers are usually collected in sets corresponding, for instance,
-   to the markers used by a specific genotyping technology.
+   to the markers used by a specific genotyping technology::
 
-   vid      maker       model  marker_vid  marker_indx allele_flip op_vid
-   V030303  affymetrix  GW6.0  V902439090  0           T           V8398989
-   V030303  affymetrix  GW6.0  V902439093  1           F           V8398989
-   ...
+    vid      maker       model  marker_vid  marker_indx allele_flip op_vid
+    V030303  affymetrix  GW6.0  V902439090  0           T           V8398989
+    V030303  affymetrix  GW6.0  V902439093  1           F           V8398989
+    ...
 
    Where marker_indx is the relative ordered position of the marker
    within the marker set, and allele_flip records if the specific
@@ -74,12 +76,17 @@ The following is a list of the typical steps.
    naming with respect to the marker definition table.
 
 
-Operations that need to be supported
-------------------------------------
+Supported operations
+--------------------
+
+FIXME: this section should actually go in the Developer's Manual. All
+bulk markers import operations are currently supported by the importer
+tool.
 
  1. Upload a new set of markers.
  2. Align markers to a new reference genome.
  3. Order a set of markers by their coordinates.
+
 
 
 Upload a new set of markers
@@ -131,7 +138,7 @@ Order a set of markers by their coordinates
 
    mrks_ids = kb.get_snp_set(maker='affymetrix', model='GW6.0')
    mrks_aligns  = kb.get_snp_positions(mrks_ids, ref_genome='hg19', copies=1)
-   # one way
+   # canonical sorting
    mrks_alings.sort(order=['chromosome', 'position'])
    # a possibly faster way
    mrks_alings.sort(order=['global_pos'])

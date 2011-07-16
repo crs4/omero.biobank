@@ -4,15 +4,37 @@ Import Marker Definitions
 
 Will read in a tsv file with the following columns::
 
-  label         rs_label   mask
-  SNP_A-1780419 rs6576700  AAAAA.._..CCCC
+  label         rs_label   mask                   strand allele_a allele_b
+  SNP_A-1780419 rs6576700  <lflank>[A/B]<rflank>  TOP    A        B
   ...
 
-importer -i markers.tsv marker_definition --source='Affymetrix' --context='GenomeWide-6.0' --release='na28'
+Where label is supposed to be the unique label for this marker in the
+(source, context, release) context, rs_label is the dbSNP db label for
+this snp (it could be the string ``None`` if it not defined/not
+known). The column mask contains the SNP definition. The strand column
+could either be the actual 'illumina style' strand used to define the
+alleles in the alleles columns, or the string 'None' which means that
+the alleles in the allele column are defined against the mask in the
+mask column.
+
+It will, for each row, convert mask to the TOP strand following
+Illumina conventions and then save a record for it in VL.
+
+The saved tuple is (source, context, release, label, rs_label,
+TOP_mask)
+
+The only available collision control is on the rs_label.
+
+Example usage::
+
+  bash$ importer -i markers.tsv marker_definition \
+                 --source='Affymetrix' --context='GenomeWide-6.0' \
+                 --release='na28'
 
 """
 
 from bl.vl.kb import KBError
+from bl.vl.utils.snp import convert_to_top
 from core import Core, BadRecord
 from version import version
 
@@ -84,16 +106,17 @@ class Recorder(Core):
     cnt = [0]
     def ns(stream, cnt):
       for x in stream:
-        x['source'] = source
-        x['context'] = context
-        x['release'] = release
         if (len(known_markers) > 0
             and not (x['rs_label'] != known_markers).all()):
           self.logger.warn('marker with rs_label %s is in kb, skipping it.' %
                            x['rs_label'])
           continue
+        #--
+        y = {'source': source, 'context' : context, 'release' : release,
+             'label' : x['label'], 'rs_label' : x['rs_label']}
+        y['mask'] = convert_to_top(x['mask'])
         cnt[0] += 1
-        yield x
+        yield y
     tsv = csv.DictReader(ifile, delimiter='\t')
     self.logger.info('start loading markers defs from %s' % ifile.name)
     self.kb.add_snp_marker_definitions(ns(tsv, cnt), op_vid=self.action.id)

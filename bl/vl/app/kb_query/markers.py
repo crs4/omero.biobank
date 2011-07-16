@@ -11,7 +11,6 @@ Extract in tabular form data from KB
 from bl.vl.app.importer.core import Core
 from version import version
 
-from bl.vl.kb.dependency import DependencyTree
 
 import csv, json
 import time, sys
@@ -165,7 +164,7 @@ class Markers(Core):
     fieldnames = 'vid mask'.split()
     tsv = csv.DictWriter(ofile, fieldnames, delimiter='\t')
     tsv.writeheader()
-    for vid, mask in it.izip(mrk_defs['vid'], mrk_defs['mask']):      
+    for vid, mask in it.izip(mrk_defs['vid'], mrk_defs['mask']):
       r = {'vid': vid,
            'mask': mask}
       tsv.writerow(r)
