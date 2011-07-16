@@ -2,6 +2,7 @@ import time
 
 import omero.rtypes as ort
 from bl.vl.sample.kb.drivers.omero.proxy_indexed import ProxyIndexed
+from bl.vl.sample.kb.drivers.omero.proxy_core import ProxyCore
 from bl.vl.sample.kb.drivers.omero.sample     import BloodSample
 from bl.vl.sample.kb.drivers.omero.sample     import DNASample
 
@@ -10,7 +11,7 @@ from enrollment import Enrollment
 from action     import ActionOnIndividual
 
 
-class Proxy(ProxyIndexed):
+class Proxy(ProxyCore):
   """
   A knowledge base implemented as a driver for OMERO.
 

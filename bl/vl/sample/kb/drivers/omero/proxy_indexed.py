@@ -23,7 +23,6 @@ save(obj):
       else:
          write record O_VID, O_ID, O_TABLE_NAME, O_KLASS, O_MODULE, O_VID
 
-FIXME: Current implementation does not handle object deletion.
 """
 
 from proxy_core import ProxyCore

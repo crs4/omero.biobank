@@ -3,6 +3,7 @@ import time
 import bl.vl.sample.kb as kb
 
 from proxy_indexed import ProxyIndexed
+from proxy_core import ProxyCore
 
 from study  import Study
 from device import Device
@@ -25,7 +26,8 @@ import logging
 
 logger = logging.getLogger()
 
-class Proxy(ProxyIndexed):
+#class Proxy(ProxyIndexed):
+class Proxy(ProxyCore):
   """
   A knowledge base for the Sample package implemented as a driver for
   OMERO.

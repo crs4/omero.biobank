@@ -19,10 +19,10 @@ instantiated by looking at the device_{maker,model,release} columns.
 Currently supported triples and corresponding vl object::
 
   maker      model            release    object         opt_columns
-  Affymetrix GenomeWideSNP_6  1.0        AffymetrixCel  contrast_qc
+  Affymetrix GenomeWideSNP_6  1.0        AffymetrixCel  contrastQC
 
 
-  study   label       contrast_qc   sample_label        device_maker  device_model    device_release  device_name
+  study   label       contrastQC   sample_label        device_maker  device_model    device_release  device_name
   TEST01  a520532.CEL 2.73  SMP4_0005515:[0,1]  Affymetrix    GenomeWideSNP_6 1.0             Affymetrix-inc-X
 
 """
@@ -193,8 +193,8 @@ class Recorder(Core):
                                              data_type=self.dtype_map['GTRAW']) # FIXME this is stupid
         data_sample.action  = action
         data_sample.outcome = self.outcome_map['OK']
-        if r.has_key('contrast_qc'):
-          data_sample.contrastQC = r['contrast_qc']
+        if r.has_key('contrastQC'):
+          data_sample.contrastQC = float(r['contrastQC'])
         data_sample = self.skb.save(data_sample)
         self.logger.info('saved data_sample %s[%s]' % (data_sample.__class__.__name__,
                                                        data_sample.label))
