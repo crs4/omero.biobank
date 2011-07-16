@@ -1,3 +1,10 @@
+2011-07-16    <simleo@neuron.crs4.it>
+
+	* tools/check_rs.py: added an option for specifying a custom cut
+	size; fixed auto-calculation of the cut size (we want min flank
+	size from the annotation, not max); added checks for over-short
+	flanks.
+
 2011-07-06    <zag@manzanillo>
 
 	* bl/vl/kb/drivers/omero/proxy.py (Proxy.add_ehr_record): Added

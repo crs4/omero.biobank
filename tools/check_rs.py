@@ -3,12 +3,28 @@ Check the rs annotation of a SNP versus NCBI dbSNP.
 
 dbSNP data is read from fasta dumps downloaded from:
 ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606/rs_fasta
+
+NOTE: this tool does not deal with the trailing 'comment':
+
+# ================ 
+# File created at: 
+# `date` 
+# ================
+
+found in original files downloaded from NCBI. Such 'comments' are not
+legal in FASTA files. This means that, with no pre-processing, those
+lines are included in the last sequence (however, they might not end
+up in the index because of the truncation).
 """
 
 import sys, csv, re, logging, optparse
 logging.basicConfig(level=logging.DEBUG)
 from bl.core.seq.io.fasta import RawFastaReader
 from bl.core.seq.utils import reverse_complement
+
+
+class FlankTooShortError(Exception):
+  pass
 
 
 class SnpAnnReader(csv.DictReader):
@@ -29,7 +45,7 @@ class SnpAnnReader(csv.DictReader):
     r = csv.DictReader.next(self)
     label = r['label']
     rs_label = None if r['rs_label'] == 'None' else r['rs_label']
-    m = re.match('^([ACGT]+)\[([ACGT])/([ACGT])\]([ACGT]+)$', r['mask'],
+    m = re.match(r'^([A-Z]+)\[([^/]+)/([^\]]+)\]([A-Z]+)$', r['mask'],
                  flags=re.IGNORECASE)
     if m:
       lflank, alleles, rflank = (m.group(1), (m.group(2), m.group(3)),
@@ -70,27 +86,23 @@ class DbSnpReader(RawFastaReader):
 
 
 def mask_to_key(left_flank, right_flank, N):
+  if len(left_flank) < N or len(right_flank) < N:
+    raise FlankTooShortError
   seq = left_flank[-N:] + right_flank[:N]
   return min(seq, reverse_complement(seq))
 
 
-def build_ann_table(snp_ann_reader):
-  table = []
-  max_flank_len = 0
-  for label, rs_label, lflank, rflank, alleles in snp_ann_reader:
-    table.append((label, rs_label, lflank, rflank))
-    M = max(len(lflank), len(rflank))
-    if M > max_flank_len:
-      max_flank_len = M
-  return max_flank_len, table
-
-
-def update_index(db_snp_reader, N, index=None):
+def update_index(db_snp_reader, N, index=None, logger=None):
   if index is None:
     index = {}
   for rs_label, lflank, rflank in db_snp_reader:
-    key = mask_to_key(lflank, rflank, N)
-    index.setdefault(key, []).append(rs_label)
+    try:
+      key = mask_to_key(lflank, rflank, N)
+    except FlankTooShortError:
+      if logger:
+        logger.warn("%r: flank(s) too short, NOT adding to index" % rs_label)
+    else:
+      index.setdefault(key, []).append(rs_label)
   return index
 
 
@@ -104,21 +116,26 @@ def make_parser():
     usage="%prog [OPTIONS] ANN_FILE DB_FILE [DB_FILE]...",
     formatter=HelpFormatter(),
     )
+  parser.add_option("-N", "--flank-cut-size", type="int", metavar="INT",
+                    help="cut flanks at this size for mapping purposes")
   parser.add_option("-o", "--output-file", metavar="FILE", help="output file")
   parser.add_option("--log-level", metavar="LOG_LEVEL", help="log level")
   return parser
 
 
-def check_rs(ann_table, index, N, outf=sys.stdout):
+def check_rs(ann_table, index, N, outf=sys.stdout, logger=None):
   outf.write("label\trs_label\ttrue_rs_labels\tcheck\n")
   for label, rs_label, lflank, rflank in ann_table:
-    k = mask_to_key(lflank, rflank, N)
     try:
-      true_rs_labels = index[k]
-    except KeyError:
-      true_rs_labels = [None]
-    outf.write("%s\t%s\t%r\t%r\n" % (
-      label, rs_label, true_rs_labels, rs_label in true_rs_labels
+      k = mask_to_key(lflank, rflank, N)
+    except FlankTooShortError:
+      if logger:
+        logger.warn("%r: flank(s) too short, forcing a no-match" % label)
+        true_rs_labels = ["None"]
+    else:
+      true_rs_labels = index.get(k, ["None"])
+    outf.write("%s\t%s\t%s\t%r\n" % (
+      label, rs_label, ",".join(true_rs_labels), rs_label in true_rs_labels
       ))
 
 
@@ -144,9 +161,12 @@ def main(argv):
   with open(ann_fn) as f:
     reader = SnpAnnReader(f, logger)
     logger.info("processing %r" % ann_fn)
-    N, ann_table = build_ann_table(reader)
-    logger.info("n. records: %d" % len(ann_table))
-    logger.info("max flank len: %d" % N)
+    ann_table = [t[:-1] for t in reader]
+  if not opt.flank_cut_size:
+    opt.flank_cut_size = min(min(len(lflank), len(rflank))
+                             for _, _, lflank, rflank in ann_table)
+  logger.info("n. records: %d" % len(ann_table))
+  logger.info("flank cut size: %d" % opt.flank_cut_size)
 
   index = {}
   logger.info("building index")
@@ -154,11 +174,11 @@ def main(argv):
     logger.info("processing %r" % fn)
     with open(fn) as f:
       db_snp_reader = DbSnpReader(f, logger=logger)
-      update_index(db_snp_reader, N, index=index)
+      update_index(db_snp_reader, opt.flank_cut_size, index, logger)
   logger.info("n. keys in index: %d" % len(index))
 
   logger.info("checking rs labels")
-  check_rs(ann_table, index, N, opt.output_file)
+  check_rs(ann_table, index, opt.flank_cut_size, opt.output_file, logger)
   if opt.output_file is not sys.stdout:
     opt.output_file.close()
 
