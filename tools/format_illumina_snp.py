@@ -41,7 +41,7 @@ def make_parser():
 
 import csv, re
 
-from bl.vl.utils.snp import conjugate, convert_to_top, identify_strand
+from bl.vl.utils.snp import conjugate, convert_to_top, identify_strand, split_mask
 
 def consistency_check(r):
   alleles = r['SNP'][1:-1].split('/')
@@ -69,7 +69,7 @@ def consistency_check(r):
                              or 'C' in alleles)):
       alleles.remove('T')
       allele_A, allele_B = 'T', alleles.pop()
-      crflank = conjugate(rflank)
+
     elif 'T' in alleles:
       assert 'A' in alleles
       allele_A, allele_B = 'T', 'A'
@@ -95,7 +95,6 @@ def process_snp(r):
    label rs_label mask strand allele_a allele_b
 
   """
-  #consistency_check(r)
   alleles = r['SNP'][1:-1].split('/')
   allele_a, allele_b = alleles
   x = {'label': r['IlmnID'],
@@ -116,11 +115,11 @@ def process_stream(istream, ostream, args):
     if r['CNV_Probe'] != '0':
       continue
     y = process_snp(r)
-    try:
+    try: # quick and dirty legality check
       tops = convert_to_top(y['mask'])
-      ctops = conjugate(tops)
+      map(conjugate, split_mask(tops))
     except KeyError, e:
-      logger.error('Cannot process record %s' % y['label'])
+      logger.error('Cannot process record %s %s' % (y['label'], e))
       continue
     ostream.writerow(y)
 

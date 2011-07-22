@@ -23,7 +23,7 @@ Illumina conventions and then save a record for it in VL.
 The saved tuple is (source, context, release, label, rs_label,
 TOP_mask)
 
-The only available collision control is on the rs_label.
+There are no collision controls.
 
 Example usage::
 
@@ -106,14 +106,9 @@ class Recorder(Core):
     cnt = [0]
     def ns(stream, cnt):
       for x in stream:
-        if (len(known_markers) > 0
-            and not (x['rs_label'] != known_markers).all()):
-          self.logger.warn('marker with rs_label %s is in kb, skipping it.' %
-                           x['rs_label'])
-          continue
-        #--
         y = {'source': source, 'context' : context, 'release' : release,
-             'label' : x['label'], 'rs_label' : x['rs_label']}
+             'label' : x['label'],
+             'rs_label' : x['rs_label']}
         y['mask'] = convert_to_top(x['mask'])
         cnt[0] += 1
         yield y

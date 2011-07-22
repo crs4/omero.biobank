@@ -7,4 +7,6 @@ Contents:
    :maxdepth: 2
 
    omero
-   openehr   
+   openehr
+   galaxy
+

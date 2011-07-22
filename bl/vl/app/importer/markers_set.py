@@ -4,10 +4,10 @@ Import Markers Set Definitions
 
 Will read in a tsv file with the following columns::
 
-  rs_label   marker_indx allele_flip
-  rs6576700  0            False
-  rs6576701  1            False
-  rs6576702  2            True
+  marker_vid   marker_indx allele_flip
+  V902909090  0            False
+  V902909091  1            False
+  V902909092  2            True
   ...
 
 importer -i taqman.tsv markers_set --maker='CRS4' --model='TaqMan.ms01' --release='1'
@@ -83,17 +83,17 @@ class Recorder(Core):
     tsv = csv.DictReader(ifile, delimiter='\t')
     #-
     records = [x for x in tsv]
-    rs_labels = [x['rs_label'] for x in records]
+    mvids = [x['marker_vid'] for x in records]
     #-
     self.logger.info('done loading')
     #-
     self.logger.info('start preloading related markers')
-    selector = '|'.join(["(rs_label == '%s')" % k for k in rs_labels])
+    #selector = '|'.join(["(vid == '%s')" % k for k in mvids])
+    selector = None
     markers = self.kb.get_snp_marker_definitions(selector=selector)
     if len(markers) != len(records):
       self.logger.warn('some markers are not listed in kb, rejecting.')
       return
-    rs_to_vid = dict([ x for x in it.izip(markers['rs_label'], markers['vid'])])
     self.logger.info('done preloading related markers')
     #--
     pars = {'maker' : maker, 'model': model, 'release' : release,
@@ -106,7 +106,6 @@ class Recorder(Core):
     self.logger.info('start loading markers in marker set')
     def snp_set_item(records):
       for x in records:
-        x['marker_vid'] = rs_to_vid[x['rs_label']]
         x['allele_flip'] = {'False' : False, 'True' : True}[x['allele_flip']]
         x['marker_indx'] = int(x['marker_indx'])
         yield x

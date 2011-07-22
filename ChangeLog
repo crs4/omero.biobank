@@ -1,3 +1,18 @@
+2011-07-22    <zag@manzanillo>
+
+	* docs/index.rst: Started documentation restructuring. Mostly
+	moving things around.
+
+2011-07-18    <zag@manzanillo>
+
+	* models/collection.ome.xml: Added ContainerStatus as an enum.
+	added it as a required parameter in Container. The idea is to be
+	able to track titerplate preparation phases.
+
+	* bl/vl/app/importer/marker_alignment.py: Back to use marker_vid
+	to identify markers. It is the only solution with a reasonable hope
+	to scale.
+
 2011-07-16    <simleo@neuron.crs4.it>
 
 	* tools/check_rs.py: added an option for specifying a custom cut

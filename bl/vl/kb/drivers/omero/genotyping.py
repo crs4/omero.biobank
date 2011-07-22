@@ -19,11 +19,11 @@ class GenotypingAdapter(object):
    ('string', 'source', 'Origin of this marker definition.', 16, None),
    ('string', 'context', 'Context of definition.', 16, None),
    ('string', 'release', 'Release within the context.', 16, None),
-   ('string', 'label', 'Label of marker in the definition context.', 16, None),
-   ('string', 'rs_label', 'dbSNP_id if available', 16, None),
+   ('string', 'label', 'Label of marker in the definition context.', 48, None),
+   ('string', 'rs_label', 'dbSNP_id if available', 32, None),
    ('string', 'mask',
     """SNP definition mask in the format <FLANK>[A/B]<FLANK>. It expected to be
-    on the Illumina convention TOP strand.""", 69, None),
+    on the Illumina convention TOP strand.""", 133, None),
    ('string', 'op_vid', 'Last operation that modified this row',
     len(vlu.make_vid()), None)]
 
@@ -31,7 +31,8 @@ class GenotypingAdapter(object):
   [('string', 'marker_vid', 'VID of the aligned marker.', len(vlu.make_vid()), None),
    ('string', 'ref_genome', 'Reference alignment genome.', 16, None),
    ('long', 'chromosome',
-    'Chromosome where this alignment was found. 1-22, 23(X) 24(Y)', None),
+    'Chromosome where this alignment was found. 1-22, 23(X) 24(Y) 25(MT)',
+    None),
    ('long', 'pos', "Position on the chromosome. Starting from 5'", None),
    ('long', 'global_pos', "Global position in the genome. (chr*10**10 + pos)", None),
    ('bool', 'strand', 'Aligned on reference strand', None),

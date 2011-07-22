@@ -1,13 +1,6 @@
 
-Example: SNP marker management
-==============================
-
-This document describes how it is possible to use the
-``bl.vl.genotype`` package to support marker management.
-
-
-SNP markers management for dummies
-----------------------------------
+SNP markers management in VL
+============================
 
 The following is a list of the typical steps. 
 
@@ -19,9 +12,10 @@ The following is a list of the typical steps.
    with the mask subdivided in two flanking regions and the possible
    allele values at the SNP position.  We will follow the convention
    that the first allele in the pair is allele A and the second allele
-   B.  This convention will be true for all markers. Genoytping
-   technology related swaps between allele definitions will be handled
-   in the appropriate MarkersSet definitions, see below.
+   B.  The sequence is supposed to be **ALWAYS** in the TOP strand as
+   defined by Illumina conventions. Specific genoytping technology
+   related swaps between allele definitions will be handled in the
+   appropriate MarkersSet definitions, see below.
 
 #. All SNP definitions are saved in a central table with the following
    columns::
@@ -59,7 +53,7 @@ The following is a list of the typical steps.
    
      global_pos = chromosome * 10**10 + pos
 
-   where chromosome should be one of range(1, 23) and 23 (X), 24 (Y)
+   where chromosome should be one of range(1, 25) and 23 (X), 24 (Y)
    and 25(MT).
 
 4. Markers are usually collected in sets corresponding, for instance,

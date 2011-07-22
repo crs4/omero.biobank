@@ -1,6 +1,24 @@
 How to import data into VL
 ==========================
 
+
+General strategy
+----------------
+
+Starting point
+,,,,,,,,,,,,,,
+
+We are expecting that every biosample will, at the end, link to an
+individual. It can be a man, it can be a mouse, but there should be
+one.  Therefore, the first
+
+Loading along a chain
+,,,,,,,,,,,,,,,,,,,,,
+
+
+
+
+
 See ``tests/tools/importer`` for examples of input data files.
 
 FIXME: add descriptions.

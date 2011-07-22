@@ -4,11 +4,20 @@ Import Marker Alignments
 
 Will read in a tsv file with the following columns::
 
-  label ref_genome chromosome pos      strand allele copies
-  rs6576   hg18       10         82938938 True   A      1
-  rs6576   hg18       1          82938999 True   A      2
-  rs6576   hg18       1          82938938 True   B      2
+  marker_vid ref_genome chromosome pos      strand allele copies
+  V0909090   hg18       10         82938938 True   A      1
+  V0909091   hg18       1          82938999 True   A      2
+  V0909092   hg18       1          82938938 True   B      2
   ...
+
+FIXME discuss the fact that pos is with respect to 5' and thus, if the
+marker had been alligned on the other strand, it is the responsability
+of the aligner app to report the actual distance from 5', while, at
+the same time, registering that the snp had actually been aligned on
+the other strand.
+
+Chromosome is an integer field with values in the range(1, 25) with 23
+(X), 24 (Y) and 25(MT).
 
 importer -i aligned_markers.tsv marker_alignment --ref-genome=hg18
 
@@ -78,23 +87,20 @@ class Recorder(Core):
   def save_snp_marker_alignments(self, ref_genome, message, ifile):
     self.logger.info('start preloading known markers defs from kb')
     known_markers = self.kb.get_snp_marker_definitions()
-    if len(known_markers) > 0:
-      known_markers = dict(it.izip(known_markers['label'],
-                                   known_markers['vid']))
     self.logger.info('done preloading known markers defs')
     self.logger.info('preloaded %d known markers defs' % len(known_markers))
     self.logger.info('will not check for rewritten alignment records')
     #--
     cnt = [0]
+    known_markers_vid = set(known_markers['vid'])
     def ns(stream, cnt):
       for x in stream:
-        if not known_markers.has_key(x['label']):
-          msg = 'referencing marker with unkwnon label %s' % x['label']
+        if x['marker_vid'] not in known_markers_vid:
+          msg = 'referencing marker with unkwnown vid %s' % x['marker_vid']
           self.logger.critical(msg)
           raise ValueError(msg)
         if ref_genome:
           x['ref_genome'] = ref_genome
-        x['marker_vid'] = known_markers[x['label']]
         x['chromosome'] = int(x['chromosome'])
         x['pos'] = int(x['pos'])
         x['global_pos'] = 10**10 * x['chromosome'] + x['pos']
@@ -124,7 +130,7 @@ def make_parser_marker_alignment(parser):
   parser.add_argument('--ref-genome', type=str,
                       help="""reference genome used""")
   parser.add_argument('--message', type=str,
-                      help="""reference genome used""",
+                      help="""optional informative message""",
                       default="")
 
 def import_marker_alignment_implementation(args):

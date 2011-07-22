@@ -1,3 +1,20 @@
+* we should add a check for label string truncation in importer
+  marker_definition.
+
+* get_table_rows should allow column selection. It is usually the case
+  that hundreds of megabytes are transfered for nothing. For instance,
+  to get the label -> rs_label association from marker definition we
+  do not need to fetch also the marker mask.
+
+* tools/map_gt_tech is definitely not handling memory in the best
+  possible way. 
+
+* it appears that the parameter selector in the various table methods
+  should be handled with care: with order of 800,000 or-ed conditions
+  it will make omero ice barf. Unclear if it is purely a buffer size
+  problem or what. Current work-around is to use the whole set and do
+  the selection, if needed, client side.
+
 * actually, this whole thing of using internally vid to reference
   objects is kind of silly. We may as well use their omero_id when we
   known what they are. For instance, i_vid and a_vid in eav ehr table

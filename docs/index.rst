@@ -13,7 +13,8 @@ Contents:
 
    introduction
    managed_data/index
-   usage_examples/index
+   usage/index
+   galaxy_ui/index
    dev_manual/index
 
 Indices and tables
