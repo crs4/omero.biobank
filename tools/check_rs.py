@@ -1,5 +1,5 @@
 """
-Check the rs annotation of a SNP versus NCBI dbSNP.
+Check chip manufacturer's marker annotations against NCBI dbSNP.
 
 dbSNP data is read from fasta dumps downloaded from:
 ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606/rs_fasta
@@ -14,7 +14,7 @@ NOTE: this tool does not deal with the trailing 'comment':
 found in original files downloaded from NCBI. Such 'comments' are not
 legal in FASTA files. This means that, with no pre-processing, those
 lines are included in the last sequence (however, they might not end
-up in the index because of the truncation).
+up in the index because of flank truncation).
 """
 
 import sys, csv, re, logging, optparse
@@ -66,15 +66,16 @@ class DbSnpReader(RawFastaReader):
 
   def next(self):
     self.header, self.seq = super(DbSnpReader, self).next()
-    self.rs_id, self.pos = self.__parse_header()
+    self.rs_id, self.pos, alleles = self.__parse_header()
     left_flank, right_flank = self.__parse_seq()
-    return self.rs_id, left_flank, right_flank
+    return self.rs_id, left_flank, alleles, right_flank
 
   def __parse_header(self):
     header = self.header.split("|")
     rs_id = header[2].split(" ", 1)[0]
     pos = int(header[3].rsplit("=", 1)[-1]) - 1
-    return rs_id, pos
+    alleles = header[8].split('"', 2)[1].split("/")
+    return rs_id, pos, alleles
 
   def __parse_seq(self):
     seq = self.seq.replace(" ", "").upper()
@@ -95,7 +96,7 @@ def mask_to_key(left_flank, right_flank, N):
 def update_index(db_snp_reader, N, index=None, logger=None):
   if index is None:
     index = {}
-  for rs_label, lflank, rflank in db_snp_reader:
+  for rs_label, lflank, alleles, rflank in db_snp_reader:
     try:
       key = mask_to_key(lflank, rflank, N)
     except FlankTooShortError:
@@ -104,6 +105,62 @@ def update_index(db_snp_reader, N, index=None, logger=None):
     else:
       index.setdefault(key, []).append(rs_label)
   return index
+
+
+def check_rs(ann_table, index, N, logger=None):
+  check_map = {}
+  for label, rs_label, lflank, rflank in ann_table:
+    try:
+      k = mask_to_key(lflank, rflank, N)
+    except FlankTooShortError:
+      if logger:
+        logger.warn("%r: flank(s) too short, forcing a no-match" % label)
+        true_rs_labels = ["None"]
+    else:
+      true_rs_labels = index.get(k, ["None"])
+    check_map[label] = [rs_label, true_rs_labels, rs_label in true_rs_labels]
+  return check_map
+
+
+def get_rs_to_label(check_map):
+  rs_to_label = {}
+  for label, (_, true_rs_labels, _) in check_map.iteritems():
+    for tl in true_rs_labels:
+      rs_to_label[tl] = label
+  return rs_to_label
+
+
+def get_true_seqs(db_snp_reader, M, rs_to_label):
+  for rs_label, lflank, alleles, rflank in db_snp_reader:
+    try:
+      label = rs_to_label[rs_label]
+    except KeyError:
+      continue
+    else:
+      alleles = "[%s]" % ("/".join(alleles))
+      true_seq = lflank[-M:] + alleles + rflank[:M]
+      yield label, true_seq
+
+
+def update_check_map(db_snp_reader, check_map, M, rs_to_label):
+  for label, true_seq in get_true_seqs(db_snp_reader, M, rs_to_label):
+    try:
+      current_true_seq = check_map[label][3]
+    except IndexError:
+      check_map[label].append(true_seq)
+    else:
+      if len(true_seq) > len(current_true_seq):
+        check_map[label][3] = true_seq
+
+
+def write_check_map(check_map, outf):
+  outf.write("label\trs_label\ttrue_rs_labels\tcheck\ttrue_seq\n")
+  for label, data in check_map.iteritems():
+    if len(data) < 4:
+      data.append("None")
+    data[1] = ",".join(data[1])
+    data[2] = repr(data[2])
+    outf.write("%s\t%s\n" % (label, "\t".join(data)))
 
 
 class HelpFormatter(optparse.IndentedHelpFormatter):
@@ -116,27 +173,15 @@ def make_parser():
     usage="%prog [OPTIONS] ANN_FILE DB_FILE [DB_FILE]...",
     formatter=HelpFormatter(),
     )
+  parser.set_description(__doc__.lstrip())
   parser.add_option("-N", "--flank-cut-size", type="int", metavar="INT",
                     help="cut flanks at this size for mapping purposes")
+  parser.add_option("-M", "--out-flank-cut-size", type="int", metavar="INT",
+                    help="cut output flanks at this size", default=128)
   parser.add_option("-o", "--output-file", metavar="FILE", help="output file")
-  parser.add_option("--log-level", metavar="LOG_LEVEL", help="log level")
+  parser.add_option("--log-level", metavar="LOG_LEVEL", help="log level",
+                    default="WARNING")
   return parser
-
-
-def check_rs(ann_table, index, N, outf=sys.stdout, logger=None):
-  outf.write("label\trs_label\ttrue_rs_labels\tcheck\n")
-  for label, rs_label, lflank, rflank in ann_table:
-    try:
-      k = mask_to_key(lflank, rflank, N)
-    except FlankTooShortError:
-      if logger:
-        logger.warn("%r: flank(s) too short, forcing a no-match" % label)
-        true_rs_labels = ["None"]
-    else:
-      true_rs_labels = index.get(k, ["None"])
-    outf.write("%s\t%s\t%s\t%r\n" % (
-      label, rs_label, ",".join(true_rs_labels), rs_label in true_rs_labels
-      ))
 
 
 def main(argv):
@@ -178,7 +223,25 @@ def main(argv):
   logger.info("n. keys in index: %d" % len(index))
 
   logger.info("checking rs labels")
-  check_rs(ann_table, index, opt.flank_cut_size, opt.output_file, logger)
+  check_map = check_rs(ann_table, index, opt.flank_cut_size, logger)
+  del index
+  logger.info("n. keys in check_map: %d" % len(check_map))
+
+  logger.info("building rs_to_label")
+  rs_to_label = get_rs_to_label(check_map)
+  logger.info("n. keys in rs_to_label: %d" % len(rs_to_label))
+  
+  logger.info("getting true sequences")
+  logger.info("output flank cut size: %d" % opt.out_flank_cut_size)
+  for fn in db_filenames:
+    logger.info("processing %r" % fn)
+    with open(fn) as f:
+      db_snp_reader = DbSnpReader(f, logger=logger)
+      update_check_map(db_snp_reader, check_map, opt.out_flank_cut_size,
+                       rs_to_label)
+  logger.info("writing output to %r" % opt.output_file.name)
+  write_check_map(check_map, opt.output_file)
+  
   if opt.output_file is not sys.stdout:
     opt.output_file.close()
 
