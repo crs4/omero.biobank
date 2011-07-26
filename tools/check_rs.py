@@ -4,6 +4,9 @@ Check chip manufacturer's marker annotations against NCBI dbSNP.
 dbSNP data is read from fasta dumps downloaded from:
 ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606/rs_fasta
 
+WARNING: if run on the whole dbSNP dump, this program requires a LOT
+of memory.
+
 NOTE: this tool does not deal with the trailing 'comment':
 
 # ================ 
@@ -21,10 +24,12 @@ import sys, csv, re, logging, optparse
 logging.basicConfig(level=logging.DEBUG)
 from bl.core.seq.io.fasta import RawFastaReader
 from bl.core.seq.utils import reverse_complement
+from bl.core.utils.null_logger import NullLogger
 
 
-class FlankTooShortError(Exception):
-  pass
+class FlankTooShortError(Exception): pass
+class BadSnpPosError(Exception): pass
+class BadDbSnpHeader(Exception): pass
 
 
 class SnpAnnReader(csv.DictReader):
@@ -39,7 +44,7 @@ class SnpAnnReader(csv.DictReader):
   """
   def __init__(self, f, logger=None):
     csv.DictReader.__init__(self, f, delimiter="\t", quoting=csv.QUOTE_NONE)
-    self.logger = logger
+    self.logger = logger or NullLogger()
 
   def next(self):
     r = csv.DictReader.next(self)
@@ -52,9 +57,8 @@ class SnpAnnReader(csv.DictReader):
                                  m.group(4))
       return label, rs_label, lflank, rflank, alleles
     else:
-      if self.logger:
-        self.logger.error("%r: bad mask format: %r -- skipping"
-                          % (label, r['mask']))
+      self.logger.error("%r: bad mask format: %r -- skipping"
+                        % (label, r['mask']))
       return self.next()
 
 
@@ -62,27 +66,41 @@ class DbSnpReader(RawFastaReader):
 
   def __init__(self, f, offset=0, split_size=None, logger=None):
     super(DbSnpReader, self).__init__(f, offset, split_size)
-    self.logger = logger
+    self.logger = logger or NullLogger()
 
   def next(self):
     self.header, self.seq = super(DbSnpReader, self).next()
-    self.rs_id, self.pos, alleles = self.__parse_header()
-    left_flank, right_flank = self.__parse_seq()
+    try:
+      self.rs_id, self.pos, alleles = self.__parse_header()
+    except BadDbSnpHeader:
+      self.logger.error("bad header %r" % (self.header))
+      return self.next()      
+    try:
+      left_flank, right_flank = self.__parse_seq()
+    except BadSnpPosError:
+      self.logger.error("%r: seq[%d] does not exist -- skipping"
+                        % (self.rs_id, self.pos))
+      return self.next()
     return self.rs_id, left_flank, alleles, right_flank
 
   def __parse_header(self):
-    header = self.header.split("|")
-    rs_id = header[2].split(" ", 1)[0]
-    pos = int(header[3].rsplit("=", 1)[-1]) - 1
-    alleles = header[8].split('"', 2)[1].split("/")
+    try:
+      rs_id = re.search(r'rs\d+', self.header).group()
+      pos = int(re.search(r'pos\s*=\s*(\d+)', self.header).groups()[0]) - 1
+      alleles = re.search(r'alleles\s*=\s*"([^"]+)', self.header).groups()[0]
+    except AttributeError:
+      raise BadDbSnpHeader
     return rs_id, pos, alleles
 
   def __parse_seq(self):
     seq = self.seq.replace(" ", "").upper()
-    if seq[self.pos] in "ACGT":
-      if self.logger:
-        self.logger.warn("%r: seq[%d] has unexpected value %r"
-                         % (self.rs_id, self.pos, seq[self.pos]))
+    try:
+      snp = seq[self.pos]
+    except IndexError:
+      raise BadSnpPosError
+    if snp in "ACGT":
+      self.logger.warn("%r: seq[%d] has unexpected value %r"
+                       % (self.rs_id, self.pos, seq[self.pos]))
     return seq[:self.pos], seq[self.pos+1:]
 
 
@@ -94,28 +112,28 @@ def mask_to_key(left_flank, right_flank, N):
 
 
 def update_index(db_snp_reader, N, index=None, logger=None):
+  logger = logger or NullLogger()
   if index is None:
     index = {}
   for rs_label, lflank, alleles, rflank in db_snp_reader:
     try:
       key = mask_to_key(lflank, rflank, N)
     except FlankTooShortError:
-      if logger:
-        logger.warn("%r: flank(s) too short, NOT adding to index" % rs_label)
+      logger.warn("%r: flank(s) too short, NOT adding to index" % rs_label)
     else:
       index.setdefault(key, []).append(rs_label)
   return index
 
 
 def check_rs(ann_table, index, N, logger=None):
+  logger = logger or NullLogger()
   check_map = {}
   for label, rs_label, lflank, rflank in ann_table:
     try:
       k = mask_to_key(lflank, rflank, N)
     except FlankTooShortError:
-      if logger:
-        logger.warn("%r: flank(s) too short, forcing a no-match" % label)
-        true_rs_labels = ["None"]
+      logger.warn("%r: flank(s) too short, forcing a no-match" % label)
+      true_rs_labels = ["None"]
     else:
       true_rs_labels = index.get(k, ["None"])
     check_map[label] = [rs_label, true_rs_labels, rs_label in true_rs_labels]
@@ -137,8 +155,7 @@ def get_true_seqs(db_snp_reader, M, rs_to_label):
     except KeyError:
       continue
     else:
-      alleles = "[%s]" % ("/".join(alleles))
-      true_seq = lflank[-M:] + alleles + rflank[:M]
+      true_seq = "%s[%s]%s" % (lflank[-M:], alleles, rflank[:M])
       yield label, true_seq
 
 
