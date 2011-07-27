@@ -1,6 +1,8 @@
 2011-07-27    <simleo@neuron.crs4.it>
 
-	* tools/check_rs.py: changed to use a shelf to store dbSNP index.
+	* tools/check_rs.py: changed to use a shelf to store the dbSNP
+	index. Output sequences are now stored together with the rs
+	labels, allowing for a single read of the dbSNP files.
 
 2011-07-26    <simleo@neuron.crs4.it>
 

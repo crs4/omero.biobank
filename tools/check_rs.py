@@ -18,7 +18,11 @@ up in the index because of flank truncation).
 """
 
 import sys, csv, re, logging, optparse, shelve, anydbm
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+  level=logging.DEBUG,
+  format='%(asctime)s|%(levelname)-8s|%(message)s',
+  datefmt='%Y-%m-%d %H:%M:%S',
+  )
 from cPickle import HIGHEST_PROTOCOL as HP
 from contextlib import closing
 
@@ -111,73 +115,40 @@ def mask_to_key(left_flank, right_flank, N):
   return min(seq, reverse_complement(seq))
 
 
-def update_index(db_snp_reader, N, index=None, logger=None):
+def update_index(index, db_snp_reader, N, M, logger=None):
   logger = logger or NullLogger()
-  if index is None:
-    index = {}
   for rs_label, lflank, alleles, rflank in db_snp_reader:
     try:
       key = mask_to_key(lflank, rflank, N)
     except FlankTooShortError:
       logger.warn("%r: flank(s) too short, NOT adding to index" % rs_label)
     else:
-      index.setdefault(key, []).append(rs_label)
+      true_seq = "%s[%s]%s" % (lflank[-M:], alleles, rflank[:M])
+      index.setdefault(key, []).append((rs_label, true_seq))
   return index
 
 
-def check_rs(ann_table, index, N, logger=None):
+def check_rs(ann_table, index, N, outf, logger=None):
+  outf.write("label\trs_label\ttrue_rs_labels\tcheck\ttrue_seq\n")
   logger = logger or NullLogger()
   check_map = {}
   for label, rs_label, lflank, rflank in ann_table:
+    outf.write("%s\t%s\t" % (label, rs_label))
     try:
       k = mask_to_key(lflank, rflank, N)
     except FlankTooShortError:
       logger.warn("%r: flank(s) too short, forcing a no-match" % label)
-      true_rs_labels = ["None"]
+      v = None
     else:
-      true_rs_labels = index.get(k, ["None"])
-    check_map[label] = [rs_label, true_rs_labels, rs_label in true_rs_labels]
-  return check_map
-
-
-def get_rs_to_label(check_map):
-  rs_to_label = {}
-  for label, (_, true_rs_labels, _) in check_map.iteritems():
-    for tl in true_rs_labels:
-      rs_to_label[tl] = label
-  return rs_to_label
-
-
-def get_true_seqs(db_snp_reader, M, rs_to_label):
-  for rs_label, lflank, alleles, rflank in db_snp_reader:
-    try:
-      label = rs_to_label[rs_label]
-    except KeyError:
-      continue
+      v = index.get(k)
+    if v is None:
+      outf.write("None\tFalse\tNone")
     else:
-      true_seq = "%s[%s]%s" % (lflank[-M:], alleles, rflank[:M])
-      yield label, true_seq
-
-
-def update_check_map(db_snp_reader, check_map, M, rs_to_label):
-  for label, true_seq in get_true_seqs(db_snp_reader, M, rs_to_label):
-    try:
-      current_true_seq = check_map[label][3]
-    except IndexError:
-      check_map[label].append(true_seq)
-    else:
-      if len(true_seq) > len(current_true_seq):
-        check_map[label][3] = true_seq
-
-
-def write_check_map(check_map, outf):
-  outf.write("label\trs_label\ttrue_rs_labels\tcheck\ttrue_seq\n")
-  for label, data in check_map.iteritems():
-    if len(data) < 4:
-      data.append("None")
-    data[1] = ",".join(data[1])
-    data[2] = repr(data[2])
-    outf.write("%s\t%s\n" % (label, "\t".join(data)))
+      true_rs_labels, true_seqs = zip(*v)
+      check = rs_label in true_rs_labels
+      longest = max((len(s), s) for s in true_seqs)[1]
+      outf.write("%s\t%r\t%s" % (",".join(true_rs_labels), check, longest))
+    outf.write("\n")
 
 
 class HelpFormatter(optparse.IndentedHelpFormatter):
@@ -229,6 +200,7 @@ def main(argv):
                              for _, _, lflank, rflank in ann_table)
   logger.info("n. records: %d" % len(ann_table))
   logger.info("flank cut size: %d" % opt.flank_cut_size)
+  logger.info("output flank cut size: %d" % opt.out_flank_cut_size)
   
   index_fn = "dbsnp_index_%d_%d" % (opt.flank_cut_size, opt.out_flank_cut_size)
   index = None
@@ -241,7 +213,8 @@ def main(argv):
       logger.info("processing %r" % fn)
       with open(fn) as f:
         db_snp_reader = DbSnpReader(f, logger=logger)
-        update_index(db_snp_reader, opt.flank_cut_size, index, logger)
+        update_index(index, db_snp_reader, opt.flank_cut_size,
+                     opt.out_flank_cut_size, logger=logger)
       logger.info("syncing index")
       index.sync()
   else:
@@ -250,26 +223,9 @@ def main(argv):
     logger.info("n. keys in index: %d" % len(index))
     index.close()
 
-  logger.info("checking rs labels")
-  with closing(shelve.open(index_fn, "r")) as index:
-    check_map = check_rs(ann_table, index, opt.flank_cut_size, logger)
-  del ann_table
-  logger.info("n. keys in check_map: %d" % len(check_map))
-
-  logger.info("building rs_to_label")
-  rs_to_label = get_rs_to_label(check_map)
-  logger.info("n. keys in rs_to_label: %d" % len(rs_to_label))
-  
-  logger.info("getting true sequences")
-  logger.info("output flank cut size: %d" % opt.out_flank_cut_size)
-  for fn in db_filenames:
-    logger.info("processing %r" % fn)
-    with open(fn) as f:
-      db_snp_reader = DbSnpReader(f, logger=logger)
-      update_check_map(db_snp_reader, check_map, opt.out_flank_cut_size,
-                       rs_to_label)
   logger.info("writing output to %r" % opt.output_file.name)
-  write_check_map(check_map, opt.output_file)
+  with closing(shelve.open(index_fn, "r")) as index:
+    check_rs(ann_table, index, opt.flank_cut_size, opt.output_file, logger)
   
   if opt.output_file is not sys.stdout:
     opt.output_file.close()
