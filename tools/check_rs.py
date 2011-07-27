@@ -4,9 +4,6 @@ Check chip manufacturer's marker annotations against NCBI dbSNP.
 dbSNP data is read from fasta dumps downloaded from:
 ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606/rs_fasta
 
-WARNING: if run on the whole dbSNP dump, this program requires a LOT
-of memory.
-
 NOTE: this tool does not deal with the trailing 'comment':
 
 # ================ 
@@ -20,8 +17,11 @@ lines are included in the last sequence (however, they might not end
 up in the index because of flank truncation).
 """
 
-import sys, csv, re, logging, optparse
+import sys, csv, re, logging, optparse, shelve, anydbm
 logging.basicConfig(level=logging.DEBUG)
+from cPickle import HIGHEST_PROTOCOL as HP
+from contextlib import closing
+
 from bl.core.seq.io.fasta import RawFastaReader
 from bl.core.seq.utils import reverse_complement
 from bl.core.utils.null_logger import NullLogger
@@ -229,19 +229,31 @@ def main(argv):
                              for _, _, lflank, rflank in ann_table)
   logger.info("n. records: %d" % len(ann_table))
   logger.info("flank cut size: %d" % opt.flank_cut_size)
-
-  index = {}
-  logger.info("building index")
-  for fn in db_filenames:
-    logger.info("processing %r" % fn)
-    with open(fn) as f:
-      db_snp_reader = DbSnpReader(f, logger=logger)
-      update_index(db_snp_reader, opt.flank_cut_size, index, logger)
-  logger.info("n. keys in index: %d" % len(index))
+  
+  index_fn = "dbsnp_index_%d_%d" % (opt.flank_cut_size, opt.out_flank_cut_size)
+  index = None
+  try:
+    index = shelve.open(index_fn, "r")
+  except anydbm.error:
+    logger.info("building index on %r" % index_fn)
+    index = shelve.open(index_fn, protocol=HP, writeback=True)
+    for fn in db_filenames:
+      logger.info("processing %r" % fn)
+      with open(fn) as f:
+        db_snp_reader = DbSnpReader(f, logger=logger)
+        update_index(db_snp_reader, opt.flank_cut_size, index, logger)
+      logger.info("syncing index")
+      index.sync()
+  else:
+    logger.info("using existing index at %r" % index_fn)
+  finally:
+    logger.info("n. keys in index: %d" % len(index))
+    index.close()
 
   logger.info("checking rs labels")
-  check_map = check_rs(ann_table, index, opt.flank_cut_size, logger)
-  del index
+  with closing(shelve.open(index_fn, "r")) as index:
+    check_map = check_rs(ann_table, index, opt.flank_cut_size, logger)
+  del ann_table
   logger.info("n. keys in check_map: %d" % len(check_map))
 
   logger.info("building rs_to_label")

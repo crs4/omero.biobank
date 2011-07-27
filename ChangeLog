@@ -1,3 +1,7 @@
+2011-07-27    <simleo@neuron.crs4.it>
+
+	* tools/check_rs.py: changed to use a shelf to store dbSNP index.
+
 2011-07-26    <simleo@neuron.crs4.it>
 
 	* tools/check_rs.py (DbSnpReader): header parser made more robust.
