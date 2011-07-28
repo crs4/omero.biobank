@@ -15,6 +15,9 @@ found in original files downloaded from NCBI. Such 'comments' are not
 legal in FASTA files. This means that, with no pre-processing, those
 lines are included in the last sequence (however, they might not end
 up in the index because of flank truncation).
+
+WARNING: when run on the full dbSNP, this program has a peak memory
+usage of about 2 GB.
 """
 
 import sys, csv, re, logging, optparse, shelve, anydbm
@@ -46,6 +49,10 @@ class SnpAnnReader(csv.DictReader):
   putative rs label (None if absent) and mask is the sequence in the
   LEFT_FLANK[ALLELE_A/ALLELE_B]RIGHT_FLANK format.
   """
+  
+  MASK_PATTERN = re.compile(r'^([A-Z]+)\[([^/]+)/([^\]]+)\]([A-Z]+)$',
+                            re.IGNORECASE)
+  
   def __init__(self, f, logger=None):
     csv.DictReader.__init__(self, f, delimiter="\t", quoting=csv.QUOTE_NONE)
     self.logger = logger or NullLogger()
@@ -54,16 +61,14 @@ class SnpAnnReader(csv.DictReader):
     r = csv.DictReader.next(self)
     label = r['label']
     rs_label = None if r['rs_label'] == 'None' else r['rs_label']
-    m = re.match(r'^([A-Z]+)\[([^/]+)/([^\]]+)\]([A-Z]+)$', r['mask'],
-                 flags=re.IGNORECASE)
-    if m:
-      lflank, alleles, rflank = (m.group(1), (m.group(2), m.group(3)),
-                                 m.group(4))
-      return label, rs_label, lflank, rflank, alleles
-    else:
+    m = self.MASK_PATTERN.match(r['mask'])
+    try:
+      lflank, a1, a2, rflank = m.groups()
+    except AttributeError:
       self.logger.error("%r: bad mask format: %r -- skipping"
                         % (label, r['mask']))
       return self.next()
+    return label, rs_label, lflank, rflank, (a1, a2)
 
 
 class DbSnpReader(RawFastaReader):
