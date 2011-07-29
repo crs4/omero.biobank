@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<types>
+
+  <type id="ome.model.vl.Location">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="name" type="string"/>
+      <required name="istatCode" type="string" unique="true"/>
+      <required name="lastUpdate" type="timestamp"/>
+      <optional name="ceaseDate" type="timestamp"/>
+    </properties>
+  </type> 
+
+  <type id="ome.model.vl.State" superclass="ome.model.vl.Location">
+    <properties>
+      <optional name="landRegisterCode" type="string"/>
+    </properties>
+  </type>
+  
+  <type id="ome.model.vl.Region" superclass="ome.model.vl.Location">
+    <properties>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.City"
+	superclass="ome.model.vl.Location">
+    <properties>
+      <optional name="zipCode" type="string"/>
+      <optional name="landRegisterCode" type="string"/>
+      <optional name="uslCode" type="string"/>
+      <optional name="region" type="ome.model.vl.Region"/>
+      <optional name="districtLabel" type="string"/>
+    </properties>
+  </type>
+
+</types>

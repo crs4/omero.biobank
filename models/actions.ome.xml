@@ -23,14 +23,20 @@ Action Definition
     <properties>
       <required name="vid" type="string" unique="true"/>
       <required name="label" type="string" unique="true"/>
-      <optional name="barcode" type="string" unique="true"/>
       <required name="maker" type="string"/>
       <required name="model" type="string"/>
       <required name="release" type="string"/>
-      <optional name="physicalLocation" type="string"/>
     </properties>
   </type>
 
+  <type id="ome.model.vl.HardwareDevice"
+	superclass="ome.model.vl.Device">
+    <properties>
+      <optional name="barcode" type="string" unique="true"/>
+      <optional name="physicalLocation" type="string"/>
+    </properties>
+  </type>
+  
   <type id="ome.model.vl.ActionSetup">
     <properties>
       <required name="vid" type="string" unique="true"/>

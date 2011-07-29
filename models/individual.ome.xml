@@ -7,6 +7,31 @@
     <entry name="FEMALE"/>
   </enum>
 
+  <type id="ome.model.vl.Demographic">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="name" type="string"/>
+      <required name="surname" type="string"/>
+      <required name="birthPlace" type="ome.model.vl.Location"/>
+      <required name="birthDate" type="timestamp"/>
+      <optional name="deathDate" type="timestamp"/>
+      <optional name="livingPlace" type="ome.model.vl.Location"/>
+      <optional name="livingAddress" type="string"/>
+      <required name="gender" type="ome.model.vl.Gender"/>
+      <optional name="nationalIDCode" type="string" unique="true"/>
+      <optional name="phone1" type="string"/>
+      <optional name="phone2" type="string"/>
+      <optional name="email" type="string"/>
+      <required name="individual" type="ome.model.vl.Individual" unique="true"/>
+      <!-- Multi field unique key -->
+      <!-- demogUK = NAME_SURNAME_BIRTHDATE_GENDER-ID_BIRTHPLACE-VID -->
+      <required name="demogUK" type="string" unique="true"/>
+      <!-- action is the first action that produced the object -->
+      <required name="action" type="ome.model.vl.Action"/>
+      <optional name="lastUpdate" type="ome.model.vl.ActionOnAction"/>
+    </properties>
+  </type>
+
   <type id="ome.model.vl.Individual">
     <properties>
       <required name="vid" type="string" unique="true"/>
@@ -33,8 +58,40 @@
       <!-- Multi-field unique keys -->
       <!-- stCodeUK = STUDY-VID_STUDYCODE -->
       <required name="stCodeUK" type="string" unique="true"/>
-      <!-- stIndUK = STUDY-VID_INDIVIDUAL-ID -->
+      <!-- stIndUK = STUDY-VID_INDIVIDUAL-VID -->
       <required name="stIndUK" type="string" unique="true"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.InformedConsent">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="label" type="string" unique="true"/>
+      <optional name="description" type="string"/>
+       <!-- The path of the scan containing the compiled and signed 
+	    Informed Consent -->
+      <optional name="documentPath" type="string" unique="true"/>
+      <optional name="documentHash" type="string" unique="true"/>
+      <!-- OriginalFile that points to the omeroTable with registered 
+	   answers for this consent -->
+      <optional name="answersData" type="ome.model.core.OriginalFile" unique="true"/>
+      <required name="refStudy" type="ome.model.vl.Study"/>
+      <!--Comma separated names of the authors -->
+      <optional name="authors" type="string"/>
+      <!--Approving commission, if more than one name is needed, 
+	  use a comma separated list of names -->
+      <optional name="approvingCommission" type="string"/>
+      <optional name="approvalDate" type="timestamp"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.Agreement">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="refConsent" type="ome.model.vl.InformedConsent"/>
+      <required name="enrollment" type="ome.model.vl.Enrollment"/>
+      <required name="submissionDate" type="timestamp"/>
+      <required name="active" type="boolean"/>
     </properties>
   </type>
 
