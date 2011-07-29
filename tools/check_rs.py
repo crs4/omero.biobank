@@ -16,8 +16,8 @@ legal in FASTA files. This means that, with no pre-processing, those
 lines are included in the last sequence (however, they might not end
 up in the index because of flank truncation).
 
-WARNING: when run on the full dbSNP, this program has a peak memory
-usage of about 2 GB.
+WARNING: indexing the full dbSNP can take several hours, with a peak
+memory usage of about 2 GB.
 """
 
 import sys, csv, re, logging, optparse, shelve, anydbm
@@ -29,14 +29,12 @@ logging.basicConfig(
 from cPickle import HIGHEST_PROTOCOL as HP
 from contextlib import closing
 
-from bl.core.seq.io.fasta import RawFastaReader
+from bl.core.seq.io import DbSnpReader
 from bl.core.seq.utils import reverse_complement
-from bl.core.utils.null_logger import NullLogger
+from bl.core.utils import NullLogger, longest_subs
 
 
 class FlankTooShortError(Exception): pass
-class BadSnpPosError(Exception): pass
-class BadDbSnpHeader(Exception): pass
 
 
 class SnpAnnReader(csv.DictReader):
@@ -71,46 +69,11 @@ class SnpAnnReader(csv.DictReader):
     return label, rs_label, lflank, rflank, (a1, a2)
 
 
-class DbSnpReader(RawFastaReader):
-
-  def __init__(self, f, offset=0, split_size=None, logger=None):
-    super(DbSnpReader, self).__init__(f, offset, split_size)
-    self.logger = logger or NullLogger()
-
-  def next(self):
-    self.header, self.seq = super(DbSnpReader, self).next()
-    try:
-      self.rs_id, self.pos, alleles = self.__parse_header()
-    except BadDbSnpHeader:
-      self.logger.error("bad header %r" % (self.header))
-      return self.next()      
-    try:
-      left_flank, right_flank = self.__parse_seq()
-    except BadSnpPosError:
-      self.logger.error("%r: seq[%d] does not exist -- skipping"
-                        % (self.rs_id, self.pos))
-      return self.next()
-    return self.rs_id, left_flank, alleles, right_flank
-
-  def __parse_header(self):
-    try:
-      rs_id = re.search(r'rs\d+', self.header).group()
-      pos = int(re.search(r'pos\s*=\s*(\d+)', self.header).groups()[0]) - 1
-      alleles = re.search(r'alleles\s*=\s*"([^"]+)', self.header).groups()[0]
-    except AttributeError:
-      raise BadDbSnpHeader
-    return rs_id, pos, alleles
-
-  def __parse_seq(self):
-    seq = self.seq.replace(" ", "").upper()
-    try:
-      snp = seq[self.pos]
-    except IndexError:
-      raise BadSnpPosError
-    if snp in "ACGT":
-      self.logger.warn("%r: seq[%d] has unexpected value %r"
-                       % (self.rs_id, self.pos, seq[self.pos]))
-    return seq[:self.pos], seq[self.pos+1:]
+def get_consensus(masks):
+  lflanks, alleles, rflanks = zip(*masks)
+  if len(set(alleles)) > 1:
+    return None
+  return longest_subs(lflanks, reverse=True), alleles[0], longest_subs(rflanks)
 
 
 def mask_to_key(left_flank, right_flank, N):
@@ -128,7 +91,7 @@ def update_index(index, db_snp_reader, N, M, logger=None):
     except FlankTooShortError:
       logger.warn("%r: flank(s) too short, NOT adding to index" % rs_label)
     else:
-      true_seq = "%s[%s]%s" % (lflank[-M:], alleles, rflank[:M])
+      true_seq = (lflank[-M:], alleles, rflank[:M])
       index.setdefault(key, []).append((rs_label, true_seq))
   return index
 
@@ -151,8 +114,17 @@ def check_rs(ann_table, index, N, outf, logger=None):
     else:
       true_rs_labels, true_seqs = zip(*v)
       check = rs_label in true_rs_labels
-      longest = max((len(s), s) for s in true_seqs)[1]
-      outf.write("%s\t%r\t%s" % (",".join(true_rs_labels), check, longest))
+      if len(true_seqs) == 1:
+        out_seq = true_seqs[0]
+      else:
+        out_seq = get_consensus(true_seqs)
+      if out_seq is None:
+        logger.warn("%r: inconsistent multiple true masks" % label)
+        out_seq = "None"
+      else:
+        out_seq = "%s[%s]%s" % out_seq
+      out_rs_label = rs_label if check else true_rs_labels[0]
+      outf.write("%s\t%s\t%s" % (out_rs_label, check, out_seq))
     outf.write("\n")
 
 
