@@ -53,9 +53,9 @@ def debug_boundary(f):
   return debug_boundary_wrapper
 
 #---------------------------------------------------------------
+import bl.vl.app.importer.study
 import bl.vl.app.importer.individual
-import bl.vl.app.importer.blood_sample
-import bl.vl.app.importer.dna_sample
+import bl.vl.app.importer.biosample
 import bl.vl.app.importer.titer_plate
 import bl.vl.app.importer.plate_well
 import bl.vl.app.importer.device
@@ -72,9 +72,9 @@ import bl.vl.app.importer.diagnosis
 class App(object):
   def __init__(self):
     self.supported_submodules = []
+    bl.vl.app.importer.study.do_register(self.supported_submodules)
     bl.vl.app.importer.individual.do_register(self.supported_submodules)
-    bl.vl.app.importer.blood_sample.do_register(self.supported_submodules)
-    bl.vl.app.importer.dna_sample.do_register(self.supported_submodules)
+    bl.vl.app.importer.biosample.do_register(self.supported_submodules)
     bl.vl.app.importer.titer_plate.do_register(self.supported_submodules)
     bl.vl.app.importer.plate_well.do_register(self.supported_submodules)
     bl.vl.app.importer.device.do_register(self.supported_submodules)
@@ -89,8 +89,11 @@ class App(object):
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic importer")
     parser.add_argument('-i', '--ifile', type=argparse.FileType('r'),
-                        help='the input csv file',
+                        help='the input tsv file',
                         default=sys.stdin)
+    parser.add_argument('-o', '--ofile', type=argparse.FileType('w'),
+                        help='the output mapping tsv file',
+                        default=sys.stdout)
     parser.add_argument('-H', '--host', type=str,
                         help='omero host system',
                         default='localhost')

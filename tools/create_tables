@@ -107,6 +107,9 @@ def main():
   p.create_snp_set_table()
   logger.info('created snp set table')
 
+  #----- EHR TABLE
+  p.create_ehr_tables()
+
 if __name__ == "__main__":
   main()
 
