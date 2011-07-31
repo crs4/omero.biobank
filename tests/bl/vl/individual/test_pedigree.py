@@ -29,6 +29,8 @@ class TestProxyCore(unittest.TestCase):
       def record(self, label, gender, father, mother):
         print 'recording %s[%s]' % (label, gender)
         return True
+      def dump_out(self):
+        print 'dumping out'
 
     def istream(fname):
       f = csv.DictReader(open(fname), delimiter='\t')

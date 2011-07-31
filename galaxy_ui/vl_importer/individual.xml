@@ -1,0 +1,72 @@
+<tool id="vl_import_individual" name="Import_Individual">
+  <description>import individual definitions within omero/vl</description>
+  <command interpreter="python">
+    individual.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=$advanced_configuration.vl_host
+      --user=$advanced_configuration.vl_user
+      --passwd=$advanced_configuration.vl_passwd
+    #else
+      --host=localhost
+      --user=root
+      --passwd=romeo
+    #end if
+    --operator=galaxy
+    --ifile=$input 
+    --ofile=$objects_list
+    --loglevel=WARNING
+    individual
+    --study $study
+  </command>  
+  <!-- command>noop</command -->
+  <inputs>
+    <param format="tabular" name="input" type="data"
+	   label="A tabular dataset with the following columns ..."/>
+    <param name="study" type="select" label="Context study" 
+	   help="Choose from the already defined studies. See below.">    
+      <options from_parameter="tool.app.known_studies" 
+	       transform_lines="[ &quot;%s%s%s:%s&quot; 
+                                  % ( l[0], self.separator, l[0], l[1][:40] ) 
+                                  for l in obj ]">
+        <column name="value" index="0"/>
+        <column name="name" index="1"/>
+        <filter type="sort_by" column="0"/>
+        <filter type="add_value" name="Records provide study labels" 
+                value="use_provided" index="0"/>
+      </options>
+    </param>
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="biobank05.crs4.it" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="galaxy" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+  <outputs>
+    <data format="tabular" name="objects_list"/>
+  </outputs>
+  <help>
+Will import a stream of new individual definitions defined by the
+following columns::
+
+  label gender   father mother
+  id2   male   id4    id5
+  id3   female None   None
+  ....
+
+The individuals will be enrolled in the 
+It is not possible to import the same individual twice: the related
+file rows will be noisily ignored.
+  </help>
+
+</tool>

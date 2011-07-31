@@ -1,6 +1,6 @@
 """
 Import of individuals collections
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+=================================
 
 
 Will read in a csv file with the following columns::
@@ -17,25 +17,10 @@ will be noisily ignored.
 
 """
 
-#-----------------------------------------------------------------------------
-#FIXME this should be factored out....
 
 import itertools as it
-import logging, time
-logger = logging.getLogger()
-counter = 0
-def debug_wrapper(f):
-  def debug_wrapper_wrapper(*args, **kv):
-    global counter
-    now = time.time()
-    counter += 1
-    logger.debug('%s[%d] in' % (f.__name__, counter))
-    res = f(*args, **kv)
-    logger.debug('%s[%d] out (%f)' % (f.__name__, counter, time.time() - now))
-    counter -= 1
-    return res
-  return debug_wrapper_wrapper
-#-----------------------------------------------------------------------------
+import time
+import json
 
 
 class Ind(object):
@@ -65,30 +50,34 @@ import csv
 
 from core import Core
 
+from version import version
 class Recorder(Core):
   """
   An utility class that handles the actual recording into VL
   """
-  def __init__(self, study_label=None, host=None, user=None, passwd=None,
-               keep_tokens=1, batch_size=1000):
-    super(Recorder, self).__init__(host, user, passwd, keep_tokens)
-    self.default_study = None
-    if study_label:
-      self.default_study = self.get_study(study_label)
+  def __init__(self, out_stream=None, study_label=None,
+               host=None, user=None, passwd=None,
+               keep_tokens=1, batch_size=1000,
+               operator='Alfred E. Neumann',
+               action_setup_conf=None,
+               logger=None
+               ):
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
+                                   study_label=study_label, logger=logger)
+    self.operator = operator
+    self.action_setup_conf = action_setup_conf
+    self.out_stream = out_stream
+    if self.out_stream:
+      self.out_stream.writeheader()
 
     self.individuals_to_be_saved = []
     self.enrollments_to_be_saved = []
     self.chunk_size = batch_size
     self.known_studies = {}
-    device = self.get_device('importer-0.0', 'CRS4', 'IMPORT', '0.0')
+    device = self.get_device('importer-%s' % version,
+                             'CRS4', 'IMPORT', version)
     asetup = self.get_action_setup('import-prog-%f' % time.time(),
-                                   # FIXME the json below should
-                                   # record the app version, and the
-                                   # parameters used.  unclear if we
-                                   # need to register the file we load
-                                   # data from, since it is, most
-                                   # likely, a transient object.
-                                   '{"foo2": "foo"}')
+                                   json.dumps(self.action_setup_conf))
     acat  = self.kb.ActionCategory.IMPORT
     operator = 'Alfred E. Neumann'
 
@@ -99,10 +88,10 @@ class Recorder(Core):
                                           'operator' : operator,
                                           'context' : self.default_study,
                                           })
+
     #-- FIXME what happens if we do not have individuals to save?
     self.action.save()
     #
-    self.input_rows = {}
     self.counter = 0
     #--
     self.known_enrollments = {}
@@ -117,7 +106,6 @@ class Recorder(Core):
                           self.default_study.label))
     #--
 
-  @debug_wrapper
   def dump_out(self):
     self.logger.debug('\tthere are %s records to save' %
                       len(self.individuals_to_be_saved))
@@ -126,23 +114,27 @@ class Recorder(Core):
                         self.enrollments_to_be_saved):
       e.individual = i
     self.kb.save_array(self.enrollments_to_be_saved)
+
+    for i, e in it.izip(self.individuals_to_be_saved, self.enrollments_to_be_saved):
+      self.out_stream.writerow({'study' : e.study.label,
+                                'label' : e.studyCode,
+                                'type' : 'Individual',  'vid' : i.id})
+
     self.individuals_to_be_saved = []
     self.enrollments_to_be_saved = []
     self.logger.debug('\tdone')
 
 
-  @debug_wrapper
   def clean_up(self):
     self.dump_out()
 
-  @debug_wrapper
   def retrieve_enrollment(self, identifier):
     study_label, label = identifier
     self.logger.info('importing (%s, %s)' % (study_label, label))
 
     assert study_label == self.default_study.label
 
-    if self.default_study and self.known_enrollments.has_key(label):
+    if self.default_study and label in self.known_enrollments:
       study = self.default_study
       e = self.known_enrollments[label]
       self.logger.info('using previously loaded enrollment (%s, %s)' %
@@ -155,12 +147,10 @@ class Recorder(Core):
     return study, e
 
 
-  @debug_wrapper
   def retrieve(self, identifier):
     study, e = self.retrieve_enrollment(identifier)
     return e.individual if e else None
 
-  @debug_wrapper
   def record(self, identifier, gender, father, mother):
     gender_map = {'MALE' : self.kb.Gender.MALE,
                   'FEMALE' : self.kb.Gender.FEMALE}
@@ -175,7 +165,9 @@ class Recorder(Core):
                                                 mother.id if mother else None))
     study, e = self.retrieve_enrollment(identifier)
     if e:
-      return
+      self.logger.warn('ignoring %s because it has already been enrolled'
+                       % (identifier))
+
     self.logger.info('creating %s %s %s %s' % (identifier, gender,
                                                father.id if father else None,
                                                mother.id if mother else None))
@@ -197,12 +189,39 @@ class Recorder(Core):
       self.dump_out()
     return i
 
+  def do_consistency_checks(self, records):
+    study_label = records[0]['study']
+    seen = {}
+    for i, r in enumerate(records):
+      bad = 'bad record %d:' % i
+      if r['study'] != study_label:
+        msg = 'non uniform study label. aborting'
+        self.logger.critical(bad + msg)
+        raise ValueError(msg)
+      if r['gender'].upper() not in ['MALE', 'FEMALE']:
+        msg = 'unknown gender value. aborting'
+        self.logger.critical(bad + msg)
+        raise ValueError(msg)
+      seen[r['label']] = r
+
+    for i, r in enumerate(records):
+      bad = 'bad record %d:' % i
+      for parent in ['father', 'mother']:
+        if not (r[parent].upper() == 'NONE'
+                or r[parent] in seen
+                or r[parent] in self.known_enrollments):
+          msg = 'undefined %s label.' % parent
+          self.logger.critical(bad + msg)
+          raise ValueError(msg)
+
+
+
 help_doc = """
 import new individual definitions into a virgil system and register
 them to a study.
 """
 def make_parser_individual(parser):
-  parser.add_argument('-S', '--study', type=str,
+  parser.add_argument('--study', type=str,
                       help="""Default study to enroll into.
                       It will over-ride the study column value""")
   parser.add_argument('-N', '--batch-size', type=int,
@@ -210,20 +229,49 @@ def make_parser_individual(parser):
                       to be processed in parallel (if possible)""",
                       default=1000)
 
-def import_individual_implementation(args):
-  recorder = Recorder(args.study, args.host, args.user, args.passwd,
-                      args.keep_tokens, args.batch_size)
-  def istream(f, input_rows):
-    for r in f:
+
+def canonize_records(args, records):
+  fields = ['study']
+  for f in fields:
+    if hasattr(args, f) and getattr(args, f) is not None:
+      for r in records:
+        r[f] = getattr(args, f)
+
+def import_individual_implementation(logger, args):
+  #--
+  action_setup_conf = {}
+  for x in dir(args):
+    if not (x.startswith('_') or x.startswith('func')):
+      action_setup_conf[x] = getattr(args, x)
+  #FIXME HACKS
+  action_setup_conf['ifile'] = action_setup_conf['ifile'].name
+  action_setup_conf['ofile'] = action_setup_conf['ofile'].name
+
+  f = csv.DictReader(args.ifile, delimiter='\t')
+  records = [r for r in f]
+  if len(records) == 0:
+    return
+
+  canonize_records(args, records)
+  study_label = records[0]['study']
+
+  o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
+                     delimiter='\t')
+  recorder = Recorder(o, study_label, args.host, args.user, args.passwd,
+                      args.keep_tokens, args.batch_size,
+                      operator=args.operator,
+                      action_setup_conf=action_setup_conf, logger=logger)
+
+  recorder.do_consistency_checks(records)
+
+  def istream():
+    for r in records:
       k = (r['study'], r['label'])
-      assert not input_rows.has_key(k)
-      input_rows[k] = '%s' % r
       i = Ind(k, r['gender'],
               None if r['father'] == 'None' else (r['study'], r['father']),
               None if r['mother'] == 'None' else (r['study'], r['mother']))
       yield i
-  f = csv.DictReader(args.ifile, delimiter='\t')
-  import_pedigree(recorder, istream(f, recorder.input_rows))
+  import_pedigree(recorder, istream())
   recorder.clean_up()
 
 

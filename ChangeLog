@@ -1,3 +1,41 @@
+2011-08-01    <zag@manzanillo>
+
+	* galaxi_ui: Added. This should provide galaxy based interfaces to
+	galaxy. It requires a (minimally) hacked version of galaxy. 
+
+	* bl/vl/app/importer/main.py: Added. This should simplify supporting galaxy_ui
+
+2011-07-31    <zag@manzanillo>
+
+	* tools/create_tables: Changed name from create_snp_tables, added
+	support for ehr tables.
+
+	* bl/vl/kb/drivers/omero/objects_collections.py (ContainerStatus):
+	Added.
+	(Container): Added field 'status'.
+
+	* bl/vl/kb/drivers/omero/demographic.py (InformedConsent): added.
+	(Demographic): added.
+
+2011-07-29    <zag@manzanillo>
+
+	* bl/vl/app/importer/study.py: Added a study module. It is
+	probably an overkill, but it was needed.
+
+	* tools/importer: Now supports importing study and
+	biosample. Explicit blood and dna samples have been removed.
+
+
+	* bl/vl/app/importer/biosample.py (do_register): Added a biosample
+	module. It makes blood_sample and dna_sample obsolete.
+
+2011-07-28    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/genotyping.py
+	(GenotypingAdapter.SNP_SET_COLS): Added a 'label' column to keep
+	track of the label of the marker in the specific technological
+	context (i.e., label given by the producer)
+
 2011-07-27    <simleo@neuron.crs4.it>
 
 	* tools/check_rs.py: changed to use a shelf to store the dbSNP

@@ -2,25 +2,11 @@ from bl.vl.kb     import KBError
 from bl.vl.kb     import KnowledgeBase as KB
 
 import json
+import logging
 
 #-----------------------------------------------------------------------------
 #FIXME this should be factored out....
 
-import logging, time
-
-logger = logging.getLogger()
-counter = 0
-def debug_wrapper(f):
-  def debug_wrapper_wrapper(*args, **kv):
-    global counter
-    now = time.time()
-    counter += 1
-    logger.debug('%s[%d] in' % (f.__name__, counter))
-    res = f(*args, **kv)
-    logger.debug('%s[%d] out (%f)' % (f.__name__, counter, time.time() - now))
-    counter -= 1
-    return res
-  return debug_wrapper_wrapper
 #-----------------------------------------------------------------------------
 
 class BadRecord(Exception):
@@ -35,9 +21,9 @@ class Core(object):
   The common set of methods used by the importer's modules.
   """
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
-               study_label=None):
+               study_label=None, logger=None):
     self.kb = KB(driver='omero')(host, user, passwd, keep_tokens)
-    self.logger = logger
+    self.logger = logger if logger else logging.getLogger()
     self.record_counter = 0
     self.default_study = None
     if study_label:
@@ -48,7 +34,6 @@ class Core(object):
                        (s.label, s.omero_id, s.id))
       self.default_study = s
 
-  @debug_wrapper
   def get_device(self, label, maker, model, release):
     device = self.kb.get_device(label)
     if not device:
@@ -60,7 +45,6 @@ class Core(object):
                                        'label' : label}).save()
     return device
 
-  @debug_wrapper
   def get_action_setup(self, label, conf):
     """
     :param label:

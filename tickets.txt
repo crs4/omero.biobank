@@ -1,3 +1,5 @@
+* we should probably avoid using OriginalFile in InformedConsent
+
 * we should add a check for label string truncation in importer
   marker_definition.
 
@@ -39,11 +41,6 @@
   project. I guess that we could converge to virgil that provides 'bl'
   extensions to 'omero', thus 'omero-bioland' and thus 'bl' instead of 'vl' and
   mimetype 'x-vl/xxx' -> 'x-bl/xxx'
-
-* gender handling is still a mess. We should add something magic to
-  the enums so that, e.g., individual.gender.label returns MALE
-  FEMALE. Currently we are using ad hoc solutions. For the same token,
-  it should be possible to say i.gender == kb.Gender.MALE
 
 * importer is not handling error/warning messages uniformly.
 

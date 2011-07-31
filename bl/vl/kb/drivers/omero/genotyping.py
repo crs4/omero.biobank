@@ -46,6 +46,7 @@ class GenotypingAdapter(object):
    ('string', 'marker_vid', 'Marker VID', len(vlu.make_vid()), None),
    ('long', 'marker_indx',
     "Ordered position of this marker within the set", None),
+   ('string', 'label', 'Label of marker in the specific technological context.', 48, None),
    ('bool', 'allele_flip',
     'Is this technology flipping our A/B allele convention?', None),
    ('string', 'op_vid',

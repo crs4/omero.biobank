@@ -16,16 +16,15 @@ class VLCollection(wp.OmeroWrapper):
   def __preprocess_conf__(self, conf):
     return assign_vid_and_timestamp(conf, time_stamp_field='creationDate')
 
-# This will be enabled in 0.4
-# class ContainerStatus(wp.OmeroWrapper):
-#   OME_TABLE = 'ContainerStatus'
-#   __enums__ = ["INSTOCK", "UNUSABLE", "UNKNOWN", "INPREPARATION",
-#                "READY", "DISCARDED",]
+class ContainerStatus(wp.OmeroWrapper):
+  OME_TABLE = 'ContainerStatus'
+  __enums__ = ["INSTOCK", "UNUSABLE", "UNKNOWN", "INPREPARATION",
+               "READY", "DISCARDED",]
 
 class Container(VLCollection):
   OME_TABLE = 'Container'
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
-#                ('status',  ContainerStatus, wp.REQUIRED) # will be in 0.4
+                ('status',  ContainerStatus, wp.REQUIRED)
                 ]
 
 class SlottedContainer(Container):

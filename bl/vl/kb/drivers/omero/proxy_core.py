@@ -49,10 +49,6 @@ def convert_from_numpy(x):
     return x
 
 import logging
-#LOG_FILENAME = 'proxy_core.log'
-logging.basicConfig(#filename=LOG_FILENAME,
-                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    level=logging.INFO)
 
 logger = logging.getLogger("proxy_core")
 

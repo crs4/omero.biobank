@@ -1,0 +1,54 @@
+<tool id="vl_import_study" name="Import_Study">
+  <description>import study definitions within omero/vl</description>
+  <command interpreter="python">
+    study.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=$advanced_configuration.vl_host
+      --user=$advanced_configuration.vl_user
+      --passwd=$advanced_configuration.vl_passwd
+    #else
+      --host=localhost
+      --user=root
+      --passwd=romeo
+    #end if
+    --operator=galaxy
+    --ifile=$input 
+    --ofile=$objects_list
+    --loglevel=WARNING
+    study
+  </command>  
+  <inputs>
+    <param format="tabular" name="input" type="data"
+	   label="A tabular dataset with the following columns ..."/>
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="biobank05.crs4.it" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="galaxy" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+  <outputs>
+    <data format="tabular" name="objects_list"/>
+  </outputs>
+  <help>
+Will import a stream of new study definitions defined by the
+following tab separated columns::
+
+  label	 description
+  BSTUDY A basically empty description of BSTUDY
+  CSTUDY A basically empty description of CSTUDY
+  ....
+
+  </help>
+
+</tool>

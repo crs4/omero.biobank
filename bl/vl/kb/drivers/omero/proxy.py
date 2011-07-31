@@ -13,6 +13,9 @@ import objects_collections
 import data_samples
 import actions_on_target
 import individual
+import location
+import demographic
+
 
 import hashlib
 
@@ -198,6 +201,13 @@ class Proxy(ProxyCore):
 
   # EVA related utility functions
   # =============================
+
+  def create_ehr_tables(self):
+    self.eadpt.create_ehr_table()
+
+  def delete_ehr_tables(self):
+    self.delete_table(self.eadpt.EAV_EHR_TABLE)
+
 
   def add_ehr_record(self, action, timestamp, archetype, rec):
     """

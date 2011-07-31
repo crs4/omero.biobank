@@ -15,8 +15,19 @@ Kb_Query Utility
 The purpose of this utility is to simplify extracting standard
 information from the KB.
 
-  bash$ kb_query -H biobank05  tabular --preferred-data-protocol hdfs --fields gender_check
-  bash$ kb_query -H biobank05 tabular --data-collection foobar --preferred-data-protocol hdfs --fields genotype_call
+
+For instance, in the example below, we are producing a new file
+'''mapped.tsv''' by replacing the column '''individual_label''' with a
+new column '''source''' that will contain the vid of the object of
+type '''Individual''' uniquely individuated by '''individual_label'''
+and '''study'''.
+
+.. code-block:: bash
+
+   kb_query -H biobank05  -o bs_mapped.tsv map \
+                          -i blood_sample.tsv \
+                          --column 'individual_label' --study BSTUDY \
+                          --source-type Individual
 
 """
 
@@ -40,16 +51,18 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 #---------------------------------------------------------------
-import bl.vl.app.kb_query.tabular
-import bl.vl.app.kb_query.markers
-import bl.vl.app.kb_query.ehr
+import bl.vl.app.kb_query.map
+#import bl.vl.app.kb_query.tabular
+#import bl.vl.app.kb_query.markers
+#import bl.vl.app.kb_query.ehr
 
 class App(object):
   def __init__(self):
     self.supported_submodules = []
-    bl.vl.app.kb_query.tabular.do_register(self.supported_submodules)
-    bl.vl.app.kb_query.markers.do_register(self.supported_submodules)
-    bl.vl.app.kb_query.ehr.do_register(self.supported_submodules)
+    bl.vl.app.kb_query.map.do_register(self.supported_submodules)
+    #bl.vl.app.kb_query.tabular.do_register(self.supported_submodules)
+    #bl.vl.app.kb_query.markers.do_register(self.supported_submodules)
+    #bl.vl.app.kb_query.ehr.do_register(self.supported_submodules)
 
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic kb_query app")

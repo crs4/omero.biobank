@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
 
-Destroy and Recreate SNP Tables
-===============================
+Destroy and Recreate Omero/VL Tables
+====================================
 
 This is a dangerous thing to do. It is destructive, and it should be
 done only when all tables need to be redefined.
@@ -108,7 +108,12 @@ def main():
   logger.info('created snp set table')
 
   #----- EHR TABLE
+  logger.info('deleting current ehr tables')
+  p.delete_ehr_tables()
+  logger.info('deleted current ehr tables')
+  logger.info('creating ehr tables')
   p.create_ehr_tables()
+  logger.info('created ehr tables')
 
 if __name__ == "__main__":
   main()

@@ -1,9 +1,37 @@
 IMPORTER='../../../tools/importer -P romeo'
+KB_QUERY='../../../tools/kb_query -P romeo'
 
 
-${IMPORTER} -i individual.tsv individual -S BSTUDY
-${IMPORTER} -i blood_sample.tsv blood_sample
-${IMPORTER} -i dna_sample.tsv dna_sample
+${IMPORTER} -i study.tsv -o study_mapping.tsv --operator aen study
+${IMPORTER} -i individual.tsv -o individual_mapping.tsv --operator aen \
+            individual
+${KB_QUERY} -o blood_sample_mapped.tsv \
+             map -i blood_sample.tsv \
+                 --column individual_label\
+                 --source-type Individual \
+                 --study BSTUDY
+
+${IMPORTER} -i blood_sample_mapped.tsv -o blood_sample_mapping.tsv \
+            --operator aen -P romeo \
+             biosample \
+             --study BSTUDY --source-type Individual \
+             --container-content BLOOD --container-status CONTENTUSABLE \
+             --container-type Tube
+
+${KB_QUERY} -o dna_sample_mapped.tsv \
+             map -i dna_sample.tsv \
+                 --column bio_sample_label \
+                 --source-type Tube \
+                 --study BSTUDY
+
+${IMPORTER} -i dna_sample_mapped.tsv -o dna_sample_mapping.tsv \
+            -P romeo  --operator aen \
+             biosample \
+             --study BSTUDY --source-type Tube \
+             --container-content DNA --container-status CONTENTUSABLE \
+             --container-type Tube
+
+exit
 ${IMPORTER} -i titer_plate.tsv titer_plate
 ${IMPORTER} -i plate_well.tsv plate_well
 ${IMPORTER} -i devices.tsv device

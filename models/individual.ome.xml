@@ -17,6 +17,10 @@
       <optional name="deathDate" type="timestamp"/>
       <optional name="livingPlace" type="ome.model.vl.Location"/>
       <optional name="livingAddress" type="string"/>
+      <!-- this is intentionally duplicated in the individual
+           definition below. It is possible that the demographic,
+           official, gender does not match with the 'genotype
+           measured' one. -->
       <required name="gender" type="ome.model.vl.Gender"/>
       <optional name="nationalIDCode" type="string" unique="true"/>
       <optional name="phone1" type="string"/>

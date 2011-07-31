@@ -1,8 +1,8 @@
-study	label	barcode	bio_sample_label	used_volume	current_volume	status
-BSTUDY	I001-dna-4	789870	I001-bs-2	0.3	0.2	USABLE
-BSTUDY	I002-dna-4	789871	I002-bs-2	0.31	0.21	USABLE
-BSTUDY	I003-dna-4	789872	I003-bs-2	0.32	0.22	USABLE
-BSTUDY	I004-dna-4	789873	I004-bs-2	0.33	0.23	USABLE
-BSTUDY	I005-dna-4	789874	I005-bs-2	0.34	0.24	USABLE
-BSTUDY	I006-dna-4	789875	I006-bs-2	0.35	0.25	USABLE
+label	barcode	bio_sample_label	used_volume	current_volume	status
+I001-dna-4	789870	I001-bs-2	0.3	0.2	USABLE
+I002-dna-4	789871	I002-bs-2	0.31	0.21	USABLE
+I003-dna-4	789872	I003-bs-2	0.32	0.22	USABLE
+I004-dna-4	789873	I004-bs-2	0.33	0.23	USABLE
+I005-dna-4	789874	I005-bs-2	0.34	0.24	USABLE
+I006-dna-4	789875	I006-bs-2	0.35	0.25	USABLE
 

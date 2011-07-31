@@ -26,7 +26,11 @@ class Device(wp.OmeroWrapper):
                 ('label', wp.STRING, wp.REQUIRED),
                 ('maker', wp.STRING, wp.REQUIRED),
                 ('model', wp.STRING, wp.REQUIRED),
-                ('release', wp.STRING, wp.REQUIRED),
+                ('release', wp.STRING, wp.REQUIRED)]
+
+class HardwareDevice(Device):
+  OME_TABLE = 'HardwareDevice'
+  __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
                 ('physicalLocation', wp.STRING, wp.OPTIONAL)]
 
 class ActionCategory(wp.OmeroWrapper):

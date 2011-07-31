@@ -66,6 +66,11 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     self.kill_list.append(d.save())
     self.check_object(d, conf, self.kb.Device)
 
+  def test_hardware_device(self):
+    conf, d = self.create_hardware_device()
+    self.kill_list.append(d.save())
+    self.check_object(d, conf, self.kb.HardwareDevice)
+
   def test_device_ops(self):
     conf, d = self.create_device()
     d.save()
@@ -107,6 +112,7 @@ def suite():
   suite.addTest(TestKB('test_study'))
   suite.addTest(TestKB('test_study_ops'))
   suite.addTest(TestKB('test_device'))
+  suite.addTest(TestKB('test_hardware_device'))
   suite.addTest(TestKB('test_device_ops'))
   suite.addTest(TestKB('test_action_setup'))
   suite.addTest(TestKB('test_action'))

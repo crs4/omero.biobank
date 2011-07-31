@@ -115,6 +115,11 @@ class CoreOmeroWrapper(object):
       raise AttributeError('object %s has no attribute %s' %
                            (self.__class__.__name__, name))
 
+  def enum_label(self):
+    if not self.is_enum():
+      raise ValueError('%s is not an enum' % self)
+    return self.ome_obj.value._val
+
   def to_omero(self, tcode, v):
     if isinstance(tcode, type):
       if not isinstance(v, tcode):

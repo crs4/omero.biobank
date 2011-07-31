@@ -31,9 +31,19 @@ class KBObjectCreator(unittest.TestCase):
     conf = {'label' : 'foo-%f' % time.time(),
             'maker' : 'foomaker',
             'model' : 'foomodel',
-            'release' : '%f' % time.time(),
-            'physicalLocation' : 'HERE_THERE_EVERYWHERE'}
+            'release' : '%f' % time.time()}
     device = self.kb.factory.create(self.kb.Device, conf)
+    conf['id'] = device.id
+    return conf, device
+
+  def create_hardware_device(self):
+    conf = {'label' : 'foo-%f' % time.time(),
+            'maker' : 'foomaker',
+            'model' : 'foomodel',
+            'release' : '%f' % time.time(),
+            'barcode' : '%f' % time.time(),
+            'physicalLocation' : 'HERE_THERE_EVERYWHERE'}
+    device = self.kb.factory.create(self.kb.HardwareDevice, conf)
     conf['id'] = device.id
     return conf, device
 
@@ -198,6 +208,7 @@ class KBObjectCreator(unittest.TestCase):
   def create_container(self, action=None):
     conf = self.create_collection_conf_helper(action)
     conf['barcode'] =  '9898989-%s' % time.time()
+    conf['status']  = self.kb.ContainerStatus.READY
     c = self.kb.factory.create(self.kb.Container, conf)
     return conf, c
 
@@ -205,6 +216,7 @@ class KBObjectCreator(unittest.TestCase):
     conf = self.create_collection_conf_helper(action)
     conf['numberOfSlots'] =  16
     conf['barcode'] =  '9898989-%s' % time.time()
+    conf['status']  = self.kb.ContainerStatus.READY
     c = self.kb.factory.create(self.kb.SlottedContainer, conf)
     return conf, c
 
@@ -213,6 +225,7 @@ class KBObjectCreator(unittest.TestCase):
     conf['rows'] =  8
     conf['columns'] =  12
     conf['barcode'] =  '9898989-%s' % time.time()
+    conf['status']  = self.kb.ContainerStatus.READY
     c = self.kb.factory.create(self.kb.TiterPlate, conf)
     return conf, c
 
