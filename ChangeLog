@@ -1,9 +1,10 @@
 2011-08-01    <zag@manzanillo>
 
 	* galaxi_ui: Added. This should provide galaxy based interfaces to
-	galaxy. It requires a (minimally) hacked version of galaxy. 
+	galaxy. It requires a (minimally) hacked version of galaxy.
 
-	* bl/vl/app/importer/main.py: Added. This should simplify supporting galaxy_ui
+	* bl/vl/app/importer/main.py: Added. This should simplify
+	supporting galaxy_ui
 
 2011-07-31    <zag@manzanillo>
 
@@ -17,6 +18,11 @@
 	* bl/vl/kb/drivers/omero/demographic.py (InformedConsent): added.
 	(Demographic): added.
 
+2011-07-29    <simleo@neuron.crs4.it>
+
+	* tools/check_rs.py: moved DbSnpReader to bl/core. Changed to
+	compute a "consensus" sequence for multiple matches.
+
 2011-07-29    <zag@manzanillo>
 
 	* bl/vl/app/importer/study.py: Added a study module. It is
@@ -25,9 +31,13 @@
 	* tools/importer: Now supports importing study and
 	biosample. Explicit blood and dna samples have been removed.
 
-
 	* bl/vl/app/importer/biosample.py (do_register): Added a biosample
 	module. It makes blood_sample and dna_sample obsolete.
+
+2011-07-28    <simleo@neuron.crs4.it>
+
+	* tools/check_rs.py (SnpAnnReader): changed to compile mask
+	pattern only once.
 
 2011-07-28    <zag@manzanillo>
 
