@@ -3,8 +3,7 @@ from bl.vl.app.kb_query.main import main as kb_query
 
 def main(argv):
   selected_column, input_file = argv[:2]
-
-  selected_column = int(selected_column[1:])
+  selected_column = int(selected_column) - 1
 
   with open(input_file) as f:
     l = f.readline().strip()

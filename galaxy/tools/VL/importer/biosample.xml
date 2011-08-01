@@ -20,10 +20,10 @@
     --study ${study}
     --source-type ${source_type}
     --container-type ${container_type}
-    #if ${container_content} != 'use_provided'
+    #if $container_content != 'use_provided'
       --container-content=${container_content}
     #end if
-    #if ${container_status} != 'use_provided'
+    #if $container_status != 'use_provided'
       --container-status=${container_status}
     #end if
   </command>  

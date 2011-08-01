@@ -6,7 +6,7 @@
     map_vid.py
     ${selected_column}
     ${input1}
-    #if ${advanced_configuration.configuration_level} == 'advanced'
+    #if $advanced_configuration.configuration_level == 'advanced'
       --host=${advanced_configuration.vl_host}
       --user=${advanced_configuration.vl_user}
       --passwd=${advanced_configuration.vl_passwd}
@@ -21,8 +21,8 @@
     map
     --ifile=${input1}
     --source-type=${source_type.source_type}
-    #if ${source_type.source_type} == 'Individual'
-    --study ${source_type.study}
+    #if $source_type.source_type == 'Individual'
+    --study=${source_type.study}
     #end if
   </command>  
   <inputs>
