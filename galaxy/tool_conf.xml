@@ -5,6 +5,8 @@
     <label text="Import" id="vlImportSectionLabel"/>
         <tool file="VL/importer/study.xml"/>
         <tool file="VL/importer/individual.xml"/>
+    <label text="Tools" id="vlToolsSectionLabel"/>
+        <tool file="VL/tools/snp_reannotator.xml"/>    
     <label text="Query" id="vlQuerySectionLabel"/>
         <!-- tool file="VL/query/map.xml"/-->
   </section>

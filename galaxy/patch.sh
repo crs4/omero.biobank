@@ -13,6 +13,7 @@ DIFF=diff
 
 ${DIFF} -C 3 tool_conf.xml.sample tool_conf.xml > tool_conf.patch
 
+${CP} -a tool-data ${GALAXY_DIR}
 ${CP} -a tools ${GALAXY_DIR}
 ${CP} -a lib ${GALAXY_DIR}
 ${PATCH} ${GALAXY_DIR}/tool_conf.xml tool_conf.patch

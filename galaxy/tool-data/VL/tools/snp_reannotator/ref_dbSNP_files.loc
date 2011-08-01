@@ -1,0 +1,7 @@
+# This file has this format (longer white space characters are TAB characters):
+#
+#<unique_build_id>   <dbkey>   <display_name>   <flank_key_len>   <max_flank_len>   <file_path>
+#
+#example:
+#
+#20110712_16_128   dbSNP-20110712   dbSNP v. 20110712   16   128   /data/dbSNP/20110712/rs_fasta/dbsnp_index_16_128
