@@ -15,7 +15,6 @@ Kb_Query Utility
 The purpose of this utility is to simplify extracting standard
 information from the KB.
 
-
 For instance, in the example below, we are producing a new file
 '''mapped.tsv''' by replacing the column '''individual_label''' with a
 new column '''source''' that will contain the vid of the object of
