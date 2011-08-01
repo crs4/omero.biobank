@@ -13,8 +13,9 @@
     #end if
     --operator=galaxy
     --ifile=$input 
-    --ofile=$objects_list
+    --ofile=$output1
     --loglevel=WARNING
+    --logfile=${logfile}
     study
   </command>  
   <inputs>
@@ -38,7 +39,8 @@
     </conditional>
   </inputs>
   <outputs>
-    <data format="tabular" name="objects_list"/>
+    <data format="tabular" name="output1"/>
+    <data format="txt" name="logfile"/>
   </outputs>
   <help>
 Will import a stream of new study definitions defined by the

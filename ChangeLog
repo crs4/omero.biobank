@@ -1,5 +1,12 @@
 2011-08-01    <zag@manzanillo>
 
+	* galaxy/tools/VL/tools/map_vid.xml: Added.
+
+	* galaxy/tools/VL/importer/biosample.xml: Added
+
+	* galaxy: Renamed galaxy_ui to galaxy. Restructured to be easily
+	installed in a standard galaxy deployment.
+
 	* galaxi_ui: Added. This should provide galaxy based interfaces to
 	galaxy. It requires a (minimally) hacked version of galaxy.
 

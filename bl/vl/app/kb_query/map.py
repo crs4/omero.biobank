@@ -23,14 +23,15 @@ class MapApp(Core):
   """
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None,
-               operator='Alfred E. Neumann'):
+               operator='Alfred E. Neumann', logger=None):
     """
     FIXME
     """
     self.logger = logging.getLogger()
     super(MapApp, self).__init__(host, user, passwd,
                                  keep_tokens=keep_tokens,
-                                 study_label=study_label)
+                                 study_label=study_label,
+                                 logger=logger)
 
   def resolve_mapping_individual(self, labels):
     mapping = {}
@@ -115,14 +116,13 @@ def make_parser_map(parser):
                       help="object labels column name",
                       required=True)
   parser.add_argument('--study', type=str,
-                      help="study label",
-                      required=True)
+                      help="study label")
 
-def import_map_implementation(args):
+def import_map_implementation(logger, args):
   #--
   app = MapApp(host=args.host, user=args.user, passwd=args.passwd,
                keep_tokens=args.keep_tokens,
-               study_label=args.study)
+               study_label=args.study, logger=logger)
 
   app.dump(args.ifile, args.source_type, args.column, args.ofile)
 

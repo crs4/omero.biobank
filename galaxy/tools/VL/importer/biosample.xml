@@ -1,0 +1,142 @@
+<tool id="vl_import_biosample" name="Import_BioSample">
+  <description>import BioSample definitions within omero/vl</description>
+  <command interpreter="python">
+    biosample.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=$advanced_configuration.vl_host
+      --user=$advanced_configuration.vl_user
+      --passwd=$advanced_configuration.vl_passwd
+    #else
+      --host=localhost
+      --user=root
+      --passwd=romeo
+    #end if
+    --operator=galaxy
+    --ifile=${input1}
+    --ofile=${output1}
+    --loglevel=WARNING
+    --logfile=${logfile}
+    biosample
+    --study ${study}
+    --source-type ${source_type}
+    --container-type ${container_type}
+    #if ${container_content} != 'use_provided'
+      --container-content=${container_content}
+    #end if
+    #if ${container_status} != 'use_provided'
+      --container-status=${container_status}
+    #end if
+  </command>  
+  <inputs>
+    <param format="tabular" name="input1" type="data"
+	   label="A tabular dataset with the following columns ..."/>
+
+    <param name="study" type="select" label="Context study" 
+	   help="Choose from the already defined studies. See below.">    
+      <options from_parameter="tool.app.known_studies" 
+	       transform_lines="[ &quot;%s%s%s:%s&quot; 
+                                  % ( l[0], self.separator, l[0], l[1][:40] ) 
+                                  for l in obj ]">
+        <column name="value" index="0"/>
+        <column name="name" index="1"/>
+        <filter type="sort_by" column="0"/>
+        <filter type="add_value" name="Records provide study labels" 
+                value="use_provided" index="0"/>
+      </options>
+    </param>
+
+    <param name="source_type" type="select"
+	   label="type of the source object"
+	   help="Choose from the legal types. See below.">
+      <option value="Tube"       selected="true">Tube</option>
+      <option value="Individual">Individual</option>
+    </param>
+
+    <param name="container_type" type="select"
+	   label="type of the container object"
+	   help="Choose from the legal types. See below.">
+      <option value="Tube"       selected="true">Tube</option>
+    </param>
+
+    <param name="container_content" type="select" label="Container content" 
+	   help="Choose from one of the available values. See below.">    
+      <options from_parameter="tool.app.kb.VesselContent.__enums__" 
+	       transform_lines="[ &quot;%s%s%s&quot; 
+                                  % (e.enum_label(),
+                                     self.separator,
+                                     e.enum_label()) 
+                                  for e in obj ]">
+        <column name="value" index="0"/>
+        <column name="name" index="1"/>
+        <filter type="sort_by" column="0"/>
+        <filter type="add_value" name="Records provide container content" 
+                value="use_provided" index="0"/>
+      </options>
+    </param>
+    <param name="container_status" type="select" label="Container status" 
+	   help="Choose from one of the available values. See below.">    
+      <options from_parameter="tool.app.kb.VesselStatus.__enums__" 
+	       transform_lines="[ &quot;%s%s%s&quot; 
+                                  % (e.enum_label(),
+                                     self.separator,
+                                     e.enum_label()) 
+                                  for e in obj ]">
+        <column name="value" index="0"/>
+        <column name="name" index="1"/>
+        <filter type="sort_by" column="0"/>
+        <filter type="add_value" name="Records provide container status" 
+                value="use_provided" index="0"/>
+      </options>
+    </param>
+
+    <conditional name="extra_fields">
+      <param name="enabled" type="select" 
+	     label="Enable extra optional fields">
+	<option value="no" selected="true">no</option>	
+	<option value="yes">yes</option>
+      </param>
+      <when value="no"/>
+      <when value="yes">
+	<param name="current_volume" type="float"
+	       value="20" 
+	       help="fluid (FIXME UNITS) currently held in the container">
+	  <validator type="in_range" message="Volume must be positive" 
+		     min="0" max="inf"/>
+	</param>
+	<param name="used_volume" type="float"
+	       value="20" 
+	       help="amount of source fluid (FIXME UNITS) used">
+	  <validator type="in_range" message="Volume must be positive" 
+		     min="0" max="inf"/>
+	</param>
+      </when>
+    </conditional>
+
+    <!-- ************************************************** -->
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="biobank05.crs4.it" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="galaxy" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="output1"/>
+    <data format="txt" name="logfile"/>
+  </outputs>
+  <help>
+
+  </help>
+
+</tool>
