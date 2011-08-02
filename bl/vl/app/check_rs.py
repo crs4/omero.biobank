@@ -27,11 +27,12 @@ logging.basicConfig(
   datefmt='%Y-%m-%d %H:%M:%S',
   )
 from cPickle import HIGHEST_PROTOCOL as HP
-from contextlib import closing
+from contextlib import closing, nested
 
 from bl.core.seq.io import DbSnpReader
 from bl.core.seq.utils import reverse_complement
 from bl.core.utils import NullLogger, longest_subs
+from bl.vl.utils.snp import split_mask
 
 
 class FlankTooShortError(Exception): pass
@@ -47,10 +48,6 @@ class SnpAnnReader(csv.DictReader):
   putative rs label (None if absent) and mask is the sequence in the
   LEFT_FLANK[ALLELE_A/ALLELE_B]RIGHT_FLANK format.
   """
-  
-  MASK_PATTERN = re.compile(r'^([A-Z]+)\[([^/]+)/([^\]]+)\]([A-Z]+)$',
-                            re.IGNORECASE)
-  
   def __init__(self, f, logger=None):
     csv.DictReader.__init__(self, f, delimiter="\t", quoting=csv.QUOTE_NONE)
     self.logger = logger or NullLogger()
@@ -59,14 +56,12 @@ class SnpAnnReader(csv.DictReader):
     r = csv.DictReader.next(self)
     label = r['label']
     rs_label = None if r['rs_label'] == 'None' else r['rs_label']
-    m = self.MASK_PATTERN.match(r['mask'])
     try:
-      lflank, a1, a2, rflank = m.groups()
-    except AttributeError:
-      self.logger.error("%r: bad mask format: %r -- skipping"
-                        % (label, r['mask']))
+      mask = split_mask(r['mask'])
+    except ValueError, e:
+      self.logger.warn("%r: %s -- skipping" % (label, e))
       return self.next()
-    return label, rs_label, lflank, rflank, (a1, a2)
+    return label, rs_label, mask
 
 
 def get_consensus(masks):
@@ -96,14 +91,19 @@ def update_index(index, db_snp_reader, N, M, logger=None):
   return index
 
 
-def check_rs(ann_table, index, N, outf, logger=None):
-  outf.write("label\trs_label\ttrue_rs_labels\tcheck\ttrue_seq\n")
+def check_rs(ann_f, index, N, outf, logger=None):
   logger = logger or NullLogger()
   check_map = {}
-  for label, rs_label, lflank, rflank in ann_table:
+  n_records = sum(1 for _ in ann_f) - 1
+  feedback_step = n_records / 10
+  ann_f.seek(0)
+  logger.info("n. records: %d" % n_records)
+  reader = SnpAnnReader(ann_f, logger)
+  outf.write("label\trs_label\ttrue_rs_labels\tcheck\ttrue_seq\n")
+  for i, (label, rs_label, mask) in enumerate(reader):
     outf.write("%s\t%s\t" % (label, rs_label))
     try:
-      k = mask_to_key(lflank, rflank, N)
+      k = mask_to_key(mask[0], mask[2], N)
     except FlankTooShortError:
       logger.warn("%r: flank(s) too short, forcing a no-match" % label)
       v = None
@@ -126,6 +126,8 @@ def check_rs(ann_table, index, N, outf, logger=None):
       out_rs_label = rs_label if check else true_rs_labels[0]
       outf.write("%s\t%s\t%s" % (out_rs_label, check, out_seq))
     outf.write("\n")
+    if i % feedback_step == 0:
+      logger.info("%6.2f %% complete" % (100.*i/n_records))
 
 
 class HelpFormatter(optparse.IndentedHelpFormatter):
@@ -140,7 +142,8 @@ def make_parser():
     )
   parser.set_description(__doc__.lstrip())
   parser.add_option("-N", "--flank-cut-size", type="int", metavar="INT",
-                    help="cut flanks at this size for mapping purposes")
+                    help="cut flanks at this size for mapping purposes",
+                    default=16)
   parser.add_option("-M", "--out-flank-cut-size", type="int", metavar="INT",
                     help="cut output flanks at this size", default=128)
   parser.add_option("-o", "--output-file", metavar="FILE", help="output file")
@@ -168,16 +171,9 @@ def main(argv):
   else:
     opt.output_file = sys.stdout
 
-  with open(ann_fn) as f:
-    reader = SnpAnnReader(f, logger)
-    logger.info("processing %r" % ann_fn)
-    ann_table = [t[:-1] for t in reader]
-  if not opt.flank_cut_size:
-    opt.flank_cut_size = min(min(len(lflank), len(rflank))
-                             for _, _, lflank, rflank in ann_table)
-  logger.info("n. records: %d" % len(ann_table))
   logger.info("flank cut size: %d" % opt.flank_cut_size)
   logger.info("output flank cut size: %d" % opt.out_flank_cut_size)
+  logger.info("output file: %r" % opt.output_file.name)
   
   index_fn = "dbsnp_index_%d_%d" % (opt.flank_cut_size, opt.out_flank_cut_size)
   index = None
@@ -197,12 +193,11 @@ def main(argv):
   else:
     logger.info("using existing index at %r" % index_fn)
   finally:
-    logger.info("n. keys in index: %d" % len(index))
     index.close()
 
-  logger.info("writing output to %r" % opt.output_file.name)
-  with closing(shelve.open(index_fn, "r")) as index:
-    check_rs(ann_table, index, opt.flank_cut_size, opt.output_file, logger)
+  logger.info("reannotating probesets")
+  with nested(open(ann_fn), closing(shelve.open(index_fn, "r"))) as (f, index):
+    check_rs(f, index, opt.flank_cut_size, opt.output_file, logger)
   
   if opt.output_file is not sys.stdout:
     opt.output_file.close()

@@ -1,5 +1,10 @@
 2011-08-02    <simleo@neuron.crs4.it>
 
+	* bl/vl/app/check_rs.py: does not read the full annotation table
+	into memory anymore.
+	(SnpAnnReader): changed to use bl.vl.utils.snp.split_mask to split
+	masks and to return a (label, rs_label, split_mask) tuple.
+
 	* bl/vl/utils/snp.py: code cleanup; convert_to_top now supports
 	split masks.
 
