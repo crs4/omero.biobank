@@ -121,8 +121,58 @@ values and the implied importing rules. Discuss also the meaning of
 '''used_volume'''.
 
 
-Containers
-----------
+
+Importing a TiterPlate
+----------------------
+
+A full TiterPlate records will have the following columns::
+
+  study  label   barcode rows columns plate_status maker model
+  ASTUDY p090    2399389 32   48      xxxx  yyy
+
+The plate_status, maker and model columns are optional, as well as the
+barcode one.  Default plate dimensions can be provided with a flag
+
+.. code-block:: bash
+   ${IMPORT} ${SERVER_OPTS} -i titer_plates.tsv
+                            -o titer_plates_mapping.tsv\
+                            titer_plate\
+                            --study  ${DEFAULT_STUDY}\
+                            --plate-shape=32x48\
+                            --maker=foomaker\
+                            --model=foomodel
+
+where container-content is taken from the enum VesselContent possible
+values and container-status from the enum VesselStatus
+
+
+Importing a PlateWell
+---------------------
+
+Will read in a csv file with the following columns::
+
+  study plate_label label row column source used_volume current_volume
+  ASTDY p01         J01   10  1      V93090 0.1         0.1
+  ASTDY p01         J02   10  2      V90020 0.1         0.1
+
+Each row will be interpreted as follows.
+Add a PlateWell to the plate identified by plate_label, The PlateWell
+will have, within that plate, the unique identifier label. If row and
+column (optional) are provided, it will use that location. If they are
+not, it will deduce them from label (e.g., J01 -> row=10,
+column=1). Missing labels will be generated as
+
+       '%s%03d' % (chr(row + ord('A') - 1), column)
+
+Badly formed label will bring the rejection of the record. The same
+will happen if label, row and column are inconsistent.  The well will
+be filled by current_volume material produced by removing used_volume
+material taken from the bio material contained in the vessel
+identified by bio_sample_label. Row and Column are base 1.
+
+FIXME: currently there is no way to specialize the action performed,
+it will always be marked as an ActionCategory.ALIQUOTING.
+
 
 
 Data Samples

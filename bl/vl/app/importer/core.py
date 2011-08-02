@@ -70,3 +70,20 @@ class Core(object):
                                      {'label' : label}).save()
     return study
 
+  def find_study(self, records):
+    study_label = records[0]['study']
+    for r in records:
+      if r['study'] != study_label:
+        m = 'all records should have the same study label'
+        self.logger.critical(m)
+        raise ValueError(m)
+    return self.get_study(study_label)
+
+  def find_klass(self, col_name, records):
+    o_type = records[0][col_name]
+    for r in records:
+      if r[col_name] != o_type:
+        m = 'all records should have the same %s' % col_name
+        self.logger.critical(m)
+        raise ValueError(m)
+    return getattr(self.kb, o_type)

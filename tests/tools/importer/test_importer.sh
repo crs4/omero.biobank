@@ -1,10 +1,9 @@
-IMPORTER='../../../tools/importer -P romeo'
+IMPORTER='../../../tools/importer -P romeo --operator aen'
 KB_QUERY='../../../tools/kb_query -P romeo'
 
 
-${IMPORTER} -i study.tsv -o study_mapping.tsv --operator aen study
-${IMPORTER} -i individual.tsv -o individual_mapping.tsv --operator aen \
-            individual
+${IMPORTER} -i study.tsv -o study_mapping.tsv study
+${IMPORTER} -i individual.tsv -o individual_mapping.tsv individual
 ${KB_QUERY} -o blood_sample_mapped.tsv \
              map -i blood_sample.tsv \
                  --column individual_label\
@@ -12,7 +11,6 @@ ${KB_QUERY} -o blood_sample_mapped.tsv \
                  --study BSTUDY
 
 ${IMPORTER} -i blood_sample_mapped.tsv -o blood_sample_mapping.tsv \
-            --operator aen -P romeo \
              biosample \
              --study BSTUDY --source-type Individual \
              --container-content BLOOD --container-status CONTENTUSABLE \
@@ -25,14 +23,16 @@ ${KB_QUERY} -o dna_sample_mapped.tsv \
                  --study BSTUDY
 
 ${IMPORTER} -i dna_sample_mapped.tsv -o dna_sample_mapping.tsv \
-            -P romeo  --operator aen \
              biosample \
              --study BSTUDY --source-type Tube \
              --container-content DNA --container-status CONTENTUSABLE \
              --container-type Tube
 
+${IMPORTER} -i titer_plate.tsv -o titer_plate_mapping.tsv \
+            titer_plate --study BSTUDY --plate-shape=32x48 \
+            --maker=foomak --model=foomod
+
 exit
-${IMPORTER} -i titer_plate.tsv titer_plate
 ${IMPORTER} -i plate_well.tsv plate_well
 ${IMPORTER} -i devices.tsv device
 ${IMPORTER} -i data_sample.tsv data_sample

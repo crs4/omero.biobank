@@ -5,9 +5,10 @@ Import of PlateWells
 
 Will read in a csv file with the following columns::
 
-  study plate_label label row column bio_sample_label used_volume current_volume
-  ASTDY p01         J01   10  1      lab-88           0.1         0.1
-  ASTDY p01         J02   10  2      lab-89           0.1         0.1
+  study plate_label label row column source used_volume current_volume
+  ASTDY p01         J01   10  1      V93090 0.1         0.1
+  ASTDY p01         J02   10  2      V90020 0.1         0.1
+
 
 Each row will be interpreted as follows.
 Add a PlateWell to the plate identified by plate_label, The PlateWell
@@ -22,7 +23,7 @@ Badly formed label will bring the rejection of the record. The same
 will happen if label, row and column are inconsistent.  The well will
 be filled by current_volume material produced by removing used_volume
 material taken from the bio material contained in the vessel
-identified by bio_sample_label. Row and Column are base 1.
+identified by source. Row and Column are base 1.
 
 FIXME: currently there is no way to specialize the action performed,
 it will always be marked as an ActionCategory.ALIQUOTING.

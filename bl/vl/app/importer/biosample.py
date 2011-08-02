@@ -61,7 +61,8 @@ class BioSampleRecorder(Core):
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                operator='Alfred E. Neumann', batch_size=10000,
                action_setup_conf=None, logger=None):
-    super(BioSampleRecorder, self).__init__(host, user, passwd, keep_tokens, logger=logger)
+    super(BioSampleRecorder, self).__init__(host, user, passwd, keep_tokens,
+                                            logger=logger)
     self.operator = operator
     self.batch_size = batch_size
     self.action_setup_conf = action_setup_conf
@@ -88,7 +89,7 @@ class BioSampleRecorder(Core):
     #--
     records = self.do_consistency_checks(records)
     #--
-    device = self.get_device('importer-%s' % version,
+    device = self.get_device('importer-%s.biosample' % version,
                              'CRS4', 'IMPORT', version)
     asetup = self.get_action_setup('import-prog-%f' % time.time(),
                                    json.dumps(self.action_setup_conf))
@@ -97,25 +98,6 @@ class BioSampleRecorder(Core):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(otsv, c, study, asetup, device, acat)
       self.logger.info('done processing chunk %d' % i)
-
-
-  def find_study(self, records):
-    study_label = records[0]['study']
-    for r in records:
-      if r['study'] != study_label:
-        m = 'all records should have the same study label'
-        self.logger.critical(m)
-        raise ValueError(m)
-    return self.get_study(study_label)
-
-  def find_klass(self, col_name, records):
-    o_type = records[0][col_name]
-    for r in records:
-      if r[col_name] != o_type:
-        m = 'all records should have the same %s' % col_name
-        self.logger.critical(m)
-        raise ValueError(m)
-    return getattr(self.kb, o_type)
 
   def find_source_klass(self, records):
     return self.find_klass('source_type', records)
@@ -269,6 +251,8 @@ def make_parser_biosample(parser):
                       help="""Size of the batch of objects
                       to be processed in parallel (if possible)""",
                       default=1000)
+
+
 
 def import_biosample_implementation(logger, args):
   #--

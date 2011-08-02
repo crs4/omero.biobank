@@ -74,7 +74,7 @@ class Recorder(Core):
     self.enrollments_to_be_saved = []
     self.chunk_size = batch_size
     self.known_studies = {}
-    device = self.get_device('importer-%s' % version,
+    device = self.get_device('importer-%s.individual' % version,
                              'CRS4', 'IMPORT', version)
     asetup = self.get_action_setup('import-prog-%f' % time.time(),
                                    json.dumps(self.action_setup_conf))
