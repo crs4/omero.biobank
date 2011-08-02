@@ -1,3 +1,8 @@
+2011-08-02    <simleo@neuron.crs4.it>
+
+	* bl/vl/utils/snp.py: code cleanup; convert_to_top now supports
+	split masks.
+
 2011-08-01    <zag@manzanillo>
 
 	* galaxy/tools/VL/tools/map_vid.xml: Added.

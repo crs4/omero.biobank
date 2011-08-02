@@ -1,101 +1,76 @@
 import re
 import itertools as it
 
-T = {'A' : 'T', 'T' : 'A', 'G' : 'C', 'C': 'G'}
-def conjugate(s):
-  return ''.join(map(lambda _: T[_], s[::-1]))
+from bl.core.seq.utils import reverse_complement
+
+
+MASK_PATTERN = re.compile(r'^([A-Z]+)\[([^/]+)/([^\]]+)\]([A-Z]+)$',
+                          re.IGNORECASE)
+
 
 def split_mask(mask):
-  return re.split('[\[\/\]]', mask)
+  m = MASK_PATTERN.match(mask)
+  try:
+    lflank, allele_a, allele_b, rflank = m.groups()
+  except AttributeError:
+    raise ValueError("bad mask format: %r" % mask)
+  else:
+    return [lflank, [allele_a, allele_b], rflank]
 
-def identify_strand(mask):
+
+def _identify_strand(mask):
   def is_unambiguos(p):
-    l, r = p if p[0] < p[1] else (p[1], p[0])
+    l, r = sorted(p)
     return not (l == r
                 or (l == 'A' and r == 'T')
                 or (l == 'C' and r == 'G'))
   #--
-  mask = mask.upper()
-  lflank, allele_a, allele_b, rflank = split_mask(mask)
-  alleles = set([allele_a, allele_b])
+  lflank, alleles, rflank = mask
+  alleles = set(alleles)
   if 'A' in alleles and 'T' not in alleles:
     strand = 'TOP'
   elif 'T' in alleles and 'A' not in alleles:
     strand = 'BOT'
   else:
     # pesky case...
-    for p in it.izip(lflank[::-1], rflank):
+    for p in it.izip(reversed(lflank), rflank):
       if is_unambiguos(p):
         strand = 'TOP' if p[0] in 'AT' else 'BOT'
         break
     else:
-      raise ValueError('Cannot decide strand of %s' % mask)
+      raise ValueError('Cannot decide strand of %r' % mask)
   return strand
 
-def identify_strand_2(mask):
-  def is_unambiguos(p):
-    l, r = p
-    l, r = (l, r) if l < r else (r, l)
-    return not (l == r
-                or (l == 'A' and r == 'T')
-                or (l == 'C' and r == 'G'))
-  #--
-  mask = mask.upper()
-  lflank, allele_a, allele_b, rflank = re.split('[\[\/\]]', mask)
-  alleles = set([allele_a, allele_b])
-  if 'A' in alleles and 'T' not in alleles:
-    # we are in TOP
-    alleles.remove('A')
-    allele_a, allele_b = 'A', alleles.pop()
-    lflank, rflank = lflank, rflank
-    strand = 'TOP'
-  elif 'T' in alleles and 'A' not in alleles:
-    # we are in BOT, need to conjugate
-    alleles.remove('T')
-    allele_a, allele_b = 'A', conjugate(alleles.pop())
-    lflank, rflank = conjugate(rflank), conjugate(lflank)
-    strand = 'BOT'
-  else:
-    # pesky case...
-    for p in it.izip(lflank, rflank[::-1]):
-      if is_unambiguos(p):
-        strand = 'TOP' if p[0] in 'AT' else 'BOT'
-        break
-    else:
-      raise ValueError('Cannot decide strand of %s' % mask)
-    if 'A' in alleles:
-      assert 'T' in alleles
-      allele_a, allele_b = 'A', 'T'
-      if strand == 'TOP':
-        lflank, rflank = lflank, rflank
-      else:
-        assert strand == 'BOT'
-        lflank, rflank = conjugate(rflank), conjugate(lflank)
-    else:
-      assert 'C' in alleles  and 'G' in alleles
-      allele_a, allele_b = 'C', 'G'
-      if strand == 'TOP':
-        lflank, rflank = lflank, rflank
-      else:
-        assert strand == 'BOT'
-        lflank, rflank = conjugate(rflank), conjugate(lflank)
-  return strand, allele_a, allele_b, lflank, rflank
 
-def convert_to_top(mask):
+def convert_to_top(mask, toupper=True):
   """
-  Given a string mask with format <lflank>[AlleleA/AlleleB]<rflank>,
-  it will convert to a new mask obtained by mapping mask to the TOP
-  (following Illumina conventions) strand. See FIXME ref for algorithm
-  description.
+  Convert a mask with format LeftFlank[AlleleA/AlleleB]RightFlank to
+  a new mask obtained by mapping mask to the TOP (following Illumina
+  conventions) strand.
+
+  The mask parameter can be a string (e.g., 'AC[A/G]GT') or a list in
+  the format output by split_mask (e.g., ['AC', ['A', 'G'], 'GT']);
+  the returned mask has the same type as the input one.
+
+  See the following reference for algorithm description:
+  
+  Illumina, Inc., "TOP/BOT" Strand and "A/B" Allele, technical note, 2006.
   """
-  #--
-  mask = mask.upper()
-  lflank, allele_a, allele_b, rflank = split_mask(mask)
-  #--
-  allele_a, allele_b = ((allele_a, allele_b)
-                        if allele_a < allele_b else (allele_b, allele_a))
-  strand = identify_strand(mask)
+  if isinstance(mask, basestring):
+    mask = split_mask(mask)
+    rebuild_str = True
+  else:
+    rebuild_str = False
+  if toupper:
+    for i in 0, 2:
+      mask[i] = mask[i].upper()
+    for i in 0, 1:
+      mask[1][i] = mask[1][i].upper()
+  mask[1].sort()
+  strand = _identify_strand(mask)
   if strand == 'BOT':
-    allele_a, allele_b = conjugate(allele_b), conjugate(allele_a)
-    lflank, rflank = conjugate(rflank), conjugate(lflank)
-  return lflank + ('[%s/%s]' % (allele_a, allele_b)) + rflank
+    mask = [reverse_complement(_) for _ in reversed(mask)]
+  if rebuild_str:
+    return '%s[%s/%s]%s' % (mask[0], mask[1][0], mask[1][1], mask[2])
+  else:
+    return mask

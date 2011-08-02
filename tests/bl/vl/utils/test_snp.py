@@ -1,7 +1,7 @@
-import os, unittest, time
-import itertools as it
+import unittest
 
 import bl.vl.utils.snp as usnp
+
 
 TOP_PAIRS = [
   ("GTCCCACACGTAGTTCGCCAGCCAGTAGATGATGGGGTTGCAGCCGCTGACAAACTGCAG[A/G]TGCTTGGCCTTGGTGGACTTCTCGGCCACGAGGAAGACAACGAAGCTGGCCGGCACGAAG",
@@ -36,8 +36,9 @@ TOP_PAIRS = [
    "TTGGGGGACCCTGAGGGTGAGCACTGAATGTAGTGGGGTCCCTGGGAAGGGGGCCTGAAT[A/G]AAGAGATCCCCAAAGTTTGGGGATTTTCTAGGGGACTGGTGGTTGGTGTCTGTGGAGAGG"),
 ]
 
+
 class TestUSNP(unittest.TestCase):
-  " "
+
   def __init__(self, name):
     super(TestUSNP, self).__init__(name)
 
@@ -47,20 +48,25 @@ class TestUSNP(unittest.TestCase):
   def tearDown(self):
     pass
 
-  def test_conjugate(self):
-    pass
-
   def test_convert_to_top(self):
-    for s,t in TOP_PAIRS:
-      self.assertEqual(usnp.convert_to_top(s), t)
+    for i, (s, t) in enumerate(TOP_PAIRS):
+      self.assertEqual(usnp.convert_to_top(s), t,
+                       '(%d): %r != %r' % ((i+1), s, t))
+
+  def test_convert_to_top_split(self):
+    for i, (s, t) in enumerate(TOP_PAIRS):
+      s, t = map(usnp.split_mask, (s.upper(), t.upper()))
+      self.assertEqual(usnp.convert_to_top(s, toupper=False), t,
+                       '(%d): %r != %r' % ((i+1), s, t))
 
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestUSNP('test_convert_to_top'))
+  suite.addTest(TestUSNP('test_convert_to_top_split'))
   return suite
+
 
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)
   runner.run((suite()))
-
