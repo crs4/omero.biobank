@@ -1,7 +1,7 @@
 import re
 import itertools as it
 
-from bl.core.seq.utils import reverse_complement
+from bl.core.seq.utils import reverse_complement as rc
 
 
 MASK_PATTERN = re.compile(r'^([A-Z]+)\[([^/]+)/([^\]]+)\]([A-Z]+)$',
@@ -15,17 +15,16 @@ def split_mask(mask):
   except AttributeError:
     raise ValueError("bad mask format: %r" % mask)
   else:
-    return [lflank, [allele_a, allele_b], rflank]
+    return (lflank, (allele_a, allele_b), rflank)
 
 
-def _identify_strand(mask):
+def _identify_strand(lflank, alleles, rflank):
   def is_unambiguos(p):
     l, r = sorted(p)
     return not (l == r
                 or (l == 'A' and r == 'T')
                 or (l == 'C' and r == 'G'))
   #--
-  lflank, alleles, rflank = mask
   alleles = set(alleles)
   if 'A' in alleles and 'T' not in alleles:
     strand = 'TOP'
@@ -57,20 +56,19 @@ def convert_to_top(mask, toupper=True):
   Illumina, Inc., "TOP/BOT" Strand and "A/B" Allele, technical note, 2006.
   """
   if isinstance(mask, basestring):
-    mask = split_mask(mask)
+    lflank, alleles, rflank = split_mask(mask)
     rebuild_str = True
   else:
+    lflank, alleles, rflank = mask
     rebuild_str = False
+  alleles = tuple(sorted(alleles))
   if toupper:
-    for i in 0, 2:
-      mask[i] = mask[i].upper()
-    for i in 0, 1:
-      mask[1][i] = mask[1][i].upper()
-  mask[1].sort()
-  strand = _identify_strand(mask)
+    lflank, rflank = lflank.upper(), rflank.upper()
+    alleles = tuple(_.upper() for _ in alleles)
+  strand = _identify_strand(lflank, alleles, rflank)
   if strand == 'BOT':
-    mask = [reverse_complement(_) for _ in reversed(mask)]
+    lflank, alleles, rflank = (rc(_) for _ in (rflank, alleles, lflank))
   if rebuild_str:
-    return '%s[%s/%s]%s' % (mask[0], mask[1][0], mask[1][1], mask[2])
+    return '%s[%s/%s]%s' % (lflank, alleles[0], alleles[1], rflank)
   else:
-    return mask
+    return (lflank, alleles, rflank)
