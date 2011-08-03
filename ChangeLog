@@ -1,8 +1,11 @@
 2011-08-03    <simleo@neuron.crs4.it>
 
+	* bl/vl/app/check_rs.py: changed to convert all masks to TOP
+	before doing anything with them.
+
 	* bl/vl/utils/snp.py: rewrote to work without side effects on a
 	split mask (this is emphasized by the fact that a split mask is
-	now a tuple).
+	now a tuple). Added join_mask.
 
 2011-08-03    <zag@manzanillo>
 

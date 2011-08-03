@@ -32,7 +32,7 @@ from contextlib import closing, nested
 from bl.core.seq.io import DbSnpReader
 from bl.core.seq.utils import reverse_complement
 from bl.core.utils import NullLogger, longest_subs
-from bl.vl.utils.snp import split_mask
+from bl.vl.utils.snp import convert_to_top, split_mask, join_mask
 
 
 class FlankTooShortError(Exception): pass
@@ -57,9 +57,9 @@ class SnpAnnReader(csv.DictReader):
     label = r['label']
     rs_label = None if r['rs_label'] == 'None' else r['rs_label']
     try:
-      mask = split_mask(r['mask'])
+      mask = convert_to_top(split_mask(r['mask']))
     except ValueError, e:
-      self.logger.warn("%r: %s -- skipping" % (label, e))
+      self.logger.warn("%r: %s, skipping" % (label, e))
       return self.next()
     return label, rs_label, mask
 
@@ -71,20 +71,30 @@ def get_consensus(masks):
   return longest_subs(lflanks, reverse=True), alleles[0], longest_subs(rflanks)
 
 
-def mask_to_key(left_flank, right_flank, N):
-  if len(left_flank) < N or len(right_flank) < N:
+def top_mask_to_key(mask, N):
+  """
+  Convert a (left_flank, (allele_a, allele_b), right_flank) mask to a
+  key for the dbSNP index. To be useful, mask must be in the TOP format.
+  """
+  if len(mask[0]) < N or len(mask[2]) < N:
     raise FlankTooShortError
-  seq = left_flank[-N:] + right_flank[:N]
-  return min(seq, reverse_complement(seq))
+  return join_mask((mask[0][-N:], mask[1], mask[2][:N]))
 
 
 def update_index(index, db_snp_reader, N, M, logger=None):
   logger = logger or NullLogger()
   for rs_label, lflank, alleles, rflank in db_snp_reader:
+    alleles = tuple(alleles.split("/"))
+    if len(alleles) != 2:
+      logger.warn("%r: bad alleles %r, skipping" % (rs_label, alleles))
     try:
-      key = mask_to_key(lflank, rflank, N)
+      lflank, alleles, rflank = convert_to_top((lflank, alleles, rflank))
+    except ValueError, e:
+      logger.warn("%r: %s, skipping" % (rs_label, e))
+    try:
+      key = top_mask_to_key((lflank, alleles, rflank), N)
     except FlankTooShortError:
-      logger.warn("%r: flank(s) too short, NOT adding to index" % rs_label)
+      logger.warn("%r: flank(s) too short, skipping" % rs_label)
     else:
       true_seq = (lflank[-M:], alleles, rflank[:M])
       index.setdefault(key, []).append((rs_label, true_seq))
@@ -103,7 +113,7 @@ def check_rs(ann_f, index, N, outf, logger=None):
   for i, (label, rs_label, mask) in enumerate(reader):
     outf.write("%s\t%s\t" % (label, rs_label))
     try:
-      k = mask_to_key(mask[0], mask[2], N)
+      k = top_mask_to_key(mask, N)
     except FlankTooShortError:
       logger.warn("%r: flank(s) too short, forcing a no-match" % label)
       v = None
@@ -122,8 +132,8 @@ def check_rs(ann_f, index, N, outf, logger=None):
         logger.warn("%r: inconsistent multiple true masks" % label)
         out_seq = "None"
       else:
-        out_seq = "%s[%s]%s" % out_seq
-      out_rs_label = rs_label if check else true_rs_labels[0]
+        out_seq = join_mask(out_seq)
+      out_rs_label = ",".join(true_rs_labels)
       outf.write("%s\t%s\t%s" % (out_rs_label, check, out_seq))
     outf.write("\n")
     if i % feedback_step == 0:

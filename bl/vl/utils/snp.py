@@ -18,6 +18,10 @@ def split_mask(mask):
     return (lflank, (allele_a, allele_b), rflank)
 
 
+def join_mask(mask):
+  return '%s[%s/%s]%s' % (mask[0], mask[1][0], mask[1][1], mask[2])
+
+
 def _identify_strand(lflank, alleles, rflank):
   def is_unambiguos(p):
     l, r = sorted(p)
@@ -25,7 +29,6 @@ def _identify_strand(lflank, alleles, rflank):
                 or (l == 'A' and r == 'T')
                 or (l == 'C' and r == 'G'))
   #--
-  alleles = set(alleles)
   if 'A' in alleles and 'T' not in alleles:
     strand = 'TOP'
   elif 'T' in alleles and 'A' not in alleles:
@@ -37,7 +40,8 @@ def _identify_strand(lflank, alleles, rflank):
         strand = 'TOP' if p[0] in 'AT' else 'BOT'
         break
     else:
-      raise ValueError('Cannot decide strand of %r' % mask)
+      raise ValueError('Cannot decide strand of %s' %
+                       join_mask((lflank, alleles, rflank)))
   return strand
 
 
@@ -68,7 +72,7 @@ def convert_to_top(mask, toupper=True):
   strand = _identify_strand(lflank, alleles, rflank)
   if strand == 'BOT':
     lflank, alleles, rflank = (rc(_) for _ in (rflank, alleles, lflank))
+  mask = (lflank, alleles, rflank)
   if rebuild_str:
-    return '%s[%s/%s]%s' % (lflank, alleles[0], alleles[1], rflank)
-  else:
-    return (lflank, alleles, rflank)
+    mask = join_mask(mask)
+  return mask
