@@ -87,17 +87,19 @@ def update_index(index, db_snp_reader, N, M, logger=None):
     alleles = tuple(alleles.split("/"))
     if len(alleles) != 2:
       logger.warn("%r: bad alleles %r, skipping" % (rs_label, alleles))
+      continue
     try:
       lflank, alleles, rflank = convert_to_top((lflank, alleles, rflank))
     except ValueError, e:
       logger.warn("%r: %s, skipping" % (rs_label, e))
+      continue
     try:
       key = top_mask_to_key((lflank, alleles, rflank), N)
     except FlankTooShortError:
       logger.warn("%r: flank(s) too short, skipping" % rs_label)
-    else:
-      true_seq = (lflank[-M:], alleles, rflank[:M])
-      index.setdefault(key, []).append((rs_label, true_seq))
+      continue
+    true_seq = (lflank[-M:], alleles, rflank[:M])
+    index.setdefault(key, []).append((rs_label, true_seq))
   return index
 
 

@@ -19,7 +19,10 @@ def split_mask(mask):
 
 
 def join_mask(mask):
-  return '%s[%s/%s]%s' % (mask[0], mask[1][0], mask[1][1], mask[2])
+  try:
+    return '%s[%s/%s]%s' % (mask[0], mask[1][0], mask[1][1], mask[2])
+  except IndexError:
+    raise ValueError("bad mask format: %r" % (mask,))
 
 
 def _identify_strand(lflank, alleles, rflank):
