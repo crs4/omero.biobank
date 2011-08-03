@@ -28,10 +28,24 @@ class Device(wp.OmeroWrapper):
                 ('model', wp.STRING, wp.REQUIRED),
                 ('release', wp.STRING, wp.REQUIRED)]
 
+class SoftwareProgram(HardwareDevice):
+  OME_TABLE = 'SoftwareProgram'
+  __fields__ = []
+
+
 class HardwareDevice(Device):
   OME_TABLE = 'HardwareDevice'
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
                 ('physicalLocation', wp.STRING, wp.OPTIONAL)]
+
+class Scanner(HardwareDevice):
+  OME_TABLE = 'Scanner'
+  __fields__ = []
+
+class Chip(Device):
+  OME_TABLE = 'Chip'
+  __fields__ = [('barcode', wp.STRING, wp.OPTIONAL)]
+
 
 class ActionCategory(wp.OmeroWrapper):
   OME_TABLE = 'ActionCategory'

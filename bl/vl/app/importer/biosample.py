@@ -131,14 +131,6 @@ class BioSampleRecorder(Core):
   def find_container_klass(self, records):
     return self.find_klass('container_type', records)
 
-  def preload_by_type(self, name, klass, preloaded):
-    self.logger.info('start preloading %s' % name)
-    objs = self.kb.get_objects(klass)
-    for o in objs:
-      assert not o.id in preloaded
-      preloaded[o.id] = o
-    self.logger.info('done preloading %s' % name)
-
   def preload_sources(self):
     self.preload_by_type('sources', self.source_klass, self.preloaded_sources)
 
@@ -361,7 +353,7 @@ def make_parser_biosample(parser):
                       over-ride the container_type column value, if any.
                       """)
   parser.add_argument('--source-type', type=str,
-                      choices=['Tube', 'Individual'],
+                      choices=['Tube', 'Individual', 'PlateWell'],
                       help="""default source type.  It will
                       over-ride the source_type column value, if any.
                       """)
@@ -391,15 +383,9 @@ def make_parser_biosample(parser):
                       default=1000)
 
 def import_biosample_implementation(logger, args):
-  #--
-  action_setup_conf = {}
-  for x in dir(args):
-    if not (x.startswith('_') or x.startswith('func')):
-      action_setup_conf[x] = getattr(args, x)
-  #FIXME HACKS
-  action_setup_conf['ifile'] = action_setup_conf['ifile'].name
-  action_setup_conf['ofile'] = action_setup_conf['ofile'].name
-  #---
+
+  action_setup_conf = self.find_action_setup_conf(args)
+
   recorder = BioSampleRecorder(host=args.host, user=args.user,
                                passwd=args.passwd,
                                keep_tokens=args.keep_tokens,

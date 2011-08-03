@@ -238,14 +238,8 @@ def canonize_records(args, records):
         r[f] = getattr(args, f)
 
 def import_individual_implementation(logger, args):
-  #--
-  action_setup_conf = {}
-  for x in dir(args):
-    if not (x.startswith('_') or x.startswith('func')):
-      action_setup_conf[x] = getattr(args, x)
-  #FIXME HACKS
-  action_setup_conf['ifile'] = action_setup_conf['ifile'].name
-  action_setup_conf['ofile'] = action_setup_conf['ofile'].name
+
+  action_setup_conf = self.find_action_setup_conf(args)
 
   f = csv.DictReader(args.ifile, delimiter='\t')
   records = [r for r in f]

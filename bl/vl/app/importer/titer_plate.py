@@ -209,15 +209,9 @@ def make_parser_titer_plate(parser):
 
 
 def import_titer_plate_implementation(logger, args):
-  #--
-  action_setup_conf = {}
-  for x in dir(args):
-    if not (x.startswith('_') or x.startswith('func')):
-      action_setup_conf[x] = getattr(args, x)
-  #FIXME HACKS
-  action_setup_conf['ifile'] = action_setup_conf['ifile'].name
-  action_setup_conf['ofile'] = action_setup_conf['ofile'].name
-  #---
+
+  action_setup_conf = self.find_action_setup_conf(args)
+
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
                       operator=args.operator,

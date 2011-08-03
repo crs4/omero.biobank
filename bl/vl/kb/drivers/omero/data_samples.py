@@ -35,18 +35,30 @@ class DataObject(wp.OmeroWrapper):
     conf['name'] = conf['sample'].vid
     return conf
 
-class GenotypingMeasure(DataSample):
-  OME_TABLE = 'GenotypingMeasure'
+class MicroArrayMeasure(DataSample):
+  OME_TABLE = 'MicroArrayMeasure'
   __fields__ = []
 
 class AffymetrixCelArrayType(wp.OmeroWrapper):
   OME_TABLE="AffymetrixCelArrayType"
-  __enums__ = ["UNKNOWN", "GenomeWideSNP_6"]
+  __enums__ = ["UNKNOWN", "GENOMEWIDESNP_6"]
 
-class AffymetrixCel(GenotypingMeasure):
+class AffymetrixCel(MicroArrayMeasure):
   OME_TABLE = 'AffymetrixCel'
-  __fields__ = [('arrayType', AffymetrixCelArrayType, wp.REQUIRED),
+  __fields__ = [('Type', AffymetrixCelArrayType, wp.REQUIRED),
                 ('celID',     wp.STRING,              wp.OPTIONAL)]
+
+
+class IlluminaBeadChipAssayType(wp.OmeroWrapper):
+  OME_TABLE="IlluminaBeadChipAssayType"
+  __enums__ = ["UNKNOWN",  "HUMANOMNI5-QUAD",
+               "HUMANOMNI2.5S", "HUMANOMNI2.5-8", "HUMANOMNI1S",
+               "HUMANOMNI1-QUAD", "HUMANOMNIEXPRESS", "HUMANCYTOSNP-12",
+               "METABOCHIP", "IMMUNOCHIP"]
+
+class IlluminaBeadChipAssay(MicroArrayMeasure):
+  OME_TABLE = 'AffymetrixCel'
+  __fields__ = [('assayType', IlluminaBeadChipAssayType, wp.REQUIRED)]
 
 
 class SNPMarkersSet(wp.OmeroWrapper):

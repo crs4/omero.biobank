@@ -1,16 +1,17 @@
 """
-Import OpenEHR
-===============
+Import OpenEHR Diagnosis
+========================
 
 Will read in a tsv file with the following columns::
 
-   study  individual_label timestamp      diagnosis
-   ASTUDY 899              1310057541608  icd10-cm:E10
-   ASTUDY 899              1310057541608  icd10-cm:G35
-   ASTYDY 1806             1310057541608  exclusion-problem_diagnosis
+   study  individual timestamp      diagnosis
+   ASTUDY V899       1310057541608  icd10-cm:E10
+   ASTUDY V899       1310057541608  icd10-cm:G35
+   ASTYDY V1806      1310057541608  exclusion-problem_diagnosis
 I  ...
 
 importer -i diagnosis.tsv diagnosis
+
 
 """
 
@@ -22,7 +23,7 @@ from bl.vl.kb import KBError
 from core import Core, BadRecord
 from version import version
 
-import csv, json
+import csv, json, time
 import time, sys
 
 import itertools as it
@@ -37,23 +38,18 @@ class Recorder(Core):
   """
   def __init__(self, study_label,
                host=None, user=None, passwd=None,  keep_tokens=1,
-               batch_size=1000,  operator='Alfred E. Neumann'):
+               action_setup_conf=None,
+               batch_size=1000,  operator='Alfred E. Neumann',
+               logger=None):
     """
     FIXME
     """
-    self.logger = logger
-    super(Recorder, self).__init__(host, user, passwd, study_label=study_label)
+    super(Recorder, self).__init__(host, user, passwd, study_label=study_label,
+                                   logger=logger)
     self.batch_size = batch_size
+    self.action_setup_conf = action_setup_conf
     self.operator = operator
-    #--
-    #--
-    device_label = ('importer.ehr.diagnosis-%s' %
-                    (version))
-    self.device = self.get_device(label=device_label,
-                                  maker='CRS4', model='importer', release='0.1')
-    self.asetup = self.get_action_setup('importer.diagnosis',
-                                        {'study_label' : study_label,
-                                         'operator' : operator})
+    self.preload_individuals = {}
 
   def record(self, records):
     def records_by_chunk(batch_size, records):
@@ -65,24 +61,38 @@ class Recorder(Core):
     if not records:
       self.logger.warn('no records')
       return
-    self.choose_relevant_study(records)
-    self.preload_enrollments()
-    #--
+
+    self.preload_individuals()
+
     records = self.do_consistency_checks(records)
+
+    study = self.find_study(records)
+    device_label = ('importer.ehr.diagnosis-%s' %  (version))
+    device = self.get_device(label=device_label,
+                             maker='CRS4', model='importer',
+                             release=version)
+    asetup = self.get_action_setup('importer.diagnosis-%f' % time.time(),
+                                   json.dumps(self.action_setup_conf))
+
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(c)
       self.logger.info('done processing chunk %d' % i)
-  #-----------------------------------------------------
-  def process_chunk(self, chunk):
+
+  def preload_individuals(self):
+    self.preload_by_type('individuals', self.kb.Individual,
+                         self.preloaded_individuals)
+
+
+  def process_chunk(self, chunk, study, asetup, device):
     actions = []
     for r in chunk:
-      target = self.known_enrollments[r['individual_label']].individual
-      conf = {'setup' : self.asetup,
-              'device': self.device,
+      target = self.preloaded_individuals[r['individual']]
+      conf = {'setup' : asetup,
+              'device': device,
               'actionCategory' : self.kb.ActionCategory.IMPORT,
               'operator' : self.operator,
-              'context'  : self.default_study,
+              'context'  : study,
               'target' : target
               }
       actions.append(self.kb.factory.create(self.kb.ActionOnIndividual, conf))
@@ -115,9 +125,8 @@ class Recorder(Core):
     good_records = []
     for i, r in enumerate(records):
       reject = 'Rejecting import %d: ' % i
-      if not r['individual_label'] in self.known_enrollments:
-        msg = reject + ('unknown individual_label %s in %s.'
-                        % (r['individual_label'], self.default_study.label))
+      if not r['individual'] in self.preloaded_individuals:
+        msg = reject + 'unknown individual'
         self.logger.error(msg)
         continue
       if not self.legal_diagnosis(r['diagnosis']):
@@ -130,52 +139,45 @@ class Recorder(Core):
         msg = reject + ('timestamp %r is not a long' % r['timestamp'])
         self.logger.error(msg)
         continue
-        k_map[r['label']] = r
       good_records.append(r)
     self.logger.info('done consistency checks')
     #--
     return good_records
 
-  def choose_relevant_study(self, records):
-    if self.default_study:
-      return
-    study_label = records[0]['study']
-    for r in records:
-      if r['study'] != study_label:
-        m = 'all records should have the same study label'
-        self.logger.critical(m)
-        raise ValueError(m)
-    self.default_study = self.get_study(study_label)
+def canonize_records(args, records):
+  fields = ['study']
+  for f in fields:
+    if hasattr(args, f) and getattr(args,f) is not None:
+      for r in records:
+        r[f] = getattr(args, f)
 
-  def preload_enrollments(self):
-    self.logger.info('start pre-loading enrolled individuals for study %s'
-                     % self.default_study.label)
-    self.known_enrollments = {}
-    known_enrollments =  self.kb.get_enrolled(self.default_study)
-    for e in known_enrollments:
-      self.known_enrollments[e.studyCode] = e
-    self.logger.info('there are %d enrolled individuals in study %s' %
-                     (len(self.known_enrollments), self.default_study.label))
-
-
-#------------------------------------------------------------------------------
 
 help_doc = """
 import new diagnosis into VL.
 """
 
 def make_parser_diagnosis(parser):
-  parser.add_argument('-S', '--study', type=str,
+  parser.add_argument('--study', type=str,
                       help="""context study label""")
 
-def import_diagnosis_implementation(args):
+def import_diagnosis_implementation(logger, args):
+
+  action_setup_conf = self.find_action_setup_conf(args)
+
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
-                      keep_tokens=1)
+                      operator=args.operator,
+                      action_setup_conf=action_setup_conf,
+                      logger=logger)
+
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
+
+  canonize_records(args, records)
+
   recorder.record(records)
+
   logger.info('done processing file %s' % args.ifile.name)
 
 

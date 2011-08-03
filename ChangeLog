@@ -1,3 +1,13 @@
+2011-08-03    <zag@manzanillo>
+
+	* bl/vl/app/importer/diagnosis.py: Changed to new style.
+
+	* bl/vl/app/importer/data_collection.py: Changed to new style.
+
+	* bl/vl/app/importer/data_object.py: Changed to new style.
+
+	* bl/vl/app/importer/data_sample.py: Changed to new style.
+
 2011-08-03    <simleo@neuron.crs4.it>
 
 	* bl/vl/app/check_rs.py: changed to convert all masks to TOP
@@ -8,6 +18,14 @@
 	now a tuple). Added join_mask.
 
 2011-08-03    <zag@manzanillo>
+
+	* bl/vl/app/importer/data_sample.py: Major rewrite. Now it has, at
+	least in spirit, a code structure similar to the one of
+	biosample.py and the rest.
+
+	* models/actions.ome.xml: Specialized Device some more, now we
+	have Chip (derived from Device) and Scanner (derived from
+	HardwareDevice). We have SoftwareProgram too (derived from Device)
 
  	* bl/vl/app/importer/biosample.py: now it can be used to import
 	PlateWells. Removed plate_well.py.

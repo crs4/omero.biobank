@@ -87,3 +87,21 @@ class Core(object):
         self.logger.critical(m)
         raise ValueError(m)
     return getattr(self.kb, o_type)
+
+  def find_action_setup_conf(self, args):
+    action_setup_conf = {}
+    for x in dir(args):
+      if not (x.startswith('_') or x.startswith('func')):
+        action_setup_conf[x] = getattr(args, x)
+    #FIXME HACKS
+    action_setup_conf['ifile'] = action_setup_conf['ifile'].name
+    action_setup_conf['ofile'] = action_setup_conf['ofile'].name
+    return action_setup_conf
+
+  def preload_by_type(self, name, klass, preloaded):
+    self.logger.info('start preloading %s' % name)
+    objs = self.kb.get_objects(klass)
+    for o in objs:
+      assert not o.id in preloaded
+      preloaded[o.id] = o
+    self.logger.info('done preloading %s' % name)

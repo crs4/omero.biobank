@@ -31,12 +31,28 @@ FIXME
     </properties>
   </type>
 
+  <type id="ome.model.vl.SoftwareProgram"
+	superclass="ome.model.vl.Device">
+  </type>
+
+
+  <type id="ome.model.vl.Chip"
+	superclass="ome.model.vl.Device">
+    <properties>
+      <optional name="barcode" type="string" unique="true"/>
+    </properties>
+  </type>
+
   <type id="ome.model.vl.HardwareDevice"
 	superclass="ome.model.vl.Device">
     <properties>
       <optional name="barcode" type="string" unique="true"/>
       <optional name="physicalLocation" type="string"/>
     </properties>
+  </type>
+
+  <type id="ome.model.vl.Scanner"
+	superclass="ome.model.vl.HardwareDevice">
   </type>
   
   <type id="ome.model.vl.ActionSetup">

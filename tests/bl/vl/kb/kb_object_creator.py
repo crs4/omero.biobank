@@ -47,6 +47,17 @@ class KBObjectCreator(unittest.TestCase):
     conf['id'] = device.id
     return conf, device
 
+  def create_hardware_device(self):
+    conf = {'label' : 'foo-%f' % time.time(),
+            'maker' : 'foomaker',
+            'model' : 'foomodel',
+            'release' : '%f' % time.time(),
+            'barcode' : '%f' % time.time(),
+            'physicalLocation' : 'HERE_THERE_EVERYWHERE'}
+    device = self.kb.factory.create(self.kb.HardwareDevice, conf)
+    conf['id'] = device.id
+    return conf, device
+
   def create_action_setup(self, action_setup=None):
     conf = {'label' : 'asetup-%f' % time.time(),
             'conf' : '{"param1": "foo"}'}
@@ -159,7 +170,7 @@ class KBObjectCreator(unittest.TestCase):
 
   def create_affymetrix_cel(self, action=None):
     conf = self.create_data_sample_conf_helper(action)
-    conf['arrayType'] = self.kb.AffymetrixCelArrayType.GenomeWideSNP_6
+    conf['arrayType'] = self.kb.AffymetrixCelArrayType.GENOMEWIDESNP_6
     ds = self.kb.factory.create(self.kb.AffymetrixCel, conf)
     return conf, ds
 

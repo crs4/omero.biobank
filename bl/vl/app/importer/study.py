@@ -119,8 +119,6 @@ def canonize_records(args, records):
       r['description'] = 'No description provided'
 
 def import_study_implementation(logger, args):
-  # FIXME it is very likely that the following can be directly
-  # implemented as a validation function in the parser definition above.
   o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
                      delimiter='\t')
   recorder = Recorder(o, host=args.host, user=args.user, passwd=args.passwd,

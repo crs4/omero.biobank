@@ -4,20 +4,17 @@ Import of Device(s)
 
 Will read in a tsv file with the following columns::
 
-  label barcode maker model release location
-  pula01  8989898 Affymetrix  GeneChip Scanner 3000 7G  Pula bld. 5
-  chip001 8329482 Affymetrix  Genome-Wide Human SNP Array 6.0  None
+  study  device_type    label   barcode maker model release location
+  BSTUDY Scanner pula01  8989898 Affymetrix  GeneChip Scanner 3000 7G  Pula bld. 5
+  BSTUDY Chip    chip001 8329482 Affymetrix  Genome-Wide Human SNP Array 6.0  None
 
-All devices have a label, an optional barcode, a maker, a model and a
-release, and, possibly a physical location. In the example above, in
-the first line we have defined a scanner, which is physically in the
-lab in Pula, building 5.  The following line defines a chip.
-
-FIXME this starts to become somewhat baroque. How does one write in an
-action that it has used chip xxx on scanner yyy?
+All devices have a type, a label, an optional barcode, a maker, a
+model and a release, and, possibly a physical location. In the example
+above, in the first line we have defined a scanner, which is
+physically in the lab in Pula, building 5.  The following line defines
+a chip.
 """
 
-from bl.vl.kb import KBError
 from core import Core, BadRecord
 from version import version
 
@@ -25,42 +22,28 @@ import itertools as it
 import csv, json
 import time, sys
 
-#-----------------------------------------------------------------------------
-#FIXME this should be factored out....
-
-import logging, time
-logger = logging.getLogger()
-counter = 0
-def debug_wrapper(f):
-  def debug_wrapper_wrapper(*args, **kv):
-    global counter
-    now = time.time()
-    counter += 1
-    logger.debug('%s[%d] in' % (f.__name__, counter))
-    res = f(*args, **kv)
-    logger.debug('%s[%d] out (%f)' % (f.__name__, counter, time.time() - now))
-    counter -= 1
-    return res
-  return debug_wrapper_wrapper
-#-----------------------------------------------------------------------------
-
 class Recorder(Core):
   """
   An utility class that handles the actual recording of Device(s)
   into VL, including Device(s) generation as needed.
   """
   def __init__(self,
+               study_label,
                host=None, user=None, passwd=None, keep_tokens=1,
-               batch_size=1000, operator='Alfred E. Neumann'):
+               batch_size=1000, operator='Alfred E. Neumann',
+               action_setup_conf=None,
+               logger=None):
     """
     FIXME
     """
     super(Recorder, self).__init__(host, user, passwd, keep_tokens,
-                                   None)
+                                   study_label=study_label,
+                                   logger=logger)
     self.batch_size = batch_size
     self.operator = operator
+    self.action_setup_conf = action_setup_conf
 
-  def record(self, records):
+  def record(self, records, otsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -70,12 +53,14 @@ class Recorder(Core):
     if not records:
       self.logger.warn('no records')
       return
-    self.preload_devices()
     #--
+    self.preload_devices()
+    study  = self.find_study(records)
+
     records = self.do_consistency_checks(records)
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
-      self.process_chunk(c)
+      self.process_chunk(c, otsv, study)
       self.logger.info('done processing chunk %d' % i)
 
 
@@ -98,7 +83,7 @@ class Recorder(Core):
     good_records = []
     for i, r in enumerate(records):
       reject = ' Rejecting import of record %d.' % i
-      if r['barcode'] in self.known_barcodes:
+      if 'barcode' in r and r['barcode'] in self.known_barcodes:
         m = 'there is a pre-existing object with barcode %s.' + reject
         self.logger.warn(m % r['barcode'])
         continue
@@ -108,6 +93,16 @@ class Recorder(Core):
         continue
       if r['label'] in k_map:
         f = ('there is a pre-existing device with label %s. (in this batch)'
+             + reject)
+        self.logger.error(f % r['label'])
+        continue
+      if 'device_type' is not in r:
+        f = ('missing device_type for record with label %s.'
+             + reject)
+        self.logger.error(f % r['label'])
+        continue
+      if not issubclass(getattr(self.kb, r['device_type']), self.kb.Device):
+        f = ('device_type of device label %s is not a subclass of Device'
              + reject)
         self.logger.error(f % r['label'])
         continue
@@ -132,9 +127,10 @@ class Recorder(Core):
     #--
     return good_records
 
-  def process_chunk(self, chunk):
+  def process_chunk(self, chunk, otsv, study):
     devices = []
     for r in chunk:
+      dklass = getattr(self.kb, r['device_type'])
       conf = {}
       for k in ['label', 'maker', 'model', 'release']:
         conf[k] = r[k]
@@ -142,29 +138,69 @@ class Recorder(Core):
         conf['physicalLocation'] = r['location']
       if 'barcode' in r and r['barcode'] is not 'None':
         conf['barcode'] = r['barcode']
-      devices.append(self.kb.factory.create(self.kb.Device, conf))
+      devices.append(self.kb.factory.create(dklass, conf))
     self.kb.save_array(devices)
     #--
     for d in devices:
-      self.logger.info('saved %s[%s,%s,%s] as %s.'
-                       % (d.label, d.maker, d.model, d.release, d.id))
+      otsv.writerow({'study' : study.label,
+                     'label' : d.label,
+                     'type'  : d.get_ome_table(),
+                     'vid'   : d.id })
+
+
+def canonize_records(args, records):
+  fields = ['study', 'maker', 'model', 'release', 'device_type']
+  for f in fields:
+    if hasattr(args, f) and getattr(args,f) is not None:
+      for r in records:
+        r[f] = getattr(args, f)
 
 help_doc = """
 import new Device definitions into a virgil system.
 """
 
 def make_parser_device(parser):
-  pass
+  parser.add_argument('--study', type=str,
+                      help="""default conxtest study label.
+                      It will over-ride the study column value""")
+  parser.add_argument('--device-type', type=str,
+                      choices=['Chip', 'Scanner'],
+                      help="""default device type.  It will
+                      over-ride the container_type column value, if any.
+                      """)
+  parser.add_argument('--maker', type=str,
+                      help="""the device maker,
+                      it will override the corresponding column""")
+  parser.add_argument('--model', type=str,
+                      help="""the device model,
+                      it will override the corresponding column""")
+  parser.add_argument('--release', type=str,
+                      help="""the device release,
+                      it will override the corresponding column""")
 
-def import_device_implementation(args):
-  # FIXME it is very likely that the following can be directly
-  # implemented as a validation function in the parser definition above.
-  recorder = Recorder(host=args.host, user=args.user, passwd=args.passwd,
-                      keep_tokens=args.keep_tokens)
+
+def import_device_implementation(logger, args):
+
+  action_setup_conf = self.find_action_setup_conf(args)
+
+  recorder = Recorder(args.study,
+                      host=args.host, user=args.user, passwd=args.passwd,
+                      operator=args.operator,
+                      action_setup_conf=action_setup_conf,
+                      keep_tokens=args.keep_tokens,
+                      logger=logger)
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  recorder.record(records)
+
+  canonize_records(args, records)
+
+  o = csv.DictWriter(args.ofile,
+                     fieldnames=['study', 'label', 'type', 'vid'],
+                     delimiter='\t')
+  o.writeheader()
+  recorder.record(records, o)
+
   logger.info('done processing file %s' % args.ifile.name)
 
 

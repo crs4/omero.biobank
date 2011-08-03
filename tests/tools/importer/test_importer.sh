@@ -50,8 +50,11 @@ ${IMPORTER} -i plate_well_mapped_2.tsv -o plate_well_mapping.tsv \
              --container-status CONTENTUSABLE --container-type PlateWell
 
 
+${IMPORTER} -i devices.tsv -o devices_mapping.tsv device --study BSTUDY
+
+
 exit
-${IMPORTER} -i devices.tsv device
+
 ${IMPORTER} -i data_sample.tsv data_sample
 ${IMPORTER} -i data_object.tsv data_object
 ${IMPORTER} -i data_collection.tsv data_collection

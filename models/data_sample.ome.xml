@@ -26,7 +26,7 @@
     </properties>
   </type>
 
-  <type id="ome.model.vl.GenotypingMeasure" 
+  <type id="ome.model.vl.MicroArrayMeasure" 
 	superclass="ome.model.vl.DataSample">
     <properties>
     </properties>
@@ -34,14 +34,35 @@
 
   <enum id="ome.model.vl.AffymetrixCelArrayType">
     <entry name="UNKNOWN"/>
-    <entry name="GenomeWideSNP_6"/>
+    <entry name="GENOMEWIDESNP_6"/>
   </enum>
 
   <type id="ome.model.vl.AffymetrixCel"
-	superclass="ome.model.vl.GenotypingMeasure">
+	superclass="ome.model.vl.MicroArrayMeasure">
     <properties>
       <required name="arrayType" type="ome.model.vl.AffymetrixCelArrayType"/>
       <optional name="celID"     type="string" unique="true"/>
+    </properties>
+  </type>
+
+  <enum id="ome.model.vl.IlluminaBeadChipAssayType">
+    <entry name="UNKNOWN"/>
+    <entry name="HUMAN1M-DUO"/>
+    <entry name="HUMANOMNI5-QUAD"/>
+    <entry name="HUMANOMNI2.5S"/>
+    <entry name="HUMANOMNI2.5-8"/>
+    <entry name="HUMANOMNI1S"/>
+    <entry name="HUMANOMNI1-QUAD"/>
+    <entry name="HUMANOMNIEXPRESS"/>
+    <entry name="HUMANCYTOSNP-12"/>
+    <entry name="METABOCHIP"/>
+    <entry name="IMMUNOCHIP"/>
+  </enum>
+
+  <type id="ome.model.vl.IlluminaBeadChip"
+	superclass="ome.model.vl.MicroArrayMeasure">
+    <properties>
+      <required name="assayType" type="ome.model.vl.IlluminaBeadChipAssayType"/>
     </properties>
   </type>
 

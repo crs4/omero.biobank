@@ -25,7 +25,6 @@ import bl.vl.app.importer.study
 import bl.vl.app.importer.individual
 import bl.vl.app.importer.biosample
 import bl.vl.app.importer.titer_plate
-import bl.vl.app.importer.plate_well
 import bl.vl.app.importer.device
 import bl.vl.app.importer.data_sample
 import bl.vl.app.importer.data_object
@@ -44,7 +43,6 @@ class App(object):
     bl.vl.app.importer.individual.do_register(self.supported_submodules)
     bl.vl.app.importer.biosample.do_register(self.supported_submodules)
     bl.vl.app.importer.titer_plate.do_register(self.supported_submodules)
-    bl.vl.app.importer.plate_well.do_register(self.supported_submodules)
     bl.vl.app.importer.device.do_register(self.supported_submodules)
     bl.vl.app.importer.data_sample.do_register(self.supported_submodules)
     bl.vl.app.importer.data_object.do_register(self.supported_submodules)
