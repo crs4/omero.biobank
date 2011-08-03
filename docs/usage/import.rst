@@ -120,6 +120,16 @@ FIXME: provide detailed list of possible columns, their accepted
 values and the implied importing rules. Discuss also the meaning of
 '''used_volume'''.
 
+A special case is when the records refer to biosamples contained in
+plate wells. Together with the minimal columns above, there should be
+a column with the vid of the relevant TiterPlate (see below). For instance::
+
+  plate  label source
+  V39030 A01   V932814892
+  V39031 A02   V932814893
+  V39032 A03   V932814894
+
+where the label column is now the label of the well position. 
 
 
 Importing a TiterPlate

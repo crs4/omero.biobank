@@ -40,6 +40,30 @@ microliters.
                             --container-content DNA \
                             --container-status  USABLE
 
+
+A special case is when the records refer to biosamples contained in
+plate wells. Together with the minimal columns above, there should be
+a column with the vid of the relevant TiterPlate. For instance::
+
+  plate  label source
+  V39030 A01   V932814892
+  V39031 A02   V932814893
+  V39032 A03   V932814894
+
+where the label column is now the label of the well position.
+
+If row and column (optional) are provided, it will use that
+location. If they are not, it will deduce them from label (e.g., J01
+-> row=10, column=1). Missing labels will be generated as
+
+       '%s%03d' % (chr(row + ord('A') - 1), column)
+
+Badly formed label will bring the rejection of the record. The same
+will happen if label, row and column are inconsistent.  The well will
+be filled by current_volume material produced by removing used_volume
+material taken from the bio material contained in the vessel
+identified by source. Row and Column are base 1.
+
 """
 
 from core import Core, BadRecord
@@ -52,6 +76,8 @@ import itertools as it
 
 # FIXME this is an hack...
 from bl.vl.kb.drivers.omero.vessels import VesselContent, VesselStatus
+from bl.vl.kb.drivers.omero.utils import make_unique_key
+
 
 class BioSampleRecorder(Core):
   """
@@ -68,7 +94,7 @@ class BioSampleRecorder(Core):
     self.action_setup_conf = action_setup_conf
     self.preloaded_sources = {}
     self.preloaded_containers = {}
-
+    self.preloaded_plates = {}
 
   def record(self, records, otsv):
     def records_by_chunk(batch_size, records):
@@ -81,22 +107,22 @@ class BioSampleRecorder(Core):
       self.logger.warn('no records')
       return
     #--
-    study        = self.find_study(records)
-    self.source_klass = self.find_source_klass(records)
+    study                = self.find_study(records)
+    self.source_klass    = self.find_source_klass(records)
     self.container_klass = self.find_container_klass(records)
-    self.preload_sources(self.source_klass)
-    self.preload_containers(self.container_klass)
-    #--
+    self.preload_sources()
+    if self.container_klass == self.kb.PlateWell:
+      self.preload_plates()
+
     records = self.do_consistency_checks(records)
-    #--
+
     device = self.get_device('importer-%s.biosample' % version,
                              'CRS4', 'IMPORT', version)
     asetup = self.get_action_setup('import-prog-%f' % time.time(),
                                    json.dumps(self.action_setup_conf))
-    acat  = self.kb.ActionCategory.IMPORT
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
-      self.process_chunk(otsv, c, study, asetup, device, acat)
+      self.process_chunk(otsv, c, study, asetup, device)
       self.logger.info('done processing chunk %d' % i)
 
   def find_source_klass(self, records):
@@ -105,25 +131,85 @@ class BioSampleRecorder(Core):
   def find_container_klass(self, records):
     return self.find_klass('container_type', records)
 
-  def preload_sources(self, klass):
-    self.logger.info('start preloading sources')
-    sources = self.kb.get_objects(klass)
-    for s in sources:
-      assert not s.id in self.preloaded_sources
-      self.preloaded_sources[s.id] = s
-    self.logger.info('done preloading sources')
+  def preload_by_type(self, name, klass, preloaded):
+    self.logger.info('start preloading %s' % name)
+    objs = self.kb.get_objects(klass)
+    for o in objs:
+      assert not o.id in preloaded
+      preloaded[o.id] = o
+    self.logger.info('done preloading %s' % name)
 
-  def preload_containers(self, klass):
-    self.logger.info('start preloading containers')
-    containers = self.kb.get_objects(klass)
-    for c in containers:
-      assert not c.id in self.preloaded_containers
-      self.preloaded_containers[c.label] = c
-    self.logger.info('done preloading containers')
+  def preload_sources(self):
+    self.preload_by_type('sources', self.source_klass, self.preloaded_sources)
+
+  def preload_plates(self):
+    self.preload_by_type('plates', self.kb.TiterPlate, self.preloaded_plates)
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
-    #--
+    if self.container_klass == self.kb.PlateWell:
+      return self.do_consistency_checks_plate_well(records)
+    else:
+      return self.do_consistency_checks_tube(records)
+
+  def do_consistency_checks_plate_well(self, records):
+    def preload_containers():
+      self.logger.info('start preloading containers')
+      objs = self.kb.get_objects(self.container_klass)
+      for o in objs:
+        assert not o.containerSlotLabelUK in self.preloaded_containers
+        self.preloaded_containers[o.containerSlotLabelUK] = o
+      self.logger.info('done preloading containers')
+
+    def build_key(r):
+      return make_unique_key(self.preloaded_plates[r['plate']],
+                             r['label'])
+
+    preload_containers()
+
+    good_records = []
+    for i, r in enumerate(records):
+      reject = 'Rejecting import of record %d.' % i
+      if not r['source'] in  self.preloaded_sources:
+        f = 'there is no known source for %s. ' + reject
+        self.logger.error(f % r['source'])
+        continue
+      if not r['plate'] in  self.preloaded_plates:
+        f = 'there is no known plate for %s. ' + reject
+        self.logger.error(f % r['plate'])
+        continue
+      if not 'label' in r or not 'row' in r or not 'column' in r:
+        f = 'there is no label/row/column.' + reject
+        self.logger.error(f)
+        continue
+
+      key = build_key(r)
+      if key in self.preloaded_containers:
+        f = 'there is a pre-existing container with key %s. ' + reject
+        self.logger.warn(f % key)
+        continue
+      good_records.append(r)
+    self.logger.info('done consistency checks')
+
+    k_map = {}
+    for r in good_records:
+      key = build_key(r)
+      if key in k_map:
+        self.logger.error('multiple record for the same key: %s. Rejecting.'
+                          % key)
+      else:
+        k_map[key] = r
+    return k_map.values()
+
+  def do_consistency_checks_tube(self, records):
+    def preload_containers():
+      self.logger.info('start preloading containers')
+      objs = self.kb.get_objects(self.container_klass)
+      for o in objs:
+        assert not o.label in self.preloaded_containers
+        self.preloaded_containers[o.label] = o
+      self.logger.info('done preloading containers')
+
     k_map = {}
     for r in records:
       if r['label'] in k_map:
@@ -132,7 +218,12 @@ class BioSampleRecorder(Core):
       else:
         k_map[r['label']] = r
     records = k_map.values()
-    #--
+
+    if len(records) == 0:
+      return []
+
+    preload_containers()
+
     good_records = []
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d.' % i
@@ -147,11 +238,7 @@ class BioSampleRecorder(Core):
         continue
       if not r['source'] in  self.preloaded_sources:
         f = 'there is no known source for %s. ' + reject
-        self.logger.warn(f % r['source'])
-        continue
-      if not r.has_key('current_volume'):
-        f = 'undefined current_volume for %s. ' + reject
-        self.logger.warn(f % r['label'])
+        self.logger.error(f % r['source'])
         continue
       good_records.append(r)
     self.logger.info('done consistency checks')
@@ -159,15 +246,21 @@ class BioSampleRecorder(Core):
     return good_records
 
   def process_chunk(self, otsv, chunk,
-                    study, asetup, device, category):
+                    study, asetup, device):
     aklass = {self.kb.Individual : self.kb.ActionOnIndividual,
-              self.kb.Tube       : self.kb.ActionOnVessel}
+              self.kb.Tube       : self.kb.ActionOnVessel,
+              self.kb.PlateWell  : self.kb.ActionOnVessel,
+              }
     actions = []
+    target_content = []
     for r in chunk:
       target = self.preloaded_sources[r['source']]
+      target_content.append(target.content if hasattr(target, 'content')
+                            else None)
       conf = {'setup' : asetup,
               'device': device,
-              'actionCategory' : category,
+              'actionCategory' : getattr(self.kb.ActionCategory,
+                                         r['action_category']),
               'operator' : self.operator,
               'context'  : study,
               'target' : target
@@ -177,21 +270,28 @@ class BioSampleRecorder(Core):
     self.kb.save_array(actions)
     #--
     vessels = []
-    for a,r in it.izip(actions, chunk):
+    for a,r,c in it.izip(actions, chunk, target_content):
       a.unload()
       current_volume = float(r['current_volume'])
       initial_volume = current_volume
+      content = (c if r['action_category'] == 'ALIQUOTING'
+                   else getattr(self.kb.VesselContent,
+                                r['container_content'].upper()))
       conf = {
         'label'         : r['label'],
         'currentVolume' : current_volume,
         'initialVolume' : initial_volume,
-        'content' : getattr(self.kb.VesselContent,
-                            r['container_content'].upper()),
+        'content' : content,
         'status'  : getattr(self.kb.VesselStatus,
                             r['container_status'].upper()),
         'action'        : a,
         }
-      if r.has_key('barcode'):
+      if self.container_klass == self.kb.PlateWell:
+        plate = self.preloaded_plates[r['plate']]
+        row, column = r['row'], r['column']
+        conf['container'] = plate
+        conf['slot']      = (row - 1) * plate.columns + column
+      elif 'barcode' in r:
         conf['barcode'] = r['barcode']
       vessels.append(self.kb.factory.create(self.container_klass, conf))
     #--
@@ -204,28 +304,66 @@ class BioSampleRecorder(Core):
                      'vid'   : v.id })
 
 def canonize_records(args, records):
+  def build_well_label(row, column):
+    # row and column are BASE 1 !
+    return '%s%02d' % (chr(row + ord('A') - 1), column)
+
+  def find_well_coords(label):
+    # FIXME this is ugly, but who cares...
+    for i in range(len(label)-1, 0, -1):
+      if not label[i].isdigit():
+        break
+    column = int(label[i+1:])
+    label = label[:i+1]
+    row  = 0
+    base = 1
+    for x in label[::-1]:
+      row += (ord(x)-ord('A') + 1) * base
+      base *= 26
+    return row, column
+
   fields = ['study', 'source_type',
             'container_type', 'container_content', 'container_status',
-            'current_volume', 'used_volume']
+            'current_volume', 'used_volume', 'action_category']
   for f in fields:
     if hasattr(args, f) and getattr(args,f) is not None:
       for r in records:
         r[f] = getattr(args, f)
+
+  # handle special cases
+  for r in records:
+    if 'action_category' not in r:
+      r['action_category'] = 'IMPORT'
+
+  if r['container_type'] == 'PlateWell':
+    for r in records:
+      if ('row' in r and 'column' in r):
+        r['row'], r['column'] = map(int, [r['row'],r['column']])
+        if 'label' not in r:
+          r['label'] = build_well_label(r['row'], r['column'])
+      elif 'label' in r:
+        r['row'], r['column'] = find_well_coords(r['label'])
+
 
 def make_parser_biosample(parser):
   parser.add_argument('--study', type=str,
                       help="""default study assumed as context for the
                       import action.  It will
                       over-ride the study column value, if any.""")
+  parser.add_argument('--action-category', type=str,
+                      choices=['IMPORT', 'EXTRACTION', 'ALIQUOTING'],
+                      help="""default action category.
+                      It will over-ride the container_type column
+                      value, if any. It will default to IMPORT""")
   parser.add_argument('--container-type', type=str,
-                      choices=['Tube'],
+                      choices=['Tube', 'PlateWell'],
                       help="""default container type.  It will
-                      over-ride the study column value.
+                      over-ride the container_type column value, if any.
                       """)
   parser.add_argument('--source-type', type=str,
                       choices=['Tube', 'Individual'],
                       help="""default source type.  It will
-                      over-ride the source_type column value.
+                      over-ride the source_type column value, if any.
                       """)
   parser.add_argument('--container-content', type=str,
                       choices=[x.enum_label() for x in VesselContent.__enums__],
@@ -251,8 +389,6 @@ def make_parser_biosample(parser):
                       help="""Size of the batch of objects
                       to be processed in parallel (if possible)""",
                       default=1000)
-
-
 
 def import_biosample_implementation(logger, args):
   #--

@@ -68,7 +68,8 @@ class MapApp(Core):
     else:
       return self.resolve_mapping_object(source_type, labels)
 
-  def dump(self, ifile, source_type_label, column_label, ofile):
+  def dump(self, ifile, source_type_label,
+           column_label, transformed_column_label, ofile):
     if not hasattr(self.kb, source_type_label):
       msg = 'Unknown source type: %s' % source_type_label
       self.logger.critical(msg)
@@ -85,11 +86,11 @@ class MapApp(Core):
 
     self.logger.info('start writing %s' % ofile.name)
     fieldnames = [k for k in records[0].keys() if k != column_label]
-    fieldnames.append('source')
+    fieldnames.append(transformed_column_label)
     o = csv.DictWriter(ofile, fieldnames=fieldnames, delimiter='\t')
     o.writeheader()
     for r in records:
-      r['source'] = mapping[r.pop(column_label)]
+      r[transformed_column_label] = mapping[r.pop(column_label)]
       o.writerow(r)
     self.logger.info('done writing %s' % ofile.name)
 #-------------------------------------------------------------------------
@@ -105,15 +106,26 @@ usage example:
 """
 
 def make_parser_map(parser):
+  def pair_of_names(s):
+    parts = s.split(',')
+    if len(parts) == 1:
+      return tuple([parts[0], 'source'])
+    elif len(parts) == 2:
+      return tuple(parts)
+    else:
+      raise ValueError()
+
   parser.add_argument('-i', '--ifile', type=argparse.FileType('r'),
                       help='the input tsv file',
                       required=True)
   parser.add_argument('--source-type', type=str,
-                      choices=['Tube', 'Individual'],
+                      choices=['Tube', 'Individual', 'TiterPlate'],
                       help="""assigned source type""",
                       required=True)
-  parser.add_argument('--column', type=str,
-                      help="object labels column name",
+  parser.add_argument('--column', type=pair_of_names,
+                      help="""comma separated list (no spaces) of the
+                      object labels column name and the name of the
+                      replacement column. The latter defaults to 'source'""",
                       required=True)
   parser.add_argument('--study', type=str,
                       help="study label")
@@ -124,7 +136,8 @@ def import_map_implementation(logger, args):
                keep_tokens=args.keep_tokens,
                study_label=args.study, logger=logger)
 
-  app.dump(args.ifile, args.source_type, args.column, args.ofile)
+  app.dump(args.ifile, args.source_type,
+           args.column[0], args.column[1], args.ofile)
 
 def do_register(registration_list):
   registration_list.append(('map', help_doc,

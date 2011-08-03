@@ -1,3 +1,8 @@
+2011-08-03    <zag@manzanillo>
+
+ 	* bl/vl/app/importer/biosample.py: now it can be used to import
+	PlateWells. Removed plate_well.py.
+
 2011-08-02    <simleo@neuron.crs4.it>
 
 	* bl/vl/app/check_rs.py: does not read the full annotation table
