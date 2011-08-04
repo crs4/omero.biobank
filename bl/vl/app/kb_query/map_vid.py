@@ -18,7 +18,6 @@ import argparse
 import time, sys
 import itertools as it
 
-import logging
 
 class MapVIDApp(Core):
   """
@@ -43,7 +42,6 @@ class MapVIDApp(Core):
     """
     FIXME
     """
-    self.logger = logging.getLogger()
     super(MapVIDApp, self).__init__(host, user, passwd,
                                  keep_tokens=keep_tokens,
                                  study_label=study_label,

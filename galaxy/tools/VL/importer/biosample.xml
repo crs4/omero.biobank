@@ -1,4 +1,4 @@
-<tool id="vl_import_biosample" name="Import_BioSample">
+<tool id="vl_import_biosample" name="VLI.biosample">
   <description>import BioSample definitions within omero/vl</description>
   <command interpreter="python">
     biosample.py
@@ -7,9 +7,9 @@
       --user=$advanced_configuration.vl_user
       --passwd=$advanced_configuration.vl_passwd
     #else
-      --host=localhost
-      --user=root
-      --passwd=romeo
+      --host=$__app__.config.omero_default_host
+      --user=$__app__.config.omero_default_user
+      --passwd=$__app__.config.omero_default_passwd
     #end if
     --operator=galaxy
     --ifile=${input1}
@@ -19,12 +19,12 @@
     biosample
     --study ${study}
     --source-type ${source_type}
-    --container-type ${container_type}
-    #if $container_content != 'use_provided'
-      --container-content=${container_content}
+    --vessel-type ${vessel_type}
+    #if $vessel_content != 'use_provided'
+      --vessel-content=${vessel_content}
     #end if
-    #if $container_status != 'use_provided'
-      --container-status=${container_status}
+    #if $vessel_status != 'use_provided'
+      --vessel-status=${vessel_status}
     #end if
   </command>  
   <inputs>
@@ -49,16 +49,18 @@
 	   label="type of the source object"
 	   help="Choose from the legal types. See below.">
       <option value="Tube"       selected="true">Tube</option>
+      <option value="PlateWell">PlateWell</option>
       <option value="Individual">Individual</option>
     </param>
 
-    <param name="container_type" type="select"
-	   label="type of the container object"
+    <param name="vessel_type" type="select"
+	   label="type of the vessel object"
 	   help="Choose from the legal types. See below.">
       <option value="Tube"       selected="true">Tube</option>
+      <option value="PlateWell">PlateWell</option>
     </param>
 
-    <param name="container_content" type="select" label="Container content" 
+    <param name="vessel_content" type="select" label="Vessel content" 
 	   help="Choose from one of the available values. See below.">    
       <options from_parameter="tool.app.kb.VesselContent.__enums__" 
 	       transform_lines="[ &quot;%s%s%s&quot; 
@@ -69,11 +71,11 @@
         <column name="value" index="0"/>
         <column name="name" index="1"/>
         <filter type="sort_by" column="0"/>
-        <filter type="add_value" name="Records provide container content" 
+        <filter type="add_value" name="Records provide vessel content" 
                 value="use_provided" index="0"/>
       </options>
     </param>
-    <param name="container_status" type="select" label="Container status" 
+    <param name="vessel_status" type="select" label="Vessel status" 
 	   help="Choose from one of the available values. See below.">    
       <options from_parameter="tool.app.kb.VesselStatus.__enums__" 
 	       transform_lines="[ &quot;%s%s%s&quot; 
@@ -84,7 +86,7 @@
         <column name="value" index="0"/>
         <column name="name" index="1"/>
         <filter type="sort_by" column="0"/>
-        <filter type="add_value" name="Records provide container status" 
+        <filter type="add_value" name="Records provide vessel status" 
                 value="use_provided" index="0"/>
       </options>
     </param>
@@ -99,7 +101,7 @@
       <when value="yes">
 	<param name="current_volume" type="float"
 	       value="20" 
-	       help="fluid (FIXME UNITS) currently held in the container">
+	       help="fluid (FIXME UNITS) currently held in the vessel">
 	  <validator type="in_range" message="Volume must be positive" 
 		     min="0" max="inf"/>
 	</param>
@@ -121,9 +123,9 @@
       </param>
       <when value="default"/>
       <when value="advanced">
-	<param name="vl_host" size="40" type="text" value="biobank05.crs4.it" 
+	<param name="vl_host" size="40" type="text" value="localhost" 
 	       label="Omero/VL host"/>
-	<param name="vl_user" size="20" type="text" value="galaxy" 
+	<param name="vl_user" size="20" type="text" value="root" 
 	       label="Omero/VL user"/>
 	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
 	       label="Omero/VL passwd"/>
@@ -132,10 +134,50 @@
   </inputs>
 
   <outputs>
-    <data format="tabular" name="output1"/>
-    <data format="txt" name="logfile"/>
+    <data format="tabular" name="output1" label="${tool.name}.output"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
+FIXME
+
+
+A biosample record will have, at least, the following fields::
+
+  label     source
+  I001-bs-2 V932814892
+  I002-bs-2 V932814892
+
+Another example, this time dna samples::
+
+  label    source     used_volume current_volume
+  I001-dna V932814899 0.3         0.2
+  I002-dna V932814900 0.22        0.2
+
+where '''used_volume''' and '''current_volume''' are measured in FIXME
+microliters.
+
+A special case is when the records refer to biosamples contained in
+plate wells. Together with the minimal columns above, there should be
+a column with the vid of the relevant TiterPlate. For instance::
+
+  plate  label source
+  V39030 A01   V932814892
+  V39031 A02   V932814893
+  V39032 A03   V932814894
+
+where the label column is now the label of the well position.
+
+If row and column (optional) are provided, it will use that
+location. If they are not, it will deduce them from label (e.g., J01
+-> row=10, column=1). Missing labels will be generated as
+
+       '%s%03d' % (chr(row + ord('A') - 1), column)
+
+Badly formed label will bring the rejection of the record. The same
+will happen if label, row and column are inconsistent.  The well will
+be filled by current_volume material produced by removing used_volume
+material taken from the bio material contained in the vessel
+identified by source. Row and Column are base 1.
 
   </help>
 

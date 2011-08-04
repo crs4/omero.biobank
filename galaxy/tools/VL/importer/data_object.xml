@@ -1,7 +1,7 @@
-<tool id="vl_import_individual" name="VLI.individual">
-  <description>import individual definitions within omero/vl</description>
+<tool id="vl_import_data_object" name="VLI.data_object">
+  <description>import DataObject definitions within omero/vl</description>
   <command interpreter="python">
-    individual.py
+    data_object.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user
@@ -15,13 +15,17 @@
     --ifile=$input1
     --ofile=$output1
     --loglevel=WARNING
-    --logfile=$logfile
-    individual
-    --study $study
+    --logfile=${logfile}
+    data_object
+    --study=${study}
+    #if $mimetype != 'use_provided'
+      --mimetype=${mimetype}
+    #end if
   </command>  
   <inputs>
     <param format="tabular" name="input1" type="data"
 	   label="A tabular dataset with the following columns ..."/>
+
     <param name="study" type="select" label="Context study" 
 	   help="Choose from the already defined studies. See below.">    
       <options from_parameter="tool.app.known_studies" 
@@ -31,10 +35,20 @@
         <column name="value" index="0"/>
         <column name="name" index="1"/>
         <filter type="sort_by" column="0"/>
-        <filter type="add_value" name="Records will provide study labels" 
+        <filter type="add_value" name="Records provide study labels" 
                 value="use_provided" index="0"/>
       </options>
     </param>
+
+    <param name="mimetype" type="select"
+	   label="mimetype for the data object."
+	   help="Choose from the following. See below.">
+      <option value="use_provided"       selected="true">
+      Use record provided</option>
+      <option value="x-vl/affymetrix-cel">x-vl/affymetrix-cel</option>
+    </param>
+
+    <!-- ************************************************** -->
     <conditional name="advanced_configuration">
       <param name="configuration_level" type="select" 
 	     label="Configuration level">
@@ -52,22 +66,22 @@
       </when>
     </conditional>
   </inputs>
+
   <outputs>
-    <data format="tabular" name="output1"  label="${tool.name}.output"/>
-    <data format="txt"     name="logfile" label="${tool.name}.logfile"/>
+    <data format="tabular" name="output1" label="${tool.name}.output"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-Will import a stream of new individual definitions defined by the
-following columns::
+Will read in a tsv file with the following columns::
 
-  label gender   father mother
-  id2   male   id4    id5
-  id3   female None   None
+   study path data_sample mimetype size sha1
+
+   TEST01 file:/share/fs/v039303.cel V2902 x-vl/affymetrix-cel 39090 E909090
   ....
 
-The individuals will be enrolled in the 
-It is not possible to import the same individual twice: the related
-file rows will be noisily ignored.
+Records that point to an unknown (data_sample) will be noisily
+ignored. The same will happen to records that have the same path of a
+previously seen data_object
   </help>
 
 </tool>

@@ -6,6 +6,12 @@
         <tool file="VL/importer/study.xml"/>
         <tool file="VL/importer/individual.xml"/>
         <tool file="VL/importer/biosample.xml"/>
+        <tool file="VL/importer/titer_plate.xml"/>
+        <tool file="VL/importer/device.xml"/>
+        <tool file="VL/importer/data_sample.xml"/>
+        <tool file="VL/importer/data_object.xml"/>
+        <tool file="VL/importer/data_collection.xml"/>
+        <tool file="VL/importer/diagnosis.xml"/>
     <label text="Tools" id="vlToolsSectionLabel"/>
         <tool file="VL/tools/snp_reannotator.xml"/>    
         <tool file="VL/tools/map_vid.xml"/>

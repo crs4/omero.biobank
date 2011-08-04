@@ -1,24 +1,25 @@
-<tool id="vl_tools_map_vid" name="Tools_Map_VID">
+<tool id="vl_tools_map_vid" name="VLT.map_vid">
   <description>
     Map labels of objects known to Omero/VL to their VID
   </description>
   <command interpreter="python">
     map_vid.py
     ${selected_column}
+    ${new_column_name}
     ${input1}
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=${advanced_configuration.vl_host}
       --user=${advanced_configuration.vl_user}
       --passwd=${advanced_configuration.vl_passwd}
     #else
-      --host=localhost
-      --user=root
-      --passwd=romeo
+      --host=$__app__.config.omero_default_host
+      --user=$__app__.config.omero_default_user
+      --passwd=$__app__.config.omero_default_passwd
     #end if
     --operator=galaxy
     --ofile=${output1}
     --loglevel=WARNING
-    map
+    map_vid
     --ifile=${input1}
     --source-type=${source_type.source_type}
     #if $source_type.source_type == 'Individual'
@@ -29,16 +30,41 @@
     <param format="tabular" name="input1" type="data"
 	   label="A tabular dataset with one 'label' column. See below."/>
 
-    <param name="selected_column" label="source label column" 
+    <param name="selected_column" label="labelled source column" 
+	   help="fixme, this has to be explained..."
 	   type="data_column" data_ref="input1" />
+    <param name="new_column_name" label="label for the replacement column" 
+	   type="text" size="40" value="source" />
     
     <conditional name="source_type">
-      <param name="source_type" type="select" 
-	     label="Select source type">
-	<option value="Tube" selected="true">Tube</option>	
+      <!-- the fancy thing below will not work because there is no
+           default clause in conditional -->
+      <!-- param name="source_type" type="select" label="Select source type" 
+	     help="Choose from the possible source types. See below.">    
+	<options from_parameter="tool.app.known_map_vid_source_types" 
+		 transform_lines="[ &quot;%s%s%s&quot; 
+                                  % ( l, self.separator, l) 
+                                  for l in obj ]">
+	  <column name="value" index="0"/>
+	  <column name="name" index="1"/>
+	  <filter type="sort_by" column="0"/>
+	</options>
+      </param -->
+      <param name="source_type" type="select" label="Select source type"
+	     help="Choose from the possible source types. See below."> 
+	<option value="Tube">Tube</option>
 	<option value="Individual">Individual</option>
+	<option value="TiterPlate">TiterPlate</option>
+	<option value="PlateWell">PlateWell</option>
+	<option value="Chip">Chip</option>
+	<option value="DataSample">DataSample</option>
       </param>
       <when value="Tube"/>
+      <when value="Individual"/>
+      <when value="TiterPlate"/>
+      <when value="PlateWell"/>
+      <when value="Chip"/>
+      <when value="DataSample"/>
       <when value="Individual">
 	<param name="study" type="select" label="Study of enrollment" 
 	       help="Resolve enrollment in a known study. See below.">    

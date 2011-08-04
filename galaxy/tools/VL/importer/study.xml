@@ -1,4 +1,4 @@
-<tool id="vl_import_study" name="Import_Study">
+<tool id="vl_import_study" name="VLI.study">
   <description>import study definitions within omero/vl</description>
   <command interpreter="python">
     study.py
@@ -7,19 +7,19 @@
       --user=$advanced_configuration.vl_user
       --passwd=$advanced_configuration.vl_passwd
     #else
-      --host=localhost
-      --user=root
-      --passwd=romeo
+      --host=$__app__.config.omero_default_host
+      --user=$__app__.config.omero_default_user
+      --passwd=$__app__.config.omero_default_passwd
     #end if
     --operator=galaxy
-    --ifile=$input 
+    --ifile=$input1
     --ofile=$output1
     --loglevel=WARNING
     --logfile=${logfile}
     study
   </command>  
   <inputs>
-    <param format="tabular" name="input" type="data"
+    <param format="tabular" name="input1" type="data"
 	   label="A tabular dataset with the following columns ..."/>
     <conditional name="advanced_configuration">
       <param name="configuration_level" type="select" 
@@ -27,24 +27,27 @@
 	<option value="default" selected="true">Default configuration</option>	
 	<option value="advanced">Advanced configuration</option>
       </param>
-      <when value="default"/>
       <when value="advanced">
-	<param name="vl_host" size="40" type="text" value="biobank05.crs4.it" 
+	<param name="vl_host" size="40" type="text" 
+	       value="localhost" 
 	       label="Omero/VL host"/>
-	<param name="vl_user" size="20" type="text" value="galaxy" 
+	<param name="vl_user" size="20" type="text" 
+	       value="root" 
 	       label="Omero/VL user"/>
-	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	<param name="vl_passwd" size="20" type="text" 
+	       value="What?Me worry?" 
 	       label="Omero/VL passwd"/>
       </when>
+      <when/>
     </conditional>
   </inputs>
   <outputs>
-    <data format="tabular" name="output1"/>
-    <data format="txt" name="logfile"/>
+    <data format="tabular" name="output1" label="${tool.name}.output"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
 Will import a stream of new study definitions defined by the
-following tab separated columns::
+following tab separated columns. A typical file will look like the following::
 
   label	 description
   BSTUDY A basically empty description of BSTUDY

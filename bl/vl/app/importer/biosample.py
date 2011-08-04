@@ -83,6 +83,12 @@ class Recorder(Core):
   """
   A class that helps in the recording of BioSamples subclasses into VL
   """
+  VESSEL_TYPE_CHOICHES=['Tube', 'PlateWell']
+  SOURCE_TYPE_CHOICHES=['Tube', 'Individual', 'PlateWell']
+  VESSEL_CONTENT_CHOICES=[x.enum_label() for x in VesselContent.__enums__]
+  VESSEL_STATUS_CHOICES=[x.enum_label() for x in VesselStatus.__enums__]
+
+
   # FIXME: the klass_name thing is a kludge...
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                operator='Alfred E. Neumann', batch_size=10000,
@@ -349,22 +355,22 @@ def make_parser_biosample(parser):
                       It will over-ride the action_category column
                       value, if any. It will default to IMPORT""")
   parser.add_argument('--vessel-type', type=str,
-                      choices=['Tube', 'PlateWell'],
+                      choices=Recorder.VESSEL_TYPE_CHOICHES,
                       help="""default vessel type.  It will
                       over-ride the vessel_type column value, if any.
                       """)
   parser.add_argument('--source-type', type=str,
-                      choices=['Tube', 'Individual', 'PlateWell'],
+                      choices=Recorder.SOURCE_TYPE_CHOICHES,
                       help="""default source type.  It will
                       over-ride the source_type column value, if any.
                       """)
   parser.add_argument('--vessel-content', type=str,
-                      choices=[x.enum_label() for x in VesselContent.__enums__],
+                      choices=Recorder.VESSEL_CONTENT_CHOICHES,
                       help="""default vessel content.  It will
                       over-ride the vessel_column value, if any.
                       """)
   parser.add_argument('--vessel-status', type=str,
-                      choices=[x.enum_label() for x in VesselStatus.__enums__],
+                      choices=Recorder.VESSEL_STATUS_CHOICHES,
                       help="""default vessel status.  It will
                       over-ride the vessel_status column value, if any.
                       """)

@@ -239,3 +239,17 @@ def do_register(registration_list):
                             import_titer_plate_implementation))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

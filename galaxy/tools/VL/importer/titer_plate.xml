@@ -1,0 +1,116 @@
+<tool id="vl_import_titer_plate" name="VLI.titer_plate">
+  <description>import TiterPlate definitions within omero/vl</description>
+  <command interpreter="python">
+    titer_plate.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=$advanced_configuration.vl_host
+      --user=$advanced_configuration.vl_user
+      --passwd=$advanced_configuration.vl_passwd
+    #else
+      --host=$__app__.config.omero_default_host
+      --user=$__app__.config.omero_default_user
+      --passwd=$__app__.config.omero_default_passwd
+    #end if
+    --operator=galaxy
+    --ifile=$input1
+    --ofile=$output1
+    --loglevel=WARNING
+    --logfile=${logfile}
+    titer_plate
+    --study=${study}
+    #if $plate_shape != 'use_provided'
+      --plate-shape=${plate_shape}
+    #end if
+    #if $maker != ''    
+      --maker=${maker}
+    #end if
+    #if $model != ''
+      --model=${model}
+    #end if
+    #if $plate_status != 'use_provided'
+      --plate-status=${plate_status}
+    #end if
+  </command>  
+  <inputs>
+    <param format="tabular" name="input1" type="data"
+	   label="A tabular dataset with the following columns ..."/>
+
+    <param name="study" type="select" label="Context study" 
+	   help="Choose from the already defined studies. See below.">    
+      <options from_parameter="tool.app.known_studies" 
+	       transform_lines="[ &quot;%s%s%s:%s&quot; 
+                                  % ( l[0], self.separator, l[0], l[1][:40] ) 
+                                  for l in obj ]">
+        <column name="value" index="0"/>
+        <column name="name" index="1"/>
+        <filter type="sort_by" column="0"/>
+        <filter type="add_value" name="Records provide study labels" 
+                value="use_provided" index="0"/>
+      </options>
+    </param>
+
+    <param name="plate_shape" type="select"
+	   label="shape of the titer plate"
+	   help="Choose from the following. See below.">
+      <option value="use_provided"       selected="true">
+      Use record provided</option>
+      <option value="8x12">8x12</option>
+      <option value="32x48">32x48</option>
+    </param>
+
+    <param name="maker" size="40" type="text" value=""  label="Plate maker"/>
+    <param name="model" size="40" type="text" value=""  label="Plate model"/>
+
+    <param name="plate_status" type="select" label="Plate status" 
+	   help="Choose from one of the available values. See below.">    
+      <options from_parameter="tool.app.kb.ContainerStatus.__enums__" 
+	       transform_lines="[ &quot;%s%s%s&quot; 
+                                  % (e.enum_label(),
+                                     self.separator,
+                                     e.enum_label()) 
+                                  for e in obj ]">
+        <column name="value" index="0"/>
+        <column name="name" index="1"/>
+        <filter type="sort_by" column="0"/>
+        <filter type="add_value" name="Records provide plate status" 
+                value="use_provided" index="0"/>
+      </options>
+    </param>
+
+    <!-- ************************************************** -->
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="localhost" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="root" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="output1" label="${tool.name}.output"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
+  </outputs>
+  <help>
+FIXME
+
+Will read in a csv file with the following columns::
+
+  study  label   barcode rows columns maker model
+  ASTUDY p090    2399389 32   48      xxxx  yyy
+
+The maker and model columns are optional, as well as the barcode one.
+Default plate dimensions  can be provided with a flag
+
+  </help>
+
+</tool>

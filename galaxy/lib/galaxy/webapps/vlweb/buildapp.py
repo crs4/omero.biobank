@@ -16,7 +16,10 @@ import pkg_resources
 
 log = logging.getLogger( __name__ )
 
-from galaxy import config, jobs, util, tools
+#from galaxy import config, jobs, util, tools
+import config # so we use the local one with Omero mods
+from galaxy import jobs, util, tools
+
 import galaxy.model
 import galaxy.model.mapping
 import galaxy.datatypes.registry

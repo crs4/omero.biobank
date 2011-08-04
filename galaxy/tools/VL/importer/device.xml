@@ -1,7 +1,7 @@
-<tool id="vl_import_individual" name="VLI.individual">
-  <description>import individual definitions within omero/vl</description>
+<tool id="vl_import_device" name="VLI.device">
+  <description>import Device definitions within omero/vl</description>
   <command interpreter="python">
-    individual.py
+    device.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user
@@ -15,13 +15,28 @@
     --ifile=$input1
     --ofile=$output1
     --loglevel=WARNING
-    --logfile=$logfile
-    individual
-    --study $study
+    --logfile=${logfile}
+    device
+    --study=${study}
+
+    #if $device_type != 'use_provided'
+      --device-type=${device_type}
+    #end if
+
+    #if $maker
+      --maker=${maker}
+    #end if
+    #if $model
+      --model=${model}
+    #end if
+    #if $release
+      --relese=${release}
+    #end if
   </command>  
   <inputs>
     <param format="tabular" name="input1" type="data"
 	   label="A tabular dataset with the following columns ..."/>
+
     <param name="study" type="select" label="Context study" 
 	   help="Choose from the already defined studies. See below.">    
       <options from_parameter="tool.app.known_studies" 
@@ -31,10 +46,26 @@
         <column name="value" index="0"/>
         <column name="name" index="1"/>
         <filter type="sort_by" column="0"/>
-        <filter type="add_value" name="Records will provide study labels" 
+        <filter type="add_value" name="Records provide study labels" 
                 value="use_provided" index="0"/>
       </options>
     </param>
+
+    <param name="device_type" type="select"
+	   label="type of the device"
+	   help="Choose from the following. See below.">
+      <option value="use_provided"       selected="true">
+      Use record provided</option>
+      <option value="Chip">Chip</option>
+      <option value="Scanner">Scanner</option>
+    </param>
+
+    <param name="maker" size="40" type="text" value=""  label="Device maker"/>
+    <param name="model" size="40" type="text" value=""  label="Device model"/>
+    <param name="release" size="40" type="text" value="" 
+	   label="Device release"/>
+
+    <!-- ************************************************** -->
     <conditional name="advanced_configuration">
       <param name="configuration_level" type="select" 
 	     label="Configuration level">
@@ -52,22 +83,25 @@
       </when>
     </conditional>
   </inputs>
+
   <outputs>
-    <data format="tabular" name="output1"  label="${tool.name}.output"/>
-    <data format="txt"     name="logfile" label="${tool.name}.logfile"/>
+    <data format="tabular" name="output1" label="${tool.name}.output"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-Will import a stream of new individual definitions defined by the
-following columns::
+FIXME
 
-  label gender   father mother
-  id2   male   id4    id5
-  id3   female None   None
-  ....
+Will read in a tsv file with the following columns::
 
-The individuals will be enrolled in the 
-It is not possible to import the same individual twice: the related
-file rows will be noisily ignored.
+  study  device_type    label   barcode maker model release location
+  BSTUDY Scanner pula01  8989898 Affymetrix  GeneChip Scanner 3000 7G  Pula bld. 5
+  BSTUDY Chip    chip001 8329482 Affymetrix  Genome-Wide Human SNP Array 6.0  None
+
+All devices have a type, a label, an optional barcode, a maker, a
+model and a release, and, possibly a physical location. In the example
+above, in the first line we have defined a scanner, which is
+physically in the lab in Pula, building 5.  The second line defines
+a chip.
   </help>
 
 </tool>
