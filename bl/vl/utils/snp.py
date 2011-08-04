@@ -7,6 +7,13 @@ from bl.core.seq.utils import reverse_complement as rc
 MASK_PATTERN = re.compile(r'^([A-Z]+)\[([^/]+)/([^\]]+)\]([A-Z]+)$',
                           re.IGNORECASE)
 
+UNAMBIGUOUS_PAIRS = frozenset([
+  frozenset(['A', 'C']),
+  frozenset(['A', 'G']),
+  frozenset(['C', 'T']),
+  frozenset(['G', 'T']),
+  ])
+
 
 def split_mask(mask):
   m = MASK_PATTERN.match(mask)
@@ -26,20 +33,16 @@ def join_mask(mask):
 
 
 def _identify_strand(lflank, alleles, rflank):
-  def is_unambiguos(p):
-    l, r = sorted(p)
-    return not (l == r
-                or (l == 'A' and r == 'T')
-                or (l == 'C' and r == 'G'))
-  #--
-  if 'A' in alleles and 'T' not in alleles:
-    strand = 'TOP'
-  elif 'T' in alleles and 'A' not in alleles:
-    strand = 'BOT'
+  """
+  Perform strand designation according to the Illumina convention.
+
+  NOTE: expects all parameters to be uppercase.
+  """
+  if set(alleles) in UNAMBIGUOUS_PAIRS:
+    strand = 'TOP' if 'A' in alleles else 'BOT'
   else:
-    # pesky case...
     for p in it.izip(reversed(lflank), rflank):
-      if is_unambiguos(p):
+      if set(p) in UNAMBIGUOUS_PAIRS:
         strand = 'TOP' if p[0] in 'AT' else 'BOT'
         break
     else:

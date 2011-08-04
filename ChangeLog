@@ -1,3 +1,12 @@
+2011-08-04    <simleo@neuron.crs4.it>
+
+	* bl/vl/utils/snp.py (_identify_strand): simpler implementation
+	that works with sequences containing non-ACGT letters (basically,
+	anything that's not explicitly defined as unambiguous is
+	ambiguous). After skipping indels, this version correctly
+	identifies all illumina 'TopGenomicSeq' masks as TOP (see
+	tests/bl/vl/utils/check_strand_vs_ann.py).
+
 2011-08-03    <zag@manzanillo>
 
 	* bl/vl/app/importer/diagnosis.py: Changed to new style.
