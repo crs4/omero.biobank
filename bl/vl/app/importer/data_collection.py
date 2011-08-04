@@ -23,6 +23,8 @@ previously known collection.
 
 from core import Core, BadRecord
 
+from version import version
+
 import csv, json, time
 
 import itertools as it
@@ -56,7 +58,13 @@ class Recorder(Core):
     self.preload_data_samples()
     self.preload_data_collections()
 
-    records = self.do_consistency_checks(records)
+    def keyfunc(r): return r['label']
+
+    sub_records = []
+    records = sorted(records, key=keyfunc)
+    for k, g in it.groupby(records, keyfunc):
+      sub_records.append(self.do_consistency_checks(k, list(g)))
+    records = sum(sub_records, [])
     if len(records) == 0:
       self.logger.warn('no records')
       return
@@ -73,17 +81,18 @@ class Recorder(Core):
             }
     action = self.kb.factory.create(self.kb.Action, conf).save()
 
-    def keyfunc(r): return r['label']
     records = sorted(records, key=keyfunc)
-
-    for k, g in it.groupby(data, keyfunc):
+    for k, g in it.groupby(records, keyfunc):
       dc_conf = {'label' : k, 'action' : action}
       dc = self.kb.factory.create(self.kb.DataCollection, dc_conf).save()
-      for i, c in enumerate(records_by_chunk(self.batch_size, g)):
+      for i, c in enumerate(records_by_chunk(self.batch_size, list(g))):
         self.logger.info('start processing chunk %s-%d' % (k, i))
         self.process_chunk(otsv, dc, c)
         self.logger.info('done processing chunk %s-%d' % (k,i))
 
+
+  def find_data_sample_klass(self, records):
+    return self.find_klass('data_sample_type', records)
 
   def preload_data_samples(self):
     self.preload_by_type('data_samples', self.data_sample_klass,
@@ -97,25 +106,37 @@ class Recorder(Core):
     self.logger.info('there are %d DataCollection(s) in the kb'
                      % len(self.preloaded_data_collections))
 
-  def do_consistency_checks(self, records):
-    self.logger.info('start consistency checks %s' % k)
-    failures = 0
+  def do_consistency_checks(self, k, records):
+    self.logger.info('start consistency checks on %s' % k)
     #--
-    for i, r in enumerate(records):
-      reject = ' Rejecting import of row %d.' % i
+    if k in self.preloaded_data_collections:
+      self.logger.error('There is already a collection with label %s'
+                        % k)
+      return []
+
+    failures = 0
+    seen = []
+    for r in records:
       if not r['data_sample'] in self.preloaded_data_samples:
-        f = 'bad data_sample in %s.' + reject
+        f = 'bad data_sample in %s.'
         self.logger.error( f % r['label'])
         failures += 1
         continue
-    self.logger.info('done consistency checks %s' % k)
+      if r['data_sample'] in seen:
+        f = 'multiple copy of the same data_sample %s in %s.'
+        self.logger.error( f % (r['label'], k))
+        failures += 1
+        continue
+      seen.append(r['data_sample'])
+
+    self.logger.info('done consistency checks on %s' % k)
 
     return [] if failures else records
 
   def process_chunk(self, otsv, dc, chunk):
     items = []
     for r in chunk:
-      conf = {'data_sample' : self.preloaded_data_samples[r['data_sample']],
+      conf = {'dataSample' : self.preloaded_data_samples[r['data_sample']],
               'dataCollection' : dc
               }
       items.append(self.kb.factory.create(self.kb.DataCollectionItem, conf))
@@ -123,7 +144,7 @@ class Recorder(Core):
     self.kb.save_array(items)
 
 def canonize_records(args, records):
-  fields = ['study', 'data_sample_type']
+  fields = ['study', 'data_sample_type', 'label']
   for f in fields:
     if hasattr(args, f) and getattr(args,f) is not None:
       for r in records:
@@ -140,13 +161,15 @@ def make_parser_data_collection(parser):
                       over-ride the study column value.""")
   parser.add_argument('--data_sample-type', type=str,
                       choices=['DataSample'],
-                      help="""default datasample type.  It will
-                      over-ride the data_sample_type column value, if any")
-
+                      help="""default data_sample type.  It will
+                      over-ride the data_sample_type column value, if any.""")
+  parser.add_argument('--label', type=str,
+                      help="""default label for the collection.  It will
+                      over-ride the label column value, if any.""")
 
 def import_data_collection_implementation(logger, args):
 
-  action_setup_conf = self.find_action_setup_conf(args)
+  action_setup_conf = Recorder.find_action_setup_conf(args)
 
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,

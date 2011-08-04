@@ -42,6 +42,8 @@ class Recorder(Core):
     self.batch_size = batch_size
     self.operator = operator
     self.action_setup_conf = action_setup_conf
+    self.preloaded_devices = {}
+    self.known_barcodes = []
 
   def record(self, records, otsv):
     def records_by_chunk(batch_size, records):
@@ -54,73 +56,65 @@ class Recorder(Core):
       self.logger.warn('no records')
       return
     #--
-    self.preload_devices()
     study  = self.find_study(records)
+    self.preload_devices()
 
     records = self.do_consistency_checks(records)
+
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(c, otsv, study)
       self.logger.info('done processing chunk %d' % i)
 
-
   def preload_devices(self):
-    self.logger.info('start prefetching devices')
-    self.known_devices = {}
-    self.known_barcodes = []
+    self.logger.info('start preloadind devices')
     devices = self.kb.get_objects(self.kb.Device)
     for d in devices:
-      self.known_devices[d.label] = d
+      self.preloaded_devices[d.label] = d
       if hasattr(d, 'barcode') and d.barcode is not None:
         self.known_barcodes.append(d.barcode)
     self.logger.info('there are %d Device(s) in the kb'
-                     % (len(self.known_devices)))
+                     % (len(self.preloaded_devices)))
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
     k_map = {}
     #--
     good_records = []
+    mandatory_fields = ['label', 'maker', 'model', 'release']
     for i, r in enumerate(records):
-      reject = ' Rejecting import of record %d.' % i
-      if 'barcode' in r and r['barcode'] in self.known_barcodes:
-        m = 'there is a pre-existing object with barcode %s.' + reject
-        self.logger.warn(m % r['barcode'])
+      reject = 'Rejecting import of record %d: ' % i
+
+      if self.missing_fields(mandatory_fields, r):
+        f = reject + 'missing mandatory field.'
+        self.logger.error(f)
         continue
-      if r['label'] in self.known_devices:
-        f = 'there is a pre-existing device with label %s.' + reject
+
+      if r['label'] in k_map:
+        f = (reject +
+             'there is a pre-existing device with label %s. (in this batch).')
+        self.logger.error(f % r['label'])
+        continue
+      elif r['label'] in self.preloaded_devices:
+        f = reject + 'there is a pre-existing device with label %s.'
         self.logger.warn(f % r['label'])
         continue
-      if r['label'] in k_map:
-        f = ('there is a pre-existing device with label %s. (in this batch)'
-             + reject)
+
+      if not( r['barcode'] and r['barcode'] not in self.known_barcodes):
+        m = reject + 'there is a pre-existing object with barcode %s.'
+        self.logger.warn(m % r['barcode'])
+        continue
+
+      if 'device_type' not in r:
+        f = reject + 'missing device_type for record with label %s.'
         self.logger.error(f % r['label'])
         continue
-      if 'device_type' is not in r:
-        f = ('missing device_type for record with label %s.'
-             + reject)
+      elif not issubclass(getattr(self.kb, r['device_type']), self.kb.Device):
+        f = (reject +
+             'device_type of device label %s is not a subclass of Device')
         self.logger.error(f % r['label'])
         continue
-      if not issubclass(getattr(self.kb, r['device_type']), self.kb.Device):
-        f = ('device_type of device label %s is not a subclass of Device'
-             + reject)
-        self.logger.error(f % r['label'])
-        continue
-      k = 'maker'
-      if not k in r:
-        f = 'missing %s.' + reject
-        self.logger.error(f % k)
-        continue
-      k = 'model'
-      if not k in r:
-        f = 'missing %s.' + reject
-        self.logger.error(f % k)
-        continue
-      k = 'release'
-      if not k in r:
-        f = 'missing %s.' + reject
-        self.logger.error(f % k)
-        continue
+
       k_map['label'] = r
       good_records.append(r)
     self.logger.info('done consistency checks')
@@ -134,9 +128,9 @@ class Recorder(Core):
       conf = {}
       for k in ['label', 'maker', 'model', 'release']:
         conf[k] = r[k]
-      if 'location'  in r and r['location'] is not 'None':
+      if r['location']:
         conf['physicalLocation'] = r['location']
-      if 'barcode' in r and r['barcode'] is not 'None':
+      if r['barcode']:
         conf['barcode'] = r['barcode']
       devices.append(self.kb.factory.create(dklass, conf))
     self.kb.save_array(devices)
@@ -154,6 +148,11 @@ def canonize_records(args, records):
     if hasattr(args, f) and getattr(args,f) is not None:
       for r in records:
         r[f] = getattr(args, f)
+  # specific fixes
+  for k in ['location', 'barcode']:
+    for r in records:
+      if not (k in r and r[k].upper() != 'NONE'):
+        r[k] = None
 
 help_doc = """
 import new Device definitions into a virgil system.
@@ -181,7 +180,7 @@ def make_parser_device(parser):
 
 def import_device_implementation(logger, args):
 
-  action_setup_conf = self.find_action_setup_conf(args)
+  action_setup_conf = Recorder.find_action_setup_conf(args)
 
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,

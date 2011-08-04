@@ -136,7 +136,7 @@ class Recorder(Core):
 
   def preload_data_samples(self):
     self.logger.info('start preloading data_samples')
-    objs = self.kb.get_objects(self.DataSample)
+    objs = self.kb.get_objects(self.kb.DataSample)
     for o in objs:
       assert not o.label in self.preloaded_data_samples
       self.preloaded_data_samples[o.label] = o
@@ -148,32 +148,38 @@ class Recorder(Core):
     #--
     k_map = {}
     good_records = []
+    mandatory_fields = ['label', 'source', 'device', 'scanner', 'options']
     for i, r in enumerate(records):
-      reject = ' Rejecting import of row %d.' % i
+      reject = 'Rejecting import of row %d: ' % i
+
+      if self.missing_fields(mandatory_fields, r):
+        f = reject + 'missing mandatory field.'
+        self.logger.error(f)
+        continue
 
       if r['label'] in self.preloaded_data_samples:
-        f = 'there is a pre-existing DataSample with label %s.' + reject
+        f = reject + 'there is a pre-existing DataSample with label %s.'
         self.logger.warn(f % r['label'])
         continue
 
       if r['label'] in k_map:
-        f = ('there is a pre-existing DataSample with label %s.(in this batch)'
-             + reject)
+        f = (reject +
+             'there is a pre-existing record with label %s.(in this batch).')
         self.logger.error(f % r['label'])
         continue
 
       if r['source'] not in self.preloaded_sources:
-        f = 'there is no known source for DataSample with label %s.' + reject
+        f = reject + 'there is no known source for DataSample with label %s.'
         self.logger.error(f % r['label'])
         continue
 
       if r['device'] not in self.preloaded_devices:
-        f = 'there is no known device for DataSample with label %s.' + reject
+        f = reject + 'there is no known device for DataSample with label %s.'
         self.logger.error(f % r['label'])
         continue
 
       if r['scanner'] and r['scanner'] not in self.preloaded_scanners:
-        f = 'there is no known scanner for DataSample with label %s.' + reject
+        f = reject + 'there is no known scanner for DataSample with label %s.'
         self.logger.error(f % r['label'])
         continue
 
@@ -183,7 +189,7 @@ class Recorder(Core):
           for kv in kvs:
             k,v = kv.split('=')
         except ValueError, e:
-          f = 'illegal options string.' + reject
+          f = reject + 'illegal options string.'
           self.logger.error(f)
           continue
       k_map[r['label']] = r
@@ -280,13 +286,12 @@ def make_parser_data_sample(parser):
   parser.add_argument('--device-type', type=str,
                       choices=['Device', 'Chip', 'Scanner', 'SoftwareProgram'],
                       help="""default source type.  It will
-                      over-ride the source_type column value, if any")
+                      over-ride the source_type column value, if any""")
   parser.add_argument('--scanner', type=str,
-                      help="""default scanner vid.
+                      help="""default scanner.
                       It will over-ride the scanner column value, if
                       any. If a record does not provide a device, it will be
-                      set to be a Scanner with this vid.
-                      """)
+                      set to be a Scanner with this vid. """)
   parser.add_argument('--batch-size', type=int,
                       help="""Size of the batch of objects
                       to be processed in parallel (if possible)""",
@@ -294,7 +299,7 @@ def make_parser_data_sample(parser):
 
 def import_data_sample_implementation(logger, args):
 
-  action_setup_conf = self.find_action_setup_conf(args)
+  action_setup_conf = Recorder.find_action_setup_conf(args)
 
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,

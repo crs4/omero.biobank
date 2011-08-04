@@ -9,6 +9,10 @@ FIXME
 from bl.vl.app.importer.core import Core
 from version import version
 
+# FIXME this is an hack that specific to the omero driver...
+from bl.vl.kb.drivers.omero.utils import make_unique_key
+
+
 import csv, json
 import argparse
 import time, sys
@@ -16,11 +20,23 @@ import itertools as it
 
 import logging
 
-class MapApp(Core):
+class MapVIDApp(Core):
   """
   An utility class that handles the dumping of map
   specification data from the KB.
+
+  FIXME
+
+  special case::
+
+    foo  well_label
+    xx   fooplate:A01
+
   """
+
+  SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
+                            'Chip', 'DataSample']
+
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None,
                operator='Alfred E. Neumann', logger=None):
@@ -28,7 +44,7 @@ class MapApp(Core):
     FIXME
     """
     self.logger = logging.getLogger()
-    super(MapApp, self).__init__(host, user, passwd,
+    super(MapVIDApp, self).__init__(host, user, passwd,
                                  keep_tokens=keep_tokens,
                                  study_label=study_label,
                                  logger=logger)
@@ -51,20 +67,39 @@ class MapApp(Core):
     self.logger.info('done selecting enrolled individuals')
     return mapping
 
-  def resolve_mapping_object(self, source_type, labels):
+  def resolve_mapping_plate_well(self, source_type, labels):
+    slot_labels = [make_unique_key(*l.split(':')) for l in labels]
+    back_to_label = dict(it.izip(slot_labels, labels))
+
     mapping = {}
     self.logger.info('start selecting %s' % source_type.get_ome_table())
     # FIXME this is not going to scale...
     objs = self.kb.get_objects(source_type)
     for o in objs:
+      if o.containerSlotLabelUK in slot_labels:
+        mapping[back_to_label[o.containerSlotLabelUK]] = o.id
+    self.logger.info('done selecting %s' % source_type.get_ome_table())
+    return mapping
+
+  def resolve_mapping_object(self, source_type, labels):
+    mapping = {}
+    self.logger.info('start selecting %s' % source_type.get_ome_table())
+    # FIXME this is not going to scale...
+    self.logger.debug('\tlabels: %s' % labels)
+    objs = self.kb.get_objects(source_type)
+    for o in objs:
+      self.logger.debug('\t-> %s' % o.label)
       if o.label in labels:
         mapping[o.label] = o.id
     self.logger.info('done selecting %s' % source_type.get_ome_table())
+    self.logger.debug('mapping: %s' % mapping)
     return mapping
 
   def resolve_mapping(self, source_type, labels):
     if source_type == self.kb.Individual:
       return self.resolve_mapping_individual(labels)
+    elif source_type == self.kb.PlateWell:
+      return self.resolve_mapping_plate_well(source_type, labels)
     else:
       return self.resolve_mapping_object(source_type, labels)
 
@@ -76,9 +111,13 @@ class MapApp(Core):
       raise ValueError(msg)
     source_type = getattr(self.kb, source_type_label)
 
+    self.logger.info('start reading %s' % ifile.name)
     f = csv.DictReader(ifile, delimiter='\t')
     records = [r for r in f]
+    self.logger.info('done reading %s' % ifile.name)
+
     if len(records) == 0:
+      self.logger.info('file %s is empty.' % ifile.name)
       return
 
     labels = [r[column_label] for r in records]
@@ -119,8 +158,9 @@ def make_parser_map(parser):
                       help='the input tsv file',
                       required=True)
   parser.add_argument('--source-type', type=str,
-                      choices=['Tube', 'Individual', 'TiterPlate'],
-                      help="""assigned source type""",
+                      choices=MapVIDApp.SUPPORTED_SOURCE_TYPES,
+                      help="""assigned source type, it is taken as
+                      the type of the first name in the column flag.""",
                       required=True)
   parser.add_argument('--column', type=pair_of_names,
                       help="""comma separated list (no spaces) of the
@@ -132,7 +172,7 @@ def make_parser_map(parser):
 
 def import_map_implementation(logger, args):
   #--
-  app = MapApp(host=args.host, user=args.user, passwd=args.passwd,
+  app = MapVIDApp(host=args.host, user=args.user, passwd=args.passwd,
                keep_tokens=args.keep_tokens,
                study_label=args.study, logger=logger)
 
@@ -140,7 +180,7 @@ def import_map_implementation(logger, args):
            args.column[0], args.column[1], args.ofile)
 
 def do_register(registration_list):
-  registration_list.append(('map', help_doc,
+  registration_list.append(('map_vid', help_doc,
                             make_parser_map,
                             import_map_implementation))
 

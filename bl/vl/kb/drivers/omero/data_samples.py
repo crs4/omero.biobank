@@ -45,7 +45,7 @@ class AffymetrixCelArrayType(wp.OmeroWrapper):
 
 class AffymetrixCel(MicroArrayMeasure):
   OME_TABLE = 'AffymetrixCel'
-  __fields__ = [('Type', AffymetrixCelArrayType, wp.REQUIRED),
+  __fields__ = [('arrayType', AffymetrixCelArrayType, wp.REQUIRED),
                 ('celID',     wp.STRING,              wp.OPTIONAL)]
 
 
@@ -57,7 +57,7 @@ class IlluminaBeadChipAssayType(wp.OmeroWrapper):
                "METABOCHIP", "IMMUNOCHIP"]
 
 class IlluminaBeadChipAssay(MicroArrayMeasure):
-  OME_TABLE = 'AffymetrixCel'
+  OME_TABLE = 'IlluminaBeadChipAssay'
   __fields__ = [('assayType', IlluminaBeadChipAssayType, wp.REQUIRED)]
 
 

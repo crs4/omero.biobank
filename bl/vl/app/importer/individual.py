@@ -192,29 +192,34 @@ class Recorder(Core):
   def do_consistency_checks(self, records):
     study_label = records[0]['study']
     seen = {}
+    mandatory_fields = ['study', 'gender', 'father', 'mother']
     for i, r in enumerate(records):
-      bad = 'bad record %d:' % i
+      reject = 'Rejecting record %d:' % i
+
+      if self.missing_fields(mandatory_fields, r):
+        msg = 'missing mandatory field. aborting'
+        self.logger.critical(reject + msg)
+        raise ValueError(msg)
+
       if r['study'] != study_label:
         msg = 'non uniform study label. aborting'
-        self.logger.critical(bad + msg)
+        self.logger.critical(reject + msg)
         raise ValueError(msg)
       if r['gender'].upper() not in ['MALE', 'FEMALE']:
         msg = 'unknown gender value. aborting'
-        self.logger.critical(bad + msg)
+        self.logger.critical(reject + msg)
         raise ValueError(msg)
       seen[r['label']] = r
 
     for i, r in enumerate(records):
-      bad = 'bad record %d:' % i
+      reject = 'Rejecting record %d:' % i
       for parent in ['father', 'mother']:
         if not (r[parent].upper() == 'NONE'
                 or r[parent] in seen
                 or r[parent] in self.known_enrollments):
           msg = 'undefined %s label.' % parent
-          self.logger.critical(bad + msg)
+          self.logger.critical(reject + msg)
           raise ValueError(msg)
-
-
 
 help_doc = """
 import new individual definitions into a virgil system and register
@@ -239,7 +244,7 @@ def canonize_records(args, records):
 
 def import_individual_implementation(logger, args):
 
-  action_setup_conf = self.find_action_setup_conf(args)
+  action_setup_conf = Recorder.find_action_setup_conf(args)
 
   f = csv.DictReader(args.ifile, delimiter='\t')
   records = [r for r in f]

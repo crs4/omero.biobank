@@ -74,34 +74,30 @@ class Recorder(Core):
     self.logger.info('start consistency checks')
     #--
     good_records = []
+    mandatory_fields = ['path', 'mimetype', 'size', 'sha1']
     for i, r in enumerate(records):
-      reject = ' Rejecting import of record %d.' % i
+      reject = 'Rejecting import of record %d: ' % i
 
-      try:
-        for k in ['path', 'mimetype', 'size', 'sha1']:
-          r[k]
-      except KeyError, e:
-        f = 'missing field %s.' + reject
-        self.logger.error(f % k)
+      if self.missing_fields(mandatory_fields, r):
         continue
 
       if r['path'] in self.preloaded_data_objects:
-        f = 'there is a pre-existing data_object with path %s. ' + reject
+        f = reject + 'there is a pre-existing data_object with path %s.'
         self.logger.warn(f % r['path'])
         continue
 
       if not r['data_sample'] in self.preloaded_data_samples:
-        f = 'there is no known data_sample with id %s.' + reject
+        f = reject + 'there is no known data_sample with id %s.'
         self.logger.error(f % r['data_sample'])
         continue
 
       if r['mimetype'] not in SUPPORTED_MIME_TYPES:
-        f = 'unknown mimetype %s.' + reject
+        f = reject + 'unknown mimetype %s.'
         self.logger.error(f % r['mimetype'])
         continue
 
       if not r['size'].isdigit():
-        f = 'bad size value %s.' + reject
+        f = reject + 'bad size value %s.'
         self.logger.error(f % r['size'])
         continue
 
@@ -144,7 +140,7 @@ def make_parser_data_object(parser):
 
 def import_data_object_implementation(logger, args):
 
-  action_setup_conf = self.find_action_setup_conf(args)
+  action_setup_conf = Recorder.find_action_setup_conf(args)
 
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,

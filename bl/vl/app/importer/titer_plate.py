@@ -210,7 +210,7 @@ def make_parser_titer_plate(parser):
 
 def import_titer_plate_implementation(logger, args):
 
-  action_setup_conf = self.find_action_setup_conf(args)
+  action_setup_conf = Recorder.find_action_setup_conf(args)
 
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,

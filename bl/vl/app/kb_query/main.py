@@ -34,7 +34,7 @@ and '''study'''.
 import logging, time
 #---------------------------------------------------------------
 
-import bl.vl.app.kb_query.map
+import bl.vl.app.kb_query.map_vid
 #import bl.vl.app.kb_query.tabular
 #import bl.vl.app.kb_query.markers
 #import bl.vl.app.kb_query.ehr
@@ -42,7 +42,7 @@ import bl.vl.app.kb_query.map
 class App(object):
   def __init__(self):
     self.supported_submodules = []
-    bl.vl.app.kb_query.map.do_register(self.supported_submodules)
+    bl.vl.app.kb_query.map_vid.do_register(self.supported_submodules)
     #bl.vl.app.kb_query.tabular.do_register(self.supported_submodules)
     #bl.vl.app.kb_query.markers.do_register(self.supported_submodules)
     #bl.vl.app.kb_query.ehr.do_register(self.supported_submodules)

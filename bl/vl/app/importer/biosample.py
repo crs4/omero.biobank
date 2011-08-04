@@ -13,13 +13,13 @@ A biosample record will have, at least, the following fields::
                             -o bio_mapping.tsv biosample \
                             --study  ${DEFAULT_STUDY} \
                             --source-type Individual \
-                            --container-type Tube \
-                            --container-content BLOOD \
-                            --container-status  USABLE \
+                            --vessel-type Tube \
+                            --vessel-content BLOOD \
+                            --vessel-status  USABLE \
                             --current-volume 20
 
-where container-content is taken from the enum VesselContent possible
-values and container-status from the enum VesselStatus
+where vessel-content is taken from the enum VesselContent possible
+values and vessel-status from the enum VesselStatus
 
 Another example, this time dna samples::
 
@@ -35,10 +35,10 @@ microliters.
    ${IMPORT} ${SERVER_OPTS} -i bio_samples.tsv
                             -o bio_mapping.tsv biosample \
                             --study  ${DEFAULT_STUDY} \
-                            --container-type Tube \
+                            --vessel-type Tube \
                             --source-type Tube \
-                            --container-content DNA \
-                            --container-status  USABLE
+                            --vessel-content DNA \
+                            --vessel-status  USABLE
 
 
 A special case is when the records refer to biosamples contained in
@@ -79,7 +79,7 @@ from bl.vl.kb.drivers.omero.vessels import VesselContent, VesselStatus
 from bl.vl.kb.drivers.omero.utils import make_unique_key
 
 
-class BioSampleRecorder(Core):
+class Recorder(Core):
   """
   A class that helps in the recording of BioSamples subclasses into VL
   """
@@ -87,14 +87,14 @@ class BioSampleRecorder(Core):
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                operator='Alfred E. Neumann', batch_size=10000,
                action_setup_conf=None, logger=None):
-    super(BioSampleRecorder, self).__init__(host, user, passwd, keep_tokens,
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
                                             logger=logger)
     self.operator = operator
     self.batch_size = batch_size
     self.action_setup_conf = action_setup_conf
     self.preloaded_sources = {}
-    self.preloaded_containers = {}
     self.preloaded_plates = {}
+    self.preloaded_vessels = {}
 
   def record(self, records, otsv):
     def records_by_chunk(batch_size, records):
@@ -109,9 +109,11 @@ class BioSampleRecorder(Core):
     #--
     study                = self.find_study(records)
     self.source_klass    = self.find_source_klass(records)
-    self.container_klass = self.find_container_klass(records)
+    self.vessel_klass = self.find_vessel_klass(records)
+
     self.preload_sources()
-    if self.container_klass == self.kb.PlateWell:
+
+    if self.vessel_klass == self.kb.PlateWell:
       self.preload_plates()
 
     records = self.do_consistency_checks(records)
@@ -128,8 +130,8 @@ class BioSampleRecorder(Core):
   def find_source_klass(self, records):
     return self.find_klass('source_type', records)
 
-  def find_container_klass(self, records):
-    return self.find_klass('container_type', records)
+  def find_vessel_klass(self, records):
+    return self.find_klass('vessel_type', records)
 
   def preload_sources(self):
     self.preload_by_type('sources', self.source_klass, self.preloaded_sources)
@@ -139,45 +141,49 @@ class BioSampleRecorder(Core):
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
-    if self.container_klass == self.kb.PlateWell:
+
+    if self.vessel_klass == self.kb.PlateWell:
       return self.do_consistency_checks_plate_well(records)
     else:
       return self.do_consistency_checks_tube(records)
 
   def do_consistency_checks_plate_well(self, records):
-    def preload_containers():
-      self.logger.info('start preloading containers')
-      objs = self.kb.get_objects(self.container_klass)
+    def preload_vessels():
+      self.logger.info('start preloading vessels')
+      objs = self.kb.get_objects(self.vessel_klass)
       for o in objs:
-        assert not o.containerSlotLabelUK in self.preloaded_containers
-        self.preloaded_containers[o.containerSlotLabelUK] = o
-      self.logger.info('done preloading containers')
+        assert not o.containerSlotLabelUK in self.preloaded_vessels
+        self.preloaded_vessels[o.containerSlotLabelUK] = o
+      self.logger.info('done preloading vessels')
 
     def build_key(r):
-      return make_unique_key(self.preloaded_plates[r['plate']],
+      return make_unique_key(self.preloaded_plates[r['plate']].label,
                              r['label'])
-
-    preload_containers()
-
+    preload_vessels()
     good_records = []
+    mandatory_fields = ['label', 'source', 'plate', 'row', 'column']
+
     for i, r in enumerate(records):
-      reject = 'Rejecting import of record %d.' % i
-      if not r['source'] in  self.preloaded_sources:
-        f = 'there is no known source for %s. ' + reject
-        self.logger.error(f % r['source'])
-        continue
-      if not r['plate'] in  self.preloaded_plates:
-        f = 'there is no known plate for %s. ' + reject
-        self.logger.error(f % r['plate'])
-        continue
-      if not 'label' in r or not 'row' in r or not 'column' in r:
-        f = 'there is no label/row/column.' + reject
+      reject = 'Rejecting import of record %d: ' % i
+
+      if self.missing_fields(mandatory_fields, r):
+        f = reject + 'missing mandatory field.'
         self.logger.error(f)
         continue
 
+      if r['source'] not in  self.preloaded_sources:
+        f = reject + 'no known source maps to %s.'
+        self.logger.error(f % r['source'])
+        continue
+
+      if r['plate'] not in  self.preloaded_plates:
+        f = reject + 'no known plate maps to %s.'
+        self.logger.error(f % r['plate'])
+        continue
+
       key = build_key(r)
-      if key in self.preloaded_containers:
-        f = 'there is a pre-existing container with key %s. ' + reject
+      if key in self.preloaded_vessels:
+        f = reject + 'there is a pre-existing vessel with key %s.'
         self.logger.warn(f % key)
         continue
       good_records.append(r)
@@ -194,13 +200,13 @@ class BioSampleRecorder(Core):
     return k_map.values()
 
   def do_consistency_checks_tube(self, records):
-    def preload_containers():
-      self.logger.info('start preloading containers')
-      objs = self.kb.get_objects(self.container_klass)
+    def preload_vessels():
+      self.logger.info('start preloading vessels')
+      objs = self.kb.get_objects(self.vessel_klass)
       for o in objs:
-        assert not o.label in self.preloaded_containers
-        self.preloaded_containers[o.label] = o
-      self.logger.info('done preloading containers')
+        assert not o.label in self.preloaded_vessels
+        self.preloaded_vessels[o.label] = o
+      self.logger.info('done preloading vessels')
 
     k_map = {}
     for r in records:
@@ -214,22 +220,17 @@ class BioSampleRecorder(Core):
     if len(records) == 0:
       return []
 
-    preload_containers()
+    preload_vessels()
 
     good_records = []
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d.' % i
-      # if self.known_barcodes.has_key(r['barcode']):
-      # m = ('there is a pre-existing object with barcode %s. '
-      #       + 'Rejecting import.')
-      #   self.logger.warn(m % r['barcode'])
-      #   continue
-      if r['label'] in self.preloaded_containers:
-        f = 'there is a pre-existing container with label %s. ' + reject
+      if r['label'] in self.preloaded_vessels:
+        f = 'there is a pre-existing vessel with label %s. ' + reject
         self.logger.warn(f % r['label'])
         continue
       if not r['source'] in  self.preloaded_sources:
-        f = 'there is no known source for %s. ' + reject
+        f = 'no known source maps to %s. ' + reject
         self.logger.error(f % r['source'])
         continue
       good_records.append(r)
@@ -268,24 +269,24 @@ class BioSampleRecorder(Core):
       initial_volume = current_volume
       content = (c if r['action_category'] == 'ALIQUOTING'
                    else getattr(self.kb.VesselContent,
-                                r['container_content'].upper()))
+                                r['vessel_content'].upper()))
       conf = {
         'label'         : r['label'],
         'currentVolume' : current_volume,
         'initialVolume' : initial_volume,
         'content' : content,
         'status'  : getattr(self.kb.VesselStatus,
-                            r['container_status'].upper()),
+                            r['vessel_status'].upper()),
         'action'        : a,
         }
-      if self.container_klass == self.kb.PlateWell:
+      if self.vessel_klass == self.kb.PlateWell:
         plate = self.preloaded_plates[r['plate']]
         row, column = r['row'], r['column']
         conf['container'] = plate
         conf['slot']      = (row - 1) * plate.columns + column
       elif 'barcode' in r:
         conf['barcode'] = r['barcode']
-      vessels.append(self.kb.factory.create(self.container_klass, conf))
+      vessels.append(self.kb.factory.create(self.vessel_klass, conf))
     #--
     assert len(vessels) == len(chunk)
     self.kb.save_array(vessels)
@@ -315,7 +316,7 @@ def canonize_records(args, records):
     return row, column
 
   fields = ['study', 'source_type',
-            'container_type', 'container_content', 'container_status',
+            'vessel_type', 'vessel_content', 'vessel_status',
             'current_volume', 'used_volume', 'action_category']
   for f in fields:
     if hasattr(args, f) and getattr(args,f) is not None:
@@ -327,7 +328,7 @@ def canonize_records(args, records):
     if 'action_category' not in r:
       r['action_category'] = 'IMPORT'
 
-  if r['container_type'] == 'PlateWell':
+  if r['vessel_type'] == 'PlateWell':
     for r in records:
       if ('row' in r and 'column' in r):
         r['row'], r['column'] = map(int, [r['row'],r['column']])
@@ -345,27 +346,27 @@ def make_parser_biosample(parser):
   parser.add_argument('--action-category', type=str,
                       choices=['IMPORT', 'EXTRACTION', 'ALIQUOTING'],
                       help="""default action category.
-                      It will over-ride the container_type column
+                      It will over-ride the action_category column
                       value, if any. It will default to IMPORT""")
-  parser.add_argument('--container-type', type=str,
+  parser.add_argument('--vessel-type', type=str,
                       choices=['Tube', 'PlateWell'],
-                      help="""default container type.  It will
-                      over-ride the container_type column value, if any.
+                      help="""default vessel type.  It will
+                      over-ride the vessel_type column value, if any.
                       """)
   parser.add_argument('--source-type', type=str,
                       choices=['Tube', 'Individual', 'PlateWell'],
                       help="""default source type.  It will
                       over-ride the source_type column value, if any.
                       """)
-  parser.add_argument('--container-content', type=str,
+  parser.add_argument('--vessel-content', type=str,
                       choices=[x.enum_label() for x in VesselContent.__enums__],
-                      help="""default container content.  It will
-                      over-ride the container_column value, if any.
+                      help="""default vessel content.  It will
+                      over-ride the vessel_column value, if any.
                       """)
-  parser.add_argument('--container-status', type=str,
+  parser.add_argument('--vessel-status', type=str,
                       choices=[x.enum_label() for x in VesselStatus.__enums__],
-                      help="""default container status.  It will
-                      over-ride the container_status column value, if any.
+                      help="""default vessel status.  It will
+                      over-ride the vessel_status column value, if any.
                       """)
   parser.add_argument('--current-volume', type=float,
                       help="""default current volume assigned to
@@ -384,15 +385,15 @@ def make_parser_biosample(parser):
 
 def import_biosample_implementation(logger, args):
 
-  action_setup_conf = self.find_action_setup_conf(args)
+  action_setup_conf = Recorder.find_action_setup_conf(args)
 
-  recorder = BioSampleRecorder(host=args.host, user=args.user,
-                               passwd=args.passwd,
-                               keep_tokens=args.keep_tokens,
-                               batch_size=args.batch_size,
-                               operator=args.operator,
-                               action_setup_conf=action_setup_conf,
-                               logger=logger)
+  recorder = Recorder(host=args.host, user=args.user,
+                      passwd=args.passwd,
+                      keep_tokens=args.keep_tokens,
+                      batch_size=args.batch_size,
+                      operator=args.operator,
+                      action_setup_conf=action_setup_conf,
+                      logger=logger)
   #--
   f = csv.DictReader(args.ifile, delimiter='\t')
   recorder.logger.info('start processing file %s' % args.ifile.name)

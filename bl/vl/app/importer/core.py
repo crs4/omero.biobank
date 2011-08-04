@@ -34,6 +34,18 @@ class Core(object):
                        (s.label, s.omero_id, s.id))
       self.default_study = s
 
+  @classmethod
+  def find_action_setup_conf(klass, args):
+    action_setup_conf = {}
+    for x in dir(args):
+      if not (x.startswith('_') or x.startswith('func')):
+        action_setup_conf[x] = getattr(args, x)
+    #FIXME HACKS
+    action_setup_conf['ifile'] = action_setup_conf['ifile'].name
+    action_setup_conf['ofile'] = action_setup_conf['ofile'].name
+    return action_setup_conf
+
+
   def get_device(self, label, maker, model, release):
     device = self.kb.get_device(label)
     if not device:
@@ -88,15 +100,6 @@ class Core(object):
         raise ValueError(m)
     return getattr(self.kb, o_type)
 
-  def find_action_setup_conf(self, args):
-    action_setup_conf = {}
-    for x in dir(args):
-      if not (x.startswith('_') or x.startswith('func')):
-        action_setup_conf[x] = getattr(args, x)
-    #FIXME HACKS
-    action_setup_conf['ifile'] = action_setup_conf['ifile'].name
-    action_setup_conf['ofile'] = action_setup_conf['ofile'].name
-    return action_setup_conf
 
   def preload_by_type(self, name, klass, preloaded):
     self.logger.info('start preloading %s' % name)
@@ -105,3 +108,11 @@ class Core(object):
       assert not o.id in preloaded
       preloaded[o.id] = o
     self.logger.info('done preloading %s' % name)
+
+  def missing_fields(self, fields, r):
+    for k in fields:
+      try:
+        r[k]
+      except KeyError, e:
+        return True
+    return False

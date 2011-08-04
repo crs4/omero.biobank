@@ -59,7 +59,7 @@
     <entry name="IMMUNOCHIP"/>
   </enum>
 
-  <type id="ome.model.vl.IlluminaBeadChip"
+  <type id="ome.model.vl.IlluminaBeadChipAssay"
 	superclass="ome.model.vl.MicroArrayMeasure">
     <properties>
       <required name="assayType" type="ome.model.vl.IlluminaBeadChipAssayType"/>

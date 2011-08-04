@@ -73,15 +73,22 @@ class Recorder(Core):
     k_map = {}
     #--
     good_records = []
+    mandatory_fields = ['label']
     for i, r in enumerate(records):
-      reject = ' Rejecting import of record %d.' % i
+      reject = ' Rejecting import of record %d: ' % i
+
+      if self.missing_fields(mandatory_fields, r):
+        f = reject + 'missing mandatory field'
+        self.logger.error(f)
+        continue
+
       if r['label'] in self.known_studies:
-        f = 'there is a pre-existing study with label %s.' + reject
+        f = reject + 'there is a pre-existing study with label %s.'
         self.logger.warn(f % r['label'])
         continue
       if r['label'] in k_map:
-        f = ('there is a pre-existing study with label %s. (in this batch)'
-             + reject)
+        f = (reject +
+             'there is a pre-existing study with label %s. (in this batch)')
         self.logger.error(f % r['label'])
         continue
       k_map['label'] = r

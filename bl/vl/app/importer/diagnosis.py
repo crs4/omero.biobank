@@ -49,7 +49,7 @@ class Recorder(Core):
     self.batch_size = batch_size
     self.action_setup_conf = action_setup_conf
     self.operator = operator
-    self.preload_individuals = {}
+    self.preloaded_individuals = {}
 
   def record(self, records):
     def records_by_chunk(batch_size, records):
@@ -76,7 +76,7 @@ class Recorder(Core):
 
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
-      self.process_chunk(c)
+      self.process_chunk(c, study, asetup, device)
       self.logger.info('done processing chunk %d' % i)
 
   def preload_individuals(self):
@@ -123,25 +123,32 @@ class Recorder(Core):
     self.logger.info('start consistency checks')
     #--
     good_records = []
+    mandatory_fields = ['individual', 'diagnosis', 'timestamp']
     for i, r in enumerate(records):
       reject = 'Rejecting import %d: ' % i
+
+      if self.missing_fields(mandatory_fields, r):
+        f = reject + 'missing mandatory field.'
+        self.logger.error(f)
+        continue
+
       if not r['individual'] in self.preloaded_individuals:
-        msg = reject + 'unknown individual'
+        msg = reject + 'unknown individual.'
         self.logger.error(msg)
         continue
       if not self.legal_diagnosis(r['diagnosis']):
-        msg = reject + ('illegal diagnosis code %s' % r['diagnosis'])
+        msg = reject + ('illegal diagnosis code %s.' % r['diagnosis'])
         self.logger.error(msg)
         continue
       try:
         long(r['timestamp'])
       except ValueError, e:
-        msg = reject + ('timestamp %r is not a long' % r['timestamp'])
+        msg = reject + ('timestamp %r is not a long.' % r['timestamp'])
         self.logger.error(msg)
         continue
       good_records.append(r)
     self.logger.info('done consistency checks')
-    #--
+
     return good_records
 
 def canonize_records(args, records):
@@ -162,7 +169,7 @@ def make_parser_diagnosis(parser):
 
 def import_diagnosis_implementation(logger, args):
 
-  action_setup_conf = self.find_action_setup_conf(args)
+  action_setup_conf = Recorder.find_action_setup_conf(args)
 
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
