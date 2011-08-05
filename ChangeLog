@@ -1,3 +1,8 @@
+2011-08-05    <simleo@neuron.crs4.it>
+
+	* bl/vl/utils/snp.py: generalized to support SNPs with more than
+	two possible alleles.
+
 2011-08-04    <simleo@neuron.crs4.it>
 
 	* bl/vl/utils/snp.py (_identify_strand): simpler implementation

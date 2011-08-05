@@ -4,30 +4,34 @@ import itertools as it
 from bl.core.seq.utils import reverse_complement as rc
 
 
-MASK_PATTERN = re.compile(r'^([A-Z]+)\[([^/]+)/([^\]]+)\]([A-Z]+)$',
-                          re.IGNORECASE)
+MASK_PATTERN = re.compile(r'^([A-Z]+)\[([^\]]+)\]([A-Z]+)$', re.IGNORECASE)
 
-UNAMBIGUOUS_PAIRS = frozenset([
-  frozenset(['A', 'C']),
-  frozenset(['A', 'G']),
-  frozenset(['C', 'T']),
-  frozenset(['G', 'T']),
-  ])
+
+UNAMBIGUOUS = {
+  frozenset(['A', 'C']): 'TOP',
+  frozenset(['A', 'G']): 'TOP',
+  frozenset(['C', 'T']): 'BOT',
+  frozenset(['G', 'T']): 'BOT',
+  frozenset(['A', 'C', 'G']): 'TOP',
+  frozenset(['A', 'C', 'T']): 'TOP',
+  frozenset(['A', 'G', 'T']): 'BOT',
+  frozenset(['C', 'G', 'T']): 'BOT',
+  }
 
 
 def split_mask(mask):
   m = MASK_PATTERN.match(mask)
   try:
-    lflank, allele_a, allele_b, rflank = m.groups()
+    lflank, alleles, rflank = m.groups()
   except AttributeError:
     raise ValueError("bad mask format: %r" % mask)
   else:
-    return (lflank, (allele_a, allele_b), rflank)
+    return (lflank, tuple(alleles.split("/")), rflank)
 
 
 def join_mask(mask):
   try:
-    return '%s[%s/%s]%s' % (mask[0], mask[1][0], mask[1][1], mask[2])
+    return '%s[%s]%s' % (mask[0], "/".join(mask[1]), mask[2])
   except IndexError:
     raise ValueError("bad mask format: %r" % (mask,))
 
@@ -38,11 +42,11 @@ def _identify_strand(lflank, alleles, rflank):
 
   NOTE: expects all parameters to be uppercase.
   """
-  if set(alleles) in UNAMBIGUOUS_PAIRS:
-    strand = 'TOP' if 'A' in alleles else 'BOT'
-  else:
+  try:
+    return UNAMBIGUOUS[frozenset(alleles)]
+  except KeyError:
     for p in it.izip(reversed(lflank), rflank):
-      if set(p) in UNAMBIGUOUS_PAIRS:
+      if frozenset(p) in UNAMBIGUOUS:
         strand = 'TOP' if p[0] in 'AT' else 'BOT'
         break
     else:

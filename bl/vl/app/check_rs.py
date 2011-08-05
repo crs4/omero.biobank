@@ -45,8 +45,8 @@ class SnpAnnReader(csv.DictReader):
     label rs_label mask
 
   Where label is the chip manufacturer's label, rs_label is the
-  putative rs label (None if absent) and mask is the sequence in the
-  LEFT_FLANK[ALLELE_A/ALLELE_B]RIGHT_FLANK format.
+  putative rs label ('None' if absent) and mask is the sequence in the
+  LEFT_FLANK[SLASH_SEPARATED_ALLELES]RIGHT_FLANK format.
   """
   def __init__(self, f, logger=None):
     csv.DictReader.__init__(self, f, delimiter="\t", quoting=csv.QUOTE_NONE)
@@ -73,8 +73,8 @@ def get_consensus(masks):
 
 def top_mask_to_key(mask, N):
   """
-  Convert a (left_flank, (allele_a, allele_b), right_flank) mask to a
-  key for the dbSNP index. To be useful, mask must be in the TOP format.
+  Convert a (left_flank, alleles_tuple, right_flank) mask to a key for
+  the dbSNP index. To be useful, mask must be in the TOP format.
   """
   if len(mask[0]) < N or len(mask[2]) < N:
     raise FlankTooShortError
