@@ -3,7 +3,14 @@ import unittest
 import bl.vl.utils.snp as usnp
 
 
-TOP_PAIRS = [
+SPLIT_MASK_PAIRS = [
+  ('AC[G/T]CA', ('AC', ('G', 'T'), 'CA')),
+  ('A[-/AAC]G', ('A', ('-', 'AAC'), 'G')),
+  ('A[A/C/G/T]G', ('A', ('A', 'C', 'G', 'T'), 'G')),
+  ]
+
+
+CONVERT_PAIRS = [
   ("GTCCCACACGTAGTTCGCCAGCCAGTAGATGATGGGGTTGCAGCCGCTGACAAACTGCAG[A/G]TGCTTGGCCTTGGTGGACTTCTCGGCCACGAGGAAGACAACGAAGCTGGCCGGCACGAAG",
    "GTCCCACACGTAGTTCGCCAGCCAGTAGATGATGGGGTTGCAGCCGCTGACAAACTGCAG[A/G]TGCTTGGCCTTGGTGGACTTCTCGGCCACGAGGAAGACAACGAAGCTGGCCGGCACGAAG"),
   ("ACATGCCCCACTCAGCGCCACCCCCGTCCTCCCCTCCCAGGTTGCCTAGCTGTCCCCAGC[T/C]TGGGCCTCCCCGAGGGCCAGACACTCACCAGCATTATTCATCCACAGTCTCCCAGGATCA",
@@ -34,36 +41,65 @@ TOP_PAIRS = [
    "CCTGCTCTTGAGTCAACCTGAGTGGCCCCTGTTCTATGCAATCAAAGGAGCCAGAGCATC[A/G]TTTCCACCCTCGGGCCCCTGGGCAAGTCATGATCACAGCCCCAGGCTGTCAGGGCCCCAG"),
   ("TTGGGGGACCCTGAGGGTGAGCACTGAATGTAGTGGGGTCCCTGGGAAGGGGGCCTGAAT[A/G]AAGAGATCCCCAAAGTTTGGGGATTTTCTAGGGGACTGGTGGTTGGTGTCTGTGGAGAGG",
    "TTGGGGGACCCTGAGGGTGAGCACTGAATGTAGTGGGGTCCCTGGGAAGGGGGCCTGAAT[A/G]AAGAGATCCCCAAAGTTTGGGGATTTTCTAGGGGACTGGTGGTTGGTGTCTGTGGAGAGG"),
+  ("AC[A/C/G]TG", "AC[A/C/G]TG"),
+  ("AC[A/G/T]TG", "CA[A/C/T]GT"),
+  ("AC[A/C/G/T]TG", "CA[A/C/G/T]GT"),
 ]
+
+
+UNDECIDABLE = [
+  "C[A/T]G",
+  "A[C/G]T",
+  ]
+
+
+class TestSplitMask(unittest.TestCase):
+
+  def test_good(self):
+    for s, t in SPLIT_MASK_PAIRS:
+      self.assertEqual(usnp.split_mask(s), t)
+
+  def test_bad(self):
+    self.assertRaises(ValueError, usnp.split_mask, 'N[N/N]')
+
+
+class TestJoinMask(unittest.TestCase):
+
+  def test_good(self):
+    for s, t in SPLIT_MASK_PAIRS:
+      self.assertEqual(usnp.join_mask(t), s)
+
+  def test_bad(self):
+    self.assertRaises(ValueError, usnp.join_mask, ('N', ('N', 'N')))
 
 
 class TestUSNP(unittest.TestCase):
 
-  def __init__(self, name):
-    super(TestUSNP, self).__init__(name)
-
-  def setUp(self):
-    pass
-
-  def tearDown(self):
-    pass
-
   def test_convert_to_top(self):
-    for i, (s, t) in enumerate(TOP_PAIRS):
+    for i, (s, t) in enumerate(CONVERT_PAIRS):
       self.assertEqual(usnp.convert_to_top(s), t,
                        '(%d): %r != %r' % ((i+1), s, t))
 
   def test_convert_to_top_split(self):
-    for i, (s, t) in enumerate(TOP_PAIRS):
+    for i, (s, t) in enumerate(CONVERT_PAIRS):
       s, t = map(usnp.split_mask, (s.upper(), t.upper()))
       self.assertEqual(usnp.convert_to_top(s, toupper=False), t,
                        '(%d): %r != %r' % ((i+1), s, t))
 
+  def test_undecidable(self):
+    for s in UNDECIDABLE:
+      self.assertRaises(ValueError, usnp.convert_to_top, s)
+
 
 def suite():
   suite = unittest.TestSuite()
+  suite.addTest(TestSplitMask('test_good'))
+  suite.addTest(TestSplitMask('test_bad'))
+  suite.addTest(TestJoinMask('test_good'))
+  suite.addTest(TestJoinMask('test_bad'))
   suite.addTest(TestUSNP('test_convert_to_top'))
   suite.addTest(TestUSNP('test_convert_to_top_split'))
+  suite.addTest(TestUSNP('test_undecidable'))
   return suite
 
 

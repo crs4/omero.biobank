@@ -30,12 +30,12 @@ from cPickle import HIGHEST_PROTOCOL as HP
 from contextlib import closing, nested
 
 from bl.core.seq.io import DbSnpReader
-from bl.core.seq.utils import reverse_complement
+from bl.core.seq.utils import reverse_complement as rc
 from bl.core.utils import NullLogger, longest_subs
-from bl.vl.utils.snp import convert_to_top, split_mask, join_mask
+from bl.vl.utils.snp import convert_to_top, split_mask, join_mask, rc_mask
 
 
-class FlankTooShortError(Exception): pass
+class MaskTooShortError(Exception): pass
 
 
 class SnpAnnReader(csv.DictReader):
@@ -64,39 +64,88 @@ class SnpAnnReader(csv.DictReader):
     return label, rs_label, mask
 
 
-def get_consensus(masks):
-  lflanks, alleles, rflanks = zip(*masks)
-  if len(set(alleles)) > 1:
-    return None
-  return longest_subs(lflanks, reverse=True), alleles[0], longest_subs(rflanks)
-
-
-def top_mask_to_key(mask, N):
+def mask_to_key(mask, N, sep="|"):
   """
   Convert a (left_flank, alleles_tuple, right_flank) mask to a key for
-  the dbSNP index. To be useful, mask must be in the TOP format.
+  the dbSNP index.
+
+  FIXME: the problem with this version is that left flanks must be
+  compared from the SNP backwards. Here is an example where similar
+  masks generate different keys::
+
+    >>> def m2k(m): return mask_to_key(split_mask(m), 4)
+    ... 
+    >>> s1 = 'AAA[A/T]CTTTT'
+    >>> s2 = 'CGTAGCTAAAAAG[A/T]TTTCACTGATCAC'
+    >>> print "         ", s1; print join_mask(rc_mask(split_mask(s2)))
+              AAA[A/T]CTTTT
+    GTGATCAGTGAAA[A/T]CTTTTTAGCTACG
+    >>> print m2k(s1); print m2k(s2)
+    AAA|CTTTT
+    AAAG|TTTC
   """
-  if len(mask[0]) < N or len(mask[2]) < N:
-    raise FlankTooShortError
-  return join_mask((mask[0][-N:], mask[1], mask[2][:N]))
+  lflank, _, rflank = min(mask, rc_mask(mask))
+  L, R = len(lflank), len(rflank)
+  if L + R < 2*N:
+    raise MaskTooShortError
+  if L < N:
+    R = 2*N - L
+  elif R < N:
+    L = 2*N - R
+  else:
+    L = R = N
+  return sep.join((lflank[-L:], rflank[:R]))    
+
+
+def mask_to_key_2(mask, N, sep="|"):
+  """
+  Convert a (left_flank, alleles_tuple, right_flank) mask to a key for
+  the dbSNP index.
+
+  FIXME: better than the other version, in the sense that keys are
+  equal around the pipe::
+
+    AAA|CTTTT
+    GAAA|CTTT
+
+  They are not good for a lookup though. Converting the mask to top
+  yields the same result, but with the additional problem of failing
+  for undecidable strands.
+  """
+  lflank = min(mask[0][::-1], rc(mask[2][::-1]))[::-1]
+  rflank = min(mask[2], rc(mask[0]))
+  L, R = len(lflank), len(rflank)
+  if L + R < 2*N:
+    raise MaskTooShortError
+  if L < N:
+    R = 2*N - L
+  elif R < N:
+    L = 2*N - R
+  else:
+    L = R = N
+  return sep.join((lflank[-L:], rflank[:R]))    
 
 
 def update_index(index, db_snp_reader, N, M, logger=None):
+  """
+  FIXME: convert_to_top: fallback to lexicographically smaller, but
+  see problems reported in mask_to_key.
+  """
   logger = logger or NullLogger()
   for rs_label, lflank, alleles, rflank in db_snp_reader:
     alleles = tuple(alleles.split("/"))
-    if len(alleles) != 2:
-      logger.warn("%r: bad alleles %r, skipping" % (rs_label, alleles))
-      continue
+    ## if len(alleles) != 2:
+    ##   logger.warn("%r: bad alleles %r, skipping" % (rs_label, alleles))
+    ##   continue
     try:
       lflank, alleles, rflank = convert_to_top((lflank, alleles, rflank))
     except ValueError, e:
       logger.warn("%r: %s, skipping" % (rs_label, e))
       continue
     try:
-      key = top_mask_to_key((lflank, alleles, rflank), N)
-    except FlankTooShortError:
-      logger.warn("%r: flank(s) too short, skipping" % rs_label)
+      key = mask_to_key((lflank, alleles, rflank), N)
+    except MaskTooShortError:
+      logger.warn("%r: mask too short, skipping" % rs_label)
       continue
     true_seq = (lflank[-M:], alleles, rflank[:M])
     index.setdefault(key, []).append((rs_label, true_seq))
@@ -104,6 +153,19 @@ def update_index(index, db_snp_reader, N, M, logger=None):
 
 
 def check_rs(ann_f, index, N, outf, logger=None):
+  """
+  FIXME: no consensus. hard cuts to size 32 must be the same; then we
+  can report problems if alleles are not equal. Convert to top mask
+  and fallback to lexicographically smaller, but see problems reported
+  in mask_to_key.
+
+  outcome:
+    untouched: match with a single, same rs
+    renamed: match with a single, different rs
+    problematic:
+      match has >2 alleles
+      multiple matches
+  """
   logger = logger or NullLogger()
   check_map = {}
   n_records = sum(1 for _ in ann_f) - 1
@@ -115,9 +177,9 @@ def check_rs(ann_f, index, N, outf, logger=None):
   for i, (label, rs_label, mask) in enumerate(reader):
     outf.write("%s\t%s\t" % (label, rs_label))
     try:
-      k = top_mask_to_key(mask, N)
-    except FlankTooShortError:
-      logger.warn("%r: flank(s) too short, forcing a no-match" % label)
+      k = mask_to_key(mask, N)
+    except MaskTooShortError:
+      logger.warn("%r: mask too short, forcing a no-match" % label)
       v = None
     else:
       v = index.get(k)

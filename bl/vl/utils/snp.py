@@ -36,6 +36,10 @@ def join_mask(mask):
     raise ValueError("bad mask format: %r" % (mask,))
 
 
+def rc_mask(mask):
+  return tuple(map(rc, reversed(mask)))
+
+
 def _identify_strand(lflank, alleles, rflank):
   """
   Perform strand designation according to the Illumina convention.
@@ -80,9 +84,9 @@ def convert_to_top(mask, toupper=True):
     lflank, rflank = lflank.upper(), rflank.upper()
     alleles = tuple(_.upper() for _ in alleles)
   strand = _identify_strand(lflank, alleles, rflank)
-  if strand == 'BOT':
-    lflank, alleles, rflank = (rc(_) for _ in (rflank, alleles, lflank))
   mask = (lflank, alleles, rflank)
+  if strand == 'BOT':
+    mask = rc_mask(mask)
   if rebuild_str:
     mask = join_mask(mask)
   return mask
