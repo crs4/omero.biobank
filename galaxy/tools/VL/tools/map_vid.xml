@@ -19,6 +19,7 @@
     --operator=galaxy
     --ofile=${output1}
     --loglevel=WARNING
+    --logfile=${logfile}
     map_vid
     --ifile=${input1}
     --source-type=${source_type.source_type}
@@ -60,7 +61,6 @@
 	<option value="DataSample">DataSample</option>
       </param>
       <when value="Tube"/>
-      <when value="Individual"/>
       <when value="TiterPlate"/>
       <when value="PlateWell"/>
       <when value="Chip"/>
@@ -75,6 +75,8 @@
 	    <column name="value" index="0"/>
 	    <column name="name" index="1"/>
 	    <filter type="sort_by" column="0"/>
+	    <filter type="add_value" name="Records provide study labels" 
+		    value="use_provided" index="0"/>
 	  </options>
 	</param>
       </when>
@@ -100,7 +102,8 @@
   </inputs>
 
   <outputs>
-    <data format="tabular" name="output1"/>
+    <data format="tabular" name="output1" label="${tool.name}.mapped"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
     

@@ -14,10 +14,12 @@
     --operator=galaxy
     --ifile=$input1
     --ofile=$output1
-    --loglevel=WARNING
+    --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
     diagnosis
-    --study=${study}
+    #if str($study) != 'use_provided'
+      --study ${study}
+    #end if 
   </command>  
   <inputs>
     <param format="tabular" name="input1" type="data"
@@ -57,7 +59,7 @@
   </inputs>
 
   <outputs>
-    <data format="tabular" name="output1" label="${tool.name}.output"/>
+    <data format="tabular" name="output1" label="${tool.name}.mapping"/>
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>

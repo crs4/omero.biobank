@@ -1,9 +1,18 @@
+2011-08-05    <zag@manzanillo>
+
+	* galaxy/lib/galaxy/webapps/vlweb/vl_app.py (UniverseApplication):
+	Now we can gather omero specific variables from the application
+	configuration file
+	(UniverseApplication.__init__): Added conf variable 'vl_loglevel'
+
 2011-08-05    <simleo@neuron.crs4.it>
 
 	* bl/vl/utils/snp.py: generalized to support SNPs with more than
 	two possible alleles.
 
 2011-08-04    <simleo@neuron.crs4.it>
+
+	* bl/vl/app/import modules now have a galaxy front-end.
 
 	* bl/vl/utils/snp.py (_identify_strand): simpler implementation
 	that works with sequences containing non-ACGT letters (basically,

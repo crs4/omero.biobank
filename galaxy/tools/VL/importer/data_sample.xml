@@ -14,17 +14,19 @@
     --operator=galaxy
     --ifile=$input1
     --ofile=$output1
-    --loglevel=WARNING
+    --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
     data_sample
-    --study=${study}
-    #if $source_type != 'use_provided'
+    #if str($study) != 'use_provided'
+      --study ${study}
+    #end if 
+    #if str($source_type) != 'use_provided'
       --source-type=${source_type}
     #end if
-    #if $device_type != 'use_provided'
+    #if str($device_type) != 'use_provided'
       --device-type=${device_type}
     #end if
-    #if $scanner != 'use_provided'
+    #if str($scanner) != 'use_provided'
       --scanner=${scanner}
     #end if
   </command>  
@@ -100,7 +102,7 @@
   </inputs>
 
   <outputs>
-    <data format="tabular" name="output1" label="${tool.name}.output"/>
+    <data format="tabular" name="output1" label="${tool.name}.mapping"/>
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>

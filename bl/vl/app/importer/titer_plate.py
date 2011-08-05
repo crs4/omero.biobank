@@ -100,7 +100,7 @@ class Recorder(Core):
     good_records = []
     for i, r in enumerate(records):
       reject = 'Rejecting import of line %d.' % i
-      if r['barcode'] in self.known_barcodes:
+      if r['barcode'] and r['barcode'] in self.known_barcodes:
         m = 'there is a pre-existing object with barcode %s. ' + reject
         self.logger.warn(m % r['barcode'])
         continue
@@ -174,6 +174,8 @@ def canonize_records(args, records):
   for r in records:
     if not 'plate_status' in r:
       r['plate_status'] = 'INSTOCK'
+    if not 'barcode' in r:
+      r['barcode'] = None
 
 
 help_doc = """

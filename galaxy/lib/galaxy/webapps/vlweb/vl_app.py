@@ -18,6 +18,7 @@ class UniverseApplication(OrigUniverseApplication):
     self.config.omero_default_host = kwargs.get('omero_default_host')
     self.config.omero_default_user = kwargs.get('omero_default_user')
     self.config.omero_default_passwd = kwargs.get('omero_default_passwd')
+    self.config.vl_loglevel = kwargs.get('vl_loglevel', 'INFO')
 
 
   @property

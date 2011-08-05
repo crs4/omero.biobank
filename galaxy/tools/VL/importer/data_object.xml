@@ -14,11 +14,13 @@
     --operator=galaxy
     --ifile=$input1
     --ofile=$output1
-    --loglevel=WARNING
+    --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
     data_object
-    --study=${study}
-    #if $mimetype != 'use_provided'
+    #if str($study) != 'use_provided'
+      --study ${study}
+    #end if 
+    #if str($mimetype) != 'use_provided'
       --mimetype=${mimetype}
     #end if
   </command>  
@@ -68,7 +70,7 @@
   </inputs>
 
   <outputs>
-    <data format="tabular" name="output1" label="${tool.name}.output"/>
+    <data format="tabular" name="output1" label="${tool.name}.mapping"/>
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>

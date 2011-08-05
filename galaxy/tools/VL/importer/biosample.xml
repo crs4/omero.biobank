@@ -14,16 +14,22 @@
     --operator=galaxy
     --ifile=${input1}
     --ofile=${output1}
-    --loglevel=WARNING
+    --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
     biosample
-    --study ${study}
-    --source-type ${source_type}
-    --vessel-type ${vessel_type}
-    #if $vessel_content != 'use_provided'
+    #if str($study) != 'use_provided'
+      --study ${study}
+    #end if
+    #if str($source_type) != 'use_provided'
+      --source-type ${source_type}
+    #end if
+    #if str($vessel_type) != 'use_provided'
+      --vessel-type ${vessel_type}
+    #end if
+    #if str($vessel_content) != 'use_provided'
       --vessel-content=${vessel_content}
     #end if
-    #if $vessel_status != 'use_provided'
+    #if str($vessel_status) != 'use_provided'
       --vessel-status=${vessel_status}
     #end if
   </command>  
@@ -48,6 +54,8 @@
     <param name="source_type" type="select"
 	   label="type of the source object"
 	   help="Choose from the legal types. See below.">
+      <option value="use_provided"       selected="true">
+      Use what provided by record</option>
       <option value="Tube"       selected="true">Tube</option>
       <option value="PlateWell">PlateWell</option>
       <option value="Individual">Individual</option>
@@ -56,7 +64,9 @@
     <param name="vessel_type" type="select"
 	   label="type of the vessel object"
 	   help="Choose from the legal types. See below.">
-      <option value="Tube"       selected="true">Tube</option>
+      <option value="use_provided"       selected="true">
+      Use what provided by record</option>
+      <option value="Tube">Tube</option>
       <option value="PlateWell">PlateWell</option>
     </param>
 
@@ -134,7 +144,7 @@
   </inputs>
 
   <outputs>
-    <data format="tabular" name="output1" label="${tool.name}.output"/>
+    <data format="tabular" name="output1" label="${tool.name}.mapping"/>
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>

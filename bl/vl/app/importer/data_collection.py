@@ -87,7 +87,7 @@ class Recorder(Core):
       dc = self.kb.factory.create(self.kb.DataCollection, dc_conf).save()
       for i, c in enumerate(records_by_chunk(self.batch_size, list(g))):
         self.logger.info('start processing chunk %s-%d' % (k, i))
-        self.process_chunk(otsv, dc, c)
+        self.process_chunk(otsv, study, dc, c)
         self.logger.info('done processing chunk %s-%d' % (k,i))
 
 
@@ -133,7 +133,7 @@ class Recorder(Core):
 
     return [] if failures else records
 
-  def process_chunk(self, otsv, dc, chunk):
+  def process_chunk(self, otsv, study, dc, chunk):
     items = []
     for r in chunk:
       conf = {'dataSample' : self.preloaded_data_samples[r['data_sample']],
@@ -142,6 +142,10 @@ class Recorder(Core):
       items.append(self.kb.factory.create(self.kb.DataCollectionItem, conf))
     #--
     self.kb.save_array(items)
+    otsv.writerow({'study' : study.label,
+                     'label' : dc.label,
+                     'type'  : dc.get_ome_table(),
+                     'vid'   : dc.id })
 
 def canonize_records(args, records):
   fields = ['study', 'data_sample_type', 'label']
