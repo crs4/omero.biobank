@@ -1,0 +1,107 @@
+<tool id="vl_tools_select_sub_group" name="VLT.select_sub_group">
+  <description>
+    Builds groups of individuals and enrolls them into a new group (a
+    study, fro the time being).
+  </description>
+  <command interpreter="python">
+    select_sub_group.py
+    ${selected_column}
+    ${new_column_name}
+    ${input1}
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=${advanced_configuration.vl_host}
+      --user=${advanced_configuration.vl_user}
+      --passwd=${advanced_configuration.vl_passwd}
+    #else
+      --host=$__app__.config.omero_default_host
+      --user=$__app__.config.omero_default_user
+      --passwd=$__app__.config.omero_default_passwd
+    #end if
+    --operator=galaxy
+    --ofile=${output1}
+    --loglevel=WARNING
+    --logfile=${logfile}
+    select_sub_group
+    --ifile=${input1}
+    --source-type=${source_type.source_type}
+    #if $source_type.source_type == 'Individual'
+    --study=${source_type.study}
+    #end if
+  </command>  
+  <inputs>
+    <param name="group_name" type="text" value="" 
+	   size="30" label="Group name"
+	   help="the new group (actually is a study) label"
+	   />
+
+    <param name="n_individuals" type="integer"
+	   label="total number of individuals requested"
+	   help="It will be cut to the largest number of individuals satisfying
+		 the required constraints."
+	   value="1000"
+	   />
+
+    <param name="male_fraction" type="float"
+	   value="0.5" 
+	   label="Male fraction"
+	   help="The fraction of male individuals.">
+      <validator type="in_range" message="should be between 0 and 1" 
+		 min="0.0" max="1.0"/>
+    </param>
+
+    <param name="control_fraction" type="float"
+	   value="0.5" 
+	   label="Control fraction"
+	   help="The fraction of control individuals.">
+      <validator type="in_range" message="should be between 0 and 1" 
+		 min="0.0" max="1.0"/>
+    </param>
+
+    <repeat name="ehr_series" title="EHR archetypes">
+      <conditional name="ehr_selector">
+        <param name="archetype" type="select" label="Archetype">
+          <option value="openEHR-EHR-EVALUATION.problem-diagnosis.v1" 
+		  selected="true">Diagnosis</option>
+          <option value="foo">Foo</option>
+        </param>
+	<when value="openEHR-EHR-EVALUATION.problem-diagnosis.v1">
+	  <param name="term" type="text" label="term" size="30"
+		 help="Coded text in the format terminology:code"/>
+	</when>	  
+	<when value="foo">
+	  <param name="termA" type="text" label="term1" size="30"
+		 help="Coded text in the format terminology:code"/>
+	  <param name="termB" type="text" label="term2" size="30"
+		 help="Coded text in the format terminology:code"/>
+	</when>	  
+      </conditional>
+    </repeat>       
+
+    <!-- ************************************************** -->
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="biobank05.crs4.it" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="galaxy" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="output1" label="${tool.name}.selected"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
+  </outputs>
+  <help>
+    
+  </help>
+
+</tool>
