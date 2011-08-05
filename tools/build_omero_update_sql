@@ -1,0 +1,120 @@
+#!/usr/bin/env python
+import re, optparse, sys
+
+"""
+
+Omero Database Update Utility
+=============================
+
+
+The purpouse of this script is to simplify the update procedure for Omero server
+when new models are introduced. This script extract differences between the old SQL file
+and the one generated with the new models producing a new SQL file that contains
+only the statements related to the new models.
+
+ bash$ build_omero_update_sql OMERO4.2__0.sql.OLD OMERO4.2__0.sql OMERO4.2__0.sql.UPDATE
+ 
+"""
+
+#---------------------------
+def get_file_content(file_name):
+    with open(file_name) as f:
+        content = f.read()
+    return content
+#---------------------------
+def extract_sequences(sequence_re, text, case_sensitive=True):
+    if not case_sensitive:
+        re_obj = re.compile(sequence_re, re.DOTALL|re.IGNORECASE)
+    else:
+        re_obj = re.compile(sequence_re, re.DOTALL)
+    return re_obj.findall(text)
+#---------------------------
+# Triggers, functions and views are related to a specific version of the Omero server,
+# an update related to the models only will not modify these SQL instructions.
+# Note that if you change the server version triggers, views and functions could be different
+# from previous versions. 
+def extract_functions_triggers_views(text):
+    function_re = 'CREATE OR REPLACE FUNCTION.+?BEGIN.+?END.+?LANGUAGE plpgsql;'
+    f_res = extract_sequences(function_re, text)
+    trigger_re = 'CREATE TRIGGER.+?;'
+    t_res = extract_sequences(trigger_re, text)
+    views_re = 'CREATE OR REPLACE VIEW.+?;'
+    v_res = extract_sequences(views_re, text)
+    return f_res + t_res + v_res
+#---------------------------
+# CREATE TABLE, ALTER TABLE, INSERT and DROP TABLE statements are related to new models
+# so we need to extract them and preverse operations order, that's why we use a single
+# regular expression that will match against the full text of the SQL script.
+def extract_sql_statements(text):
+    sql_re = 'create.+?;{1,2}|alter.+?;{1,2}|insert.+?;{1,2}|drop.+?;{1,2}'
+    return extract_sequences(sql_re, text, False)
+#---------------------------
+# When functions, triggers and views are matched (and if we don't find differences between the two files)
+# we can clean the text in order to prevent useless matches when getting SQL statements (for example, the 
+# 'CREATE OR REPLACE FUNCTION...' statement will be matched by the 'create.+?;{1,2}' regular expression
+# that it's used to match the 'CREATE TABLE....' statements
+def purge_text(text, purge_list):
+    purge_list = set(purge_list)
+    for p_el in purge_list:
+        text = text.replace(p_el, '')
+    return text
+#---------------------------
+# Compare the SQL statements found in the new file against the statements of the old one.
+# New file's statements are not transformed into a set beacause we need to preserve the 
+# order of the instructions as we found them in the original file. 
+def compare_sql_statements(old_sql, new_sql):
+    updated_sql = []
+    old_sql = set(old_sql)
+    for x in new_sql:
+        if x not in old_sql:
+            updated_sql.append(x)
+    return updated_sql
+#---------------------------
+def write_output(out_file_name, seqs_to_append):
+    with open(out_file_name, 'w') as f:
+        f.write('\n'.join(seqs_to_append))
+#---------------------------
+def make_parser():
+    parser = optparse.OptionParser(usage='%prog OLD_SQL_FILE NEW_SQL_FILE UPDATE_SQL_FILE')
+    return parser
+#---------------------------
+
+def main(argv):
+    parser = make_parser()
+    opt, args = parser.parse_args()
+
+    try:
+        old_fname = args[0]
+        new_fname = args[1]
+        out_fname = args[2]
+    except IndexError:
+        parser.print_help()
+        sys.exit(2)
+
+    oldf_content = get_file_content(old_fname)
+    newf_content = get_file_content(new_fname)
+       
+    oldf_ft = extract_functions_triggers_views(oldf_content)
+    newf_ft = extract_functions_triggers_views(newf_content)
+    updated_ft = compare_sql_statements(oldf_ft, newf_ft)
+    # The script works with SQL files generated using the same versione of Omero server.
+    # Views, functions and triggers are always the same if the server version does not change,
+    # if one of these elements found in the new file has no match inside the old file the script
+    # must exit with an error code
+    assert len(updated_ft) == 0
+
+    # Clean the text, we don't need functions, views and triggers if they are the same in 
+    # both files
+    oldf_content = purge_text(oldf_content, oldf_ft)
+    newf_content = purge_text(newf_content, newf_ft)
+
+    oldf_sql = extract_sql_statements(oldf_content)
+    print 'Found %d SQL statements in OLD FILE %s' % (len(oldf_sql), old_fname)
+    newf_sql = extract_sql_statements(newf_content)
+    print 'Found %d SQL statements in NEW FILE %s' % (len(newf_sql), new_fname)
+    updated_sql = compare_sql_statements(oldf_sql, newf_sql)
+    print 'Found %d differences, write them to file %s' % (len(updated_sql), out_fname)
+    write_output(out_fname, updated_sql)
+
+if __name__ == '__main__':
+    main(sys.argv)
