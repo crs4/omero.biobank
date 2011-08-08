@@ -1,4 +1,4 @@
-rs_label	marker_indx	allele_flip
+label	marker_indx	allele_flip
 rs12265218	0	False
 rs11981089	1	False
 rs7625376	2	False

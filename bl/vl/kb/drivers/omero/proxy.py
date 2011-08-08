@@ -24,6 +24,7 @@ from genotyping import GenotypingAdapter
 from modeling   import ModelingAdapter
 from eav        import EAVAdapter
 from ehr        import EHR
+from genotyping import Marker
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 
@@ -40,6 +41,8 @@ class Proxy(ProxyCore):
     for k in KOK:
       klass = KOK[k]
       setattr(self, klass.get_ome_table(), klass)
+    # special case
+    self.Marker = Marker
     #-- setup adapters
     self.gadpt = GenotypingAdapter(self)
     self.madpt = ModelingAdapter(self)
@@ -131,6 +134,9 @@ class Proxy(ProxyCore):
 
   def get_snp_marker_definitions(self, selector=None, batch_size=50000):
     return self.gadpt.get_snp_marker_definitions(selector, batch_size)
+
+  def get_snp_markers(self, labels=None, vids=None):
+    return self.gadpt.get_snp_markers(labels, vids)
 
   def add_snp_alignments(self, stream, op_vid, batch_size=50000):
     return self.gadpt.add_snp_alignments(stream, op_vid, batch_size)

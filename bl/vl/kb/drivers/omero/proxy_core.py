@@ -314,6 +314,12 @@ class ProxyCore(object):
 
   @debug_boundary
   def get_table_rows(self, table_name, selector, batch_size=50000):
+    """
+    FIXME
+    selector can now be either a selection or a list of selections. In
+    the latter case, it is interpreted as an 'or' condition between
+    the list elements.
+    """
     s = self.connect()
     try:
       t = self._get_table(s, table_name)
@@ -328,11 +334,14 @@ class ProxyCore(object):
   @debug_boundary
   def __get_table_rows_selected(self, table, selector, batch_size):
     res, row_read, max_row = [], 0, table.getNumberOfRows()
+    if isinstance(selector, str):
+      selector = [selector]
     while row_read < max_row:
-      ids = table.getWhereList(selector, {}, row_read, row_read + batch_size, 1)
-      if ids:
-        d = table.readCoordinates(ids)
-        res.append(convert_coordinates_to_np(d))
+      for s in selector:
+        ids = table.getWhereList(s, {}, row_read, row_read + batch_size, 1)
+        if ids:
+          d = table.readCoordinates(ids)
+          res.append(convert_coordinates_to_np(d))
       row_read += batch_size
     return np.concatenate(tuple(res)) if res else []
 

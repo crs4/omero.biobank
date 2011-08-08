@@ -32,24 +32,6 @@ import time, sys
 
 import itertools as it
 
-#-----------------------------------------------------------------------------
-#FIXME this should be factored out....
-
-import logging, time
-logger = logging.getLogger()
-counter = 0
-def debug_wrapper(f):
-  def debug_wrapper_wrapper(*args, **kv):
-    global counter
-    now = time.time()
-    counter += 1
-    logger.debug('%s[%d] in' % (f.__name__, counter))
-    res = f(*args, **kv)
-    logger.debug('%s[%d] out (%f)' % (f.__name__, counter, time.time() - now))
-    counter -= 1
-    return res
-  return debug_wrapper_wrapper
-#-----------------------------------------------------------------------------
 
 class Recorder(Core):
   """
@@ -58,21 +40,26 @@ class Recorder(Core):
   """
   def __init__(self, study_label,
                host=None, user=None, passwd=None,  keep_tokens=1,
+               action_setup_conf=None,
+               logger=None,
                operator='Alfred E. Neumann'):
     """
     FIXME
     """
-    self.logger = logger
-    super(Recorder, self).__init__(host, user, passwd, study_label=study_label)
+    super(Recorder, self).__init__(host, user, passwd, study_label=study_label,
+                                   logger=logger)
+    self.action_setup_conf = action_setup_conf
     #--
     #--
     device_label = ('importer.marker_definition.SNP-marker-definition-%s' %
                     (version))
     device = self.get_device(label=device_label,
                              maker='CRS4', model='importer', release='0.1')
-    asetup = self.get_action_setup('importer.marker_alignment',
-                                   {'study_label' : study_label,
-                                    'operator' : operator})
+    asetup = self.get_action_setup(('importer.marker_alignment-%f'
+                                    % time.time()),
+                                   json.dumps(self.action_setup_conf))
+
+
     acat  = self.kb.ActionCategory.IMPORT
     self.action = self.kb.factory.create(self.kb.Action,
                                          {'setup' : asetup,
@@ -133,13 +120,19 @@ def make_parser_marker_alignment(parser):
                       help="""optional informative message""",
                       default="")
 
-def import_marker_alignment_implementation(args):
+def import_marker_alignment_implementation(logger, args):
   if not (args.study):
     msg = 'missing context study label'
     logger.critical(msg)
     raise ValueError(msg)
+
+  action_setup_conf = Recorder.find_action_setup_conf(args)
+
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
+                      action_setup_conf=action_setup_conf,
+                      operator=args.operator,
+                      logger=logger,
                       keep_tokens=1)
   recorder.save_snp_marker_alignments(args.ref_genome, args.message, args.ifile)
 

@@ -1,3 +1,19 @@
+2011-08-08    <zag@manzanillo>
+
+	* tests/bl/vl/kb/drivers/omero/test_table.py (TestProxyCore):
+	added a test for the new get_table_rows selector type cases.
+
+	* bl/vl/kb/drivers/omero/proxy_core.py (ProxyCore.get_table_rows):
+	selector can now be either a selection or a list of selections. In
+	the latter case, it is interpreted as an 'or' condition between
+	the list elements.
+
+	* bl/vl/kb/drivers/omero/genotyping.py (Marker): Added. It is only
+	a placeholder for the time being.
+
+	* bl/vl/kb/drivers/omero/proxy.py (Proxy.get_snp_markers): we may
+	want markers as standard objects, afterall...
+
 2011-08-05    <zag@manzanillo>
 
 	* galaxy/lib/galaxy/webapps/vlweb/vl_app.py (UniverseApplication):

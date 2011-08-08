@@ -25,6 +25,14 @@ TOP_mask)
 
 There are no collision controls.
 
+It will output a a tsv file with the following columns::
+
+   study    label     type    vid
+   ASTUDY   SNP_A-xxx Marker  V000002222
+   ...
+
+
+
 Example usage::
 
   bash$ importer -i markers.tsv marker_definition \
@@ -41,24 +49,6 @@ from version import version
 import csv, json
 import time, sys
 
-#-----------------------------------------------------------------------------
-#FIXME this should be factored out....
-
-import logging, time
-logger = logging.getLogger()
-counter = 0
-def debug_wrapper(f):
-  def debug_wrapper_wrapper(*args, **kv):
-    global counter
-    now = time.time()
-    counter += 1
-    logger.debug('%s[%d] in' % (f.__name__, counter))
-    res = f(*args, **kv)
-    logger.debug('%s[%d] out (%f)' % (f.__name__, counter, time.time() - now))
-    counter -= 1
-    return res
-  return debug_wrapper_wrapper
-#-----------------------------------------------------------------------------
 
 class Recorder(Core):
   """
@@ -67,21 +57,22 @@ class Recorder(Core):
   """
   def __init__(self, study_label,
                host=None, user=None, passwd=None, keep_tokens=1,
-               operator='Alfred E. Neumann'):
+               action_setup_conf=None,
+               operator='Alfred E. Neumann', logger=None):
     """
     FIXME
     """
-    self.logger = logger
     super(Recorder, self).__init__(host, user, passwd, keep_tokens,
-                                   study_label)
+                                   study_label, logger=logger)
+    self.action_setup_conf = action_setup_conf
     #--
     device_label = ('importer.marker_definition.SNP-marker-definition-%s' %
                     (version))
     device = self.get_device(label=device_label,
                              maker='CRS4', model='importer', release='0.1')
-    asetup = self.get_action_setup('importer.marker_definition',
-                                   {'study_label' : study_label,
-                                    'operator' : operator})
+    asetup = self.get_action_setup(('importer.marker_definition-%f'
+                                    % time.time()),
+                                   json.dumps(self.action_setup_conf))
     acat  = self.kb.ActionCategory.IMPORT
     self.action = self.kb.factory.create(self.kb.Action,
                                          {'setup' : asetup,
@@ -94,7 +85,8 @@ class Recorder(Core):
     self.action.save()
 
 
-  def save_snp_marker_definitions(self, source, context, release, ifile):
+
+  def record(self, source, context, release, ifile, ofile):
     self.logger.info('start preloading known markers defs from kb')
     known_markers = self.kb.get_snp_marker_definitions()
     if len(known_markers) > 0:
@@ -114,8 +106,19 @@ class Recorder(Core):
         yield y
     tsv = csv.DictReader(ifile, delimiter='\t')
     self.logger.info('start loading markers defs from %s' % ifile.name)
-    self.kb.add_snp_marker_definitions(ns(tsv, cnt), op_vid=self.action.id)
-    self.logger.info('done loading markers defs there were %s new markers.' % cnt[0])
+    vmap = self.kb.add_snp_marker_definitions(ns(tsv, cnt),
+                                              op_vid=self.action.id)
+    o = csv.DictWriter(ofile,
+                       fieldnames=['study', 'label', 'type', 'vid'],
+                       delimiter='\t')
+    o.writeheader()
+    for t in vmap:
+      o.writerow({'study' : self.default_study.label,
+                  'label' : t[0],
+                  'type'  : 'Marker',
+                  'vid'   : t[1]})
+    self.logger.info('done loading markers defs there were %s new markers.' %
+                     cnt[0])
 
 #-----------------------------------------------------------------------------
 
@@ -135,16 +138,23 @@ def make_parser_marker_definition(parser):
   parser.add_argument('--release', type=str,
                       help="""marker definition release""")
 
-def import_marker_definition_implementation(args):
+def import_marker_definition_implementation(logger, args):
   if not (args.study and args.source and args.context and args.release):
     msg = 'missing command line options'
     logger.critical(msg)
     raise ValueError(msg)
+
+  action_setup_conf = Recorder.find_action_setup_conf(args)
+
+
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
-                      keep_tokens=args.keep_tokens)
-  recorder.save_snp_marker_definitions(args.source, args.context, args.release,
-                                       args.ifile)
+                      operator=args.operator,
+                      action_setup_conf=action_setup_conf,
+                      keep_tokens=args.keep_tokens, logger=logger)
+
+  recorder.record(args.source, args.context, args.release,
+                  args.ifile, args.ofile)
 
 def do_register(registration_list):
   registration_list.append(('marker_definition', help_doc,

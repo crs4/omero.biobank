@@ -1,6 +1,7 @@
 IMPORTER='../../../tools/importer -P romeo --operator aen'
 KB_QUERY='../../../tools/kb_query -P romeo --operator aen'
 
+if false; then
 
 ${IMPORTER} -i study.tsv -o study_mapping.tsv study
 ${IMPORTER} -i individual.tsv -o individual_mapping.tsv individual
@@ -113,11 +114,19 @@ ${IMPORTER} -i diagnosis_mapped.tsv \
 
 
 
+${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus.tsv \
+            -o AppliedBioSystem_TaqMan_MSstatus_mapping.tsv \
+            marker_definition -S BSTUDY --source CNR-IGMB \
+            --context TaqMan --release MSstatus
+
+fi
+
+${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus_aligned.tsv marker_alignment -S BSTUDY --ref-genome hg28 --message 'alignment done using libbwa'
+
+
 exit
 
 
-${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus.tsv marker_definition -S BSTUDY --source CNR-IGMB --context TaqMan --release MSstatus
-${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus_aligned.tsv marker_alignment -S BSTUDY --ref-genome hg28 --message 'alignment done using libbwa'
 ${IMPORTER} -i taq_man_ms_status_markers_set.tsv markers_set -S BSTUDY --maker CRS4 --model TaqMan --release MSstudy
 
 

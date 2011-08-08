@@ -135,3 +135,16 @@ Templating options
         </data>
     </outputs>
 
+
+.. code-block:: xml
+
+    <param name="table_names" 
+	   type="drill_down" 
+	   display="checkbox" 
+	   hierarchy="recurse" 
+	   multiple="true" 
+	   label="Choose Tables to Use" 
+	   help="Selecting no tables will result in using all tables." 
+	   from_file="annotation_profiler_options.xml"/>
+
+.. code-block:: xml

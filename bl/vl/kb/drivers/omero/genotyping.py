@@ -4,6 +4,20 @@ import itertools as it
 import numpy     as np
 
 
+class Marker(object):
+  "FIXME This is a place-holder"
+
+  def __init__(self, vid, label, rs_label):
+    self.id = vid
+    self.label = label
+    self.rs_label = rs_label
+    self.mask = None
+
+  def get_ome_table(self):
+    "FIXME this is to make app.importter.map_vid happy"
+    return "Marker"
+
+
 class GenotypingAdapter(object):
   """
   FIXME
@@ -80,17 +94,17 @@ class GenotypingAdapter(object):
                          self.SNP_MARKER_DEFINITIONS_COLS)
 
   def add_snp_marker_definitions(self, stream, op_vid, batch_size=50000):
-    vids = []
+    vid_correspondence = []
     def add_vid_filter_and_op_vid(stream, op_vid):
       for x in stream:
         x['vid'] = vlu.make_vid()
         x['op_vid'] = op_vid
-        vids.append(x['vid'])
+        vid_correspondence.append((x['label'], x['vid']))
         yield x
     i_s = add_vid_filter_and_op_vid(stream, op_vid)
     self.kb.add_table_rows_from_stream(self.SNP_MARKER_DEFINITIONS_TABLE,
                                        i_s, batch_size)
-    return vids
+    return vid_correspondence
 
   def get_snp_marker_definitions(self, selector=None, batch_size=50000):
     """
@@ -98,6 +112,39 @@ class GenotypingAdapter(object):
     """
     return self.kb.get_table_rows(self.SNP_MARKER_DEFINITIONS_TABLE,
                                   selector, batch_size)
+
+  def marker_maker(self, r):
+    vid, label, rs_label = map(str, [r[0], r[4], r[5]])
+    return Marker(vid, label, rs_label)
+
+  def get_snp_markers(self, labels=None, vids=None, batch_size=50000):
+    selector_critical_size = 10000
+    if not (labels or vids):
+      raise ValueError('labels and vids cannot be both None')
+    if labels and vids:
+      raise ValueError('labels and vids cannot be both not None')
+    if labels:
+      field_name = 'label'
+      requested = labels
+    else:
+      field_name = 'vid'
+      requested = vids
+
+    if len(requested) < selector_critical_size:
+      selector = '|'.join(['(%s=="%s")' % (field_name, l) for l in labels])
+    else:
+      n_chunks = (len(requested) / selector_critical_size
+                  + 1 if len(requested) % selector_critical_size else 0)
+      start = 0
+      selector = []
+      while start < len(requested):
+        end = start + selector_critical_size
+        selector.append('|'.join(['(%s=="%s")' % (field_name, l)
+                                  for l in labels[start:end]]))
+        start = end
+    res = self.get_snp_marker_definitions(selector, batch_size)
+    return [self.marker_maker(r) for r in res]
+
 
   #-- marker sets
   def create_snp_markers_set_table(self):

@@ -34,7 +34,7 @@ class MapVIDApp(Core):
   """
 
   SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
-                            'Chip', 'DataSample']
+                            'Chip', 'DataSample', 'Marker']
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None,
@@ -93,11 +93,22 @@ class MapVIDApp(Core):
     self.logger.debug('mapping: %s' % mapping)
     return mapping
 
+  def resolve_mapping_marker(self, source_type, labels):
+    mapping = {}
+    self.logger.info('start selecting %s' % source_type.get_ome_table())
+    objs = self.kb.get_snp_markers(labels=labels)
+    for o in objs:
+      mapping[o.label] = o.id
+    self.logger.info('done selecting %s' % source_type.get_ome_table())
+    return mapping
+
   def resolve_mapping(self, source_type, labels):
     if source_type == self.kb.Individual:
       return self.resolve_mapping_individual(labels)
     elif source_type == self.kb.PlateWell:
       return self.resolve_mapping_plate_well(source_type, labels)
+    elif source_type == self.kb.Marker:
+      return self.resolve_mapping_marker(source_type, labels)
     else:
       return self.resolve_mapping_object(source_type, labels)
 

@@ -53,6 +53,27 @@ class TestProxyCore(unittest.TestCase):
     pc.add_table_row(table_name, data[-1])
     return data
 
+  def test_get_table_rows(self):
+    fields = self.make_fields()
+    table_name = 'foo-%s.h5' % time.time()
+    N = 16
+    pc = ProxyCore(OME_HOST, OME_USER, OME_PASS)
+    pc.create_table(table_name, fields)
+    data = self.fill_table(pc, table_name, N)
+    # -- selector classic
+    irange = range(N/4, (3*N)/4)
+    selectors = ['(r_vid == "%s")' % data[i]['r_vid'] for i in irange]
+    #--
+    sel_classic = '|'.join(selectors)
+    rows_classic = pc.get_table_rows(table_name, selector=sel_classic)
+    for i, r in it.izip(irange, rows_classic):
+      self.assertTrue(data[i] == r)
+    #--
+    sel_lite    = selectors
+    rows_lite = pc.get_table_rows(table_name, selector=sel_lite)
+    for i, r in it.izip(irange, rows_classic):
+      self.assertTrue(data[i] == r)
+
   def test_update_row(self):
     fields = self.make_fields()
     table_name = 'foo-%s.h5' % time.time()
@@ -116,6 +137,7 @@ def suite():
   suite.addTest(TestProxyCore('test_create_delete'))
   suite.addTest(TestProxyCore('test_table_rows'))
   suite.addTest(TestProxyCore('test_table_rows_iterator'))
+  suite.addTest(TestProxyCore('test_get_table_rows'))
   suite.addTest(TestProxyCore('test_update_row'))
   return suite
 
