@@ -59,7 +59,6 @@ class Recorder(Core):
                                     % time.time()),
                                    json.dumps(self.action_setup_conf))
 
-
     acat  = self.kb.ActionCategory.IMPORT
     self.action = self.kb.factory.create(self.kb.Action,
                                          {'setup' : asetup,
@@ -71,39 +70,61 @@ class Recorder(Core):
     #-- FIXME what happens if we do not have markers to save?
     self.action.save()
 
-  def save_snp_marker_alignments(self, ref_genome, message, ifile):
-    self.logger.info('start preloading known markers defs from kb')
-    known_markers = self.kb.get_snp_marker_definitions()
-    self.logger.info('done preloading known markers defs')
-    self.logger.info('preloaded %d known markers defs' % len(known_markers))
-    self.logger.info('will not check for rewritten alignment records')
-    #--
-    cnt = [0]
-    known_markers_vid = set(known_markers['vid'])
-    def ns(stream, cnt):
-      for x in stream:
-        if x['marker_vid'] not in known_markers_vid:
-          msg = 'referencing marker with unkwnown vid %s' % x['marker_vid']
-          self.logger.critical(msg)
-          raise ValueError(msg)
-        if ref_genome:
-          x['ref_genome'] = ref_genome
-        x['chromosome'] = int(x['chromosome'])
-        x['pos'] = int(x['pos'])
-        x['global_pos'] = 10**10 * x['chromosome'] + x['pos']
-        x['strand'] = x['strand'].upper() in ['TRUE', '+']
-        x['copies'] = int(x['copies'])
-        cnt[0] += 1
-        yield x
-    tsv = csv.DictReader(ifile, delimiter='\t')
-    #--
-    pars = {'message' : message,
-            'ref_genome' : ref_genome,
-            'filename' : ifile.name}
-    self.logger.info('start loading marker alignments from %s' % ifile.name)
-    self.kb.add_snp_alignments(ns(tsv, cnt), op_vid=self.action.id)
-    self.logger.info('done loading marker alignments. There were %s new alignments.'
-                     % cnt[0])
+  def do_consistency_checks(self, records):
+    self.logger.info('start consistency checks')
+    mandatory_fields = ['marker_vid', 'ref_genome',
+                        'chromosome', 'pos', 'strand', 'allele', 'copies']
+
+    markers = dict([(m.id, m) for m in
+                    self.kb.get_snp_markers(vids=[r['marker_vid']
+                                                  for r in records])])
+    accepted = []
+    for i, r in enumerate(records):
+      reject = 'Rejecting import of record %d: ' % i
+
+      if not r['marker_vid'] in markers:
+        f = reject + 'unkown marker_vid value.'
+        self.logger.error(f)
+        continue
+
+      if self.missing_fields(mandatory_fields, r):
+        f = reject + 'missing mandatory field.'
+        self.logger.error(f)
+        continue
+
+      if not 0 < r['chromosome'] < 26:
+        f = reject + 'chomosome value out ot the [1:25] range.'
+        self.logger.error(f)
+        continue
+
+      if not 0 < r['pos']:
+        f = reject + 'non positive pos.'
+        self.logger.error(f)
+        continue
+      accepted.append(r)
+
+    return accepted
+
+  def record(self, message, records):
+    records = self.do_consistency_checks(records)
+    self.kb.add_snp_alignments(records, op_vid=self.action.id)
+
+
+def canonize_records(args, records):
+  fields = ['study', 'ref_genome']
+  for f in fields:
+    if hasattr(args, f) and getattr(args,f) is not None:
+      for r in records:
+        r[f] = getattr(args, f)
+
+  # special treatment
+  for r in records:
+    r['chromosome'] = int(r['chromosome'])
+    r['pos'] = int(r['pos'])
+    r['global_pos'] = 10**10 * r['chromosome'] + r['pos']
+    r['strand'] = r['strand'].upper() in ['TRUE', '+']
+    r['copies'] = int(r['copies'])
+  return records
 
 #------------------------------------------------------------------------------
 
@@ -134,7 +155,17 @@ def import_marker_alignment_implementation(logger, args):
                       operator=args.operator,
                       logger=logger,
                       keep_tokens=1)
-  recorder.save_snp_marker_alignments(args.ref_genome, args.message, args.ifile)
+  #--
+  f = csv.DictReader(args.ifile, delimiter='\t')
+  recorder.logger.info('start processing file %s' % args.ifile.name)
+  records = [r for r in f]
+  #--
+  canonize_records(args, records)
+
+  recorder.record(args.message, records)
+
+  recorder.logger.info('done processing file %s' % args.ifile.name)
+
 
 def do_register(registration_list):
   registration_list.append(('marker_alignment', help_doc,

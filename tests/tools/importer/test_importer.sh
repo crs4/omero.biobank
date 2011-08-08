@@ -121,7 +121,14 @@ ${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus.tsv \
 
 fi
 
-${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus_aligned.tsv marker_alignment -S BSTUDY --ref-genome hg28 --message 'alignment done using libbwa'
+${KB_QUERY} -o AppliedBioSystem_TaqMan_MSstatus_aligned_mapped.tsv
+            map_vid -i AppliedBioSystem_TaqMan_MSstatus_aligned.tsv\
+            --source-type Marker --column label,marker_vid
+
+
+${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus_aligned_mapped.tsv \
+            marker_alignment -S BSTUDY --ref-genome hg28  \
+            --message 'alignment done using libbwa'
 
 
 exit

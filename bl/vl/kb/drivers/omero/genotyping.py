@@ -13,7 +13,8 @@ class Marker(object):
     self.rs_label = rs_label
     self.mask = None
 
-  def get_ome_table(self):
+  @classmethod
+  def get_ome_table(klass):
     "FIXME this is to make app.importter.map_vid happy"
     return "Marker"
 
@@ -131,7 +132,7 @@ class GenotypingAdapter(object):
       requested = vids
 
     if len(requested) < selector_critical_size:
-      selector = '|'.join(['(%s=="%s")' % (field_name, l) for l in labels])
+      selector = '|'.join(['(%s=="%s")' % (field_name, l) for l in requested])
     else:
       n_chunks = (len(requested) / selector_critical_size
                   + 1 if len(requested) % selector_critical_size else 0)
@@ -140,7 +141,7 @@ class GenotypingAdapter(object):
       while start < len(requested):
         end = start + selector_critical_size
         selector.append('|'.join(['(%s=="%s")' % (field_name, l)
-                                  for l in labels[start:end]]))
+                                  for l in requested[start:end]]))
         start = end
     res = self.get_snp_marker_definitions(selector, batch_size)
     return [self.marker_maker(r) for r in res]
