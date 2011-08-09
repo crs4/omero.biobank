@@ -313,11 +313,14 @@ def import_data_sample_implementation(logger, args):
 
   canonize_records(args, records)
 
-  o = csv.DictWriter(args.ofile,
-                     fieldnames=['study', 'label', 'type', 'vid'],
-                     delimiter='\t')
-  o.writeheader()
-  recorder.record(records, o)
+  if len(records) > 0:
+    o = csv.DictWriter(args.ofile,
+                       fieldnames=['study', 'label', 'type', 'vid'],
+                       delimiter='\t')
+    o.writeheader()
+    recorder.record(records, o)
+  else:
+    logger.info('empty file')
 
   logger.info('done processing file %s' % args.ifile.name)
 

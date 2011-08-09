@@ -127,7 +127,7 @@ import new marker definitions into VL.
 """
 
 def make_parser_marker_definition(parser):
-  parser.add_argument('-S', '--study', type=str,
+  parser.add_argument('--study', type=str,
                       default='default_study',
                       help="""context study label""")
 
@@ -142,7 +142,7 @@ def import_marker_definition_implementation(logger, args):
   if not (args.study and args.source and args.context and args.release):
     msg = 'missing command line options'
     logger.critical(msg)
-    raise ValueError(msg)
+    sys.exit(1)
 
   action_setup_conf = Recorder.find_action_setup_conf(args)
 

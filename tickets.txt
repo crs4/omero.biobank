@@ -1,7 +1,12 @@
-* The import modules have many common components that could be
-  factored out.
+* SNPMarkersSet do not have a label. This makes handling them more
+  cumbersome than needed.
 
-* we should probably avoid using OriginalFile in InformedConsent
+* The import modules have many common components that could be
+  factored out. It gets particularly ugly when, in principle, an input
+  file could contain multiple groups of records, e.g., data_collection
+  and markers_set.
+
+* we should probably avoid using OriginalFile in InformedConsent .. Why?
 
 * we should add a check for label string truncation in importer
   marker_definition.

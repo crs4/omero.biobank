@@ -1,3 +1,12 @@
+2011-08-09    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/genotyping.py
+	(GenotypingAdapter.SNP_SET_COLS): Removed the field 'label'. This
+	field, the label of the marker in the specific technological
+	context (e.g., affy SNP_A_xxx codes, it redundant, since the
+	marker is identified by the marker_vid, and it is dangerous, since
+	it can generate confusion.
+
 2011-08-08    <zag@manzanillo>
 
 	* tests/bl/vl/kb/drivers/omero/test_table.py (TestProxyCore):

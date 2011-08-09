@@ -3,6 +3,7 @@ KB_QUERY='../../../tools/kb_query -P romeo --operator aen'
 
 if false; then
 
+
 ${IMPORTER} -i study.tsv -o study_mapping.tsv study
 ${IMPORTER} -i individual.tsv -o individual_mapping.tsv individual
 ${KB_QUERY} -o blood_sample_mapped.tsv \
@@ -102,6 +103,8 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
 #../../../tools/create_tables  -P romeo --do-it
 #-----------------
 
+fi
+
 ${KB_QUERY} -o diagnosis_mapped.tsv \
              map_vid -i diagnosis.tsv \
                  --column individual_label,individual \
@@ -116,25 +119,27 @@ ${IMPORTER} -i diagnosis_mapped.tsv \
 
 ${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus.tsv \
             -o AppliedBioSystem_TaqMan_MSstatus_mapping.tsv \
-            marker_definition -S BSTUDY --source CNR-IGMB \
+            marker_definition --study BSTUDY --source CNR-IGMB \
             --context TaqMan --release MSstatus
 
-fi
 
-${KB_QUERY} -o AppliedBioSystem_TaqMan_MSstatus_aligned_mapped.tsv
+${KB_QUERY} -o AppliedBioSystem_TaqMan_MSstatus_aligned_mapped.tsv \
             map_vid -i AppliedBioSystem_TaqMan_MSstatus_aligned.tsv\
             --source-type Marker --column label,marker_vid
 
 
 ${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus_aligned_mapped.tsv \
-            marker_alignment -S BSTUDY --ref-genome hg28  \
+            marker_alignment --study BSTUDY --ref-genome hg28  \
             --message 'alignment done using libbwa'
 
+${KB_QUERY} -o taq_man_ms_status_markers_set_mapped.tsv \
+            map_vid -i taq_man_ms_status_markers_set.tsv \
+            --source-type Marker --column label,marker_vid
 
-exit
+${IMPORTER} -i taq_man_ms_status_markers_set_mapped.tsv \
+            markers_set \
+            --study BSTUDY --maker CRS4 --model TaqMan --release MSstudy
 
-
-${IMPORTER} -i taq_man_ms_status_markers_set.tsv markers_set -S BSTUDY --maker CRS4 --model TaqMan --release MSstudy
 
 
 
