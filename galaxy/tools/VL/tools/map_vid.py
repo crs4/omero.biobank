@@ -6,8 +6,13 @@ def main(argv):
   selected_column = int(selected_column) - 1
   new_column_name = new_column_name.strip()
 
-  with open(input_file) as f:
-    l = f.readline().strip()
+  # with open(input_file) as f:
+  #   l = f.readline().strip()
+  # Backport to 2.6
+  fi = open(input_file)
+  l = fi.readline().strip()
+  fi.close()
+
   column_names = l.split('\t')
   column_name = column_names[selected_column]
 

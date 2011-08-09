@@ -1,5 +1,5 @@
 <tool id="vl_import_diagnosis" name="VLI.diagnosis">
-  <description>import TiterPlate definitions within omero/vl</description>
+  <description>import diagnosis data within omero/vl</description>
   <command interpreter="python">
     diagnosis.py
     #if $advanced_configuration.configuration_level == 'advanced'
