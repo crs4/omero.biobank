@@ -1,7 +1,7 @@
 <tool id="vl_tools_select_sub_group" name="VLT.select_sub_group">
   <description>
-    Builds groups of individuals and enrolls them into a new group (a
-    study, fro the time being).
+    Builds groups of individuals and enrolls them into a new group
+    (which, for the time being, we model as a study.).
   </description>
   <command interpreter="python">
     select_sub_group.py
@@ -31,7 +31,7 @@
   <inputs>
     <param name="group_name" type="text" value="" 
 	   size="30" label="Group name"
-	   help="the new group (actually is a study) label"
+	   help="the new group (it is actually a study) label"
 	   />
 
     <param name="n_individuals" type="integer"

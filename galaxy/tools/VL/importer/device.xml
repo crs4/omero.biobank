@@ -1,7 +1,7 @@
 <tool id="vl_import_device" name="VLI.device">
   <description>import Device definitions within omero/vl</description>
   <command interpreter="python">
-    device.py
+    importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user

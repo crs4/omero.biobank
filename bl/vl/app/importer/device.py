@@ -30,7 +30,8 @@ class Recorder(Core):
   def __init__(self,
                study_label,
                host=None, user=None, passwd=None, keep_tokens=1,
-               batch_size=1000, operator='Alfred E. Neumann',
+               batch_size
+               =1000, operator='Alfred E. Neumann',
                action_setup_conf=None,
                logger=None):
     """
@@ -100,7 +101,7 @@ class Recorder(Core):
         self.logger.warn(f % r['label'])
         continue
 
-      if not( r['barcode'] and r['barcode'] not in self.known_barcodes):
+      if r['barcode'] and r['barcode'] in self.known_barcodes:
         m = reject + 'there is a pre-existing object with barcode %s.'
         self.logger.warn(m % r['barcode'])
         continue

@@ -1,7 +1,7 @@
 <tool id="vl_import_biosample" name="VLI.biosample">
   <description>import BioSample definitions within omero/vl</description>
   <command interpreter="python">
-    biosample.py
+    importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user

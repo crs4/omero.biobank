@@ -1,7 +1,7 @@
 <tool id="vl_import_study" name="VLI.study">
   <description>import study definitions within omero/vl</description>
   <command interpreter="python">
-    study.py
+    importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user

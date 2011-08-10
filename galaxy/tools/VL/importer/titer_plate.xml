@@ -1,7 +1,7 @@
 <tool id="vl_import_titer_plate" name="VLI.titer_plate">
   <description>import TiterPlate definitions within omero/vl</description>
   <command interpreter="python">
-    titer_plate.py
+    importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user

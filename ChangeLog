@@ -1,5 +1,9 @@
 2011-08-10    <zag@manzanillo>
 
+	* bl/vl/app/importer/device.py (Recorder.do_consistency_checks):
+	bug fix. It was rejecting devices with no barcode (it is legal,
+	after all)
+
 	* tools/build_dependency.py: another quick and dirty importer for
 	Ilenia style csv. This one should be less lenient on ambiguos
 	records. It makes extract_individuals.py and extract_samples.py
