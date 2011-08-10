@@ -69,10 +69,12 @@
   <!-- ***********************************************************-->
   <type id="ome.model.vl.SNPMarkersSet">
     <!--
-	this is merely a link to the actual snp_markers_set definition 
-	sitting in an omero table.
+	this is merely a link to the actual snp_markers_set definition
+	sitting in an omero table.  The label is actually a
+	convenience. Strictly speaking is not needed.
     -->
     <properties>
+      <required name="label"    type="string" unique="true"/>
       <required name="maker"    type="string"/>
       <required name="model"    type="string"/>
       <required name="release"  type="string"/>

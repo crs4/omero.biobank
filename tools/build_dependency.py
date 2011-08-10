@@ -4,10 +4,7 @@ import csv
 import os
 import logging
 
-logger = logging.getLogger()
-logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-loglevel  = logging.DEBUG
-logging.basicConfig(format=logformat, level=loglevel)
+logger = None
 
 def make_parser():
   parser = argparse.ArgumentParser(description="""
@@ -26,6 +23,12 @@ def make_parser():
                       help="""if set, it will add fictitious
                               TiterPlates and wells when needed to
                               mantain the dependency chain""")
+  parser.add_argument('--logfile', type=str,
+                      help='logfile. Will write to stderr if not specified')
+  parser.add_argument('--loglevel', type=str,
+                      choices=['DEBUG', 'INFO', 'WARNING', 'CRITICAL'],
+                      help='logging level', default='INFO')
+
   return parser
 
 #-----------------------------------------------------------------
@@ -398,9 +401,23 @@ def dump_data_sample(titer_plates, study, ofname):
                   })
 
 def main():
+  global logger
+
   parser = make_parser()
   args = parser.parse_args()
+
+  logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  loglevel  = getattr(logging, args.loglevel)
+  if args.logfile:
+    logging.basicConfig(filename=args.logfile, format=logformat, level=loglevel)
+  else:
+    logging.basicConfig(format=logformat, level=loglevel)
+  logger = logging.getLogger()
+
+
   #-
+  logger.info('opening file %s'  % args.ifile.name)
+
   f = csv.DictReader(args.ifile, delimiter='\t')
   all_records = [normalizer(args, r) for r in f]
   by_sample = map_to_sample(all_records)
@@ -437,6 +454,8 @@ def main():
 
   dump_data_sample(titer_plates, args.study,
                    args.ofile_root + 'data_sample.tsv')
+
+  logger.info('done processing file %s'  % args.ifile.name)
 
 
 main()

@@ -10,7 +10,7 @@ Will read in a tsv file with the following columns::
   V902909092  2            True
   ...
 
-importer -i taqman.tsv markers_set --maker='CRS4' --model='TaqMan.ms01' --release='1'
+importer -i taqman.tsv markers_set --label=my_mset --maker='CRS4' --model='TaqMan.ms01' --release='1'
 
 """
 
@@ -40,11 +40,15 @@ class Recorder(Core):
     self.action_setup_conf = action_setup_conf
     self.operator = operator
     self.preloaded_markers = {}
+    self.preloaded_markers_set = {}
 
   def record(self, records, otsv):
     if len(records) == 0:
       self.logger.warn('no records')
 
+    self.preload_markers_set()
+    # FIXME this is not very efficient, we could directly check here
+    # if we actually need to preload the markers
     self.preload_markers(records)
 
     records = self.do_consistency_checks(records)
@@ -55,7 +59,7 @@ class Recorder(Core):
     study  = self.find_study(records)
     print 'study:', study
     action = self.find_action(study)
-    maker, model, release = self.find_markers_set_label(records)
+    label, maker, model, release = self.find_markers_set_label(records)
 
 
     self.logger.info('start creating markers set')
@@ -74,21 +78,20 @@ class Recorder(Core):
     self.logger.info('done creating gdo repository')
 
     self.logger.info('start creating SNPMarkersSet')
-    conf = {'maker' : maker, 'model' : model, 'release' : release,
+    conf = {'label': label,
+            'maker' : maker, 'model' : model, 'release' : release,
             'markersSetVID' : set_vid,
             'action' : action}
     mset = self.kb.factory.create(self.kb.SNPMarkersSet, conf).save()
     self.logger.info('done creating SNPMarkersSet')
-
-    # FIXME SNPMarkersSet do not have a label.
-    # otsv.writerow({'study' : study.label,
-    #                'label' : v.label,
-    #                'type'  : v.get_ome_table(),
-    #                'vid'   : v.id })
+    otsv.writerow({'study' : study.label,
+                   'label' : v.label,
+                   'type'  : v.get_ome_table(),
+                   'vid'   : v.id })
 
   def find_markers_set_label(self, records):
     r = records[0]
-    return r['maker'], r['model'], r['release']
+    return r['label']. r['maker'], r['model'], r['release']
 
 
   def find_action(self, study):
@@ -108,6 +111,12 @@ class Recorder(Core):
                                      })
     return action.save()
 
+  def preload_markers_set(self):
+    self.logger.info('start preloading SNPMarkersSet')
+    msets = self.kb.get_objects(self.kb.SNPMarkersSet)
+    self.preloaded_markers_set = dict([(m.label, m) for m in msets])
+    self.logger.info('done preloading SNPMarkersSet')
+
   def preload_markers(self, records):
     self.logger.info('start preloading related markers')
     markers = self.kb.get_snp_markers(vids=[r['marker_vid'] for r in records])
@@ -117,10 +126,16 @@ class Recorder(Core):
   def do_consistency_checks(self, records):
     good_records = []
 
+    label = records[0]['label']
     maker = records[0]['maker']
     model = records[0]['model']
     release = records[0]['release']
     study = records[0]['study']
+
+    if label in self.preloaded_markers_set:
+      msg = 'there is already a marker with this label'
+      self.logger.critical(msg)
+      sys.exit(1)
 
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
@@ -154,7 +169,7 @@ class Recorder(Core):
 
 #----------------------------------------------------------------------------
 def canonize_records(args, records):
-  fields = ['study', 'maker', 'model', 'release']
+  fields = ['study', 'label', 'maker', 'model', 'release']
   for f in fields:
     if hasattr(args, f) and getattr(args,f) is not None:
       for r in records:
@@ -171,6 +186,8 @@ import new markers set definition into VL.
 def make_parser_markers_set(parser):
   parser.add_argument('--study', type=str,
                       help="""context study label""")
+  parser.add_argument('--label', type=str,
+                      help="""markers_set unique label""")
   parser.add_argument('--maker', type=str,
                       help="""markers_set maker""")
   parser.add_argument('--model', type=str,
@@ -198,12 +215,11 @@ def import_markers_set_implementation(logger, args):
 
   canonize_records(args, records)
   if len(records) > 0:
-    # FIXME SNPMarkersSet do not have a label.
-    # o = csv.DictWriter(args.ofile,
-    #                    fieldnames=['study', 'label', 'type', 'vid'],
-    #                    delimiter='\t')
-    # o.writeheader()
-    recorder.record(records, None)
+    o = csv.DictWriter(args.ofile,
+                       fieldnames=['study', 'label', 'type', 'vid'],
+                       delimiter='\t')
+    o.writeheader()
+    recorder.record(records, o)
   else:
     logger.info('empty file')
 

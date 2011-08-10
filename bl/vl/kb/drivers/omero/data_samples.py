@@ -63,7 +63,8 @@ class IlluminaBeadChipAssay(MicroArrayMeasure):
 
 class SNPMarkersSet(wp.OmeroWrapper):
   OME_TABLE = 'SNPMarkersSet'
-  __fields__ = [('maker', wp.STRING, wp.REQUIRED),
+  __fields__ = [('label', wp.STRING, wp.REQUIRED),
+                ('maker', wp.STRING, wp.REQUIRED),
                 ('model', wp.STRING, wp.REQUIRED),
                 ('release', wp.STRING, wp.REQUIRED),
                 ('markersSetVID', wp.VID, wp.REQUIRED),
