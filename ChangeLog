@@ -1,5 +1,18 @@
 2011-08-11    <zag@manzanillo>
 
+	* bl/vl/kb/drivers/omero/objects_collections.py (ContainerStatus):
+	updated to new enum.
+
+	* models/collection.ome.xml: added 'USED' to ContainerStatus.
+
+	* bl/vl/kb/drivers/omero/data_samples.py
+	(IlluminaBeadChipAssayType): updated to new enum.
+
+	* models/data_sample.ome.xml: changed IlluminaBeadChipAssayType to
+	more reasonable string values.
+
+	* tests/bl/vl/kb/test_enums.py: added.
+
 	* bl/vl/app/importer/titer_plate.py (Recorder.process_chunk): oops
 	in the handling of barcodes.
 
