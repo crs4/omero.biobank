@@ -1,8 +1,6 @@
 IMPORTER='../../../tools/importer -P romeo --operator aen'
 KB_QUERY='../../../tools/kb_query -P romeo --operator aen'
 
-if false; then
-
 
 ${IMPORTER} -i study.tsv -o study_mapping.tsv study
 ${IMPORTER} -i individual.tsv -o individual_mapping.tsv individual

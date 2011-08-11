@@ -19,7 +19,7 @@ class VLCollection(wp.OmeroWrapper):
 class ContainerStatus(wp.OmeroWrapper):
   OME_TABLE = 'ContainerStatus'
   __enums__ = ["INSTOCK", "UNUSABLE", "UNKNOWN", "INPREPARATION",
-               "READY", "DISCARDED",]
+               "READY", "DISCARDED", "USED"]
 
 class Container(VLCollection):
   OME_TABLE = 'Container'

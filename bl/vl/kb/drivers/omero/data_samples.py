@@ -51,9 +51,9 @@ class AffymetrixCel(MicroArrayMeasure):
 
 class IlluminaBeadChipAssayType(wp.OmeroWrapper):
   OME_TABLE="IlluminaBeadChipAssayType"
-  __enums__ = ["UNKNOWN",  "HUMANOMNI5-QUAD",
-               "HUMANOMNI2.5S", "HUMANOMNI2.5-8", "HUMANOMNI1S",
-               "HUMANOMNI1-QUAD", "HUMANOMNIEXPRESS", "HUMANCYTOSNP-12",
+  __enums__ = ["UNKNOWN",  "HUMANOMNI5_QUAD",
+               "HUMANOMNI2_5S", "HUMANOMNI2_5_8", "HUMANOMNI1S",
+               "HUMANOMNI1_QUAD", "HUMANOMNIEXPRESS", "HUMANCYTOSNP_12",
                "METABOCHIP", "IMMUNOCHIP"]
 
 class IlluminaBeadChipAssay(MicroArrayMeasure):

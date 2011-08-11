@@ -26,6 +26,7 @@ Models for Object Collections
     <entry name="UNKNOWN"/>
     <entry name="INPREPARATION"/>
     <entry name="READY"/>
+    <entry name="USED"/>
     <entry name="DISCARDED"/>
   </enum>
 

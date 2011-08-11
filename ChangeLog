@@ -1,3 +1,11 @@
+2011-08-11    <zag@manzanillo>
+
+	* bl/vl/app/importer/titer_plate.py (Recorder.process_chunk): oops
+	in the handling of barcodes.
+
+	* tools/build_dependency.py (dump_dna_samples): bug fix. it was
+	using a sample_label == label, which is not very useful.
+
 2011-08-10    <zag@manzanillo>
 
 	* bl/vl/app/importer/device.py (Recorder.do_consistency_checks):

@@ -17,12 +17,7 @@ def make_parser():
                         help='the output tsv filename root',
                         default='extracted-')
   parser.add_argument('-s', '--study', type=str,
-                        help='study label')
-  parser.add_argument('-p', '--patch-missing-plate-info', action='store_true',
-                      default=False,
-                      help="""if set, it will add fictitious
-                              TiterPlates and wells when needed to
-                              mantain the dependency chain""")
+                      help='study label', required=True)
   parser.add_argument('--logfile', type=str,
                       help='logfile. Will write to stderr if not specified')
   parser.add_argument('--loglevel', type=str,
@@ -87,6 +82,9 @@ class Individual(object):
     self.father = father
     self.mother = mother
 
+  def __str__(self):
+    return '%s[%s,%s]' % (self.label, self.father, self.mother)
+
   def is_orphan(self):
     return not (self.father or self.mother)
 
@@ -118,6 +116,7 @@ def map_to_pedigree(records):
     del known_individuals_by_id[i]
 
   for k, v in known_individuals.iteritems():
+    logger.debug('before %s' % v)
     for pname in ['father', 'mother']:
       parent = getattr(v, pname)
       if parent:
@@ -132,6 +131,7 @@ def map_to_pedigree(records):
             logger.warn('recovered by id -> %s' % (getattr(v, pname).id,))
           else:
             logger.error('cannot patch %s' % parent)
+    logger.debug('after %s' % v)
   return known_individuals
 
 
@@ -140,11 +140,14 @@ def fix_pedigree(ped, s_to_indy):
     if len(synonyms) <= 1:
       return
     choosen = ped[synonyms[0]]
+    logger.info('using %s as collapse point' % choosen)
     for i in synonyms[1:]:
       for v in ped.values():
         if v.father and v.father.id == i:
+          logger.info('mapping father of %s to choosen' % v)
           v.father = choosen
         if v.mother and v.mother.id == i:
+          logger.info('mapping mother of %s to choosen' % v)
           v.mother = choosen
       del ped[i]
   logger.info('started fixing pedigree')
@@ -206,7 +209,7 @@ def map_to_plate_wells(by_sample):
           'scanner_location' : 'Tramariglio',
           'plate': plate,
           'label':  'ZZZ',
-          'type': ('Illumina', 'BeadChip', 'HUMAN1M-DUO'),
+          'type': ('Illumina', 'BeadChip', 'HUMAN1M_DUO'),
           'data_sample': x['Illumina_%s' % place],
           'sample_label' : sample_label,
           'place': place })
@@ -245,11 +248,11 @@ def map_to_plate_wells(by_sample):
       assert label[0].isalpha() and label[1].isdigit()
       return (ord(label[0]) - ord('A'))*columns + int(label[1:]) - 1
 
-    index = 0 # starts with A01
+    index = -1 # starts with A01
     for r in v:
       if r['label'] == 'ZZZ':
-        r['label'] = well_label_of_index(index)
         index += 1
+        r['label'] = well_label_of_index(index)
       else:
         index = index_of_well_label(r['label'])
         r['label'] = well_label_of_index(index_of_well_label(r['label']))
@@ -298,7 +301,7 @@ def dump_dna_samples(by_sample, study, ofname):
   for k, v in by_sample.iteritems():
     o.writerow({'study': study,
                 'label': '%s-%s' % (k, 'dna'),
-                'sample_label': '%s-%s' % (k, 'dna'),
+                'sample_label': '%s-%s' % (k, 'bs'),
                 'source_type' : 'Tube',
                 'vessel_type' : 'Tube',
                 'vessel_content' : 'DNA',

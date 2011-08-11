@@ -146,7 +146,7 @@ class Recorder(Core):
                             r['plate_status'].upper()),
         }
       for k in ['barcode', 'maker', 'model']:
-        if k in r:
+        if r[k]:
           conf[k] = r[k]
       titer_plates.append(self.kb.factory.create(self.kb.TiterPlate, conf))
     #--
@@ -174,8 +174,9 @@ def canonize_records(args, records):
   for r in records:
     if not 'plate_status' in r:
       r['plate_status'] = 'INSTOCK'
-    if not 'barcode' in r:
-      r['barcode'] = None
+    for k in ['barcode', 'maker', 'model']:
+      if not k in r:
+        r[k] = None
 
 
 help_doc = """

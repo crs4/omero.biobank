@@ -34,7 +34,7 @@ class MapVIDApp(Core):
   """
 
   SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
-                            'Chip', 'DataSample', 'Marker']
+                            'Chip', 'DataSample', 'Marker', 'Scanner']
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None,

@@ -24,7 +24,9 @@
     --ifile=${input1}
     --source-type=${source_type.source_type}
     #if $source_type.source_type == 'Individual'
-    --study=${source_type.study}
+       #if str($source_type.study) != 'use_provided'
+          --study=${source_type.study}
+       #end if
     #end if
   </command>  
   <inputs>
@@ -58,12 +60,14 @@
 	<option value="TiterPlate">TiterPlate</option>
 	<option value="PlateWell">PlateWell</option>
 	<option value="Chip">Chip</option>
+	<option value="Scanner">Scanner</option>
 	<option value="DataSample">DataSample</option>
       </param>
       <when value="Tube"/>
       <when value="TiterPlate"/>
       <when value="PlateWell"/>
       <when value="Chip"/>
+      <when value="Scanner"/>
       <when value="DataSample"/>
       <when value="Individual">
 	<param name="study" type="select" label="Study of enrollment" 

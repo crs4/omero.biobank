@@ -54,7 +54,7 @@ def conf_illumina_beadchip_1m_duo(kb, r, a, options):
   conf = {'label' : r['label'],
           'status' : kb.DataSampleStatus.USABLE,
           'action' : a,
-          'assayType' : kb.IlluminaBeadChipAssayType.HUMAN1M-DUO
+          'assayType' : kb.IlluminaBeadChipAssayType.HUMAN1M_DUO
           }
   return kb.factory.create(kb.IlluminaBeadChip, conf)
 
@@ -69,7 +69,7 @@ def conf_illumina_beadchip_immuno(kb, r, a, options):
 
 data_sample_configurator = {
   ('Affymetrix', 'Genome-Wide Human SNP Array', '6.0') : conf_affymetrix_cel_6,
-  ('Illumina', 'BeadChip', 'HUMAN1M-DUO') : conf_illumina_beadchip_1m_duo,
+  ('Illumina', 'BeadChip', 'HUMAN1M_DUO') : conf_illumina_beadchip_1m_duo,
   ('Illumina', 'BeadChip', 'IMMUNOCHIP') : conf_illumina_beadchip_1m_duo,
   }
 

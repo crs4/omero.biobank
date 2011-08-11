@@ -47,14 +47,14 @@
 
   <enum id="ome.model.vl.IlluminaBeadChipAssayType">
     <entry name="UNKNOWN"/>
-    <entry name="HUMAN1M-DUO"/>
-    <entry name="HUMANOMNI5-QUAD"/>
-    <entry name="HUMANOMNI2.5S"/>
-    <entry name="HUMANOMNI2.5-8"/>
+    <entry name="HUMAN1M_DUO"/>
+    <entry name="HUMANOMNI5_QUAD"/>
+    <entry name="HUMANOMNI2_5S"/>
+    <entry name="HUMANOMNI2_5_8"/>
     <entry name="HUMANOMNI1S"/>
-    <entry name="HUMANOMNI1-QUAD"/>
+    <entry name="HUMANOMNI1_QUAD"/>
     <entry name="HUMANOMNIEXPRESS"/>
-    <entry name="HUMANCYTOSNP-12"/>
+    <entry name="HUMANCYTOSNP_12"/>
     <entry name="METABOCHIP"/>
     <entry name="IMMUNOCHIP"/>
   </enum>
