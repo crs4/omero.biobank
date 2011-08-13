@@ -46,14 +46,16 @@ def diagnosis_conversion_rule(study, x):
   for k in ['TD', 'MS']:
     if x[k] == '2':
       is_affected = True
-      dds.append({'study' : study, 'individual_label' : x['ID'],
+      dds.append({'study' : study,
+                  'individual_label' : '%s_%s' % (x['Fam'], x['ID']),
                   'timestamp' : timestamp,
                   'diagnosis' : term[k]})
     elif x[k] == '1':
       is_characterized = True
   #--
   if is_characterized and not is_affected:
-    dds.append({'study' : study, 'individual_label' : x['ID'],
+    dds.append({'study' : study,
+                'individual_label' : '%s_%s' % (x['Fam'], x['ID']),
                 'timestamp' : timestamp,
                 'diagnosis' : 'exclusion-problem_diagnosis'})
   return dds

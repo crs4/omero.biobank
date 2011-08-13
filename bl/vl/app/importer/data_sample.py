@@ -35,7 +35,7 @@ processing on other DataSample(s). This is an example::
 """
 
 from core import Core, BadRecord
-import csv, json
+import csv, json, time
 import itertools as it
 
 #-----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ def conf_illumina_beadchip_1m_duo(kb, r, a, options):
           'action' : a,
           'assayType' : kb.IlluminaBeadChipAssayType.HUMAN1M_DUO
           }
-  return kb.factory.create(kb.IlluminaBeadChip, conf)
+  return kb.factory.create(kb.IlluminaBeadChipAssay, conf)
 
 def conf_illumina_beadchip_immuno(kb, r, a, options):
   conf = {'label' : r['label'],
@@ -216,7 +216,17 @@ class Recorder(Core):
       options = get_options(r)
       if isinstance(device, self.kb.Chip) and r['scanner']:
         options['scanner_label'] = self.preloaded_scanners[r['scanner']].label
-      alabel = ('importer.data_sample.%s' % r['label'])
+
+      # FIXME: the following is an hack. In principle, it should not
+      # be possible to reload the same data_sample twice, so if are
+      # trying to get an ActionSetup with a label that already exists
+      # it means that the previous attemps aborted before that the
+      # data_sample could be saved. The data_sample import should
+      # clean after itself and remove the debries of failed
+      # imports. However, it currently does not do it, so we had to
+      # put in a workaround.
+
+      alabel = ('importer.data_sample.%s-%f' % (r['label'], time.time()))
 
       asetup = self.kb.factory.create(self.kb.ActionSetup,
                                       {'label' : alabel,
