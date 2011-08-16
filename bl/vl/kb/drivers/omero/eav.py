@@ -20,7 +20,7 @@ class EAVAdapter(object):
     but it is a responsability of the user app to keep data consistent.
     """,
     len(vlu.make_vid()), None),
-    ('string', 'a_vid',
+   ('string', 'a_vid',
     """a unique identifier that points to the Action that generates the
     record (a single Action can generate several records. We need the
     Action to know how data was collected, when it was collected and where)""",

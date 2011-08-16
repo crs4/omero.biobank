@@ -1,0 +1,138 @@
+<tool id="vl_import_marker_alignment" name="VLI.marker_alignment">
+  <description>import marker aligments within omero/vl</description>
+  <command interpreter="python">
+    importer.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=$advanced_configuration.vl_host
+      --user=$advanced_configuration.vl_user
+      --passwd=$advanced_configuration.vl_passwd
+    #else
+      --host=$__app__.config.omero_default_host
+      --user=$__app__.config.omero_default_user
+      --passwd=$__app__.config.omero_default_passwd
+    #end if
+    --operator=galaxy
+    --ifile=$input1
+    --ofile=$output1
+    --loglevel=$__app__.config.vl_loglevel
+    --logfile=${logfile}
+    marker_alignment
+    #if str($study) != 'use_provided'
+      --study ${study}
+    #end if 
+    #if str($ref_genome)
+      --ref-genome ${reg_genome}
+    #end if 
+    #if str($message)
+      --message ${message}
+    #end if 
+  </command>  
+  <inputs>
+    <!-- use a special format to automatically pick up the ref-gen -->
+    <param format="tabular" name="input1" type="data"
+	   label="A tabular dataset with the following columns ..."/>
+
+    <param name="study" type="select" label="Context study" 
+	   help="Choose from the already defined studies. See help below.">    
+      <options from_parameter="tool.app.known_studies" 
+	       transform_lines="[ &quot;%s%s%s:%s&quot; 
+                                  % ( l[0], self.separator, l[0], l[1][:40] ) 
+                                  for l in obj ]">
+        <column name="value" index="0"/>
+        <column name="name" index="1"/>
+        <filter type="sort_by" column="0"/>
+        <filter type="add_value" name="Records provide study labels" 
+                value="use_provided" index="0"/>
+      </options>
+    </param>
+
+
+    <conditional name="genomeSource">
+      <param name="refGenomeSource"
+	     type="select" 
+	     label="Will you select a reference genome from your history 
+                   or use a built-in index?">
+        <option value="indexed">Use a built-in index</option>
+        <option value="history">Use one from the history</option>
+      </param>
+      <when value="indexed">
+        <param name="indices" type="select" label="Select a reference genome">
+          <options from_data_table="libbwa_indexes">
+            <filter type="sort_by" column="2" />
+            <validator type="no_options" message="No indexes are available" />
+          </options>
+        </param>
+      </when>
+      <when value="history">
+        <param name="ownFile" type="data" 
+	       format="fasta" metadata_name="dbkey" 
+	       label="Select a reference from history" />
+      </when>
+    </conditional>
+    <conditional name="paired">
+      <param name="sPaired" type="select" label="Is this library mate-paired?">
+        <option value="single">Single-end</option>
+        <option value="paired">Paired-end</option>
+      </param>
+      <when value="single">
+        <param name="input1" type="data" format="fastqsanger" label="FASTQ file" help="Must have Sanger-scaled quality values with ASCII offset 33" />
+      </when>
+      <when value="paired">
+        <param name="input1" type="data" format="fastqsanger" label="Forward FASTQ file" help="Must have Sanger-scaled quality values with ASCII offset 33" />
+        <param name="input2" type="data" format="fastqsanger" label="Reverse FASTQ file" help="Must have Sanger-scaled quality values with ASCII offset 33" />
+      </when>
+    </conditional>
+
+
+
+    <param name="source" size="40" type="text" value="" 
+	   label="source"/>
+    <param name="context" size="40" type="text" value="" 
+	   label="context"/>
+    <param name="release" size="40" type="text" value="" 
+	   label="release"/>
+
+
+    <!-- ************************************************** -->
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="localhost" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="root" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="output1" label="${tool.name}.mapping"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
+  </outputs>
+  <help>
+Will read in a tsv file with the following columns::
+
+  marker_vid ref_genome chromosome pos      strand allele copies
+  V0909090   hg18       10         82938938 True   A      1
+  V0909091   hg18       1          82938999 True   A      2
+  V0909092   hg18       1          82938938 True   B      2
+  ...
+
+FIXME discuss the fact that pos is with respect to 5' and thus, if the
+marker had been alligned on the other strand, it is the responsability
+of the aligner app to report the actual distance from 5', while, at
+the same time, registering that the snp had actually been aligned on
+the other strand.
+
+Chromosome is an integer field with values in the range(1, 25) with 23
+(X), 24 (Y) and 25(MT).
+ </help>
+
+</tool>

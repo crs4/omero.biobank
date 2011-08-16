@@ -41,6 +41,8 @@
 	   value="1000"
 	   />
 
+    <param 
+
     <param name="male_fraction" type="float"
 	   value="0.5" 
 	   label="Male fraction"
@@ -57,11 +59,19 @@
 		 min="0.0" max="1.0"/>
     </param>
 
-    <repeat name="ehr_series" title="EHR archetypes">
+    <param name="seed" type="int" value="0"
+	   lavel="Random seed"
+	   help="Seed for the random number generator. A value of 0 
+                 will force to time.time().">
+      <validator type="in_range" message="should be non negative" 
+		 min="0.0" max="inf"/>
+    </param>
+
+    <!-- repeat name="ehr_series" title="EHR archetypes">
       <conditional name="ehr_selector">
         <param name="archetype" type="select" label="Archetype">
-          <option value="openEHR-EHR-EVALUATION.problem-diagnosis.v1" 
-		  selected="true">Diagnosis</option>
+          <option value="openEHR-EHR-EVALUATION.problem-diagnosis.v1"
+          selected="true">Diagnosis</option>
           <option value="foo">Foo</option>
         </param>
 	<when value="openEHR-EHR-EVALUATION.problem-diagnosis.v1">
@@ -75,7 +85,7 @@
 		 help="Coded text in the format terminology:code"/>
 	</when>	  
       </conditional>
-    </repeat>       
+    </repeat -->       
 
     <!-- ************************************************** -->
     <conditional name="advanced_configuration">

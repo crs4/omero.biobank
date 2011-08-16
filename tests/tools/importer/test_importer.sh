@@ -1,6 +1,7 @@
 IMPORTER='../../../tools/importer -P romeo --operator aen'
 KB_QUERY='../../../tools/kb_query -P romeo --operator aen'
 
+if false; then 
 
 ${IMPORTER} -i study.tsv -o study_mapping.tsv study
 ${IMPORTER} -i individual.tsv -o individual_mapping.tsv individual
@@ -94,6 +95,7 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
              --study BSTUDY 
 
 
+
 #-----------------
 # use the following command to scratch and recreate the markers tables
 # THIS IS A VERY DANGEOURS THING TO DO.
@@ -102,6 +104,8 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
 #-----------------
 
 fi
+
+
 
 ${KB_QUERY} -o diagnosis_mapped.tsv \
              map_vid -i diagnosis.tsv \
@@ -125,18 +129,18 @@ ${KB_QUERY} -o AppliedBioSystem_TaqMan_MSstatus_aligned_mapped.tsv \
             map_vid -i AppliedBioSystem_TaqMan_MSstatus_aligned.tsv\
             --source-type Marker --column label,marker_vid
 
-
 ${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus_aligned_mapped.tsv \
             marker_alignment --study BSTUDY --ref-genome hg28  \
             --message 'alignment done using libbwa'
 
 ${KB_QUERY} -o taq_man_ms_status_markers_set_mapped.tsv \
             map_vid -i taq_man_ms_status_markers_set.tsv \
-            --source-type Marker --column label,marker_vid
+            --source-type Marker --column marker_label,marker_vid
 
 ${IMPORTER} -i taq_man_ms_status_markers_set_mapped.tsv \
             markers_set \
-            --study BSTUDY --maker CRS4 --model TaqMan --release MSstudy
+            --study BSTUDY \
+            --label MSET0 --maker CRS4 --model TaqMan --release MSstudy
 
 
 

@@ -48,7 +48,6 @@ class AffymetrixCel(MicroArrayMeasure):
   __fields__ = [('arrayType', AffymetrixCelArrayType, wp.REQUIRED),
                 ('celID',     wp.STRING,              wp.OPTIONAL)]
 
-
 class IlluminaBeadChipAssayType(wp.OmeroWrapper):
   OME_TABLE="IlluminaBeadChipAssayType"
   __enums__ = ["UNKNOWN", "HUMAN1M_DUO",
@@ -76,6 +75,10 @@ class SNPMarkersSet(wp.OmeroWrapper):
       conf['snpMarkersSetUK'] = make_unique_key(conf['maker'], conf['model'],
                                                 conf['release'])
     return conf
+
+  @property
+  def id(self):
+    return self.markersSetVID
 
 class GenotypeDataSample(DataSample):
   OME_TABLE = 'GenotypeDataSample'

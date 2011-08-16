@@ -219,7 +219,7 @@ class Proxy(ProxyCore):
     """
 
     FIXME multi fields rec will be exploded in a group of records all
-    with the same (assuemed to be unique within KB) group id.
+    with the same (assumed to be unique within a KB) group id.
 
     :param action: action that generated this record
     :type action: ActionOnIndividual
@@ -287,6 +287,11 @@ class Proxy(ProxyCore):
         fields = {}
       fields[r[6]] = self.eadpt.decode_field_value(r[7],
                                                    r[8], r[9], r[10], r[11])
+    else:
+      if g_vid:
+        x['fields'] = fields
+        recs.append(x)
+
     return recs
 
   def get_ehr_iterator(self, selector=None):
@@ -299,3 +304,7 @@ class Proxy(ProxyCore):
     for k,v in by_individual.iteritems():
       yield (k, EHR(v))
 
+  def get_ehr(self, individual):
+    "Get the available ehr for an individual"
+    recs = self.get_ehr_records(selector='(i_vid=="%s")' % individual.id)
+    return EHR(recs)

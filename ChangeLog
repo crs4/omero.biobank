@@ -1,3 +1,8 @@
+2011-08-15    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/ehr.py (EHR.__init__): Now we can handle
+	multiple records for the same archetype for the same individual.
+
 2011-08-12    <zag@manzanillo>
 
 	* bl/vl/app/importer/data_sample.py (Recorder.process_chunk):

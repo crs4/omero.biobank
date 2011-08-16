@@ -10,21 +10,59 @@ This is the list of the currently available modules.
 
  * Data import into Omero/VL
 
-   - new individual definitions
+   - study definitions
+   - ...
 
-   - new biosample definitions
- 
+ * Data analysis
+
    - 
+   -
+  
+ * Other tools
 
-The general strategy for the import should be, I expect, uploading a
-file and the invoking the importer.
-
- * Pre-cooked queries
-   
-   - 
-
+   - map_vid
+   - data tree coverage
 
 
+Data import
+-----------
+
+The general strategy for the import is divided in three steps:
+
+ * upload a file;
+
+ * convert user understandable labels to unique identifies VID using
+   ```map_vid```;
+
+ * invoke the actual importer.
+
+Data Analysis
+-------------
+
+
+
+Other tools
+-----------
+
+
+Data tree coverage
+..................
+
+This tool will provide statistics on the data currently known to the
+Omero/VL system. 
+Selected a study, it will report on:
+
+ * total number of individuals present in the study and their
+   distribution by gender and affection status (?)
+
+ * available datasets
+
+This could be structured as a tree::
+
+ study
+    - path
+         - dataset
+                 - gender
 
 
 Contents:

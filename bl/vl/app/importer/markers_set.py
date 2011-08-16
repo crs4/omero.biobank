@@ -85,13 +85,13 @@ class Recorder(Core):
     mset = self.kb.factory.create(self.kb.SNPMarkersSet, conf).save()
     self.logger.info('done creating SNPMarkersSet')
     otsv.writerow({'study' : study.label,
-                   'label' : v.label,
-                   'type'  : v.get_ome_table(),
-                   'vid'   : v.id })
+                   'label' : mset.label,
+                   'type'  : mset.get_ome_table(),
+                   'vid'   : mset.id })
 
   def find_markers_set_label(self, records):
     r = records[0]
-    return r['label']. r['maker'], r['model'], r['release']
+    return r['label'], r['maker'], r['model'], r['release']
 
 
   def find_action(self, study):
