@@ -9,4 +9,4 @@ Contents:
    omero
    openehr
    galaxy
-
+   kb_tutorial

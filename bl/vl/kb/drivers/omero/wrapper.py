@@ -148,9 +148,11 @@ class CoreOmeroWrapper(object):
       # We cannot be here.....
       raise ValueError('illegal tcode value: %s' % tcode)
 
-
   def is_mapped(self):
     return self.ome_obj.id is not None
+
+  def is_loaded(self):
+    return self.is_mapped() and self.ome_obj.loaded
 
   def is_upcastable(self):
     pass
