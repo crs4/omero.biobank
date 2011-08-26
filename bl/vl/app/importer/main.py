@@ -28,6 +28,7 @@ import bl.vl.app.importer.titer_plate
 import bl.vl.app.importer.device
 import bl.vl.app.importer.data_sample
 import bl.vl.app.importer.data_object
+import bl.vl.app.importer.group
 import bl.vl.app.importer.data_collection
 import bl.vl.app.importer.marker_definition
 import bl.vl.app.importer.marker_alignment
@@ -47,6 +48,7 @@ class App(object):
     bl.vl.app.importer.data_sample.do_register(self.supported_submodules)
     bl.vl.app.importer.data_object.do_register(self.supported_submodules)
     bl.vl.app.importer.data_collection.do_register(self.supported_submodules)
+    bl.vl.app.importer.group.do_register(self.supported_submodules)
     bl.vl.app.importer.marker_definition.do_register(self.supported_submodules)
     bl.vl.app.importer.marker_alignment.do_register(self.supported_submodules)
     bl.vl.app.importer.markers_set.do_register(self.supported_submodules)

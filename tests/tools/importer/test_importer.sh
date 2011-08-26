@@ -103,8 +103,6 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
 #../../../tools/create_tables  -P romeo --do-it
 #-----------------
 
-fi
-
 
 
 ${KB_QUERY} -o diagnosis_mapped.tsv \
@@ -142,6 +140,15 @@ ${IMPORTER} -i taq_man_ms_status_markers_set_mapped.tsv \
             --study BSTUDY \
             --label MSET0 --maker CRS4 --model TaqMan --release MSstudy
 
+fi
+
+${KB_QUERY} --ofile group_foo.tsv selector --study BSTUDY --group-label foo \
+            --total-number=2 \
+            --male-fraction=0.5\
+            --reference-disease=icd10-cm:G35 \
+            --control-fraction=0.0
+
+${IMPORTER} -i group_foo.tsv group 
 
 
 

@@ -36,6 +36,8 @@ import logging, time
 
 import bl.vl.app.kb_query.map_vid
 import bl.vl.app.kb_query.global_stats
+import bl.vl.app.kb_query.selector
+import bl.vl.app.kb_query.query
 #import bl.vl.app.kb_query.tabular
 #import bl.vl.app.kb_query.markers
 #import bl.vl.app.kb_query.ehr
@@ -45,6 +47,8 @@ class App(object):
     self.supported_submodules = []
     bl.vl.app.kb_query.map_vid.do_register(self.supported_submodules)
     bl.vl.app.kb_query.global_stats.do_register(self.supported_submodules)
+    bl.vl.app.kb_query.selector.do_register(self.supported_submodules)
+    bl.vl.app.kb_query.query.do_register(self.supported_submodules)
     #bl.vl.app.kb_query.tabular.do_register(self.supported_submodules)
     #bl.vl.app.kb_query.markers.do_register(self.supported_submodules)
     #bl.vl.app.kb_query.ehr.do_register(self.supported_submodules)

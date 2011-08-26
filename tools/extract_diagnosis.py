@@ -34,7 +34,7 @@ def dv_coded_text(terminology, term):
   return ':'.join([terminology, term])
 
 term = {'TD' : dv_coded_text('icd10-cm', 'E10'), # Type 1 Diabetes
-        'MS' : dv_coded_text('icd10-cm', 'G35'), # Multiple Scelosis
+        'MS' : dv_coded_text('icd10-cm', 'G35'), # Multiple Sclerosis
         }
 
 def diagnosis_conversion_rule(study, x):

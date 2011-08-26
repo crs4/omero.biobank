@@ -43,28 +43,26 @@ class GlobalStats(Core):
 
   def dump(self, study_label, ofile):
     if study_label is None:
-      studies = self.kb.get_objects(self.kb.Study)
+      individuals = self.kb.get_objects(self.kb.Individual)
     else:
       study = self.kb.get_study(study_label)
       if not study:
         self.logger.critical('study %s does not exist' % study_label)
         sys.exit(1)
-      studies = [study]
+      individuals = [e.individual for e in self.kb.get_enrolled(study)]
 
     dt = DependencyTree(self.kb)
-    for s in studies:
-      if s:
-        self.dump_study(dt, s, ofile)
+    self.dump_indiduals(dt, study_label if study_label else '_ALL_',
+                        individuals, ofile)
 
-  def dump_study(self, dt, study, ots):
-    enrolled = self.kb.get_enrolled(study)
+  def dump_indiduals(self, dt, study_label, individuals, ots):
     counts = {}
-    for e in enrolled:
-      key = self.get_profile_of_individual(dt, e.individual)
+    for i in individuals:
+      key = self.get_profile_of_individual(dt, i)
       counts[key] = counts.get(key, 0) + 1
     for k, v in counts.iteritems():
       ots.writerow({
-        'study' : study.label,
+        'study' : study_label,
         'diagnosis': k[0],
         'technologies': k[1],
         'gender' : k[2],

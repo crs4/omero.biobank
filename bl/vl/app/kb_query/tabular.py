@@ -149,9 +149,21 @@ class Tabular(Core):
 #-------------------------------------------------------------------------
 help_doc = """
 Extract data from the KB in tabular form.
+
+xxx --field-class Individual --select gender \
+    --field-class DataObject --select --
+
+for i in Individual(group):
+   for x in DataSample(i):
+      if
+
+
+
 """
 
 def make_parser_tabular(parser):
+  parser.add_argument('--group-label', type=str,
+                      help='the label of an existing group')
   parser.add_argument('--data-collection', type=str,
                       help="data collection label")
   parser.add_argument('--study-label', type=str,

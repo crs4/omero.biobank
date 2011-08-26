@@ -5,66 +5,38 @@ The ``kb_query`` is the basic command line tool that can be used to
 extract information from VL. Similarly to the importer tool is
 structured around a modular interface with context specific modules::
 
-  bash$ python ${bl_vl_root}/tools/kb_query --help
-   usage: kb_query [-h] [-o OFILE] [-H HOST] [-U USER] [-P PASSWD]
-                   [-K KEEP_TOKENS]
-                   {tabular,ehr,markers} ...
-   
-   A magic kb_query app
-   
-   positional arguments:
-     {tabular,ehr,markers}
-       tabular             Extract data from the KB in tabular form.
-       markers             Extract markers related info from the KB.
-       ehr                 Extract ehr related info from the KB.
-   
-   optional arguments:
-     -h, --help            show this help message and exit
-     -o OFILE, --ofile OFILE
-                           the output tsv file
-     -H HOST, --host HOST  omero host system
-     -U USER, --user USER  omero user
-     -P PASSWD, --passwd PASSWD
-                           omero user passwd
-     -K KEEP_TOKENS, --keep-tokens KEEP_TOKENS
-                           omero tokens for open session
 
-FIXME current module names are not optimal (e.g., tabular??) and will
-be changed.
+	usage: kb_query [-h] [--logfile LOGFILE]
+	                [--loglevel {DEBUG,INFO,WARNING,CRITICAL}] [-o OFILE]
+	                [-H HOST] [-U USER] [-P PASSWD] [-K KEEP_TOKENS] 
+                        --operator  OPERATOR
+	                {map_vid,global_stats} ...
+	
+	A magic kb_query app
+	
+	positional arguments:
+	  {map_vid,global_stats}
+	    map_vid             Map user defined objects label to vid. 
+                                usage example:
+	                        kb_query -H biobank05 -o bs_mapped.tsv map_vid
+                                -i blood_sample.tsv 
+                                --column 'individual_label' 
+                                --study  BSTUDY --source-type Individual
+	    global_stats        Extract global stats from KB in tabular form.
+	
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  --logfile LOGFILE     logfile. Will write to stderr if not specified
+	  --loglevel {DEBUG,INFO,WARNING,CRITICAL}
+	                        logging level
+	  -o OFILE, --ofile OFILE
+	                        the output tsv file
+	  -H HOST, --host HOST  omero host system
+	  -U USER, --user USER  omero user
+	  -P PASSWD, --passwd PASSWD
+	                        omero user passwd
+	  -K KEEP_TOKENS, --keep-tokens KEEP_TOKENS
+	                        omero tokens for open session
+	  --operator OPERATOR   operator identifier
+	
 
-kb_query tabular module
------------------------
-
-This module extracts in tabular form... FIXME
-
-
-
-
-
-
-def make_parser_tabular(parser):
-  parser.add_argument('--data-collection', type=str,
-                      help="data collection label")
-  parser.add_argument('--study-label', type=str,
-                      help="study label")
-  parser.add_argument('--preferred-data-protocol', type=str,
-                      choices=Tabular.SUPPORTED_DATA_PROTOCOLS,
-                      default='file',
-                      help="""try, if possible, to provide
-                      data object paths that use this protocol""")
-  parser.add_argument('--fields-set', type=str,
-                      choices=Tabular.SUPPORTED_FIELDS_SETS,
-                      help="""choose all the fields listed in this set""")
-
-
- $ kb_query markers --definition-source (XXX,YYYY,ZZZZ) --marker-set=(Affymetrix,foo,hg28) --fields-set definition
-
-
-def make_parser_markers(parser):
-  parser.add_argument('--definition-source', type=str,
-                      help="marker definition source, a tuple (source,context,release)")
-  parser.add_argument('--markers-set', type=str,
-                      help="a tuple (maker,model,release)")
-  parser.add_argument('--fields-set', type=str,
-                      choices=Markers.SUPPORTED_FIELDS_SETS,
-                      help="""choose all the fields listed in this set""")

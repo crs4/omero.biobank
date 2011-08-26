@@ -64,12 +64,12 @@
   <help>
     It will output a tsv files with the following columns::
 
-    study   diagnosis technology gender  counts
-    BSTUDY	icd10-cm:G35	AffymetrixCelGENOMEWIDESNP_6	MALE	1
-    BSTUDY	icd10-cm:E10	AffymetrixCelGENOMEWIDESNP_6	FEMALE	1
-    BSTUDY	local:at0.3	AffymetrixCelGENOMEWIDESNP_6	MALE	2
-    BSTUDY	icd10-cm:G35;icd10-cm:E10;icd10-cm:E10	AffymetrixCelGENOMEWIDESNP_6	MALE	1
-    BSTUDY	icd10-cm:G35	AffymetrixCelGENOMEWIDESNP_6	FEMALE	1
+      study   diagnosis technology gender  counts
+      BSTUDY	icd10-cm:G35	AffymetrixCelGENOMEWIDESNP_6	MALE	1
+      BSTUDY	icd10-cm:E10	AffymetrixCelGENOMEWIDESNP_6	FEMALE	1
+      BSTUDY	local:at0.3	AffymetrixCelGENOMEWIDESNP_6	MALE	2
+      BSTUDY	icd10-cm:G35;icd10-cm:E10;icd10-cm:E10	AffymetrixCelGENOMEWIDESNP_6	MALE	1
+      BSTUDY	icd10-cm:G35	AffymetrixCelGENOMEWIDESNP_6	FEMALE	1
 
   </help>
 

@@ -1,13 +1,10 @@
 <tool id="vl_tools_select_sub_group" name="VLT.select_sub_group">
   <description>
-    Builds groups of individuals and enrolls them into a new group
+    Selects groups of individuals and enrolls them into a new group
     (which, for the time being, we model as a study.).
   </description>
   <command interpreter="python">
-    select_sub_group.py
-    ${selected_column}
-    ${new_column_name}
-    ${input1}
+    kb_query.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=${advanced_configuration.vl_host}
       --user=${advanced_configuration.vl_user}
@@ -21,27 +18,49 @@
     --ofile=${output1}
     --loglevel=WARNING
     --logfile=${logfile}
-    select_sub_group
-    --ifile=${input1}
-    --source-type=${source_type.source_type}
-    #if $source_type.source_type == 'Individual'
-    --study=${source_type.study}
+    selector
+    #if str($study) != 'use_all'
+       --study=${source_type.study}
     #end if
+    --group-label=$group_label
+    --total-number=$total_number
+    --male-fraction=$male_fraction
+    --reference-disease=$reference_disease
+    --control-fraction=$control_fraction
+    #if str($required_datasample) !=  'unselect'
+      --required-datasample=$required_datasample
+    #end if
+    #if int($seed) != 0
+      --seed=$seed
+    #end if 
   </command>  
   <inputs>
-    <param name="group_name" type="text" value="" 
-	   size="30" label="Group name"
+    <param name="study" type="select" label="study label" 
+	   help="Select only between individuals enrolled in this study. 
+		 See below.">    
+      <options from_parameter="tool.app.known_studies" 
+	       transform_lines="[ &quot;%s%s%s:%s&quot; 
+				% ( l[0], self.separator, l[0], l[1][:40] ) 
+				for l in obj ]">
+	<column name="value" index="0"/>
+	<column name="name" index="1"/>
+	<filter type="sort_by" column="0"/>
+	<filter type="add_value" name="Use all individuals" 
+		value="use_all" index="0"/>
+      </options>
+    </param>
+
+    <param name="group_label" type="text" value="fake-group" 
+	   size="30" label="Group label"
 	   help="the new group (it is actually a study) label"
 	   />
 
-    <param name="n_individuals" type="integer"
+    <param name="total_number" type="integer"
 	   label="total number of individuals requested"
 	   help="It will be cut to the largest number of individuals satisfying
 		 the required constraints."
-	   value="1000"
+	   value="100"
 	   />
-
-    <param 
 
     <param name="male_fraction" type="float"
 	   value="0.5" 
@@ -51,6 +70,12 @@
 		 min="0.0" max="1.0"/>
     </param>
 
+    <param name="reference_diagnosis" type="select" 
+	   label="Phenotypic profile (diagnosis, for the time being)">
+	<option value="icd10-cm:E10">Type 1 Diabetes</option>	
+	<option value="icd10-cm:G35">Multiple Sclerosis</option>
+      </param>
+
     <param name="control_fraction" type="float"
 	   value="0.5" 
 	   label="Control fraction"
@@ -59,10 +84,17 @@
 		 min="0.0" max="1.0"/>
     </param>
 
+    <param name="required_datasample" type="select"
+	   label="Required datasample type">
+	<option value="unselect">none</option>
+	<option value="AffymetrixCel">AffymetrixCel</option>	
+	<option value="IlluminaBeadChipAssay"></option>
+      </param>
+	   
     <param name="seed" type="int" value="0"
 	   lavel="Random seed"
 	   help="Seed for the random number generator. A value of 0 
-                 will force to time.time().">
+                 will force to the default initialization.">
       <validator type="in_range" message="should be non negative" 
 		 min="0.0" max="inf"/>
     </param>
