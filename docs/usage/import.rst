@@ -144,6 +144,7 @@ The plate_status, maker and model columns are optional, as well as the
 barcode one.  Default plate dimensions can be provided with a flag
 
 .. code-block:: bash
+
    ${IMPORT} ${SERVER_OPTS} -i titer_plates.tsv
                             -o titer_plates_mapping.tsv\
                             titer_plate\
