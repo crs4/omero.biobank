@@ -3,6 +3,8 @@ import sys
 import csv
 import os
 import logging
+import random
+import sys
 
 logger = None
 
@@ -28,7 +30,6 @@ def make_parser():
 
 #-----------------------------------------------------------------
 
-
 def normalizer(args, x):
   def rename_field(x, mapping):
     for f,t in mapping:
@@ -40,13 +41,30 @@ def normalizer(args, x):
 
   if x.has_key(None):
     del x[None]
+
   for k in x.keys():
+    x[k] = x[k].strip()
+    x[k].replace(' ', '_')
     x[k] = 'x' if x[k] == '-' else x[k]
     x[k] = 'x' if x[k] == 'TBF' else x[k]
-    if x[k] in 'xX':   x[k] = None
+    x[k] = 'x' if x[k] == 'None' else x[k]
+    if x[k] in 'xX' :   x[k] = None
+    if k == 'Fam_ID' and x[k] is None:
+      x[k] = 'TBF'
 
-    x['Gender'] = {'1': 'MALE', '2': 'FEMALE'}[x['Submitted_Gender']]
+  if x['Computed_Gender']:
+    gender = x['Computed_Gender']
+  elif x['Submitted_Gender']:
+    gender = x['Submitted_Gender']
+  else:
+    logger.warn('Assigned random Submitted_Gender to (%s,%s)' %
+                (x['Fam_ID'], x['ID']))
+    gender = random.sample(['1','2'], 1)[0]
 
+  x['Gender'] = {'1': 'MALE', '2': 'FEMALE'}[gender]
+
+  for k in ['Father', 'Mother']:
+    x[k] = x[k] if x[k] else '0'
 
   rename_field(x, [
     ('Affymetrix_Plate_Lanusei', 'Affy_Plate_Lanusei'),
@@ -97,8 +115,13 @@ def map_to_pedigree(records):
   known_individuals = {}
   known_individuals_by_id = {}
   bad_id = []
+  missing_fam_id = []
 
   for r in records:
+    # FIXME handle the missing Fam_ID s
+    if r['Fam_ID'] == 'TBF':
+      missing_fam_id.append(r)
+      continue
     k = (r['Fam_ID'], r['ID'])
     indy = Individual(k, r['Gender'],
                       None if r['Father'] == '0' else r['Father'],
@@ -109,11 +132,20 @@ def map_to_pedigree(records):
                       % [known_individuals_by_id[k[1]].id, k])
       logger.critical('disabling by_id on this one')
       bad_id.append(k[1])
-      #sys.exit(1)
     else:
       known_individuals_by_id[k[1]] = indy
   for i in bad_id:
     del known_individuals_by_id[i]
+
+  # FIXME first we check if we there are individuals that we cannot patch
+  for r in missing_fam_id:
+    if r['ID'] not in known_individuals_by_id:
+      k = ('NOFAM', r['ID'])
+      indy = Individual(k, r['Gender'],
+                        None if r['Father'] == '0' else r['Father'],
+                        None if r['Mother'] == '0' else r['Mother'])
+      known_individuals[k] = indy
+      known_individuals_by_id[k[1]] = indy
 
   for k, v in known_individuals.iteritems():
     logger.debug('before %s' % v)
@@ -132,8 +164,14 @@ def map_to_pedigree(records):
           else:
             logger.error('cannot patch %s' % parent)
     logger.debug('after %s' % v)
-  return known_individuals
 
+  # FIXME now we patch what we can patch
+  for r in missing_fam_id:
+    if r['ID'] in known_individuals_by_id:
+      k = (r['Fam_ID'], r['ID'])
+      known_individuals[k] = known_individuals_by_id[r['ID']]
+
+  return known_individuals
 
 def fix_pedigree(ped, s_to_indy):
   def collapse(ped, synonyms):
@@ -218,8 +256,19 @@ def map_to_plate_wells(by_sample):
   wells_of = {}
 
   for k, v in by_sample.iteritems():
-    for r in split_on_plate_records(v[0]):
-      wells_of.setdefault(r['plate'], []).append(r)
+    if k == 'NO-SAMPLE':
+      continue
+    if len(v) > 1:
+      logger.info('v:%s' % v)
+    #FIXME this is a kludge to screen out duplicates
+    seen = {}
+    for w in v:
+      for r in split_on_plate_records(w):
+        k = (r['plate'], r['type'], r['data_sample'])
+        if k in seen:
+          continue
+        seen[k] = 1
+        wells_of.setdefault(r['plate'], []).append(r)
 
   titer_plates = {}
 
@@ -262,12 +311,35 @@ def map_to_plate_wells(by_sample):
                       'wells' : v}
   return titer_plates
 
+def sanitize_funny_samples(titer_plates):
+  by_data_sample = {}
+  for k, v in titer_plates.iteritems():
+    for w in v['wells']:
+      by_data_sample.setdefault(w['data_sample'], []).append(w)
+  for k, v in by_data_sample.iteritems():
+    if len(v) > 1:
+      logger.error('there are %d records for %s: %s' %
+                   (len(v), k, v))
+      filtered = []
+      for r in v:
+        if not r['plate'].startswith('FAKE'):
+          filtered.append(r)
+        else:
+          titer_plates[r['plate']]['wells'].remove(r)
+      if len(filtered) > 1:
+        logger.critical('cannot sanitize %s' % filtered)
+        sys.exit(1)
+
+  return titer_plates
+
 def dump_pedigree(ped, study, ofname):
 
   fieldnames = 'study label gender father mother'.split()
   o = csv.DictWriter(open(ofname, 'w'), fieldnames, delimiter='\t')
   o.writeheader()
-  for v in ped.values():
+  for k, v in ped.iteritems():
+    if k[0] == 'TBF':
+      continue
     o.writerow({'study': study,
                 'label': v.label,
                 'gender': v.gender,
@@ -416,8 +488,6 @@ def main():
   else:
     logging.basicConfig(format=logformat, level=loglevel)
   logger = logging.getLogger()
-
-
   #-
   logger.info('opening file %s'  % args.ifile.name)
 
@@ -429,12 +499,11 @@ def main():
   sample_to_individual_map = {}
   for k, v in by_sample.iteritems():
     sample_to_individual_map[k] = [(r['Fam_ID'], r['ID']) for r in v]
-
   pedigree = fix_pedigree(pedigree, sample_to_individual_map)
 
   titer_plates = map_to_plate_wells(by_sample)
+  titer_plates = sanitize_funny_samples(titer_plates)
 
-  #--
   dump_pedigree(pedigree, args.study, args.ofile_root + 'individuals.tsv')
   #--
   dump_blood_samples(by_sample, pedigree, args.study,
