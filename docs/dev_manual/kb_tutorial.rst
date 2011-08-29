@@ -7,7 +7,7 @@ available meta-information stored in the backend (e.g., Omero).
 .. code-block:: python
 
   from bl.vl.kb import KnowledgeBase as KB
-  kb = KB(driver='omero')(host='biobank05', user='root', passwd='xxx')
+  kb = KB(driver='omero')(host='localhost', user='root', passwd='xxx')
 
 For instance, in the code snippet above, we have established a
 connection to an Omero metadata bank.
@@ -68,7 +68,7 @@ What has been done above is a general pattern for object creation:
  #. Create a dictionary with values for, at least, the required fields;
 
  #. Use the create method of the kb.factory object providing as
-  arguments the object type and the configuration dictionary;
+    arguments the object type and the configuration dictionary;
 
  #. Use the save method of the object to register it with the database.
 
@@ -168,4 +168,3 @@ To check which individuals are enrolled in a specific study:
   True
   >>> v[0].studyCode 
   'I001'
-

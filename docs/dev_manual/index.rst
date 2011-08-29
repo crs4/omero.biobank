@@ -10,3 +10,4 @@ Contents:
    openehr
    galaxy
    kb_tutorial
+   kb_usage_examples
