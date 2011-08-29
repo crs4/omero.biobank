@@ -24,5 +24,6 @@ setup(name='bl_vl_genotype',
                 'bl.vl.app.importer',
                 'bl.vl.app.exporter',
                 'bl.vl.app.kb_query',
+                'bl.vl.app.snp_reannotator',
                 ],
       )
