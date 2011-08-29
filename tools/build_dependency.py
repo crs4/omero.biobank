@@ -235,6 +235,7 @@ def map_to_plate_wells(by_sample):
           'label':  well,
           'type': ('Affymetrix', 'Genome-Wide Human SNP Array', '6.0'),
           'data_sample': x['Affy_%s' % place],
+          'status' : x['Affy_QC_%s' % place],
           'place': place,
           'sample_label' : sample_label,
           })
@@ -458,6 +459,7 @@ def dump_scanners(titer_plates, study, ofname):
 
 def dump_data_sample(titer_plates, study, ofname):
   fieldnames = ['study', 'label',
+                'status',
                 'well_label',
                 'device_label',
                 'device_type',
@@ -467,12 +469,15 @@ def dump_data_sample(titer_plates, study, ofname):
 
   for k, v in titer_plates.iteritems():
     for r in v['wells']:
+      status = 'USABLE' if ('status' not in r or r['status'] == 'IN')\
+                        else 'CORRUPTED'
       o.writerow({'study': study,
                   'label' : r['data_sample'],
                   'well_label': '%s:%s' % (k, r['label']),
                   'device_label': 'chip-%s-%s' % (k, r['label']),
                   'device_type': 'Chip',
                   'scanner_label': r['scanner'],
+                  'status' : status,
                   })
 
 def main():
