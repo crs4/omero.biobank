@@ -20,6 +20,12 @@ WARNING: indexing the full dbSNP can take several hours, with a peak
 memory usage of about 2 GB.
 """
 
+#---
+# NOTE: due to the problems reported in the mask_to_key documentation,
+# we are reimplementing this in snp_reannotator. This one will stay
+# here for reference until it's not needed anymore.
+#---
+
 import sys, csv, re, logging, optparse, shelve, anydbm
 logging.basicConfig(
   level=logging.DEBUG,
@@ -69,10 +75,10 @@ def mask_to_key(mask, N, sep="|"):
   Convert a (left_flank, alleles_tuple, right_flank) mask to a key for
   the dbSNP index.
 
-  FIXME: the problem with this version is that left flanks must be
-  compared from the SNP backwards. Here is an example where similar
-  masks generate different keys::
+  FIXME: Here is an example where similar masks generate different keys::
 
+    >>> from check_rs import mask_to_key
+    >>> from bl.vl.utils.snp import join_mask, rc_mask, split_mask
     >>> def m2k(m): return mask_to_key(split_mask(m), 4)
     ... 
     >>> s1 = 'AAA[A/T]CTTTT'
@@ -82,35 +88,13 @@ def mask_to_key(mask, N, sep="|"):
     GTGATCAGTGAAA[A/T]CTTTTTAGCTACG
     >>> print m2k(s1); print m2k(s2)
     AAA|CTTTT
-    AAAG|TTTC
-  """
-  lflank, _, rflank = min(mask, rc_mask(mask))
-  L, R = len(lflank), len(rflank)
-  if L + R < 2*N:
-    raise MaskTooShortError
-  if L < N:
-    R = 2*N - L
-  elif R < N:
-    L = 2*N - R
-  else:
-    L = R = N
-  return sep.join((lflank[-L:], rflank[:R]))    
-
-
-def mask_to_key_2(mask, N, sep="|"):
-  """
-  Convert a (left_flank, alleles_tuple, right_flank) mask to a key for
-  the dbSNP index.
-
-  FIXME: better than the other version, in the sense that keys are
-  equal around the pipe::
-
-    AAA|CTTTT
     GAAA|CTTT
+  
+  This is not good for lookups. s1 has a length 8 match with rc(s2),
+  yet they map to different keys.
 
-  They are not good for a lookup though. Converting the mask to top
-  yields the same result, but with the additional problem of failing
-  for undecidable strands.
+  Converting the mask to top yields the same result, but with the
+  additional problem of failing for undecidable strands.
   """
   lflank = min(mask[0][::-1], rc(mask[2][::-1]))[::-1]
   rflank = min(mask[2], rc(mask[0]))
@@ -128,7 +112,7 @@ def mask_to_key_2(mask, N, sep="|"):
 
 def update_index(index, db_snp_reader, N, M, logger=None):
   """
-  FIXME: convert_to_top: fallback to lexicographically smaller, but
+  TODO: convert_to_top: fallback to lexicographically smaller, but
   see problems reported in mask_to_key.
   """
   logger = logger or NullLogger()
@@ -154,10 +138,10 @@ def update_index(index, db_snp_reader, N, M, logger=None):
 
 def check_rs(ann_f, index, N, outf, logger=None):
   """
-  FIXME: no consensus. hard cuts to size 32 must be the same; then we
-  can report problems if alleles are not equal. Convert to top mask
-  and fallback to lexicographically smaller, but see problems reported
-  in mask_to_key.
+  TODO: do not compute a 'consensus' sequence. Hard cuts to size 2N
+  must be the same for all sequences; then we can report problems if
+  alleles are not equal. Convert mask to top and fallback to
+  lexicographically smaller, but see problems reported in mask_to_key.
 
   outcome:
     untouched: match with a single, same rs
