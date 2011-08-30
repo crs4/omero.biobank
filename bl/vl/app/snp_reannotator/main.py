@@ -17,7 +17,30 @@ found in original files downloaded from NCBI. Such 'comments' are not
 legal in FASTA files. This means that, with no pre-processing, those
 lines are included in the last sequence (however, they might not end
 up in the index because of flank truncation).
+
+Given a SNP defined as lflank[alleles]rflank, a reference genome
+DB and a requested flanking size L::
+
+  1. align [lflankArflank for A in alleles] to DB, with multiple
+     alignments flagged as suspicious and kept for further processing;
+
+  2. extract a region with L length symmetric flanks around the SNP
+     alignment position: this will be a key into an on-file dictionary
+     where values will be tuples of sequences that correspond to that
+     key.
+
+Given the above mask canonization strategy::
+
+  1. build a canonized dbSNP wrt DB and use the resulting key to
+     populate the index
+
+  2. for each genotyping platform, canonize masks as described above
+     and use the canonized masks to perform a lookup into the index.
+
+The alignment step is external.
 """
+
+
 
 import logging
 import convert_dbsnp, build_index

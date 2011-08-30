@@ -1,5 +1,4 @@
 import sys
-from bl.vl.app.check_rs import main
+from bl.vl.app.snp_reannotator.main import main as snp_reannotator
 
-if __name__ == "__main__":
-  main(sys.argv)
+snp_reannotator(sys.argv[1:])

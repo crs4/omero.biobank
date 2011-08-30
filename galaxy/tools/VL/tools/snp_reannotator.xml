@@ -2,12 +2,12 @@
   <description>get true rs label and mask from dbSNP</description>
   <command interpreter="python">
     snp_reannotator.py
-  </command>  
+  </command>
   <inputs>
     <param format="tabular" name="input" type="data"
 	   label="A tabular dataset with the following columns ..."/>
-    <param name="dbSNP_ref" type="select" label="Reference dbSNP files"
-	   help="Choose from the known dbSNP reference collections. See below.">    
+    <param name="dbSNP_ref" type="select" label="Reference dbSNP index"
+	   help="Choose from the known dbSNP index collections. See below.">    
       <options from_file="VL/tools/snp_reannotator/ref_dbSNP_files.loc">
         <column name="value" index="0"/>
         <column name="dbkey" index="1"/>
