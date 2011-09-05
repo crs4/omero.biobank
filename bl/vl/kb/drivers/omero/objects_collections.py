@@ -11,7 +11,8 @@ class VLCollection(wp.OmeroWrapper):
   __fields__ = [('vid', wp.STRING, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
                 ('creationDate', wp.TIMESTAMP, wp.REQUIRED),
-                ('action', Action, wp.REQUIRED)]
+                ('action', Action, wp.REQUIRED),
+                ('lastUpdte', Action, wp.OPTIONAL)]
 
   def __preprocess_conf__(self, conf):
     return assign_vid_and_timestamp(conf, time_stamp_field='creationDate')

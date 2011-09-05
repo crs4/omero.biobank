@@ -17,6 +17,7 @@ Models for Object Collections
       <required name="creationDate" type="timestamp"/>
       <!-- -->
       <required name="action" type="ome.model.vl.Action"/>
+      <optional name="lastUpdate" type="ome.model.vl.Action"/>
     </properties>
   </type>
 
