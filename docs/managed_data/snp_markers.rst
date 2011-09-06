@@ -56,7 +56,7 @@ The following is a list of the typical steps.
    where chromosome should be one of range(1, 25) and 23 (X), 24 (Y)
    and 25(MT).
 
-4. Markers are usually collected in sets corresponding, for instance,
+#. Markers are usually collected in sets corresponding, for instance,
    to the markers used by a specific genotyping technology::
 
     vid      maker       model  marker_vid  marker_indx allele_flip op_vid
@@ -68,6 +68,24 @@ The following is a list of the typical steps.
    within the marker set, and allele_flip records if the specific
    genotyping technology uses a reverse convention on A/B allele
    naming with respect to the marker definition table.
+
+The general strategy to define new markers is the following:
+
+#. Acquire the list of markers for a given technology
+
+#. Use snp_reannotator to find out if they correspond to known dbSNP
+   SNPs. If they do, register a line such as the following one in omero::
+
+     source context label rs_label mask
+     dbSNP  build36 rs791 rs791    AAGGAAGGAGCTGGANTTTTTTT[A/T]AAATCTTTCTTTCTGGTGTTTAA
+
+   The actual mapping from the specific technology SNPs to the VL
+   markers definition is delegated to the creation of the SNPMarkersSet.
+
+   If they do not, register a line such as the following one instead::
+
+     source     context label         rs_label mask
+     affymetrix gene6.0 SNP_A-1780419 None     GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT
 
 
 Supported operations

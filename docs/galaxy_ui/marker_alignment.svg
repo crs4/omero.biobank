@@ -1,0 +1,580 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="marker_alignment.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="319.72773"
+     inkscape:cy="306.1846"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1121"
+     inkscape:window-x="0"
+     inkscape:window-y="26"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="opacity:0.97935486;fill:#00ffff;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985"
+       width="162.14285"
+       height="77.85714"
+       x="266.42859"
+       y="174.50504"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="300"
+       y="204.50502"
+       id="text2987"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan2989"
+         x="300"
+         y="204.50502"
+         style="font-size:20px">masks to</tspan><tspan
+         sodipodi:role="line"
+         x="300"
+         y="229.50502"
+         style="font-size:20px"
+         id="tspan2991">bwa input</tspan></text>
+    <rect
+       style="opacity:0.97935486000000005;fill:#808000;fill-opacity:0.67777776000000001;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-5"
+       width="162.14285"
+       height="77.85714"
+       x="265.35715"
+       y="286.29077"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="305.84821"
+       y="329.31879"
+       id="text2987-8"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="305.84821"
+         y="329.31879"
+         style="font-size:20px"
+         id="tspan2991-4">BWA align</tspan></text>
+    <rect
+       style="opacity:0.97935486;fill:#00ffff;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-3"
+       width="36.428566"
+       height="34.285709"
+       x="12.500017"
+       y="24.862175"
+       ry="14.492354" />
+    <rect
+       style="opacity:0.97935486000000005;fill:#808000;fill-opacity:0.67777776000000001;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-3-3"
+       width="36.428566"
+       height="34.285709"
+       x="11.785719"
+       y="73.076469"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="70"
+       y="51.647896"
+       id="text3839"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3841"
+         x="70"
+         y="51.647896">VL tool</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="66.489952"
+       y="96.660172"
+       id="text3839-1"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3841-3"
+         x="66.489952"
+         y="96.660172">generic tool</tspan></text>
+    <rect
+       style="opacity:0.97935486;fill:#00ffff;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-7"
+       width="162.14285"
+       height="77.85714"
+       x="393.21429"
+       y="414.14792"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="395.35712"
+       y="434.86218"
+       id="text2987-1"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="395.35712"
+         y="434.86218"
+         style="font-size:20px"
+         id="tspan2991-0">SAM to genome</tspan><tspan
+         sodipodi:role="line"
+         x="395.35712"
+         y="459.86218"
+         style="font-size:20px"
+         id="tspan3899">segment extractor</tspan><tspan
+         sodipodi:role="line"
+         x="395.35712"
+         y="484.86218"
+         style="font-size:20px"
+         id="tspan3901">input</tspan></text>
+    <rect
+       style="opacity:0.97935486;fill:#808000;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-5-9"
+       width="162.14285"
+       height="77.85714"
+       x="395.35715"
+       y="527.71936"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="437.99106"
+       y="550.03302"
+       id="text2987-8-9"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="437.99106"
+         y="550.03302"
+         style="font-size:20px"
+         id="tspan2991-4-6">Genome</tspan><tspan
+         sodipodi:role="line"
+         x="437.99106"
+         y="575.03302"
+         style="font-size:20px"
+         id="tspan3927">segment</tspan><tspan
+         sodipodi:role="line"
+         x="437.99106"
+         y="600.03302"
+         style="font-size:20px"
+         id="tspan3929">extractor</tspan></text>
+    <rect
+       style="opacity:0.97935486;fill:#00ffff;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-7-6"
+       width="162.14285"
+       height="77.85714"
+       x="169.49637"
+       y="415.57648"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="189.49634"
+       y="434.86218"
+       id="text2987-1-9"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="189.49634"
+         y="434.86218"
+         style="font-size:20px"
+         id="tspan3901-3">SAM to marker</tspan><tspan
+         sodipodi:role="line"
+         x="189.49634"
+         y="459.86218"
+         style="font-size:20px"
+         id="tspan3966">alignment</tspan><tspan
+         sodipodi:role="line"
+         x="189.49634"
+         y="484.86218"
+         style="font-size:20px"
+         id="tspan3968">input file</tspan></text>
+    <rect
+       style="opacity:0.97935486;fill:#00ffff;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-7-6-2"
+       width="162.14285"
+       height="77.85714"
+       x="170.35715"
+       y="520.57648"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="178.92854"
+       y="550.57648"
+       id="text2987-1-9-6"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="178.92854"
+         y="550.57648"
+         style="font-size:20px"
+         id="tspan3968-7">Import marker</tspan><tspan
+         sodipodi:role="line"
+         x="178.92854"
+         y="575.57648"
+         style="font-size:20px"
+         id="tspan4005">alignments to VL</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 347.12689,252.36217 -0.32519,33.9286"
+       id="path4019"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect2985"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2985-5"
+       inkscape:connection-end-point="d4" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 317.56442,364.14791 -38.13247,51.42857"
+       id="path4021"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect2985-5"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2985-7-6"
+       inkscape:connection-end-point="d4" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 250.88693,493.43362 0.22251,27.14286"
+       id="path4023"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect2985-7-6"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2985-7-6-2"
+       inkscape:connection-end-point="d4" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 385.35714,364.14791 50.00001,50.00001"
+       id="path4025"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect2985-5"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2985-7"
+       inkscape:connection-end-point="d4" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 469.62362,492.00506 -4.27716,35.7143"
+       id="path4027"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect2985-7"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2985-5-9"
+       inkscape:connection-end-point="d4" />
+    <rect
+       style="opacity:0.97935486;fill:#ffff00;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect4060"
+       width="155.71428"
+       height="71.428574"
+       x="271.42859"
+       y="76.647896"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="298.92859"
+       y="117.00502"
+       id="text2987-0"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="298.92859"
+         y="117.00502"
+         style="font-size:20px"
+         id="tspan2991-3">VL marker</tspan><tspan
+         sodipodi:role="line"
+         x="298.92859"
+         y="142.00502"
+         style="font-size:20px"
+         id="tspan4058">definition file</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 348.65473,148.07647 -0.46693,26.42857"
+       id="path4062"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect4060"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2985"
+       inkscape:connection-end-point="d4" />
+    <rect
+       style="opacity:0.97935486000000005;fill:#ffff00;fill-opacity:0.67777776000000001;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-3-3-5"
+       width="36.428566"
+       height="34.285709"
+       x="13.928573"
+       y="118.79076"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="66.775108"
+       y="142.83371"
+       id="text3839-1-4"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3841-3-9"
+         x="66.775108"
+         y="142.83371">data file</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="284.47769"
+       y="94.423576"
+       id="text3839-3"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3841-5"
+         x="284.47769"
+         y="94.423576">label rs_label mask</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="484.28918"
+       y="523.09674"
+       id="text2987-8-9-4"
+       sodipodi:linespacing="125%"
+       inkscape:transform-center-x="14.285714"
+       inkscape:transform-center-y="-27.857143"><tspan
+         sodipodi:role="line"
+         x="484.28918"
+         y="523.09674"
+         style="font-size:12px"
+         id="tspan3929-4">GenotypingAdapter.SNP_MASK_SIZE</tspan></text>
+    <rect
+       style="opacity:0.97935486;fill:#00ffff;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-7-8"
+       width="162.14285"
+       height="77.85714"
+       x="312.35352"
+       y="649.14783"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="340.21063"
+       y="682.005"
+       id="text2987-1-0"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="340.21063"
+         y="682.005"
+         style="font-size:20px"
+         id="tspan3901-37">build dbSNP</tspan><tspan
+         sodipodi:role="line"
+         x="340.21063"
+         y="707.005"
+         style="font-size:20px"
+         id="tspan4210">index db</tspan></text>
+    <rect
+       style="opacity:0.97935486;fill:#00ffff;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-7-8-0"
+       width="162.14285"
+       height="77.85714"
+       x="496.78574"
+       y="648.43359"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="497.49997"
+       y="679.86218"
+       id="text2987-1-0-7"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="497.49997"
+         y="679.86218"
+         style="font-size:20px"
+         id="tspan3901-37-2">lookup segment in</tspan><tspan
+         sodipodi:role="line"
+         x="497.49997"
+         y="704.86218"
+         style="font-size:20px"
+         id="tspan4210-8">dbSNP index db</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 449.81856,605.5765 -29.78361,43.57133"
+       id="path4243"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect2985-5-9"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2985-7-8"
+       inkscape:connection-end-point="d4" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 509.13781,605.5765 36.01012,42.85709"
+       id="path4245"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect2985-5-9"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2985-7-8-0"
+       inkscape:connection-end-point="d4" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="295.38547"
+       y="631.18195"
+       id="text2987-8-9-4-4"
+       sodipodi:linespacing="125%"
+       inkscape:transform-center-x="14.285714"
+       inkscape:transform-center-y="-27.857143"><tspan
+         sodipodi:role="line"
+         x="295.38547"
+         y="631.18195"
+         style="font-size:12px"
+         id="tspan3929-4-8">dbSNP index generation</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="537.40845"
+       y="629.03906"
+       id="text2987-8-9-4-4-0"
+       sodipodi:linespacing="125%"
+       inkscape:transform-center-x="14.285714"
+       inkscape:transform-center-y="-27.857143"><tspan
+         sodipodi:role="line"
+         x="537.40845"
+         y="629.03906"
+         style="font-size:12px"
+         id="tspan3929-4-8-5">SNP reannotation</tspan></text>
+    <rect
+       style="opacity:0.97935486;fill:#ffff00;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect4060-5"
+       width="155.71428"
+       height="71.428574"
+       x="500"
+       y="760.93359"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="527.5"
+       y="801.29071"
+       id="text2987-0-6"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="527.5"
+         y="801.29071"
+         style="font-size:20px"
+         id="tspan2991-3-9">VL marker</tspan><tspan
+         sodipodi:role="line"
+         x="527.5"
+         y="826.29071"
+         style="font-size:20px"
+         id="tspan4058-1">definition file</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="509.47772"
+       y="777.995"
+       id="text3839-3-2"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3841-5-0"
+         x="509.47772"
+         y="777.995">label rs_label mask</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 577.85715,726.29073 0,34.64286"
+       id="path4322"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect2985-7-8-0"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect4060-5"
+       inkscape:connection-end-point="d4" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="355.97989"
+       y="791.18195"
+       id="text2987-8-9-4-4-06"
+       sodipodi:linespacing="125%"
+       inkscape:transform-center-x="14.285714"
+       inkscape:transform-center-y="-27.857143"><tspan
+         sodipodi:role="line"
+         x="355.97989"
+         y="791.18195"
+         style="font-size:12px"
+         id="tspan3929-4-8-7">1. rs_label is filled</tspan><tspan
+         sodipodi:role="line"
+         x="355.97989"
+         y="806.18195"
+         style="font-size:12px"
+         id="tspan4345">2. mask is of standard len</tspan></text>
+    <rect
+       style="opacity:0.97935486;fill:#00ffff;fill-opacity:0.67777776;stroke:#ff0000;stroke-width:0;stroke-miterlimit:4;stroke-opacity:0;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2985-7-6-2-6"
+       width="162.14285"
+       height="77.85714"
+       x="501.07144"
+       y="869.14795"
+       ry="14.492354" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       x="509.64282"
+       y="899.14795"
+       id="text2987-1-9-6-4"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="509.64282"
+         y="899.14795"
+         style="font-size:20px"
+         id="tspan3968-7-5">Import marker</tspan><tspan
+         sodipodi:role="line"
+         x="509.64282"
+         y="924.14795"
+         style="font-size:20px"
+         id="tspan4005-3">definitions to VL</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 579.23077,832.36217 1.41484,36.78578"
+       id="path4374"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect4060-5"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2985-7-6-2-6"
+       inkscape:connection-end-point="d4" />
+  </g>
+</svg>
