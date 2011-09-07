@@ -16,6 +16,7 @@
       <required name="creationDate" type="timestamp"/>
       <required name="status" type="ome.model.vl.DataSampleStatus"/>
       <required name="action" type="ome.model.vl.Action"/>
+      <optional name="lastUpdate" type="ome.model.vl.Action"/>
     </properties>
   </type>
 

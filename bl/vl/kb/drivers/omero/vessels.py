@@ -28,7 +28,8 @@ class Vessel(wp.OmeroWrapper):
                 ('initialVolume', wp.FLOAT, wp.REQUIRED),
                 ('content', VesselContent, wp.REQUIRED),
                 ('status', VesselStatus, wp.REQUIRED),
-                ('action', Action, wp.REQUIRED)]
+                ('action', Action, wp.REQUIRED),
+                ('lastUpdate', Action, wp.OPTIONAL)]
 
   def __preprocess_conf__(self, conf):
     return assign_vid_and_timestamp(conf, time_stamp_field='activationDate')

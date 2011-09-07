@@ -1,3 +1,13 @@
+2011-09-07  Luca Lianas  <luca@tensa-zangetsu>
+
+	* models/vessel.ome.xml: lastUpdate property added to Vessel model (and to all children classes by inheritance).
+
+	* bl/vl/kb/drivers/omero/vessels.py (Vessel): lastUpdate property added to Vessel class.
+
+	* bl/vl/kb/drivers/omero/data_samples.py (DataSample): lastUpdate property added to DataSample class.
+
+	* models/data_sample.ome.xml: added lastUpdate property to DataSample model (and to all children classes by inheritance).
+
 2011-09-05  Luca Lianas  <luca@tensa-zangetsu>
 
 	* bl/vl/kb/drivers/omero/objects_collections.py (VLCollection): lastUpdate field added
