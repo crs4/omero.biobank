@@ -15,8 +15,7 @@ class DataSample(wp.OmeroWrapper):
                 ('label', wp.STRING, wp.REQUIRED),
                 ('creationDate', wp.TIMESTAMP, wp.REQUIRED),
                 ('status', DataSampleStatus, wp.REQUIRED),
-                ('action', Action, wp.REQUIRED),
-                ('lastUpdate', Action, wp.OPTIONAL)]
+                ('action', Action, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
     return assign_vid_and_timestamp(conf, time_stamp_field='creationDate')

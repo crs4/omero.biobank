@@ -1,5 +1,9 @@
 2011-09-07  Luca Lianas  <luca@tensa-zangetsu>
 
+	* bl/vl/kb/drivers/omero/data_samples.py (DataSample): lastUpdate property removed
+
+	* models/data_sample.ome.xml: lastUpdate property removed
+
 	* models/vessel.ome.xml: lastUpdate property added to Vessel model (and to all children classes by inheritance).
 
 	* bl/vl/kb/drivers/omero/vessels.py (Vessel): lastUpdate property added to Vessel class.
