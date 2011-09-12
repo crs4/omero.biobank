@@ -6,7 +6,7 @@ FIXME
 
 """
 
-from bl.vl.sample.kb import KBError
+from bl.vl.kb import KBError
 from bl.vl.app.importer.core import Core, BadRecord
 from version import version
 
