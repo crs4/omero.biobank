@@ -2,15 +2,13 @@
 Convert dbSNP files to the VL marker definition format.
 """
 import os, argparse
+
 from bl.core.seq.io import DbSnpReader
 from bl.core.utils import NullLogger
+from common import POSSIBLE_ALLELES, MARKER_DEF_FIELDS
 
 
 HELP_DOC = __doc__
-
-
-POSSIBLE_ALLELES = frozenset(['A', 'C', 'G', 'T'])
-OUTPUT_FIELDS = "label", "rs_label", "mask"
 
 
 def write_output(db_snp_reader, outf, logger=None):
@@ -41,14 +39,14 @@ def main(logger, args):
                   if fn.endswith('fas')]
   logger.info("found %d dbSNP files" % len(db_filenames))
   with open(args.output_file, 'w') as outf:
-    outf.write("\t".join(OUTPUT_FIELDS)+"\n")
+    outf.write("\t".join(MARKER_DEF_FIELDS)+"\n")
     for fn in db_filenames:
       bn = os.path.basename(fn)
       logger.info("processing %r" % bn)
       with open(fn) as f:
         db_snp_reader = DbSnpReader(f, logger=logger)
         bad_count = write_output(db_snp_reader, outf, logger=logger)
-      logger.info("bad alleles for %r: %d" % (bn, bad_count))
+      logger.info("bad masks for %r: %d" % (bn, bad_count))
 
 
 def do_register(registration_list):

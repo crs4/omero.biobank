@@ -43,7 +43,7 @@ The alignment step is external.
 
 
 import logging
-import convert_dbsnp, build_index
+import convert_dbsnp, convert_affy, build_index
 
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
@@ -55,6 +55,7 @@ class App(object):
   def __init__(self):
     self.supported_submodules = []
     convert_dbsnp.do_register(self.supported_submodules)
+    convert_affy.do_register(self.supported_submodules)
     build_index.do_register(self.supported_submodules)
 
   def make_parser(self):
