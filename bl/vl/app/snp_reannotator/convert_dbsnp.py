@@ -1,5 +1,5 @@
 """
-Convert dbSNP files to the format expected by SEAL's realign_snp tool.
+Convert dbSNP files to the VL marker definition format.
 """
 import os, argparse
 from bl.core.seq.io import DbSnpReader
@@ -10,6 +10,7 @@ HELP_DOC = __doc__
 
 
 POSSIBLE_ALLELES = frozenset(['A', 'C', 'G', 'T'])
+OUTPUT_FIELDS = "label", "rs_label", "mask"
 
 
 def write_output(db_snp_reader, outf, logger=None):
@@ -19,7 +20,8 @@ def write_output(db_snp_reader, outf, logger=None):
     alleles = alleles.split("/")
     if 2 <= len(alleles) <= 4 and set(alleles) <= POSSIBLE_ALLELES:
       alleles = "/".join(alleles)
-      outf.write("%s\t%s[%s]%s\n" % (rs_label, lflank, alleles, rflank))
+      outf.write("%s\t%s\t%s[%s]%s\n" %
+                 (rs_label, rs_label, lflank, alleles, rflank))
     else:
       logger.warn("%r: bad alleles %r, skipping" % (rs_label, alleles))
       bad_count += 1
@@ -39,7 +41,7 @@ def main(logger, args):
                   if fn.endswith('fas')]
   logger.info("found %d dbSNP files" % len(db_filenames))
   with open(args.output_file, 'w') as outf:
-    outf.write("vid\tmask\n")
+    outf.write("\t".join(OUTPUT_FIELDS)+"\n")
     for fn in db_filenames:
       bn = os.path.basename(fn)
       logger.info("processing %r" % bn)

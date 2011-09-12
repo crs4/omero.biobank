@@ -2,6 +2,8 @@
 Import Marker Definitions
 ==========================
 
+FIXME: these docs are probably out of sync.
+
 Will read in a tsv file with the following columns::
 
   label         rs_label   mask                   strand allele_a allele_b
