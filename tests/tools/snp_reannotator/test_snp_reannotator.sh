@@ -10,3 +10,5 @@ fi
 ${SNP_REANNOTATOR} --logfile convert_dbsnp.log convert_dbsnp -d ./ -o dbsnp_marker_definitions.tsv
 
 ${SNP_REANNOTATOR} --logfile convert_affy.log convert_affy -i affyTest.csv -o affy_marker_definitions.tsv
+
+${SNP_REANNOTATOR} --logfile convert_ill.log convert_ill -i illTest.csv -o ill_marker_definitions.tsv
