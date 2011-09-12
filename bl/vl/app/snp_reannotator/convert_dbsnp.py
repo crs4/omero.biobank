@@ -11,15 +11,29 @@ from common import POSSIBLE_ALLELES, MARKER_DEF_FIELDS
 HELP_DOC = __doc__
 
 
-def write_output(db_snp_reader, outf, logger=None):
+def build_mask(lflank, alleles, rflank, mask_size):
+  alleles = "/".join(alleles)
+  if mask_size >= 2:
+    L, R = len(lflank), len(rflank)
+    N = mask_size / 2
+    if L < N:
+      R = 2*N - L
+    elif R < N:
+      L = 2*N - R
+    else:
+      L = R = N
+    lflank, rflank = lflank[-L:], rflank[:R]
+  return "%s[%s]%s" % (lflank, alleles, rflank)
+
+
+def write_output(db_snp_reader, outf, mask_size, logger=None):
   logger = logger or NullLogger()
   bad_count = 0
   for rs_label, lflank, alleles, rflank in db_snp_reader:
     alleles = alleles.split("/")
     if 2 <= len(alleles) <= 4 and set(alleles) <= POSSIBLE_ALLELES:
-      alleles = "/".join(alleles)
-      outf.write("%s\t%s\t%s[%s]%s\n" %
-                 (rs_label, rs_label, lflank, alleles, rflank))
+      mask = build_mask(lflank, alleles, rflank, mask_size)
+      outf.write("%s\t%s\t%s\n" % (rs_label, rs_label, mask))
     else:
       logger.warn("%r: bad alleles %r, skipping" % (rs_label, alleles))
       bad_count += 1
@@ -31,6 +45,8 @@ def make_parser(parser):
                       help='a directory containing dbSNP (.fas) files')
   parser.add_argument('-o', '--output-file', metavar='FILE', required=True,
                       help='output file')
+  parser.add_argument('--mask-size', type=int, metavar='INT', default=200,
+                      help='maximum output mask size (<=1: do not trim)')
 
 
 def main(logger, args):
@@ -45,7 +61,8 @@ def main(logger, args):
       logger.info("processing %r" % bn)
       with open(fn) as f:
         db_snp_reader = DbSnpReader(f, logger=logger)
-        bad_count = write_output(db_snp_reader, outf, logger=logger)
+        bad_count = write_output(db_snp_reader, outf, args.mask_size,
+                                 logger=logger)
       logger.info("bad masks for %r: %d" % (bn, bad_count))
 
 

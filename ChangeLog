@@ -1,7 +1,8 @@
 2011-09-12    <simleo@neuron.crs4.it>
 
 	* bl/vl/app/snp_reannotator/convert_dbsnp.py: changed to output a
-	VL marker definition file.
+	VL marker definition file. Added an option for trimming the mask
+	down to a maximum given size.
 
 2011-09-07  Luca Lianas  <luca@tensa-zangetsu>
 
