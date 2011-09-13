@@ -1,0 +1,20 @@
+<tool id="vl_tools_markers_to_fastq" name="VLT.markers_to_fastq">
+  <description>converter</description>
+  <command interpreter="python">
+    markers_to_fastq.py --logfile ${log_file} masks_to_fastq
+    -i ${input_file} -o ${output_file}
+  </command>
+  <inputs>
+    <param name="input_file" type="data" format="tabular"
+	   label="VL marker definitions file" />
+  </inputs>
+  <outputs>
+    <data name="output_file" format="fastq" />
+    <data format="txt" name="log_file" label="${tool.name}.log_file"/>
+  </outputs>
+  <help>
+**What it does**
+
+This tool converts VL marker definitions to fastq data.
+  </help>
+</tool>

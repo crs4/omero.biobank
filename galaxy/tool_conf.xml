@@ -13,7 +13,7 @@
     <tool file="VL/importer/diagnosis.xml"/>
   </section>
   <section name="VL Tools" id="vlSection.tools">
-    <tool file="VL/tools/snp_reannotator.xml"/>    
+    <tool file="VL/tools/markers_to_fastq.xml"/>
     <tool file="VL/tools/map_vid.xml"/>
   </section>
   <!-- OMERO/VL END -->

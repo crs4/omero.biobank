@@ -52,7 +52,7 @@ in the Cloud, the efficient distribution and monitoring of compute
 jobs becomes crucial. Without an accurate planning of computing
 resources allocation, one could force large peak loads on the
 computational infrastructure with no improvement of the total run
-time: a naïve submission of a typical analysis run11 could completely
+time: a naive submission of a typical analysis run11 could completely
 saturate a 400 8-core nodes cluster for hours with a swarm of quickly
 completing jobs with only a few hundred jobs lasting for weeks. Figure
 5B shows how the expected time needed for a typical imputation

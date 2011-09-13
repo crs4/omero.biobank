@@ -1,7 +1,9 @@
 #!/bin/bash
-#
-# usage: bash patch.sh GALAXY_DIR
 
+if [ -z "$1" ]; then
+    echo "Usage: $0 GALAXY_DIR"
+    exit 2
+fi
 GALAXY_DIR=$1
 
 #-----------------------------------------------------------
@@ -22,5 +24,3 @@ for f in ${FILES}
 do
     ${CP} $f ${GALAXY_DIR}
 done
-
-
