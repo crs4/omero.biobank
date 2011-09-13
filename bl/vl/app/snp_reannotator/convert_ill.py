@@ -62,7 +62,7 @@ def main(logger, args):
     outf.write("\t".join(MARKER_DEF_FIELDS)+"\n")
     reader = IllSNPReader(f)
     bad_count = write_output(reader, outf, logger=logger)
-    logger.info("bad masks for %r: %d" % (bn, bad_count))
+  logger.info("bad masks for %r: %d" % (bn, bad_count))
 
 
 def do_register(registration_list):
