@@ -12,7 +12,6 @@ Contents:
    :maxdepth: 2
 
    introduction
-   managed_data/index
    usage/index
    galaxy_ui/index
    dev_manual/index

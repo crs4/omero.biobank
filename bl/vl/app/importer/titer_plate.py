@@ -1,24 +1,37 @@
 """
-Import of TiterPlate
-,,,,,,,,,,,,,,,,,,,,
+Importing a TiterPlate
+======================
 
-Will read in a csv file with the following columns::
+A full TiterPlate records will have the following columns::
 
-  study  label   barcode rows columns maker model
+  study  label   barcode rows columns plate_status maker model
   ASTUDY p090    2399389 32   48      xxxx  yyy
 
 The maker and model columns are optional, as well as the barcode one.
 Default plate dimensions  can be provided with a flag
 
 .. code-block:: bash
-   ${IMPORT} ${SERVER_OPTS} -i titer_plates.tsv
+
+   bash> cat titer_plates.tsv
+   study  label barcode rows  columns maker model
+   BSTUDY P001  1234567 32  48  foomaker  foomodel
+   BSTUDY P002  1234568 32  48  foomaker  foomodel
+   BSTUDY P003  1234569 32  48  foomaker  foomodel
+   BSTUDY P004  1234570 32  48  foomaker  foomaker
+   bash> ${IMPORT} ${SERVER_OPTS} -i titer_plates.tsv
                             -o titer_plates_mapping.tsv\
                             titer_plate\
                             --study  ${DEFAULT_STUDY}\
                             --plate-shape=32x48\
                             --maker=foomaker\
-                            --model=foomodel
+                            --model=foomodel \
                             --plate-status=INSTOCK
+   bash> cat titer_plats_mapping.tsv
+   study  label type  vid
+   BSTUDY P001  TiterPlate  V03F6FDA9274CC4D529A8F620EFF458137
+   BSTUDY P002  TiterPlate  V0FA4AE6F472834018AFD7900435A9FB3C
+   BSTUDY P003  TiterPlate  V0ADBCD52832D14BE7B3CC561C1B2D7257
+   BSTUDY P004  TiterPlate  V0C73E0007822640AB98CEF3F43350AA27
 
 """
 

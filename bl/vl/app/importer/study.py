@@ -1,11 +1,31 @@
 """
-Defining a new study
-====================
+Importing a Study definition
+============================
 
-Will read in a tsv file with the following columns::
+A study is essentially a label to represent a general context.
+It is characterized by the following fields::
 
-  label   description
-  ASTUDY  a textual description of the study, no tabs
+  label  description
+  ASTUDY A textual description of ASTUDY, no tabs please.
+
+The description column is optional. It will be filled with the string
+'''No description provided''' if missing.
+
+The study sub-operation will read in a tsv files with that information
+and output the vid ids  of the created study objects.
+
+.. code-block:: bash
+
+   bash> cat study.tsv
+   label  description
+   BSTUDY A basically empty description of BSTUDY
+   CSTUDY A basically empty description of CSTUDY
+   bash> ${IMPORTER} -i study.tsv -o study_mapping.tsv study
+   bash> cat study_mapping.tsv
+   study  label type  vid
+   None BSTUDY  Study V058F28010E99945A5930375FE22363FC4
+   None CSTUDY  Study V0BBAACD697EFA4A6B982FAED36673A17D
+
 
 """
 

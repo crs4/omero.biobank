@@ -1,5 +1,6 @@
 """
-FIXME
+Importing a BioSample definition
+================================
 
 A biosample record will have, at least, the following fields::
 
@@ -8,7 +9,12 @@ A biosample record will have, at least, the following fields::
   I002-bs-2 V932814892
 
 
+Where '''label''' is the label of the biosample container.
+This is not enough to provide the minimum set of required information,
+and they should be provided as command line options.
+
 .. code-block:: bash
+
    ${IMPORT} ${SERVER_OPTS} -i bio_samples.tsv
                             -o bio_mapping.tsv biosample \
                             --study  ${DEFAULT_STUDY} \
@@ -54,7 +60,7 @@ where the label column is now the label of the well position.
 
 If row and column (optional) are provided, it will use that
 location. If they are not, it will deduce them from label (e.g., J01
--> row=10, column=1). Missing labels will be generated as
+-> row=10, column=1). Missing labels will be generated as::
 
        '%s%03d' % (chr(row + ord('A') - 1), column)
 
@@ -63,6 +69,69 @@ will happen if label, row and column are inconsistent.  The well will
 be filled by current_volume material produced by removing used_volume
 material taken from the bio material contained in the vessel
 identified by source. Row and Column are base 1.
+
+The biosample sub-operation will output the vid ids of the created
+biosample objects. The following is a complete example.
+
+.. code-block:: bash
+
+   bash> cat blood_sample.tsv
+   label  individual_label
+   I001-bs-2  I001
+   I002-bs-2  I002
+   I003-bs-2  I003
+   I004-bs-2  I004
+   I005-bs-2  I005
+   I006-bs-2  I006
+   bash> ${KB_QUERY} -o blood_sample_mapped.tsv \
+                map_vid -i blood_sample.tsv \
+                 --column individual_label\
+                 --source-type Individual \
+                 --study BSTUDY
+   bash> cat blood_sample_mapped.tsv
+   label  source
+   I001-bs-2  V044DE795E7F9F42FEB9855288CF577A77
+   I002-bs-2  V0B718B77691B145BFA8901FCCF6B37998
+   I003-bs-2  V06C59B915C0FD47DABE6AE02C731780AF
+   I004-bs-2  V080331A3E763348F4879A71FEAA11C699
+   I005-bs-2  V00FE62DB1758648CFB91F354A7EF9AAE2
+   I006-bs-2  V01654DCFC5BB640C0BB7EE088194E629D
+   bash> ${IMPORTER} -i blood_sample_mapped.tsv -o blood_sample_mapping.tsv \
+             biosample \
+             --study BSTUDY --source-type Individual \
+             --vessel-content BLOOD --vessel-status CONTENTUSABLE \
+             --vessel-type Tube
+   bash> cat blood_sample_mapping.tsv
+   study  label type  vid
+   BSTUDY I004-bs-2 Tube  V046B2FF2BF6D04B2A836B612FEE2AC2C3
+   BSTUDY I006-bs-2 Tube  V04BB92ABFFDFF4D258118295BD28BC380
+   BSTUDY I005-bs-2 Tube  V0AD3DDA422E11489D8FB75B5C338ADEA2
+   BSTUDY I003-bs-2 Tube  V067F7669C11674A84824929AD115D54E2
+   BSTUDY I001-bs-2 Tube  V0D3E2064DB1C742288E761B0E2AEBD7B8
+   BSTUDY I002-bs-2 Tube  V05740B1A6AE844443B45CF1ED7A89C207
+
+
+One more complete examples for plate wells import.
+
+.. code-block:: bash
+
+  ${KB_QUERY} -o plate_well_mapped_1.tsv \
+               map_vid -i plate_well.tsv \
+                   --column bio_sample_label \
+                   --source-type Tube \
+                   --study BSTUDY
+
+  ${KB_QUERY} -o plate_well_mapped_2.tsv \
+               map_vid -i plate_well_mapped_1.tsv \
+                   --column plate_label,plate \
+                   --source-type TiterPlate \
+                   --study BSTUDY
+
+  ${IMPORTER} -i plate_well_mapped_2.tsv -o plate_well_mapping.tsv \
+               biosample \
+               --study BSTUDY --source-type Tube --action-category ALIQUOTING \
+               --vessel-status CONTENTUSABLE --vessel-type PlateWell
+
 
 """
 

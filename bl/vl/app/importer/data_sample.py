@@ -9,6 +9,9 @@ Will read in a tsv file with the following columns::
   ASTUDY foo02 v03909 v99022 Scanner     v99022  conf1=...,conf2=...
   ....
 
+and instantiate specialized DataSample derived classes that correspond
+to the specific lines.
+
 In this example, the first line corresponds to a dataset obtained by
 using chip v9309 on scanner v99020, while the second datasample has
 been obtained using a technology directly using a scanner, e.g., an
@@ -31,6 +34,42 @@ processing on other DataSample(s). This is an example::
   ASTUDY foo02 v03909 v99021 SoftwareProgram conf1=...,conf2=...
   ....
 
+.. code-block:: bash
+
+  bash> cat data_sample.tsv
+  study label sample_label  device_label  options
+  BSTUDY  foobar-00 P001:A01  chip001 celID=829898,scanner=pula01
+  BSTUDY  foobar-01 P001:A02  chip002 celID=320093,scanner=pula01
+  BSTUDY  foobar-02 P002:A03  chip003 celID=320094,scanner=pula01
+  BSTUDY  foobar-03 P003:E04  chip004 celID=320095,scanner=pula01
+  BSTUDY  foobar-04 P004:A05  chip005 celID=320096,scanner=pula01
+  BSTUDY  foobar-05 P004:B06  chip006 celID=320097,scanner=pula01
+  bash> ${KB_QUERY} -o data_sample_mapped_1.tsv \
+               map_vid -i data_sample.tsv \
+                   --column sample_label \
+                   --source-type PlateWell \
+                   --study BSTUDY
+
+  bash> ${KB_QUERY} -o data_sample_mapped_2.tsv \
+               map_vid -i data_sample_mapped_1.tsv \
+                   --column device_label,device \
+                   --source-type Chip \
+                   --study BSTUDY
+
+  bash> SCANNER=`grep pula01 devices_mapping.tsv | perl -ane "print @F[3];"`
+  bash> ${IMPORTER} -i data_sample_mapped_2.tsv -o data_sample_mapping.tsv \
+               data_sample \
+               --study BSTUDY --source-type PlateWell \
+               --device-type Chip --scanner ${SCANNER}
+
+  bash> cat data_dample_mapping.tsv
+  study label type  vid
+  BSTUDY  foobar-00 AffymetrixCel V078132A1404484D4C90DFC509495FD5C6
+  BSTUDY  foobar-01 AffymetrixCel V07FD6BF58EE0E4823B63E34D81776A706
+  BSTUDY  foobar-02 AffymetrixCel V087ED477FF57344C985694A622F18CD7A
+  BSTUDY  foobar-03 AffymetrixCel V0052FD03AAB0C4B50BE79AE97486BEA9C
+  BSTUDY  foobar-04 AffymetrixCel V0CE60F590239D4072B95D15201DDB40F2
+  BSTUDY  foobar-05 AffymetrixCel V0A7EA20CF3A0D4DC392062BA4DE4AEAE4
 
 """
 

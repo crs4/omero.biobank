@@ -65,3 +65,21 @@ selected set.
 
 Things like saving a new GDO will be left to the client, as well
 as recovering a GDO.
+
+Working on groups of individuals
+--------------------------------
+
+In general, all the operations above apply to a group of datasets
+pertaining to a given group of selected individuals. It is useful to
+organize things so that the individual selection and the data analysis
+operation as two completely separated phases.
+
+.. code-block:: bash
+
+  KB_QUERY='../../../tools/kb_query -P romeo --operator aen'
+  ${KB_QUERY} --ofile foo.tsv selector --group-label foo \
+              --total-number=2 \
+              --male-fraction=0.5\
+              --reference-disease=icd10-cm:G35 \
+              --control-fraction=0.0
+

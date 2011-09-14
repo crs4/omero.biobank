@@ -2,7 +2,25 @@
 Extract global stats from KB
 ============================
 
-FIXME
+
+An utility that handles the dumping of global stats from KB.
+
+The basic command is the following::
+
+  usage: kb_query global_stats [-h] [--study STUDY]
+
+  optional arguments:
+    -h, --help     show this help message and exit
+    --study STUDY  study label
+
+
+It will output a tsv files with the following columns::
+
+  study  diagnosis technologies  gender  counts
+  ASTUDY icd10:E10 Affymetrix.GENOMEWIDESNP_6;Illumina.HUMAN1M_DUO  MALE   230
+  ASTUDY icd10:E10 Affymetrix.GENOMEWIDESNP_6;Illumina.HUMAN1M_DUO  FEMALE 200
+  ...
+
 
 """
 

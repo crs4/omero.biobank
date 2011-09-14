@@ -1,8 +1,6 @@
 IMPORTER='../../../tools/importer -P romeo --operator aen'
 KB_QUERY='../../../tools/kb_query -P romeo --operator aen'
 
-if false; then 
-
 ${IMPORTER} -i study.tsv -o study_mapping.tsv study
 ${IMPORTER} -i individual.tsv -o individual_mapping.tsv individual
 ${KB_QUERY} -o blood_sample_mapped.tsv \
@@ -73,7 +71,7 @@ ${IMPORTER} -i data_sample_mapped_2.tsv -o data_sample_mapping.tsv \
              --device-type Chip --scanner ${SCANNER}
 
 ${KB_QUERY} -o data_object_mapped.tsv \
-             map_vid -i data_object_mapped.tsv \
+             map_vid -i data_object.tsv \
                  --column data_sample_label,data_sample \
                  --source-type DataSample \
                  --study BSTUDY
@@ -140,7 +138,6 @@ ${IMPORTER} -i taq_man_ms_status_markers_set_mapped.tsv \
             --study BSTUDY \
             --label MSET0 --maker CRS4 --model TaqMan --release MSstudy
 
-fi
 
 ${KB_QUERY} --ofile group_foo.tsv selector --study BSTUDY --group-label foo \
             --total-number=2 \

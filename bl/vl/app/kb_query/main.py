@@ -1,3 +1,44 @@
+"""
+
+Kb_Query Utility
+================
+
+The ``kb_query`` is the basic command line tool that can be used to
+extract information from VL. Similarly to the importer tool is
+structured around a modular interface with context specific modules::
+
+  usage: kb_query [-h] [--logfile LOGFILE]
+                  [--loglevel {DEBUG,INFO,WARNING,CRITICAL}] [-o OFILE]
+                  [-H HOST] [-U USER] [-P PASSWD] [-K KEEP_TOKENS] --operator
+                  OPERATOR
+                  {map_vid,query,global_stats,selector} ...
+
+  A magic kb_query app
+
+  positional arguments:
+    {map_vid,query,global_stats,selector}
+      map_vid             Map user defined objects label to vid.
+      global_stats        Extract global stats from KB in tabular form.
+      selector            Select a group of individuals
+      query               Select a group of individuals
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    --logfile LOGFILE     logfile. Will write to stderr if not specified
+    --loglevel {DEBUG,INFO,WARNING,CRITICAL}
+                          logging level
+    -o OFILE, --ofile OFILE
+                          the output tsv file
+    -H HOST, --host HOST  omero host system
+    -U USER, --user USER  omero user
+    -P PASSWD, --passwd PASSWD
+                          omero user passwd
+    -K KEEP_TOKENS, --keep-tokens KEEP_TOKENS
+                          omero tokens for open session
+    --operator OPERATOR   operator identifier
+
+"""
+
 import sys, os
 
 import argparse
@@ -5,29 +46,6 @@ import sys
 
 import csv
 
-"""
-
-Kb_Query Utility
-===============
-
-
-The purpose of this utility is to simplify extracting standard
-information from the KB.
-
-For instance, in the example below, we are producing a new file
-'''mapped.tsv''' by replacing the column '''individual_label''' with a
-new column '''source''' that will contain the vid of the object of
-type '''Individual''' uniquely individuated by '''individual_label'''
-and '''study'''.
-
-.. code-block:: bash
-
-   kb_query -H biobank05  -o bs_mapped.tsv map \
-                          -i blood_sample.tsv \
-                          --column 'individual_label' --study BSTUDY \
-                          --source-type Individual
-
-"""
 
 
 #---------------------------------------------------------------

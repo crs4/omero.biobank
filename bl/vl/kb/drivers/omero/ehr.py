@@ -27,12 +27,8 @@ class EHR(object):
 
     for r in self.recs[archetype]:
       if field in r['fields']:
-        break
+        if value is None or value == r['fields'][field]:
+          return True
     else:
       return False
-
-    if value is None:
-      return True
-
-    return value == r['fields'][field]
 

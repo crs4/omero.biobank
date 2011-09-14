@@ -8,9 +8,31 @@ Will read in a tsv file with the following columns::
    ASTUDY V899       1310057541608  icd10-cm:E10
    ASTUDY V899       1310057541608  icd10-cm:G35
    ASTYDY V1806      1310057541608  exclusion-problem_diagnosis
-I  ...
+   ...
 
-importer -i diagnosis.tsv diagnosis
+
+FIXME explain what are the diagnosis values.
+
+.. code-block:: bash
+
+  bash> cat diagnosis.tsv
+  study individual_label  timestamp diagnosis
+  BSTUDY  I001  1310057541608 exclusion-problem_diagnosis
+  BSTUDY  I002  1310057541608 icd10-cm:G35
+  BSTUDY  I003  1310057541608 icd10-cm:E10
+  BSTUDY  I004  1310057541608 icd10-cm:E10
+  BSTUDY  I005  1310057541608 icd10-cm:G35
+  BSTUDY  I006  1310057541608 exclusion-problem_diagnosis
+  BSTUDY  I003  1310057541700 icd10-cm:E10
+  BSTUDY  I003  1310057541700 icd10-cm:G35
+  bash> ${KB_QUERY} -o diagnosis_mapped.tsv \
+               map_vid -i diagnosis.tsv \
+               --column individual_label,individual \
+               --source-type Individual \
+               --study BSTUDY
+  bash> ${IMPORTER} -i diagnosis_mapped.tsv \
+               diagnosis \
+               --study BSTUDY
 
 
 """

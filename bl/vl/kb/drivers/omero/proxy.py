@@ -135,8 +135,8 @@ class Proxy(ProxyCore):
   def get_snp_marker_definitions(self, selector=None, batch_size=50000):
     return self.gadpt.get_snp_marker_definitions(selector, batch_size)
 
-  def get_snp_markers(self, labels=None, vids=None):
-    return self.gadpt.get_snp_markers(labels, vids)
+  def get_snp_markers(self, labels=None, rs_labels=None, vids=None):
+    return self.gadpt.get_snp_markers(labels, rs_labels, vids)
 
   def add_snp_alignments(self, stream, op_vid, batch_size=50000):
     return self.gadpt.add_snp_alignments(stream, op_vid, batch_size)

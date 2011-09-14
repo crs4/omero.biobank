@@ -6,18 +6,14 @@ FIXME: these docs are probably out of sync.
 
 Will read in a tsv file with the following columns::
 
-  label         rs_label   mask                   strand allele_a allele_b
-  SNP_A-1780419 rs6576700  <lflank>[A/B]<rflank>  TOP    A        B
+  label         rs_label   mask
+  SNP_A-1780419 rs6576700  <lflank>[A/B]<rflank>
   ...
 
 Where label is supposed to be the unique label for this marker in the
 (source, context, release) context, rs_label is the dbSNP db label for
 this snp (it could be the string ``None`` if it not defined/not
-known). The column mask contains the SNP definition. The strand column
-could either be the actual 'illumina style' strand used to define the
-alleles in the alleles columns, or the string 'None' which means that
-the alleles in the allele column are defined against the mask in the
-mask column.
+known). The column mask contains the SNP definition.
 
 It will, for each row, convert mask to the TOP strand following
 Illumina conventions and then save a record for it in VL.

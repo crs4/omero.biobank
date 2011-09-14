@@ -2,18 +2,47 @@
 Import of individuals collections
 =================================
 
-
-Will read in a csv file with the following columns::
+An individual is characterized by the following fields::
 
   study label gender   father mother
-  xxx   id2   male   id4    id5
-  xxx   id3   female None   None
-  ....
+  xxx   id2   male     None   None
+  xxx   id2   male     id4    id5
 
-A study with label ``xxx`` will be automatically generated if missing,
-and the individuals will be enrolled in the given study. It is not
-possible to import the same individual twice: the related file rows
-will be noisily ignored.
+where gender could be either male or female, father and mother could
+either be the string '''None''' or a label (within the same study)
+individual.  Individuals are the only "bio" objects in Omero/VL that
+can be loaded independently from what is
+already in the DB.  Of course, if they do not have assigned
+parents. The study label should, however, correspond to a study that
+it has already been defined in the database.
+
+The individual sub-operation will create and enroll the individuals
+listed in the given study, it will output the vid ids of the created
+individual objects. It is not possible to import the same individual
+twice: the related file rows will be noisily ignored.
+
+.. code-block:: bash
+
+   bash> cat individual.tsv
+   study  label gender  father  mother
+   BSTUDY I001  male  None  None
+   BSTUDY I002  female  None  None
+   BSTUDY I003  male  I001  I002
+   BSTUDY I004  female  I001  I002
+   BSTUDY I005  male  I003  I004
+   BSTUDY I006  male  I003  I004
+   bash> ${IMPORTER} -i individual.tsv -o individual_mapping.tsv individual
+   bash> cat individual_mapping.tsv
+   study  label type  vid
+   BSTUDY I001  Individual  V044DE795E7F9F42FEB9855288CF577A77
+   BSTUDY I002  Individual  V0B718B77691B145BFA8901FCCF6B37998
+   BSTUDY I003  Individual  V06C59B915C0FD47DABE6AE02C731780AF
+   BSTUDY I004  Individual  V080331A3E763348F4879A71FEAA11C699
+   BSTUDY I005  Individual  V00FE62DB1758648CFB91F354A7EF9AAE2
+   BSTUDY I006  Individual  V01654DCFC5BB640C0BB7EE088194E629D
+
+**NOTE:** The current incarnation of the import application does not support
+cross studies parenthood definitions.
 
 """
 

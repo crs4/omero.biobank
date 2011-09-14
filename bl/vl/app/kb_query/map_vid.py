@@ -1,8 +1,44 @@
 """
-Map user available labels to vid
+Map user visible labels to vid
 ================================
 
-FIXME
+A tool to resolve labels to VID ids.
+The basic command is the following::
+
+  usage: kb_query map_vid [-h] -i IFILE --source-type
+                          {Tube,Individual,TiterPlate,PlateWell,Chip,DataSample,Marker,Scanner}
+                          --column COLUMN [--study STUDY]
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    -i IFILE, --ifile IFILE
+                          the input tsv file
+    --source-type {Tube,Individual,TiterPlate,PlateWell,Chip,DataSample,Marker,Scanner}
+                          assigned source type, it is taken as the type of the
+                          first name in the column flag.
+    --column COLUMN       comma separated list (no spaces) of the object labels
+                          column name and the name of the replacement column.
+                          The latter defaults to 'source'
+    --study STUDY         study label
+
+
+
+**FIXME**
+
+Map user defined objects label to vid.
+
+usage example::
+
+   kb_query -H biobank05  -o bs_mapped.tsv map \
+                          -i blood_sample.tsv \
+                          --column 'individual_label' --study BSTUDY \
+                          --source-type Individual
+
+special case::
+
+    foo  well_label
+    xx   fooplate:A01
+
 
 """
 
@@ -151,6 +187,7 @@ usage example:
                           -i blood_sample.tsv \
                           --column 'individual_label' --study BSTUDY \
                           --source-type Individual
+
 """
 
 def make_parser_map(parser):

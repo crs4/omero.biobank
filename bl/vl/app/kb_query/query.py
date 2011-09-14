@@ -2,8 +2,45 @@
 Generic Query support
 =====================
 
-FIXME
+The goal of this module is to provide a simplified environment to
+perform complex queries in VL.
 
+The basic command is the following::
+
+  usage: kb_query query [-h] --group GROUP --code-file CODE_FILE
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    --group GROUP         the group label
+    --code-file CODE_FILE
+                          path to the query code file
+
+
+The idea is that one invokes
+
+.. code-block:: bash
+
+   bash> ${KB_QUERY} --ofile foo_junk.tsv -P romeo \
+                     --operator aen query --code-file foo.py \
+                     --group BSTUDY
+
+where the contents of the '''--code-file''' are something like the following.
+
+.. code-block:: python
+
+   writeheader('dc_id', 'gender', 'data_sample',
+               'path', 'mimetype', 'size', 'sha1')
+   for i in Individuals(group):
+      for d in DataSamples(i, 'AffymetrixCel'):
+         for o in DataObjects(d):
+            writerow(group.id, enum_label(i.gender), d.id,
+                     o.path, o.mimetype, o.size, o.sha1)
+
+
+Where '''group''' (actually a study) corresponds to the group whose
+label is assigned by the '''--group''' flag.
+
+**Note** This is clearly an extremely dangerous tool.
 
 """
 
@@ -18,6 +55,7 @@ import csv, json
 import time, sys
 import itertools as it
 
+import argparse
 
 import logging
 
@@ -45,26 +83,26 @@ class Selector(Core):
     self.kb.Gender.map_enums_values(self.kb)
 
   def dump(self, args):
-    otsv = None
-    _field_names = []
+    self.ots = None
+    self._field_names = []
 
     self.logger.info('start loading dependency tree')
     dt = DependencyTree(self.kb)
     self.logger.info('done loading dependency tree')
 
     def writeheader(*field_names):
-      _field_names = field_names
-      ots = csv.DictWriter(args.ofile, _field_names, delimiter='\t')
-      ots.writeheader()
+      self._field_names = field_names
+      self.ots = csv.DictWriter(args.ofile, self._field_names, delimiter='\t')
+      self.ots.writeheader()
 
     def writerow(*field_values):
-      d = dict(zip(_field_names, field_values))
-      ots.writerow(d)
+      d = dict(zip(self._field_names, field_values))
+      self.ots.writerow(d)
 
     def Individuals(group):
       return [e.individual for e in self.kb.get_enrolled(group)]
 
-    def DataSamples(individual, data_sample_klass_name=DataSample):
+    def DataSamples(individual, data_sample_klass_name='DataSample'):
       klass = getattr(self.kb, data_sample_klass_name)
       return dt.get_connected(individual, aklass=klass)
 
@@ -73,33 +111,40 @@ class Selector(Core):
              where s.id = :sid"""
       return self.kb.find_all_by_query(q, {'sid' : data_sample.omero_id})
 
+    def enum_label(x):
+      if isinstance(x, self.kb.Gender):
+        if x == self.kb.Gender.MALE:
+          return 'MALE'
+        if x == self.kb.Gender.FEMALE:
+          return 'FEMALE'
+
     code  = args.code_file.read()
     group = self.kb.get_study(args.group)
     ccode = compile(code, '<string>', 'exec')
-    exec ccode in {}
+    exec ccode in locals()
 
 #-------------------------------------------------------------------------
 help_doc = """
 Select a group of individuals
 """
 
-def make_parser_query(parser):
+def make_parser(parser):
   parser.add_argument('--group', type=str,
                       required=True,
                       help="the group label")
-  parser.add_argument('--code-file', type=argparse.FileType('w'),
+  parser.add_argument('--code-file', type=argparse.FileType('r'),
                       required=True,
                       help="path to the query code file")
 
-def import_query_implementation(logger, args):
+def implementation(logger, args):
   #--
   selector = Selector(host=args.host, user=args.user, passwd=args.passwd,
                       logger=logger)
   selector.dump(args)
 
 def do_register(registration_list):
-  registration_list.append(('selector', help_doc,
-                            make_parser_selector,
-                            import_selector_implementation))
+  registration_list.append(('query', help_doc,
+                            make_parser,
+                            implementation))
 
 

@@ -14,6 +14,48 @@ controlled by the following parameters:
 
 FIXME: defining what we mean by presence of specific datasets will be
 a mess...
+
+The basic command is the following::
+
+  usage: kb_query selector [-h] [--study STUDY] --group-label GROUP_LABEL
+                           --total-number TOTAL_NUMBER --male-fraction
+                           MALE_FRACTION --reference-disease REFERENCE_DISEASE
+                           --control-fraction CONTROL_FRACTION
+                           [--required-datasample {AffymetrixCel,IlluminaBeadChipAssay}]
+                           [--seed SEED]
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    --study STUDY         will select individuals from this study
+    --group-label GROUP_LABEL
+                          the new group label
+    --total-number TOTAL_NUMBER
+                          total number of individuals required
+    --male-fraction MALE_FRACTION
+                          required fraction of male individuals
+    --reference-disease REFERENCE_DISEASE
+                          the coded text (e.g., icd10-cm:E10) identifying the
+                          reference disease
+    --control-fraction CONTROL_FRACTION
+                          required fraction of control individuals
+    --required-datasample {AffymetrixCel,IlluminaBeadChipAssay}
+                          required datasample type
+    --seed SEED           random seed (will default to int(time.time())
+
+
+The results will be presented as a file that can be used to generate a
+new study (FIXME, we should have the concept of a group that is
+independent of a study.). The file will have the following columns::
+
+    study label individual
+    XXX   0001  V20940239409
+    XXX   0002  V20940239509
+    XXX   0003  V20940239609
+    XXX   0004  V20940239709
+    ...
+
+  where study is the name of the new study
+
 """
 
 from bl.vl.kb.dependency import DependencyTree

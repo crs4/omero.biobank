@@ -1,6 +1,31 @@
 openEHR support
 ===============
 
+Tutorial
+--------
+
+.. code-block:: python
+
+  >>> inds = kb.get_objects(kb.Individual)
+  >>> ehr = kb.get_ehr(i)
+  >>> for x in ehr.recs[r]:
+        print x['timestamp'], x['archetype'], x['fields']
+  1310057541700 openEHR-EHR-EVALUATION.problem-diagnosis.v1 {'at0002.1': 'icd10-cm:G35'}
+  1310057541608 openEHR-EHR-EVALUATION.problem-diagnosis.v1 {'at0002.1': 'icd10-cm:E10'}
+  1310057541700 openEHR-EHR-EVALUATION.problem-diagnosis.v1 {'at0002.1': 'icd10-cm:E10'}
+  >>> ehr.matches('openEHR-EHR-EVALUATION.problem-diagnosis.v1')
+  True
+  >>> ehr.matches('openEHR-EHR-EVALUATION.problem-diagnosis.v1', 'at0002.1')
+  True
+  >>> ehr.matches('openEHR-EHR-EVALUATION.problem-diagnosis.v1', 'at0002.1', 'icd10-cm:E10)
+  True
+  >>> ehr.matches('openEHR-EHR-EVALUATION.problem-diagnosis.v1', 'at0002.1', 'icd10-cm:G35')
+  True
+  >>> ehr.matches('openEHR-EHR-EVALUATION.problem-diagnosis.v1', 'at0002.1', 'icd10-cm:XXX')
+  False
+
+
+
 Supported openEHR archetypes
 ----------------------------
 

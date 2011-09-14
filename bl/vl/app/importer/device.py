@@ -13,6 +13,29 @@ model and a release, and, possibly a physical location. In the example
 above, in the first line we have defined a scanner, which is
 physically in the lab in Pula, building 5.  The following line defines
 a chip.
+
+.. code-block:: bash
+
+  bash> cat devices.tsv
+  device_type label barcode maker model release location
+  Scanner pula01  8989898 Affymetrix  GeneChip Scanner 3000 7G  Pula Ed.5
+  Chip  chip001 8329482 Affymetrix  Genome-Wide Human SNP Array 6.0 None
+  Chip  chip002 8329483 Affymetrix  Genome-Wide Human SNP Array 6.0 None
+  Chip  chip003 8329484 Affymetrix  Genome-Wide Human SNP Array 6.0 None
+  Chip  chip004 8329485 Affymetrix  Genome-Wide Human SNP Array 6.0 None
+  Chip  chip005 8329486 Affymetrix  Genome-Wide Human SNP Array 6.0 None
+  Chip  chip006 8329487 Affymetrix  Genome-Wide Human SNP Array 6.0 None
+  bash> ${IMPORTER} -i devices.tsv -o devices_mapping.tsv device --study BSTUDY
+  bash> cat devices_mapping.tsv
+  study label type  vid
+  BSTUDY  pula01  Scanner V0BAF6C3F471284CBF9A867A62B26E688A
+  BSTUDY  chip001 Chip  V03C9FB0C268594D7BBBB359BBF09163E4
+  BSTUDY  chip002 Chip  V03C658EE6C1E8494FB239E791EA0BA061
+  BSTUDY  chip003 Chip  V0E37789C133784DB9B9FF6EA81A3B1024
+  BSTUDY  chip004 Chip  V0ABA7C0D1D90F46F7B36F1FB8ED626AEF
+  BSTUDY  chip005 Chip  V02CA380A20926473386A7A15A5270B939
+  BSTUDY  chip006 Chip  V065049E68E56946E09CE51E448756F01F
+
 """
 
 from core import Core, BadRecord

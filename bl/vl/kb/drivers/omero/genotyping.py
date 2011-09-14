@@ -7,11 +7,11 @@ import numpy     as np
 class Marker(object):
   "FIXME This is a place-holder"
 
-  def __init__(self, vid, label, rs_label):
+  def __init__(self, vid, label, rs_label, mask):
     self.id = vid
     self.label = label
     self.rs_label = rs_label
-    self.mask = None
+    self.mask = mask
 
   @classmethod
   def get_ome_table(klass):
@@ -114,18 +114,23 @@ class GenotypingAdapter(object):
                                   selector, batch_size)
 
   def marker_maker(self, r):
-    vid, label, rs_label = map(str, [r[0], r[4], r[5]])
-    return Marker(vid, label, rs_label)
+    vid, label, rs_label, mask = map(str, [r[0], r[4], r[5], r[6]])
+    return Marker(vid, label, rs_label, mask)
 
-  def get_snp_markers(self, labels=None, vids=None, batch_size=50000):
+  def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
+                      batch_size=50000):
     selector_critical_size = 10000
-    if not (labels or vids):
-      raise ValueError('labels and vids cannot be both None')
-    if labels and vids:
-      raise ValueError('labels and vids cannot be both not None')
+    count = (labels is None) + (rs_labels is None) + (vids is None)
+    if count == 3:
+      raise ValueError('labels, rs_labels and vids cannot be all None')
+    if count == 1:
+      raise ValueError('only one of labels, rs_labels and vids should be assigned')
     if labels:
       field_name = 'label'
       requested = labels
+    elif rs_labels:
+      field_name = 'rs_label'
+      requested = rs_labels
     else:
       field_name = 'vid'
       requested = vids

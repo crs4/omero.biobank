@@ -5,13 +5,35 @@ Import of Data Objects
 Will read in a tsv file with the following columns::
 
    study path data_sample mimetype size sha1
+   TEST01 file:/share/fs/v039303.cel V2902 x-vl/affymetrix-cel 39090 SHA1SHA1
+   ....
 
-   TEST01 file:/share/fs/v039303.cel V2902 x-vl/affymetrix-cel 39090 E909090
-  ....
+and will instantiate for each a DataObject that represent, inside
+omero/VL, a physical instance of a given DataSample.
 
 Records that point to an unknown (data_sample) will be noisily
 ignored. The same will happen to records that have the same path of a
 previously seen data_object
+
+.. code-block:: bash
+
+  bash> cat data_object.tsv
+  study path  data_sample_label mimetype  size  sha1
+  BSTUDY  file:/share/fs/v000.cel foobar-00 x-vl/affymetrix-cel 8989  SHA1SHA1
+  BSTUDY  file:/share/fs/v001.cel foobar-01 x-vl/affymetrix-cel 8989  SHA1SHA1
+  BSTUDY  file:/share/fs/v002.cel foobar-02 x-vl/affymetrix-cel 8989  SHA1SHA1
+  BSTUDY  file:/share/fs/v003.cel foobar-03 x-vl/affymetrix-cel 8989  SHA1SHA1
+  BSTUDY  file:/share/fs/v004.cel foobar-04 x-vl/affymetrix-cel 8989  SHA1SHA1
+  BSTUDY  file:/share/fs/v005.cel foobar-05 x-vl/affymetrix-cel 8989  SHA1SHA1
+  BSTUDY  file:/share/fs/v051.cel foobar-05 x-vl/affymetrix-cel 8989  SHA1SHA1
+  bash> ${KB_QUERY} -o data_object_mapped.tsv \
+               map_vid -i data_object.tsv \
+                   --column data_sample_label,data_sample \
+                   --source-type DataSample \
+                   --study BSTUDY
+  bash> ${IMPORTER} -i data_object_mapped.tsv -o data_object_mapping.tsv \
+               data_object
+
 """
 from core import Core, BadRecord
 
