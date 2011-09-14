@@ -16,5 +16,5 @@ ${SNP_REANNOTATOR} --logfile convert_affy.log convert_affy -i affyTest.csv -o af
 echo "Testing convert_ill"
 ${SNP_REANNOTATOR} --logfile convert_ill.log convert_ill -i illTest.csv -o ill_marker_definitions.tsv
 
-echo "Testing masks_to_fastq"
-${SNP_REANNOTATOR} --logfile masks_to_fastq.log masks_to_fastq -i markerDefinitionsTest.tsv -o reads.fastq
+echo "Testing markers_to_fastq"
+${SNP_REANNOTATOR} --logfile markers_to_fastq.log markers_to_fastq -i markerDefinitionsTest.tsv -o reads.fastq

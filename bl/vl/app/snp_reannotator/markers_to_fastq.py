@@ -32,7 +32,7 @@ def build_fastq_records(label, mask):
     for a, c in izip(alleles, ALLELE_CODES):
       seq = "%s%s%s" % (lflank, a, rflank)
       seq_id = "%s|%s|%d" % (label, c, snp_offset)
-      r = ('@%s' % seq_id, seq, '+%s' % seq_id, 'E'*len(seq))
+      r = ('@%s' % seq_id, seq, '+%s' % seq_id, '~'*len(seq))
       records.append(r)
   return records
     
@@ -65,4 +65,4 @@ def main(logger, args):
 
 
 def do_register(registration_list):
-  registration_list.append(('masks_to_fastq', HELP_DOC, make_parser, main))
+  registration_list.append(('markers_to_fastq', HELP_DOC, make_parser, main))

@@ -41,7 +41,7 @@ The alignment step is external.
 """
 
 import logging
-import convert_dbsnp, convert_affy, convert_ill, masks_to_fastq, build_index
+import convert_dbsnp, convert_affy, convert_ill, markers_to_fastq, build_index
 
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
@@ -55,7 +55,7 @@ class App(object):
     convert_dbsnp.do_register(self.supported_submodules)
     convert_affy.do_register(self.supported_submodules)
     convert_ill.do_register(self.supported_submodules)
-    masks_to_fastq.do_register(self.supported_submodules)
+    markers_to_fastq.do_register(self.supported_submodules)
     build_index.do_register(self.supported_submodules)
 
   def make_parser(self):
