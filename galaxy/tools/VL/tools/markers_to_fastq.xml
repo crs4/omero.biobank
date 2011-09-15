@@ -16,5 +16,19 @@
 **What it does**
 
 This tool converts VL marker definitions to fastq data.
+
+VL marker definitions files have the following format (spaces are tabs)::
+
+  label   rs_label        mask
+  SNP_A-1780419   rs6576700       GGATACATTTTATTGC[A/G]CTTGCAGAGTATTTTT
+  SNP_A-1780418   rs17054099      GGATACATTACCCAAA[C/T]GGTCACAGGTCAAAGG
+  SNP_A-1780415   rs7730126       GGATACATCCCCCCCA[A/G]AAAATGAGAATAAAGC
+  ...
+
+Where "label" is a unique identifier, "rs_label" is the dbSNP label
+and "mask" is the SNP's mask in the
+LEFT_FLANK[ALLELE_A/ALLELE_B/...]RIGHT_FLANK format. One fastq record
+is generated for each allele in the mask. The string "None" in the
+rs_label column means there is no rs label for the marker.
   </help>
 </tool>
