@@ -10,7 +10,7 @@ from contextlib import nested
 
 from bl.core.seq.align.mapping import SAMMapping
 from bl.core.utils import NullLogger
-from common import MARKER_AL_FIELDS, SeqNameSerializer
+from common import MARKER_AL_FIELDS, CHR_CODES, SeqNameSerializer
 
 
 HELP_DOC = __doc__
@@ -54,10 +54,10 @@ class SnpHitProcessor(object):
     mapped = hit.is_mapped()
     if mapped and nm <= 0 and hit.qual > 0:
       snp_pos = hit.get_untrimmed_pos() + snp_offset
-      chromosome = hit.tid or '*'
+      chr_code = CHR_CODES.get(hit.tid, 'None')
       strand = '-' if hit.is_on_reverse() else '+'
       self.current_hits.append(
-        [id_, self.ref_genome_tag, chromosome, str(snp_pos), strand, allele]
+        [id_, self.ref_genome_tag, str(chr_code), str(snp_pos), strand, allele]
         )
     else:
       self.logger.info("%r: mapped:%r; NM:%r; qual:%r" % (
@@ -69,7 +69,7 @@ class SnpHitProcessor(object):
       self.logger.warn("hit count for %s: %d != 1" % (self.current_id, nh))
     if nh == 0:
       self.current_hits.append(
-        [self.current_id, self.ref_genome_tag, '*', '0', '+', 'A']
+        [self.current_id, self.ref_genome_tag, 'None', 'None', 'None', 'None']
         )
     for hit in self.current_hits:
       hit.append(str(nh))

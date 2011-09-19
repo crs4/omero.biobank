@@ -1,3 +1,9 @@
+2011-09-19    <simleo@neuron.crs4.it>
+
+	* bl/vl/app/snp_reannotator/convert_sam.py (SnpHitProcessor):
+	changed to use numeric values for chromosomes and 'None' instead
+	of '*' for a null value.
+
 2011-09-14    <simleo@neuron.crs4.it>
 
 	* bl/vl/app/snp_reannotator/markers_to_fastq.py: renamed from
