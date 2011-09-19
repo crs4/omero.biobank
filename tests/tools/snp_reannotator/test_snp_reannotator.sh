@@ -3,7 +3,7 @@
 SNP_REANNOTATOR="../../../tools/snp_reannotator --loglevel DEBUG"
 
 if [ "$1" == "--clean" ]; then
-    rm -fv *.log *marker_definitions.tsv *.fastq
+    rm -fv *.log *marker_definitions.tsv *.fastq marker_alignment.tsv
     exit 0
 fi
 
@@ -18,3 +18,6 @@ ${SNP_REANNOTATOR} --logfile convert_ill.log convert_ill -i illTest.csv -o ill_m
 
 echo "Testing markers_to_fastq"
 ${SNP_REANNOTATOR} --logfile markers_to_fastq.log markers_to_fastq -i markerDefinitionsTest.tsv -o reads.fastq
+
+echo "Testing convert_sam"
+${SNP_REANNOTATOR} --logfile convert_sam.log convert_sam -i reads.sam -o marker_alignment.tsv --reftag hg18

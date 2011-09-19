@@ -13,15 +13,14 @@ from itertools import izip
 
 from bl.core.utils import NullLogger
 from bl.vl.utils.snp import split_mask
-
-#from common import check_mask, MARKER_DEF_FIELDS
+from common import SeqNameSerializer
 
 
 HELP_DOC = __doc__
 ALLELE_CODES = ('A', 'B', 'C', 'D')
 
 
-def build_fastq_records(label, mask):
+def build_fastq_records(label, mask, name_serializer):
   records = []
   try:
     lflank, alleles, rflank = split_mask(mask)
@@ -31,7 +30,7 @@ def build_fastq_records(label, mask):
     snp_offset = len(lflank)
     for a, c in izip(alleles, ALLELE_CODES):
       seq = "%s%s%s" % (lflank, a, rflank)
-      seq_id = "%s|%s|%d" % (label, c, snp_offset)
+      seq_id = name_serializer.serialize(label, c, snp_offset)
       r = ('@%s' % seq_id, seq, '+%s' % seq_id, '~'*len(seq))
       records.append(r)
   return records
@@ -40,8 +39,9 @@ def build_fastq_records(label, mask):
 def write_output(reader, outf, logger=None):
   logger = logger or NullLogger()
   seq_count = 0
+  name_serializer = SeqNameSerializer()
   for r in reader:
-    fastq_records = build_fastq_records(r['label'], r['mask'])
+    fastq_records = build_fastq_records(r['label'], r['mask'], name_serializer)
     seq_count += len(fastq_records)
     for r in fastq_records:
       outf.write("%s\n" % "\n".join(r))
