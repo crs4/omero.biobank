@@ -1,5 +1,6 @@
 """
-Convert SAM alignment data to VL marker alignment input.
+Convert SAM alignment data to VL marker alignment or Galaxy extract
+genomic DNA input.
 
 Expects single-end BWA alignment data produced by the previous steps
 in the workflow (see markers_to_fastq).
@@ -14,6 +15,9 @@ from common import MARKER_AL_FIELDS, CHR_CODES, SeqNameSerializer
 
 
 HELP_DOC = __doc__
+OUTPUT_FORMATS = ["marker_alignment", "segment_extractor"]
+DEFAULT_OUTPUT_FORMAT = OUTPUT_FORMATS[0]
+DEFAULT_FLANK_SIZE = 100
 
 
 def SamReader(f):
@@ -28,10 +32,13 @@ class SnpHitProcessor(object):
 
   HEADER = MARKER_AL_FIELDS
 
-  def __init__(self, ref_genome_tag, outf, logger=None):
+  def __init__(self, ref_tag, outf, outfmt=DEFAULT_OUTPUT_FORMAT,
+               flank_size=DEFAULT_FLANK_SIZE, logger=None):
     self.logger = logger or NullLogger()
-    self.ref_genome_tag = ref_genome_tag
+    self.ref_tag = ref_tag
     self.outf = outf
+    self.outfmt = outfmt
+    self.flank_size = flank_size
     self.current_id = None
     self.current_hits = []
     self.serializer = SeqNameSerializer()
@@ -56,9 +63,17 @@ class SnpHitProcessor(object):
       snp_pos = hit.get_untrimmed_pos() + snp_offset
       chr_code = CHR_CODES.get(hit.tid, 'None')
       strand = '-' if hit.is_on_reverse() else '+'
-      self.current_hits.append(
-        [id_, self.ref_genome_tag, str(chr_code), str(snp_pos), strand, allele]
-        )
+      if self.outfmt == DEFAULT_OUTPUT_FORMAT:
+        r = [id_, self.ref_tag, str(chr_code), str(snp_pos), strand, allele]
+      else:
+        if hit.tid is None:
+          self.logger.error("%r: can't use null chr for %r output" %
+                            (name, self.outfmt))
+          return
+        start = snp_pos - self.flank_size
+        end = snp_pos + self.flank_size
+        r = [hit.tid, str(start), str(end), id_]
+      self.current_hits.append(r)
     else:
       self.logger.info("%r: mapped:%r; NM:%r; qual:%r" % (
         name, mapped, nm, hit.qual))
@@ -67,28 +82,33 @@ class SnpHitProcessor(object):
     nh = len(self.current_hits)
     if nh != 1:
       self.logger.warn("hit count for %s: %d != 1" % (self.current_id, nh))
-    if nh == 0:
+    if nh == 0 and self.outfmt == DEFAULT_OUTPUT_FORMAT:
       self.current_hits.append(
-        [self.current_id, self.ref_genome_tag, 'None', 'None', 'None', 'None']
+        [self.current_id, self.ref_tag, 'None', 'None', 'None', 'None']
         )
-    for hit in self.current_hits:
-      hit.append(str(nh))
-      assert hit[0] == self.current_id
-      self.write_row(hit)
+    if self.outfmt == DEFAULT_OUTPUT_FORMAT:
+      for hit in self.current_hits:
+        hit.append(str(nh))
+        assert hit[0] == self.current_id
+        self.write_row(hit)
+    else:
+      if nh == 1:
+        self.write_row(self.current_hits[0])
 
   def write_row(self, data):
     self.outf.write("\t".join(data)+"\n")
 
   def write_header(self):
-    self.write_row(self.HEADER)
+    if self.outfmt == DEFAULT_OUTPUT_FORMAT:
+      self.write_row(self.HEADER)
 
   def close_open_handles(self):
     self.outf.close()
 
 
-def write_output(sam_reader, outf, reftag, logger=None):
+def write_output(sam_reader, outf, reftag, outfmt, flank_size, logger=None):
   logger = logger or NullLogger()
-  hit_processor = SnpHitProcessor(reftag, outf, logger)
+  hit_processor = SnpHitProcessor(reftag, outf, outfmt, flank_size, logger)
   hit_processor.write_header()
   for i, m in enumerate(sam_reader):
     hit_processor.process(m)
@@ -103,6 +123,13 @@ def make_parser(parser):
                       help='output file')
   parser.add_argument('--reftag', metavar='STRING', required=True,
                       help='reference genome tag')
+  parser.add_argument('--output-format', metavar='STRING',
+                      choices=OUTPUT_FORMATS, default=DEFAULT_OUTPUT_FORMAT,
+                      help='possible values: %r' % (OUTPUT_FORMATS,))
+  parser.add_argument('--flank-size', metavar='INT', type=int,
+                      default=DEFAULT_FLANK_SIZE,
+                      help='size of the flanks to extract around the SNP.' +
+                      ' Has no effect with marker alignment output')
 
 
 def main(logger, args):
@@ -110,7 +137,8 @@ def main(logger, args):
     bn = os.path.basename(args.input_file)
     logger.info("processing %r" % bn)
     reader = SamReader(f)
-    count = write_output(reader, outf, args.reftag, logger=logger)
+    count = write_output(reader, outf, args.reftag, args.output_format,
+                         args.flank_size, logger=logger)
   logger.info("SAM records processed from %r: %d" % (bn, count))
 
 
