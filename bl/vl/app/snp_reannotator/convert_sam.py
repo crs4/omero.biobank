@@ -71,7 +71,7 @@ class SnpHitProcessor(object):
           self.logger.error("%r: can't use null chr for %r output" %
                             (name, self.outfmt))
           return
-        start = snp_pos - self.flank_size
+        start = snp_pos - self.flank_size - 1
         end = snp_pos + self.flank_size
         r = [hit.tid, str(start), str(end), id_]
       self.current_hits.append(r)
