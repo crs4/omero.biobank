@@ -11,13 +11,14 @@ from contextlib import nested
 
 from bl.core.seq.align.mapping import SAMMapping
 from bl.core.utils import NullLogger
+from bl.vl.kb.drivers.omero.genotyping import GenotypingAdapter
 from common import MARKER_AL_FIELDS, CHR_CODES, SeqNameSerializer
 
 
 HELP_DOC = __doc__
 OUTPUT_FORMATS = ["marker_alignment", "segment_extractor"]
 DEFAULT_OUTPUT_FORMAT = OUTPUT_FORMATS[0]
-DEFAULT_FLANK_SIZE = 100
+DEFAULT_FLANK_SIZE = GenotypingAdapter.SNP_FLANK_SIZE
 
 
 def SamReader(f):

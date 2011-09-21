@@ -27,7 +27,8 @@ class GenotypingAdapter(object):
   SNP_ALIGNMENT_TABLE  = 'snp_alignment.h5'
   SNP_SET_DEF_TABLE    = 'snp_set_def.h5'
   SNP_SET_TABLE        = 'snp_set.h5'
-  SNP_MASK_SIZE        = 251
+  SNP_FLANK_SIZE       = 125
+  SNP_MASK_SIZE        = 2*SNP_FLANK_SIZE+1
 
   SNP_MARKER_DEFINITIONS_COLS = \
   [('string', 'vid',    'This marker VID', len(vlu.make_vid()), None),
