@@ -70,6 +70,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
                 ('markersSetVID', wp.VID, wp.REQUIRED),
                 ('snpMarkersSetUK', wp.STRING, wp.REQUIRED)]
 
+
   def __preprocess_conf__(self, conf):
     if not 'snpMarkersSetUK' in conf:
       conf['snpMarkersSetUK'] = make_unique_key(conf['maker'], conf['model'],

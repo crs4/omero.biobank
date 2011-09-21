@@ -1,14 +1,15 @@
-Usage examples
-==============
+Tools Usage
+===========
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-   import
    query
-   defining_a_marker_set
+   recipes
    computing_on_genotypes
+
+   
    
 

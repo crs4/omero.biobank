@@ -2,8 +2,6 @@
 Import Marker Definitions
 ==========================
 
-FIXME: these docs are probably out of sync.
-
 Will read in a tsv file with the following columns::
 
   label         rs_label   mask
@@ -18,8 +16,9 @@ known). The column mask contains the SNP definition.
 It will, for each row, convert mask to the TOP strand following
 Illumina conventions and then save a record for it in VL.
 
-The saved tuple is (source, context, release, label, rs_label,
-TOP_mask)
+The saved tuple is::
+
+ (source, context, release, label, rs_label, TOP_mask)
 
 There are no collision controls.
 

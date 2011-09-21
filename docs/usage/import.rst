@@ -21,8 +21,11 @@ How to import data into VL
 
 .. automodule:: bl.vl.app.importer.diagnosis
 
+.. automodule:: bl.vl.app.importer.marker_definition
 
+.. automodule:: bl.vl.app.importer.marker_alignment
 
+.. automodule:: bl.vl.app.importer.markers_set
 
 
 See ``tests/tools/importer/test_importer.sh`` for a full set of examples. 

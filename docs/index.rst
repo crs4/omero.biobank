@@ -16,6 +16,13 @@ Contents:
    galaxy_ui/index
    dev_manual/index
 
+Todo List
+=========
+
+.. todolist::
+
+
+
 Indices and tables
 ==================
 

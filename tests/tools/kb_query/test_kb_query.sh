@@ -10,6 +10,18 @@ ${KB_QUERY} --ofile foo.tsv selector --group-label foo \
             --reference-disease=icd10-cm:G35 \
             --control-fraction=0.0
 
+cat > foo.py <<EOF
+writeheader('dc_id', 'gender', 'data_sample',
+            'path', 'mimetype', 'size', 'sha1')
+for i in Individuals(group):
+  for d in DataSamples(i, 'AffymetrixCel'):
+    for o in DataObjects(d):
+      writerow(group.id, enum_label(i.gender), d.id,
+               o.path, o.mimetype, o.size, o.sha1)
+EOF
+
+${KB_QUERY} --ofile foo.tsv query --group BSTUDY \
+            --code-file foo.py
 
 
 

@@ -1,8 +1,38 @@
 """
-Import Markers Set Definitions
+Import Markers Set Definition
 =============================
 
-Will read in a tsv file with the following columns::
+A **SNPMarkersSet** is, essentially, an ordered list of markers where
+the order is, in principle, arbitrary but it usually comes from the
+alignment of the SNP markers against a reference genome.  Within VL,
+different genotyping technologies are mapped to different
+SNPMarkersSet.
+
+In more detail, a marker set is defined by:
+
+ * identification information:
+
+   * **maker:** the name of the organization that has defined the
+     SNPMarkersSet, e.g., 'CRS4'
+
+   * **model** the specific "model" of the SNPMarkersSet, e.g.,
+     'AffymetrixGenome6.0'
+
+   * **release** a string that identifies this specific instance, e.g.,
+     'aligned_on_human_g1k_v37'
+
+ * markers reference list: for each marker that should go in the list,
+   the following information is provided:
+
+   * **marker_vid** the vid identifier of the marker
+
+   * **marker_indx** the position of the marker within the marker set
+     list. (Well, a SNPMarkersSet is actually a list, more than a set)
+
+   * **allele_flip** False if the alleles are in the same order as
+     recorded in the marker definition, True if they are swapped.
+
+For instance::
 
   marker_vid   marker_indx allele_flip
   V902909090  0            False

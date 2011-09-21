@@ -277,6 +277,9 @@ class Recorder(Core):
       elif issubclass(self.source_klass, self.kb.DataSample):
         a_klass = self.kb.ActionOnDataSample
         acat = self.kb.ActionCategory.PROCESSING
+      elif issubclass(self.source_klass, self.kb.Individual):
+        a_klass = self.kb.ActionOnIndividual
+        acat = self.kb.ActionCategory.MEASUREMENT
       else:
         assert False
 
@@ -328,14 +331,14 @@ def make_parser_data_sample(parser):
                       import action.  It will
                       over-ride the study column value, if any.""")
   parser.add_argument('--source-type', type=str,
-                      choices=['Tube', 'PlateWell', 'DataSample'],
+                      choices=['Tube', 'PlateWell', 'DataSample', 'Individual'],
                       help="""default source type.  It will
                       over-ride the source_type column value, if any.
                       """)
   parser.add_argument('--device-type', type=str,
                       choices=['Device', 'Chip', 'Scanner', 'SoftwareProgram'],
-                      help="""default source type.  It will
-                      over-ride the source_type column value, if any""")
+                      help="""default device type.  It will
+                      over-ride the device_type column value, if any""")
   parser.add_argument('--scanner', type=str,
                       help="""default scanner.
                       It will over-ride the scanner column value, if
