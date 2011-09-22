@@ -1,6 +1,6 @@
 <tool id="vl_tools_snp_reannotator" name="Snp_Reannotator">
   <description>get true rs label and mask from dbSNP</description>
-  <command interpreter="python">
+  <command interpreter="python2.7">
     snp_reannotator.py
   </command>
   <inputs>

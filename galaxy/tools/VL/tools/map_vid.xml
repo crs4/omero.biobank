@@ -2,7 +2,7 @@
   <description>
     Map labels of objects known to Omero/VL to their VID
   </description>
-  <command interpreter="python">
+  <command interpreter="python2.7">
     map_vid.py
     ${selected_column}
     ${new_column_name}

@@ -2,7 +2,7 @@
   <description>
     Provide global statistics for a given study.
   </description>
-  <command interpreter="python">
+  <command interpreter="python2.7">
     kb_query.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host

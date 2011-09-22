@@ -3,7 +3,7 @@
     Selects groups of individuals and enrolls them into a new group
     (which, for the time being, we model as a study.).
   </description>
-  <command interpreter="python">
+  <command interpreter="python2.7">
     kb_query.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=${advanced_configuration.vl_host}
