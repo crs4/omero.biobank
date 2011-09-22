@@ -25,10 +25,10 @@ class UniverseApplication(OrigUniverseApplication):
   def known_studies(self):
     studies = self.kb.get_objects(self.kb.Study)
     if studies:
-      return [(s.label, s.description) for s in studies]
+      return [(s.label, s.description) if s.description else (s.label, '') for s in studies]      
     else:
       return []
-
+    
   @property
   def known_scanners(self):
     scanners = self.kb.get_objects(self.kb.Scanner)

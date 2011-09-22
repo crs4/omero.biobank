@@ -1,6 +1,6 @@
 <tool id="vl_import_markers_set" name="VLI.markers_set">
   <description>import Marker definitions within omero/vl</description>
-  <command interpreter="python">
+  <command interpreter="python2.7">
     importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host

@@ -1,6 +1,6 @@
 <tool id="vl_import_study" name="VLI.study">
   <description>Create a new group within omero/vl</description>
-  <command interpreter="python">
+  <command interpreter="python2.7">
     importer.py
     #if str($advanced_configuration.configuration_level) == 'advanced'
       --host=$advanced_configuration.vl_host

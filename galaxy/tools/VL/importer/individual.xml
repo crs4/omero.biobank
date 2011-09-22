@@ -1,6 +1,6 @@
 <tool id="vl_import_individual" name="VLI.individual">
   <description>import individual definitions within omero/vl</description>
-  <command interpreter="python">
+  <command interpreter="python2.7">
     importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host

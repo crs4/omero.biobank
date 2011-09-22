@@ -1,6 +1,6 @@
 <tool id="vl_import_diagnosis" name="VLI.diagnosis">
   <description>import diagnosis data within omero/vl</description>
-  <command interpreter="python">
+  <command interpreter="python2.7">
     importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
