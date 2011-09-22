@@ -47,12 +47,14 @@ class SeqNameSerializer(object):
   def __init__(self, sep=DEFAULT_SEP):
     self.sep = sep
 
-  def serialize(self, label, allele, snp_offset):
-    return self.sep.join([label, allele, str(snp_offset)])
+  def serialize(self, label, allele_code, snp_offset, alleles):
+    return self.sep.join(
+      [label, allele_code, str(snp_offset), "".join(alleles)]
+      )
 
   def deserialize(self, seq_name):
-    label, allele, snp_offset_str = seq_name.split("|")
-    return label, allele, int(snp_offset_str)
+    label, allele_code, snp_offset_str, alleles_str = seq_name.split("|")
+    return label, allele_code, int(snp_offset_str), tuple(alleles_str)
 
 
 def check_mask(mask):

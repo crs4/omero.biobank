@@ -27,14 +27,14 @@ def main(logger, args):
       reader = csv.reader(f, delimiter="\t")
       for i, r in enumerate(reader):
         try:
-          rs_label = r[3]
-          seq = r[4].upper()
+          tag = r[3]
+          seq = r[-1].upper()
         except IndexError:
           msg = "%r: bad input format, bailing out" % bn
           logger.critical(msg)
           raise ValueError(msg)
         else:
-          index.setdefault(seq, []).append(rs_label)
+          index.setdefault(seq, []).append(tag)
           if (i+1) % SYNC_INTERVAL == 0:
             logger.info("processed %d records: syncing db" % (i+1))
             index.sync()

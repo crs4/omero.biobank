@@ -51,7 +51,7 @@ class SnpHitProcessor(object):
     quality > 0) hit.
     """
     name = hit.get_name()
-    id_, allele, snp_offset = self.serializer.deserialize(name)
+    id_, allele, snp_offset, _ = self.serializer.deserialize(name)
     if id_ != self.current_id:
       if self.current_id is not None:
         self.dump_current_hits()
@@ -73,7 +73,7 @@ class SnpHitProcessor(object):
           return
         start = snp_pos - self.flank_size - 1
         end = snp_pos + self.flank_size
-        r = [hit.tid, str(start), str(end), id_]
+        r = [hit.tid, str(start), str(end), name, '0', strand]
       self.current_hits.append(r)
     else:
       self.logger.info("%r: mapped:%r; NM:%r; qual:%r" % (

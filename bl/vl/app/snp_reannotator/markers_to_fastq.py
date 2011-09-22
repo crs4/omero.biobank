@@ -3,9 +3,9 @@ Convert VL marker definitions to fastq data.
 
 A fastq record is generated for each allele where the sequence is
 obtained by joining the flanks with that allele. The fastq id is built
-by joining (with the '|' character) three fields: label, allele code
-(A for the first one in the mask, B for the second, etc.) and SNP
-offset (i.e., length of the left flank).
+by joining (with the '|' character) four fields: label, allele code (A
+for the first one in the mask, B for the second, etc.), SNP offset
+(i.e., length of the left flank) and original alleles (string).
 """
 import os, argparse, csv
 from contextlib import nested
@@ -30,7 +30,7 @@ def build_fastq_records(label, mask, name_serializer):
     snp_offset = len(lflank)
     for a, c in izip(alleles, ALLELE_CODES):
       seq = "%s%s%s" % (lflank, a, rflank)
-      seq_id = name_serializer.serialize(label, c, snp_offset)
+      seq_id = name_serializer.serialize(label, c, snp_offset, alleles)
       r = ('@%s' % seq_id, seq, '+%s' % seq_id, '~'*len(seq))
       records.append(r)
   return records
