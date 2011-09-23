@@ -1,5 +1,8 @@
-How to query VL
-===============
+VL query tool
+=============
+
+Command line
+------------
 
 .. automodule:: bl.vl.app.kb_query.main
 
@@ -11,3 +14,8 @@ How to query VL
 
 .. automodule:: bl.vl.app.kb_query.selector
 
+
+Galaxy UI
+---------
+
+FIXME write some sphinx plugin to handle galaxy xml modules.

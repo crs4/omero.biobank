@@ -1,5 +1,8 @@
-How to import data into VL
-==========================
+VL import tool
+==============
+
+Command line
+------------
 
 .. automodule:: bl.vl.app.importer.main
 
@@ -28,4 +31,7 @@ How to import data into VL
 .. automodule:: bl.vl.app.importer.markers_set
 
 
-See ``tests/tools/importer/test_importer.sh`` for a full set of examples. 
+Galaxy UI
+---------
+
+FIXME write some sphinx plugin to handle galaxy xml modules.

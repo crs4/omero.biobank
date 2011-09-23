@@ -11,7 +11,7 @@ class LiterateProgrammingInclude(BaseInclude):
                self.arguments[0].startswith(os.sep):
             env = self.state.document.settings.env
             self.arguments[0] = os.path.join(env.srcdir, self.arguments[0][1:])
-        fo = tempfile.NamedTemporaryFile(delete=False)
+        fo = tempfile.NamedTemporaryFile()
         with open(str(self.arguments[0])) as fi:
           self.invert_blocks(fi, fo)
         self.arguments[0] = fo.name

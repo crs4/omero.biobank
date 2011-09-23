@@ -6,6 +6,14 @@
 Welcome to vl's documentation!
 ==============================
 
+This documentation is organized as follows.
+
+ * a general introduction on omero/vl organization and the underlying models
+ * a description of the command line tools and their galaxy interfaces
+ * a tour of the python API
+ * a developer manual with reference manuals, howtos and recipes for
+   extending omero/vl
+
 Contents:
 
 .. toctree::
@@ -13,7 +21,7 @@ Contents:
 
    introduction
    usage/index
-   galaxy_ui/index
+   api_tour/index
    dev_manual/index
 
 Todo List
