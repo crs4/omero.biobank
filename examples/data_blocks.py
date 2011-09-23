@@ -8,7 +8,7 @@ Genomic data set manipulations
   We are missing some sort of introduction.
 
 FIXME: Here goes a general intro. Points to touch:
- * Major complication is do decide what stays in memory and what
+ * A major complication is do decide what stays in memory and what
    should be projected in db.
  * For the time being, we try to be clear first and efficient second.
  * Explations concerning how to open a connection to a KnowledgeBase
@@ -18,7 +18,6 @@ FIXME: Here goes a general intro. Points to touch:
 """
 
 from bl.vl.kb import KnowledgeBase as KB
-from bl.vl.kb import Individuals, DataSamples
 import itertools as it
 
 kb = KB(driver="omero")(OME_HOST, OME_USER, OME_PASSWD)
@@ -35,7 +34,7 @@ mset0.reload()
 
 """ ..
 
-For now, we can think the SNPMarkerSet mset0 as analogous to an array
+For the time being, we can think the SNPMarkerSet mset0 as analogous to an array
 of markers. The following is a list of expressions that are expected
 to be legal.
 """
@@ -62,14 +61,14 @@ mset, if there is at least one, otherwise we will skip the individual.
 """
 def extract_data_sample(group, mset, dsample_name):
   by_individual = {}
-  for i in Individuals(group, kb=kb):
-    for d in DataSamples(i, dsample_name, kb=kb):
+  for i in kb.get_individuals(group):
+    for d in kb.get_data_samples(i, dsample_name):
       gds = filter(lambda x: x.snpMarkersSet == mset)
       assert(len(gds) == 1)
       by_individual[i.id] = gds[0]
   return by_individual
 
-group = kb.get_study(label='foo-study')
+group = kb.get_study(label='TEST01')
 gds0_by_individual = extract_data_sample(group, mset0, 'GenotypeDataSample')
 
 """ ..

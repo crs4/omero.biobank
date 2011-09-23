@@ -1,7 +1,15 @@
+"""
 
+FIXME
+
+"""
 # This is actually used in the meta class magic
 import omero.model as om
 import bl.vl.utils as vlu
+
+from bl.vl.utils.snp import convert_to_top
+
+from bl.vl.kb.dependency import DependencyTree
 
 from proxy_core import ProxyCore
 
@@ -17,7 +25,7 @@ import location
 import demographic
 
 
-import hashlib
+import hashlib, time, pwd, json, os
 
 
 from genotyping import GenotypingAdapter
@@ -31,7 +39,6 @@ KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 class Proxy(ProxyCore):
   """
   An omero driver for KB.
-
   """
 
   def __init__(self, host, user, passwd, session_keep_tokens=1):
@@ -47,6 +54,8 @@ class Proxy(ProxyCore):
     self.gadpt = GenotypingAdapter(self)
     self.madpt = ModelingAdapter(self)
     self.eadpt = EAVAdapter(self)
+    #-- depencency_tree service
+    self.dt = None
 
   def __check_type(self, fname, ftype, val):
     if not isinstance(val, ftype):
@@ -57,6 +66,10 @@ class Proxy(ProxyCore):
   # ==============
   def find_all_by_query(self, query, params):
     return super(Proxy, self).find_all_by_query(query, params, self.factory)
+
+  def update_dependency_tree(self):
+    self.dt = DependencyTree(self)
+
 
   # MODELING related utility functions
   # ==================================
@@ -129,7 +142,45 @@ class Proxy(ProxyCore):
   def create_snp_set_table(self):
     self.gadpt.create_snp_set_table()
 
-  def add_snp_marker_definitions(self, stream, op_vid, batch_size=50000):
+  def add_snp_marker_definitions(self, stream, action, batch_size=50000):
+    """
+    Save a stream of markers definitions.  For efficiency reasons,
+    markers are written in batches, whose size is controlled by
+    batch_size.
+
+    .. code-block:: python
+
+      taq_man_markers = [
+        ('A0001', 'xrs122652',  'TCACTTCTTCAAAGCT[A/G]AGCTACAAGCATTATT'),
+        ('A0002', 'xrs741592',  'GGAAGGAAGAAATAAA[C/G]CAGCACTATGTCTGGC'),
+        ('A0003', 'xrs807079',  'CCGACCTAGTAGGCAA[A/G]TAGACACTGAGGCTGA'),
+        ('A0004', 'xrs567736',  'AGGTCTATGTTAATAC[A/G]GAATCAGTTTCTCACC'),
+        ('A0005', 'xrs4693427', 'AGATTACCATGCAGGA[A/T]CTGTTCTGAGATTAGC'),
+        ('A0006', 'xrs4757019', 'TCTACCTCTGTGACTA[C/G]AAGTGTTCTTTTATTT'),
+        ('A0007', 'xrs7958813', 'AAGGCAATACTGTTCA[C/T]ATTGTATGGAAAGAAG')
+        ]
+      def generator():
+        for t in mark_defs:
+          yield {'source' : source, 'context' :context, 'release' : release,
+                 'label' : t[0], 'rs_label' : t[1],
+                 'mask' : convert_to_top(t[2])
+      vmap = kb.add_snp_marker_definitions(generator(), action)
+      for x in vmap:
+        print 'label: %s -> id: %s' % (x[0], x[1])
+
+    :param stream: a stream of dict objects
+    :type stream: generator
+
+    :param action: a valid action, for backward compatibility reasons, it could
+                   also be a VID string.
+    :type action: Action
+
+    :param batch_size: size of the batch written
+    :type batch_size: positive int
+
+    :return list: of (<label>, <vid>) tuples
+    """
+    op_vid = action.id if isinstance(action, self.Action) else action
     return self.gadpt.add_snp_marker_definitions(stream, op_vid, batch_size)
 
   def get_snp_marker_definitions(self, selector=None, batch_size=50000):
@@ -151,15 +202,16 @@ class Proxy(ProxyCore):
   def get_snp_markers_set_content(self, snp_markers_set, batch_size=50000):
     selector = '(vid=="%s")' % snp_markers_set.markersSetVID
     msetc = self.gadpt.get_snp_markers_set(selector, batch_size)
-    selector = '|'.join(['(vid=="%s")' % mv for mv in msetc['marker_vid']])
-    mdefs = self.gadpt.get_snp_marker_definitions(selector)
+    mdefs = self.get_snp_markers(vids=[mv for mv in msetc['marker_vid']])
     return mdefs, msetc
 
-  def add_snp_markers_set(self, maker, model, release, op_vid):
-    return self.gadpt.add_snp_markers_set(maker, model, release, op_vid)
+  def add_snp_markers_set(self, maker, model, release, action):
+    avid = action.id if isinstance(action, self.Action) else action
+    return self.gadpt.add_snp_markers_set(maker, model, release, avid)
 
-  def fill_snp_markers_set(self, set_vid, stream, op_vid, batch_size=50000):
-    return self.gadpt.fill_snp_markers_set(set_vid, stream, op_vid, batch_size)
+  def fill_snp_markers_set(self, set_vid, stream, action, batch_size=50000):
+    avid = action.id if isinstance(action, self.Action) else action
+    return self.gadpt.fill_snp_markers_set(set_vid, stream, avid, batch_size)
 
   def get_snp_alignments(self, selector=None, batch_size=50000):
     return self.gadpt.get_snp_alignments(selector, batch_size)
@@ -167,15 +219,219 @@ class Proxy(ProxyCore):
   def create_gdo_repository(self, set_vid, N):
     return self.gadpt.create_gdo_repository(set_vid, N)
 
-  # Utility functions built as composition of the above
-  # ====================================================
+  # Syntactic sugar functions built as a composition of the above
+  # =============================================================
 
-  def add_gdo_data_object(self, avid, sample, probs, confs):
+  def create_an_action(self, study, target=None, doc='',
+                       operator=None, device=None,
+                       acat=None, options=None):
     """
+    Syntactic sugar to simplify action creation.
+
+    Unless explicitely provided, the action will use as its device the
+    one identified by the label 'DEVICE-CREATE-AN-ACTION'.
+
+    **Note:** this method is NOT supposed to be used in production
+      code striving to be efficient. It is merely a convenience to
+      simplify action creation in small scripts.
+    """
+    default_device_label = 'DEVICE-CREATE-AN-ACTION'
+    alabel = ('auto-created-action%f' % (time.time()))
+    asetup = self.factory.create(self.ActionSetup,
+                                 {'label' : alabel,
+                                  'conf' : json.dumps(options)})
+
+    acat = acat if acat else self.ActionCategory.IMPORT
+    if not target:
+      a_klass = self.Action
+    elif issubclass(target, Vessel):
+      a_klass = self.ActionOnVessel
+    elif issubclass(self.source_klass, self.DataSample):
+      a_klass = self.ActionOnDataSample
+    elif issubclass(self.source_klass, self.Individual):
+      a_klass = self.ActionOnIndividual
+    else:
+      assert False
+    operator = operator if operator else pwd.getpwuid(os.geteuid())[0]
+
+    device = self.get_device(default_device_label)
+    if not device:
+      conf = {'label' : default_device_label,
+              'maker' : 'CRS4',
+              'model' : 'fake-device',
+              'release' : 'create_an_action'}
+      device = self.factory.create(self.Device, conf).save()
+
+    conf = {'setup' : asetup,
+            'device': device,
+            'actionCategory' : acat,
+            'operator' : operator,
+            'context'  : study,
+            'target' : target
+            }
+    return self.factory.create(a_klass, conf).save()
+
+
+  def create_markers(self, source, context, release, stream, action):
+    """
+    Given a stream of tuples (label, rs_label, mask), will create and
+    save the associated markers objets and return the label, vid
+    association as a list of tuples.
+
+    .. code-block:: python
+
+      taq_man_markers = [
+        ('A0001', 'xrs122652',  'TCACTTCTTCAAAGCT[A/G]AGCTACAAGCATTATT'),
+        ('A0002', 'xrs741592',  'GGAAGGAAGAAATAAA[C/G]CAGCACTATGTCTGGC')]
+
+      source, context, release = 'foobar', 'fooctx', 'foorel'
+      lvs = kb.create_markers(source, context, release, taq_man_markers, action)
+      for tmm, t in zip(taq_man_markers, lvs):
+        assert (tmm[0] == t[0])
+        print 'label:%s -> vid: %s' % (t[0], t[1])
+
+    .. todo::
+
+        add param docs.
+
+    """
+    marker_defs = [t for t in stream]
+    marker_labels = [t[0] for t in marker_defs]
+    if len(marker_labels) > len(set(marker_labels)):
+      raise ValueError('duplicate marker definitions in stream')
+
+    old_markers = self.get_snp_markers(labels=marker_labels)
+    if len(old_markers) > 0:
+      if len(old_markers) < 10:
+        msg = 'redefined markers: %s ' % [t.label for t in old_markers]
+      else:
+        msg = 'there are %s redefined markers' % len(old_markers)
+      raise ValueError(msg)
+    def generator(mdefs):
+      for t in mdefs:
+        yield {'source' : source,
+               'context' :context,
+               'release' : release,
+               'label' : t[0],
+               'rs_label' : t[1],
+               'mask' : convert_to_top(t[2])}
+    label_vid_list = self.add_snp_marker_definitions(generator(marker_defs),
+                                                     action)
+    return label_vid_list
+
+  def create_snp_markers_set(self, label, maker, model, release,
+                             stream, action):
+    """
+    Given a stream of tuples (marker_vid, marker_indx, allele_flip),
+    will build and save a new marker set.
+
+    **NOTE:** with the current implementation, this is not an atomic
+      op. FIXME so?
+
+    .. todo::
+
+        add param docs.
+
+    """
+    set_vid = 'V99999' # temp value
+    conf = {'label': label,
+            'maker' : maker, 'model' : model, 'release' : release,
+            'markersSetVID' : set_vid,
+            'action' : action}
+    mset = self.factory.create(self.SNPMarkersSet, conf).save()
+    # FIXME: the following is a brutal attempt to exception
+    # containment, it should be refined.
+    mlist = [t for t in stream]
+    markers = self.get_snp_markers(vids=[t[0] for t in mlist])
+    if len(markers) != len(mlist):
+      raise ValueError('there are unknown markers in stream')
+    if len(set((t[1] for t in mlist))) != len(mlist):
+      raise ValueError('not unique marker_indx')
+
+    def generator(stream):
+      for t in stream:
+        yield {'marker_vid' : t[0], 'marker_indx' : t[1],
+               'allele_flip' : t[2]}
+    try:
+      set_vid = self.add_snp_markers_set(maker, model, release, action)
+      N = self.fill_snp_markers_set(set_vid, generator(mlist), action)
+      self.create_gdo_repository(set_vid, N)
+    except Exception as e:
+      self.delete(mset)
+      raise e
+    mset.markersSetVID = set_vid
+    mset.save()
+    return mset
+
+  def get_individuals(self, group):
+    """
+    Syntactic sugar to simplify the looping on individuals contained in a group.
+    The idea is that it should be possible to do the following:
+
+    .. code-block:: python
+
+      for i in kb.get_individuals(study):
+        for d in kb.get_data_samples(i, dsample_klass_name):
+          gds = filter(lambda x: x.snpMarkersSet == mset)
+
+
+    :param group: a study object, we will be looping on all the
+                  Individual enrolled in it.
+    :type group: Study
+
+    :type return: generator
+
+    """
+    return (e for e in self.get_enrolled(group))
+
+  def get_data_samples(self, individual, data_sample_klass_name='DataSample'):
+    """
+    Syntactic sugar to simplify the looping on DataSample connected to
+    an individual. The idea is that it should be possible to do the
+    following:
+
+    .. code-block:: python
+
+      for i in kb.get_individuals(study):
+        for d in kb.get_data_samples(i, 'AffymetrixCel'):
+          gds = filter(lambda x: x.snpMarkersSet == mset)
+
+    :param individual: the root individual object.
+    :type group: Individual
+
+    :param data_sample_klass_name: the name of the selected data_sample
+                                   class, e.g. 'AffymetrixCel' or
+                                   'GenotypeDataSample'
+    :type data_sample_klass_name: str
+
+    :type return: generator of a sequence of DataSample objects
+
+    **Note:** in the current implementation, it has to do an expensive,
+    both in memory and cpu time initialization the first time it is called.
+    """
+    if not self.dt:
+      self.update_dependency_tree()
+    klass = getattr(self, data_sample_klass_name)
+    return (d for d in self.dt.get_connected(individual, aklass=klass))
+
+
+
+  def add_gdo_data_object(self, action, sample, probs, confs):
+    """
+    Syntactic sugar to simplify adding genotype data objects.
+
     FIXME
+
+
+    :param probs: a 2x<nmarkers> array with the AA and the BB
+                  homozygote probs.
+    :type probs: numpy.darray
+
+    :param confs: a <nmarkers> array with the confidence on probs above.
+    :type probs: numpy.darray
+
     """
-    # if not isinstance(action, self.Action):
-    #   raise ValueError('action should be an instance of Action')
+    avid = action.id if isinstance(action, self.Action) else action
     if not isinstance(sample, self.GenotypeDataSample):
       raise ValueError('sample should be an instance of GenotypeDataSample')
     # FIXME we delegate to gadpt checking that probs and confs have the

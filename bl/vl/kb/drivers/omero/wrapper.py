@@ -102,6 +102,12 @@ class CoreOmeroWrapper(object):
   def __config__(self, ome_obj, conf):
     pass
 
+  def bare_getattr(self, name):
+    return super(CoreOmeroWrapper, self).__getattribute__(name)
+
+  def bare_setattr(self, name, v):
+    super(CoreOmeroWrapper, self).__setattr__(name, v)
+
   def __getattr__(self, name):
     if hasattr(self, name):
       return getattr(self, name)

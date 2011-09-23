@@ -25,7 +25,7 @@ Currently, the KB handles the following object types:
  * Collection of objects (e.g., TiterPlate is a collection of PlateWell(s))
  * DataSample
  * DataObject
- * SnpMarker
+ * Marker
  * ... FIXME
 
 
@@ -168,3 +168,7 @@ To check which individuals are enrolled in a specific study:
   True
   >>> v[0].studyCode 
   'I001'
+
+.. todo::
+
+   missing everything beyond Individual

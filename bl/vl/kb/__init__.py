@@ -21,33 +21,6 @@ def KnowledgeBase(driver):
     raise ValueError('Driver %s is unknown' % driver)
   return driver_module.driver
 
-def Individuals(group, kb=None):
-  """
-  Syntactic sugar to simplify the looping on individuals contained in a group.
-  The idea is that it should be possible to do the following:
-
-  .. code-block:: python
-
-    for i in Individuals(group, kb=kb):
-      for d in DataSamples(i, dsample_name, kb=kb):
-        gds = filter(lambda x: x.snpMarkersSet == mset)
-
-
-  :param group: a study object, we will be looping on all the
-                Individual enrolled in it.
-  :type group: Study
-
-  :type return: generator
-
-  """
-  return (e in kb.get_enrolled(group))
-
-def DataSamples()
-
-    def DataSamples(individual, data_sample_klass_name='DataSample'):
-      klass = getattr(self.kb, data_sample_klass_name)
-      return dt.get_connected(individual, aklass=klass)
-
 
 #--
 #

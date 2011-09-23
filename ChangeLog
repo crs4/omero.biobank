@@ -1,3 +1,14 @@
+2011-09-23    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/data_samples.py (SNPMarkersSet): Added
+	support to bring markers set markers in memory.
+
+	* bl/vl/kb/drivers/omero/proxy.py
+	(Proxy.add_snp_marker_definitions): Changed the op_vid parameter
+	to be either an Action or a string. Added some sort of documentation.
+	(Proxy.create_snp_markers_set): Added new syntactic sugar.
+	(Proxy.create_markers): Added new syntactic sugar
+
 2011-09-20    <zag@manzanillo>
 
 	* bl/vl/app/importer/data_sample.py (make_parser_data_sample):

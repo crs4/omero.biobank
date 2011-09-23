@@ -70,16 +70,36 @@ class SNPMarkersSet(wp.OmeroWrapper):
                 ('markersSetVID', wp.VID, wp.REQUIRED),
                 ('snpMarkersSetUK', wp.STRING, wp.REQUIRED)]
 
-
   def __preprocess_conf__(self, conf):
     if not 'snpMarkersSetUK' in conf:
       conf['snpMarkersSetUK'] = make_unique_key(conf['maker'], conf['model'],
                                                 conf['release'])
     return conf
 
+  def __set_markers(self, v):
+    self.bare_setattr('markers', v)
+
+  def __get_markers(self):
+    return self.bare_getattr('markers')
+
+  def __len__(self):
+    if not hasattr(self, 'markers'):
+      raise ValueError('markers vector has not been reloaded.')
+    return len(self.markers)
+
+  def __getitem__(self, x):
+    if not hasattr(self, 'markers'):
+      raise ValueError('markers vector has not been reloaded.')
+    return self.markers[x]
+
   @property
   def id(self):
     return self.markersSetVID
+
+  def reload(self):
+    super(SNPMarkersSet, self).reload()
+    mdefs, msetc = self.proxy.get_snp_markers_set_content(self)
+    self.__set_markers(mdefs)
 
 class GenotypeDataSample(DataSample):
   OME_TABLE = 'GenotypeDataSample'

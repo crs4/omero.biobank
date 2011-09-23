@@ -3,10 +3,19 @@
 The goal of this example is to show how Markers and SNPMarkersSet are
 defined.
 
+We will assume that, as explained in FIXME, we already have a set of
+individuals in omero and that they are enrolled in 'TEST01'.
+
+For each individual, we have a sample of DNA in a well of a work
+plate, and we assume that we have run a series of TaqMan genotyping
+assays that associates to each well a collection of genotyping
+values. This is, of course, a simplistic model but it should be
+enough to illustrate the procedure.
+
 **Note:** DO NOT run this examples against a production database.
 
-We will consider a set of TaqMan experiments run against the following
-set of SNP (fake) markers.
+The following is the collection of (fake) markers used for the TaqMan
+assays.
 """
 taq_man_markers = [
   ('A0001', 'xrs122652',  'TCACTTCTTCAAAGCT[A/G]AGCTACAAGCATTATT'),
@@ -27,8 +36,7 @@ is the dbSNP db label, if available, while the third is the marker mask.
 
   put a reference to reference documentation
 
-The first thing we will do is now to load the markers set definition
-into Omero/VL.
+Now we will load the markers set definition into Omero/VL.
 
 **Note:** We are considering an ideal case where none of the markers
   are already in the db.
@@ -36,33 +44,48 @@ into Omero/VL.
 """
 
 from bl.vl.kb import KnowledgeBase as KB
-from examples_common import create_an_action, create_a_study
+import numpy as np
 
 kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
 
 study = kb.get_study('TEST01')
-if not study:
-  study = create_a_study('TEST01')
 
-action = create_an_action(study, 'importing markers')
+action = kb.create_an_action(study, doc='importing markers')
 
 source, context, release = 'foobar', 'fooctx', 'foorel'
 
-lvs = kb.create_markers(kb, source, context, release, taq_man_markers, action)
+lvs = kb.create_markers(source, context, release, taq_man_markers, action)
 
 taq_man_set = [ (t[1], i, False) for i, t in enumerate(lvs)]
 label, maker, model, release = 'FakeTaqSet01', 'CRS4', 'TaqManSet', '23/09/2011'
 
-mset = kb.create_snp_markers_set(label, marker, model, release,
+mset = kb.create_snp_markers_set(label, maker, model, release,
                                  taq_man_set, action)
 
 """ ..
-Now that we have the SNPMarkersSet, we can add some (fake) datasets.
 
+Now that we have the SNPMarkersSet, we can proceed with the definition
+of the datasets. We will consider a minimalistic model, where we will
+not keep track of the Tube, PlateWell, ... chain that goes from the
+individual to the experiment, but we directly link the dataset to the
+individuals.
 """
 
+def make_fake_data(mset):
+  n = len(mset)
+  probs = 0.5 * np.cast[np.float32](np.random.random(2, n))
+  confs = np.cast[np.float32](np.random.random(n))
+  return probs, confs
 
-
+for i, ind in enumerate(kb.get_individuals(study)):
+  action = kb.create_an_action(study, target=i, doc='fake dataset')
+  conf = {'label' : 'taq-%03d' % i,
+          'status' : kb.DataSampleStatus.USABLE,
+          'action' : action,
+          'snpMarkersSet' : mset}
+  data_sample = kb.factory.create(kb.GenotypeDataSample, conf).save()
+  probs, conf = make_fake_data(mset)
+  do = kb.add_gdo_data_object(action, data_sample, probs, conf)
 
 
 

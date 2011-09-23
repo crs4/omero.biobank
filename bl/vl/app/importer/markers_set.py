@@ -1,6 +1,6 @@
 """
-Import Markers Set Definition
-=============================
+Import Markers Set Definitions
+==============================
 
 A **SNPMarkersSet** is, essentially, an ordered list of markers where
 the order is, in principle, arbitrary but it usually comes from the
@@ -87,7 +87,6 @@ class Recorder(Core):
       return
 
     study  = self.find_study(records)
-    print 'study:', study
     action = self.find_action(study)
     label, maker, model, release = self.find_markers_set_label(records)
 

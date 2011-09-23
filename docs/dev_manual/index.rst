@@ -9,5 +9,4 @@ Contents:
    omero
    openehr
    galaxy
-   kb_tutorial
-   kb_usage_examples
+   api_ref

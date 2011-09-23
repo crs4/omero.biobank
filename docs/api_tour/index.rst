@@ -1,8 +1,12 @@
 A tour of Omero/VL python API
 =============================
 
+This section of the documentation is organized as follows.
 
-
+  * A tutorial on KnowledgeBase, the interface to data and metadata
+    stored in omero/VL.
+  * An example of genotyping data import.
+  * An example of computation on stored data.
 
 
 Contents:
@@ -10,8 +14,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   
-   computing_on_genotypes
+   kb_tutorial
+   examples
 
    
    
