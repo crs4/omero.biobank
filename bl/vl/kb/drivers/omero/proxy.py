@@ -244,11 +244,11 @@ class Proxy(ProxyCore):
     acat = acat if acat else self.ActionCategory.IMPORT
     if not target:
       a_klass = self.Action
-    elif issubclass(target, Vessel):
+    elif isinstance(target, self.Vessel):
       a_klass = self.ActionOnVessel
-    elif issubclass(self.source_klass, self.DataSample):
+    elif isinstance(target, self.DataSample):
       a_klass = self.ActionOnDataSample
-    elif issubclass(self.source_klass, self.Individual):
+    elif isinstance(target, self.Individual):
       a_klass = self.ActionOnIndividual
     else:
       assert False
@@ -269,7 +269,9 @@ class Proxy(ProxyCore):
             'context'  : study,
             'target' : target
             }
-    return self.factory.create(a_klass, conf).save()
+    action = self.factory.create(a_klass, conf).save()
+    action.unload()
+    return action
 
 
   def create_markers(self, source, context, release, stream, action):
@@ -382,7 +384,7 @@ class Proxy(ProxyCore):
     :type return: generator
 
     """
-    return (e for e in self.get_enrolled(group))
+    return (e.individual for e in self.get_enrolled(group))
 
   def get_data_samples(self, individual, data_sample_klass_name='DataSample'):
     """

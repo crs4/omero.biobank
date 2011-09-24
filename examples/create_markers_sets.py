@@ -12,8 +12,22 @@ assays that associates to each well a collection of genotyping
 values. This is, of course, a simplistic model but it should be
 enough to illustrate the procedure.
 
-**Note:** DO NOT run this examples against a production database.
+**Note:** DO NOT run this examples against a production
+  database. Also, what will be shown here is supposed to be
+  didactically clear, not efficient. See the implementation of the
+  importer tools for more efficiency solutions.
 
+
+First, as usual, we open the connection to the KnowledgeBase
+"""
+
+from bl.vl.kb import KnowledgeBase as KB
+import numpy as np
+
+kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
+
+
+""" ..
 The following is the collection of (fake) markers used for the TaqMan
 assays.
 """
@@ -42,12 +56,6 @@ Now we will load the markers set definition into Omero/VL.
   are already in the db.
 
 """
-
-from bl.vl.kb import KnowledgeBase as KB
-import numpy as np
-
-kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
-
 study = kb.get_study('TEST01')
 
 action = kb.create_an_action(study, doc='importing markers')
@@ -62,23 +70,51 @@ label, maker, model, release = 'FakeTaqSet01', 'CRS4', 'TaqManSet', '23/09/2011'
 mset = kb.create_snp_markers_set(label, maker, model, release,
                                  taq_man_set, action)
 
+""" ...
+
+The function below will provide us with the data needed to fake the
+results of a genotyping assays on the given SNPMarkersSet.  As
+discussed in XXXX, we need a numpy array of shape '''(2, N)''', where
+'''N''' is the number of markers, that represents the probability of
+being homozygous on allele A and allele B, and a numpy array of shape
+'''(N,)''' that represent the relative confidence on the measurements.
+
+.. todo::
+
+   write a general discussion on the floating point approach to
+   genotyping data storage.
+
+"""
+
+def make_fake_data(mset):
+  n = len(mset)
+  probs = 0.5 * np.cast[np.float32](np.random.random((2, n)))
+  confs = np.cast[np.float32](np.random.random(n))
+  return probs, confs
+
 """ ..
 
 Now that we have the SNPMarkersSet, we can proceed with the definition
 of the datasets. We will consider a minimalistic model, where we will
 not keep track of the Tube, PlateWell, ... chain that goes from the
 individual to the experiment, but we directly link the dataset to the
-individuals.
+individuals. To register this dependency and how the dependency was
+established, each DataSample object is linked with an action to the
+the relevant Individual instance. Mainly for historical reasons, the
+action is though as an arrow that starts from the 'newer' object, the
+GenotypeDataSample instance in this case, and has as a 'target' the
+object on which the process operated. It is, essentially, a
+representation of the 'inverse' of the creation process.
+
+.. todo::
+
+   uhmmm, not sure that the Action explanation is crystal clear :-).
+
 """
 
-def make_fake_data(mset):
-  n = len(mset)
-  probs = 0.5 * np.cast[np.float32](np.random.random(2, n))
-  confs = np.cast[np.float32](np.random.random(n))
-  return probs, confs
-
+by_id = {}
 for i, ind in enumerate(kb.get_individuals(study)):
-  action = kb.create_an_action(study, target=i, doc='fake dataset')
+  action = kb.create_an_action(study, target=ind, doc='fake dataset')
   conf = {'label' : 'taq-%03d' % i,
           'status' : kb.DataSampleStatus.USABLE,
           'action' : action,
@@ -86,6 +122,7 @@ for i, ind in enumerate(kb.get_individuals(study)):
   data_sample = kb.factory.create(kb.GenotypeDataSample, conf).save()
   probs, conf = make_fake_data(mset)
   do = kb.add_gdo_data_object(action, data_sample, probs, conf)
+  by_id[ind.id] = do
 
 
 
