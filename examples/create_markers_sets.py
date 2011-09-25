@@ -112,8 +112,10 @@ representation of the 'inverse' of the creation process.
 
 """
 
-by_id = {}
+data_sample_by_id = {}
+family = []
 for i, ind in enumerate(kb.get_individuals(study)):
+  family.append(ind)
   action = kb.create_an_action(study, target=ind, doc='fake dataset')
   conf = {'label' : 'taq-%03d' % i,
           'status' : kb.DataSampleStatus.USABLE,
@@ -122,7 +124,26 @@ for i, ind in enumerate(kb.get_individuals(study)):
   data_sample = kb.factory.create(kb.GenotypeDataSample, conf).save()
   probs, conf = make_fake_data(mset)
   do = kb.add_gdo_data_object(action, data_sample, probs, conf)
-  by_id[ind.id] = do
+  data_sample_by_id[ind.id] = data_sample
+
+""" ..
+
+As an example, we will now write out the information we have just
+saved as a plink pedfile.
+
+"""
+from bl.vl.genotype.io import PedWriter
+
+pw = PedWriter(mset, base_path="./foo", ref_genome='hg18')
+
+pw.write_map()
+
+family_label = study.label
+pw.write_family(family_label, family, data_sample_by_id)
+
+pw.close()
+
+
 
 
 

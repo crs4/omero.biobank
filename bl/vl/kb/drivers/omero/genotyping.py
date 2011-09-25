@@ -7,15 +7,16 @@ import numpy     as np
 class Marker(object):
   "FIXME This is a place-holder"
 
-  def __init__(self, vid, label, rs_label, mask):
+  def __init__(self, vid, label, rs_label, mask, position=(0,0)):
     self.id = vid
     self.label = label
     self.rs_label = rs_label
     self.mask = mask
+    self.position = position
 
   @classmethod
   def get_ome_table(klass):
-    "FIXME this is to make app.importter.map_vid happy"
+    "FIXME this is to make app.importer.map_vid happy"
     return "Marker"
 
 
@@ -47,7 +48,7 @@ class GenotypingAdapter(object):
   [('string', 'marker_vid', 'VID of the aligned marker.', len(vlu.make_vid()), None),
    ('string', 'ref_genome', 'Reference alignment genome.', 16, None),
    ('long', 'chromosome',
-    'Chromosome where this alignment was found. 1-22, 23(X) 24(Y) 25(MT)',
+    'Chromosome where this alignment was found. 1-22, 23(X) 24(Y) 25(XY) 26(MT)',
     None),
    ('long', 'pos', "Position on the chromosome. Starting from 5'", None),
    ('long', 'global_pos', "Global position in the genome. (chr*10**10 + pos)", None),

@@ -4,5 +4,6 @@ Tools usage examples
 
 FIXME
 
+.. literalinclude:: /../tests/tools/importer/test_importer.sh
+   :language: bash
 
-See ``tests/tools/importer/test_importer.sh`` for a full set of examples. 

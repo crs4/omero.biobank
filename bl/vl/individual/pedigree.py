@@ -1,7 +1,6 @@
 """
 A quick and dirty collection of pedigree manipulation functions.
 
-
 """
 import itertools as it
 
@@ -13,7 +12,6 @@ INDIVIDUAL_DEFINITION_DOC = """
    - I.father   the individual mother or None if not known
    - I.mother   the individual father or None if not known
    - I.gender      FIXME (an integer? a constant?)
-   - I.genotyped a boolean
 """
 
 MAX_COMPLEXITY=19
@@ -128,7 +126,7 @@ def analyze(family):
   dangling = set(children) - set([x.id for x in (founders + non_founders)])
   return (founders, non_founders, list(dangling), list(couples), children)
 
-def compute_bit_complexity(family):
+def compute_bit_complexity(family, genotyped):
   """
   Bit complexity defined as:
   .. math::
@@ -141,13 +139,19 @@ def compute_bit_complexity(family):
 
   :param family: a list of individuals
   :type  family: list
+
+  :param genotyped: the genotyped status of all the individuals in family
+  :type genotyped: a dict like object that returns the genotyped
+                   status (bool) when indexed by individual.id
+
   :rtype: integer
 
   %s
 
   """ % INDIVIDUAL_DEFINITION_DOC
   founders, non_founders, couples, children = analyze(family)
-  not_gt_couples = filter(lambda c : not (c[0].genotyped or c[1].genotyped),
+  not_gt_couples = filter(lambda c : not (genotyped[c[0].id]
+                                          or genotyped[c[1].id]),
                           couples)
   return 2*len(non_founders) - len(founders) - len(not_gt_couples)
 
@@ -184,7 +188,7 @@ def split_disjoint(family, children):
     splits.append(list(split))
   return splits
 
-def grow_family(seeds, children, max_complexity=MAX_COMPLEXITY):
+def grow_family(seeds, children, genotyped, max_complexity=MAX_COMPLEXITY):
   """
   Will grow family, following two ways parental relationships, from
   the list of seeds up to the largest possible complexity lower equal
@@ -193,6 +197,11 @@ def grow_family(seeds, children, max_complexity=MAX_COMPLEXITY):
   :param seeds: initial group of individuals, it should be a family,
                 possibly composed by a single individual
   :type  seeds: list of individuals
+
+  :param genotyped: the genotyped status of all the individuals in family
+  :type genotyped: a dict like object that returns the genotyped
+                   status (bool) when indexed by individual.id
+
   :param max_complexity: the maximal acceptable bit complexity
   :type max_complexity: integer, default %d
   :rtype: a list with the resulting family
@@ -209,13 +218,13 @@ def grow_family(seeds, children, max_complexity=MAX_COMPLEXITY):
     # FIXME: to compute bit_complexity at each cycle is rather stupid,
     # since it could be computed incrementally.
     delta_size = len(new_fam) - len(family)
-    bc = compute_bit_complexity(list(new_fam))
+    bc = compute_bit_complexity(list(new_fam), genotyped)
     if bc > max_complexity:
       break
     family = new_fam
   return list(family)
 
-def split_family(family, max_complexity=MAX_COMPLEXITY):
+def split_family(family, genotyped, max_complexity=MAX_COMPLEXITY):
   """
   Split a family pedigree in partially overlapping sub pedigrees with
   bit complexity lower than max_complexity.
@@ -230,6 +239,11 @@ def split_family(family, max_complexity=MAX_COMPLEXITY):
 
   :param family: a list of individuals
   :type  family: list
+
+  :param genotyped: the genotyped status of all the individuals in family
+  :type genotyped: a dict like object that returns the genotyped
+                   status (bool) when indexed by individual.id
+
   :param max_complexity: the requested maximal complexity
   :type max_complexity: integer (default %d)
   :rtype: list of families with bit complexity lower than max_complexity
@@ -238,11 +252,12 @@ def split_family(family, max_complexity=MAX_COMPLEXITY):
 
   """ % (MAX_COMPLEXITY, INDIVIDUAL_DEFINITION_DOC)
 
-  if compute_bit_complexity(family) < max_complexity:
+  if compute_bit_complexity(family, genotyped) < max_complexity:
     return [family]
 
   founders, non_founders, couples, children = analyze(family)
-  non_founders_not_genotyped = filter(lambda i: not i.genotyped, non_founders)
+  non_founders_not_genotyped = filter(lambda i: not genotyped[i.id],
+                                      non_founders)
 
   # distance = {}
   # for c in it.combinations(non_founders_not_genotyped):
@@ -257,9 +272,9 @@ def split_family(family, max_complexity=MAX_COMPLEXITY):
                                         key=number_of_children)
     i = non_founders_not_genotyped[0]
     f = grow_family([i], children, max_complexity)
-    cbn1 = compute_bit_complexity(f)
+    cbn1 = compute_bit_complexity(f, genotyped)
     non_founders_not_genotyped = list(set(non_founders_not_genotyped) -
                                       set(f))
-    cbn = compute_bit_complexity(f)
+    cbn = compute_bit_complexity(f, genotyped)
     fams.append(f)
   return fams

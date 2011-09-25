@@ -219,6 +219,9 @@ class Proxy(ProxyCore):
   def create_gdo_repository(self, set_vid, N):
     return self.gadpt.create_gdo_repository(set_vid, N)
 
+  def get_gdo(self, set_vid, vid):
+    return self.gadpt.get_gdo(set_vid, vid)
+
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
 
@@ -364,6 +367,36 @@ class Proxy(ProxyCore):
     mset.markersSetVID = set_vid
     mset.save()
     return mset
+
+  def update_snp_positions(self, markers, ref_genome, batch_size=50000):
+    def build_selector(ref_genome, markers):
+      selector = '(ref_genome == "%s")&(' % ref_genome
+      for m in markers:
+        selector += '(marker_vid=="%s")|' % m.id
+      return selector[:-1] + ')'
+    selector_critical_size = 10000
+    if len(markers) < critical_size:
+      selector = build_selector(ref_genome, markers)
+    else:
+      n = len(markers)
+      n_chunks = (n / selector_critical_size
+                  + 1 if n % selector_critical_size else 0)
+      start = 0
+      selector = []
+      while start < n:
+        end = start + selector_critical_size
+        selector.append(build_selector(markers[start:end]))
+        start = end
+    res = self.get_snp_alignments(selector, batch_size=50000)
+    if not res:
+      raise ValueError('missing markers alignments')
+
+    by_vid = dict(it.izip(res['marker_vid'], it.izip(res['chromosome'],
+                                                     res['pos'])))
+    if len(by_vid) != len(markers):
+      raise ValueError('missing markers alignments')
+    for m in markers:
+      m.position = by_vid[m.id]
 
   def get_individuals(self, group):
     """

@@ -1,3 +1,13 @@
+2011-09-24    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/genotyping.py
+	(GenotypingAdapter.SNP_ALIGNMENT_COLS): added Pseudo-autosomal
+	region of x (XY), assigned code 25, moved MT to 26.
+
+	* bl/vl/individual/pedigree.py: Now the genotyping status of
+	individuals is passed as an aux dict and not as an attribute to
+	the individual object.
+
 2011-09-23    <zag@manzanillo>
 
 	* bl/vl/kb/drivers/omero/data_samples.py (SNPMarkersSet): Added

@@ -139,3 +139,71 @@ class PedLineParser(object):
       else:
         preview = " ".join(data[:5]) + " [...]"
         raise MismatchError("%r is not consistent with DAT types" % preview)
+
+
+from bl.vl.genotype.algo import project_to_genotype
+
+class PedWriter(object):
+  def __init__(self, mset, base_path, ref_genome=None, selected_markers=None):
+    self.mset = mset
+    self.base_path = base_path
+    self.selected_markers = selected_markers
+    self.ref_genome = ref_genome
+    self.ped_file = None
+
+  def write_map(self):
+    def chrom_label(x):
+      if x < 23:
+        return x
+      return { 23 : 'X', 24 : 'Y', 25 : 'XY', 26 : 'MT'}[x]
+    def dump_markers(fo, marker_indx):
+      for i in marker_indx:
+        m = self.mset.markers[i]
+        chrom, pos = m.position
+        # FIXME: we currently do not have a way to estimate the
+        # genetic distance, so we force it to 0
+        fo.write('%s\t%s\t%s\n' % (chrom, m.label, 0, pos))
+
+    if self.ref_genome:
+      self.mset.load_alignments(self.ref_genome)
+    with open(self.base_path + '.map', 'w') as fo:
+      fo.write('# map based on mset %s aligned on %s\n' %
+               (self.mset.id, self.ref_genome))
+      s = self.selected_markers if self.selected_markers \
+                                else xrange(len(self.mset))
+      dump_markers(fo, s)
+
+  def write_family(self, group, family_members, data_sample_by_id,
+                   phenotype_by_id=None):
+    allele_patterns = { 0 : 'A A', 1 : 'B B', 2 : 'A B', 3 : '0 0'}
+    def dump_genotype(fo, data_sample):
+      probs, conf = data_sample.resolve_to_data()
+      probs = probs[self.selected_markers] if self.selected_markers \
+                                           else probs
+      fo.write('\t'.join([allele_patterns[x]
+                          for x in project_to_genotype(probs)]))
+
+    if self.ped_file is None:
+      self.ped_file = open(self.base_path + '.ped', 'w')
+    for i in family_members:
+      # Family ID, IndividualID, paternalID, maternalID, sex, phenotype
+      fam_id, ind_id = group.id, i.id
+      fat_id = 0 if not i.father else i.father.id
+      mot_id = 0 if not i.mother else i.mother.id
+      gender = {'MALE' : 1, 'FEMALE' : 2}[i.gender.enum_label()]
+      pheno  = 0 if not phenotype_by_id else phenotype_by_id[i.id]
+      self.ped_file.write('%s\t%s\t%s\t%s\t%s\t%s\t' %
+                          (group.id, i.id, fat_id, mot_id, gender, pheno))
+      dump_genotype(self.ped_file, data_sample_by_id[i.id])
+
+  def close(self):
+    if self.ped_file:
+      self.ped_file.close()
+    self.ped_file = None
+
+
+
+
+
+
+

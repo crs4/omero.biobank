@@ -1,5 +1,12 @@
 """
-FIXME doc of bl/vl/genotype module
+Genotype level operations
+=========================
+
+.. todo::
+
+   write doc of the bl/vl/genotype module.
+
+
 """
 
 

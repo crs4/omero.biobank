@@ -29,6 +29,30 @@ depending on the technology, the GDO could also contain CNV data.
 
 import numpy as np
 
+def project_to_discrete_genotype(probs, threshold=0.2):
+  """
+  Convert a probabilistic genotype description to the classical
+  discrete view. It will return an array of int, with::
+
+    AA    -> 0
+    BB    -> 1
+    AB    -> 2
+    undef -> 3
+
+  """
+  x = np.vstack([probs, 1.0 - probs.sum(axis=0)])
+  xt = np.transpose(x)
+  idx = np.argsort(xt)
+  offsets = np.array(xrange(xt.shape[0]))
+  offsets *= idx.shape[1]
+  offsets.shape = (offsets.shape[0], 1)
+
+  sels = idx[:, -1]
+  xtw = np.take(xt, idx + offsets)
+  c = (xtw[:,-2] / (xtw[:,-1] + 1e-6)) < threshold
+  res = np.select([c], [idx[:,-1]], default=3)
+  return res
+
 def count_homozygotes(it):
   """
   Count (compute) the number of  N_AA, N_BB homozygotes.
@@ -66,18 +90,6 @@ def maf(it, counts=None):
   return (2*counts + N_AB)/(2.0*N)
 
 def hwe_probabilites(n_a, n_ab, N):
-  """
-  Implement Hardy Weinberg exact calculation using the method described in
-  Wigginton et al., Am.J.Hum.Genet.vol.76-pp.887.
-
-  :param it: an iterator of Genomic data objects
-  :type it: a gdo
-  :param counts: the result of calling count_homozygotes(it)
-  :type counts: (N of records seen, type(np.zeros((2,N), dtype=np.int32)))
-
-  :rtype: type(np.zeros((2,N), dtype=np.int32)))
-
-  """
   n_a = n_a if n_a <= N else 2*N - n_a
   n_b = 2*N - n_a
   N_ab = np.arange(n_a & 0x01, n_a , 2, dtype=np.float64)

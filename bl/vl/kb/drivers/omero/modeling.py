@@ -89,6 +89,18 @@ class ModelingAdapter(object):
                                    query, pars)
     return [self.kb.factory.wrap(e) for e in result]
 
+  def get_data_objects(self, sample):
+    query = """select do
+               from DataObject do
+               join fetch do.sample as s
+               where s.id  = :sid
+               """
+    pars = self.kb.ome_query_params({'sid' :
+                                     wp.ome_wrap(sample.omero_id, wp.LONG)})
+    result = self.kb.ome_operation("getQueryService", "findAllByQuery",
+                                   query, pars)
+    return [self.kb.factory.wrap(i) for i in result]
+
   def get_data_collection_items(self, dc):
     query = """select i
                from DataCollectionItem i

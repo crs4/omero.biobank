@@ -101,12 +101,28 @@ class SNPMarkersSet(wp.OmeroWrapper):
     mdefs, msetc = self.proxy.get_snp_markers_set_content(self)
     self.__set_markers(mdefs)
 
+  def load_alignments(self, ref_genome):
+    """
+    Update markers position using known alignments on ref_genome.
+    """
+    if not hasattr(self, 'markers'):
+      raise ValueError('markers vector has not been reloaded.')
+
+    self.proxy.update_snp_positions(self.markers, ref_genome)
+
+
 class GenotypeDataSample(DataSample):
   OME_TABLE = 'GenotypeDataSample'
   __fields__ = [('snpMarkersSet', SNPMarkersSet, wp.REQUIRED)]
 
-
-
-
-
-
+  def resolve_to_data(self):
+    dos = self.proxy.get_data_objects(self)
+    if not dos:
+      raise ValueError('no connected DataObject(s)')
+    do = dos[0]
+    do.reload()
+    if do.mimetype != 'x-bl/gdo-table':
+      raise ValueError('DataObject is not a x-bl/gdo-table')
+    jnk, vid = do.path.split('=')
+    res = self.proxy.get_gdo(self.markersSetVID, vid)
+    return res['probs'], res['confidence']
