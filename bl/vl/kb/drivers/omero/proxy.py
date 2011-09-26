@@ -114,6 +114,9 @@ class Proxy(ProxyCore):
   def get_containers(self, klass=objects_collections.Container):
     return self.madpt.get_containers(klass)
 
+  def get_data_objects(self, sample):
+    return self.madpt.get_data_objects(sample)
+
   # GENOTYPING related utility functions
   # ====================================
 
@@ -192,12 +195,14 @@ class Proxy(ProxyCore):
   def add_snp_alignments(self, stream, op_vid, batch_size=50000):
     return self.gadpt.add_snp_alignments(stream, op_vid, batch_size)
 
-  def snp_markers_set_exists(self, maker, model, release):
-    return self.madpt.snp_markers_set_exists(maker, model, release)
+  def snp_markers_set_exists(self, label=None,
+                             maker=None, model=None, release=None):
+    return self.madpt.snp_markers_set_exists(label, maker, model, release)
 
-  def get_snp_markers_set(self, maker, model, release):
+  def get_snp_markers_set(self, label=None,
+                          maker=None, model=None, release=None):
     "returns a SNPMarkersSet object"
-    return self.madpt.get_snp_markers_set(maker, model, release)
+    return self.madpt.get_snp_markers_set(label, maker, model, release)
 
   def get_snp_markers_set_content(self, snp_markers_set, batch_size=50000):
     selector = '(vid=="%s")' % snp_markers_set.markersSetVID

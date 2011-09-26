@@ -26,11 +26,13 @@ kb = KB(driver="omero")(OME_HOST, OME_USER, OME_PASSWD)
 
 The first thing we will do is to select a markers set. See FIXME:XXX
 for its definition. We will first obtain an handle to it, and then
-invoke a '.reload()' that will bring in memory the actual definition
+invoke a '.load_markers()' that will bring in memory the actual definition
 data.
 """
-mset0 = kb.get_snp_markers_set(label="foo")
-mset0.reload()
+
+mset_name = 'FakeTaqSet01'
+mset0 = kb.get_snp_markers_set(label=mset_name)
+mset0.load_markers()
 
 """ ..
 
@@ -62,10 +64,10 @@ mset, if there is at least one, otherwise we will skip the individual.
 def extract_data_sample(group, mset, dsample_name):
   by_individual = {}
   for i in kb.get_individuals(group):
-    for d in kb.get_data_samples(i, dsample_name):
-      gds = filter(lambda x: x.snpMarkersSet == mset)
-      assert(len(gds) == 1)
-      by_individual[i.id] = gds[0]
+    gds = filter(lambda x: x.snpMarkersSet == mset,
+                 kb.get_data_samples(i, dsample_name))
+    assert(len(gds) == 1)
+    by_individual[i.id] = gds[0]
   return by_individual
 
 group = kb.get_study(label='TEST01')

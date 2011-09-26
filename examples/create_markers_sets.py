@@ -108,7 +108,7 @@ representation of the 'inverse' of the creation process.
 
 .. todo::
 
-   uhmmm, not sure that the Action explanation is crystal clear :-).
+   uhmmm, not sure that the Action explanation above is crystal clear :-).
 
 """
 
@@ -134,7 +134,7 @@ saved as a plink pedfile.
 """
 from bl.vl.genotype.io import PedWriter
 
-pw = PedWriter(mset, base_path="./foo", ref_genome='hg18')
+pw = PedWriter(mset, base_path="./foo")
 
 pw.write_map()
 

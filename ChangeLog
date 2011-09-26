@@ -1,3 +1,14 @@
+2011-09-26    <zag@manzanillo>
+
+	* bl/vl/genotype/io.py (PedWriter): Added a plink compliant ped
+	writer.
+
+	* bl/vl/kb/drivers/omero/wrapper.py (MetaWrapper.make_getter):
+	changed so that it will return a None when the ome_obj field is
+	None. It could be used to trigger a reload, if the field is not
+	optional. For the time being, this is left as an exercise for the
+	caller.
+
 2011-09-24    <zag@manzanillo>
 
 	* bl/vl/kb/drivers/omero/genotyping.py

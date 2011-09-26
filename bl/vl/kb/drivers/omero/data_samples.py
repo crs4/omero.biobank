@@ -96,8 +96,8 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def id(self):
     return self.markersSetVID
 
-  def reload(self):
-    super(SNPMarkersSet, self).reload()
+  def load_markers(self):
+    self.reload()
     mdefs, msetc = self.proxy.get_snp_markers_set_content(self)
     self.__set_markers(mdefs)
 
@@ -124,5 +124,7 @@ class GenotypeDataSample(DataSample):
     if do.mimetype != 'x-bl/gdo-table':
       raise ValueError('DataObject is not a x-bl/gdo-table')
     jnk, vid = do.path.split('=')
-    res = self.proxy.get_gdo(self.markersSetVID, vid)
+    mset = self.snpMarkersSet
+    mset.reload()
+    res = self.proxy.get_gdo(mset.id, vid)
     return res['probs'], res['confidence']

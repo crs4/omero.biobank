@@ -154,22 +154,31 @@ class ModelingAdapter(object):
                                     query, pars)
     return [self.kb.factory.wrap(v) for v in results]
 
-  def get_snp_markers_set(self, maker, model, release):
-    query = """select ms
-               from SNPMarkersSet ms
-               where ms.maker = :maker
-                     and ms.model = :model
-                     and ms.release = :release
-               """
-    pars = self.kb.ome_query_params({'maker' : wp.ome_wrap(maker),
-                                     'model' : wp.ome_wrap(model),
-                                     'release' : wp.ome_wrap(release)})
+  def get_snp_markers_set(self, label, maker, model, release):
+    if label:
+      query = """select ms
+                 from SNPMarkersSet ms
+                 where ms.label = :label
+                 """
+      pars = self.kb.ome_query_params({'label' : wp.ome_wrap(label)})
+    else:
+      if not (marker and model and release):
+        raise ValueError('maker model and release should be all provided')
+      query = """select ms
+                 from SNPMarkersSet ms
+                 where ms.maker = :maker
+                       and ms.model = :model
+                       and ms.release = :release
+                 """
+      pars = self.kb.ome_query_params({'maker' : wp.ome_wrap(maker),
+                                       'model' : wp.ome_wrap(model),
+                                       'release' : wp.ome_wrap(release)})
     result = self.kb.ome_operation("getQueryService", "findByQuery",
                                    query, pars)
     return None if result is None else self.kb.factory.wrap(result)
 
-  def snp_markers_set_exists(self, maker, model, release):
-    return not self.get_snp_markers_set(maker, model, release) is None
+  def snp_markers_set_exists(self, label, maker, model, release):
+    return not self.get_snp_markers_set(label, maker, model, release) is None
 
 
   #-------------------------------------------------------------------------

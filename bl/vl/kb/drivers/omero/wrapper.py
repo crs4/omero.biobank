@@ -9,38 +9,9 @@ import bl.vl.utils.ome_utils as vluo
 Omero Objects Wrapping
 ======================
 
-Expected Usage
---------------
+.. todo::
 
-We expect to be able to do::
-
-  class Action(OmeroWrapper):
-    __fields__ = []
-
-  factory.create(Action, {'vid' : ort.rstring(vluo.make_vid()),
-                            'beginTime' : vluo.time2rtime(time.time())})
-
-  factory.wrap(ome_objj)
-
-under the hood it will use::
-
-  a = Action(ome_obj=None, proxy)
-  a.configure({ ....})
-
-
-Enums handling
---------------
-
-We expect to be able to do::
-
-  a = factory.create(Action, {'actionCategory' : ActionCategory.IMPORT, ...})
-
-under the hood, the ActionCategory.IMPORT object is an intance of MagicEnum::
-
-  ActionCategory.IMPORT = MagicEnum(ActionCategory, 'IMPORT')
-
-which is expected to be recognized by proxy an
-
+   write docs.
 
 """
 
@@ -227,7 +198,8 @@ class MetaWrapper(type):
   def make_getter(klass, base, fields):
     def getter(self, k):
       if k in fields:
-        return self.from_omero(fields[k][0], getattr(self.ome_obj, k))
+        v = getattr(self.ome_obj, k)
+        return self.from_omero(fields[k][0], v) if v else None
       else:
         return base.__getattr__(self, k)
     return getter
