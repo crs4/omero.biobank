@@ -32,11 +32,13 @@ CHR_CODES = {
   "chr22": 22,
   "chrX": 23,
   "chrY": 24,
-  "chrM": 25,
+  "chrXY": 25,  
+  "chrM": 26,
   #---
   "chrx": 23,
   "chry": 24,
-  "chrm": 25,
+  "chrxy": 25,
+  "chrm": 26,
 }
 
 

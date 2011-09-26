@@ -17,7 +17,7 @@ the same time, registering that the snp had actually been aligned on
 the other strand.
 
 Chromosome is an integer field with values in the range(1, 25) with 23
-(X), 24 (Y) and 25(MT).
+(X), 24 (Y), 25(XY) and 26(MT).
 
 importer -i aligned_markers.tsv marker_alignment --ref-genome=hg18
 
