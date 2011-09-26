@@ -1,7 +1,6 @@
-import time
+import numpy as np
 import bl.vl.utils as vlu
-import itertools as it
-import numpy     as np
+import bl.vl.utils.snp as vlu_snp
 
 
 class Marker(object):
@@ -28,8 +27,8 @@ class GenotypingAdapter(object):
   SNP_ALIGNMENT_TABLE  = 'snp_alignment.h5'
   SNP_SET_DEF_TABLE    = 'snp_set_def.h5'
   SNP_SET_TABLE        = 'snp_set.h5'
-  SNP_FLANK_SIZE       = 125
-  SNP_MASK_SIZE        = 2*SNP_FLANK_SIZE+1
+  SNP_FLANK_SIZE       = vlu_snp.SNP_FLANK_SIZE
+  SNP_MASK_SIZE        = vlu_snp.SNP_MASK_SIZE
 
   SNP_MARKER_DEFINITIONS_COLS = \
   [('string', 'vid',    'This marker VID', len(vlu.make_vid()), None),

@@ -19,6 +19,10 @@ UNAMBIGUOUS = {
   }
 
 
+SNP_FLANK_SIZE = 125
+SNP_MASK_SIZE = 2*SNP_FLANK_SIZE+1
+
+
 def split_mask(mask):
   m = MASK_PATTERN.match(mask)
   try:
