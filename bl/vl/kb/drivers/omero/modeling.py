@@ -70,7 +70,7 @@ class ModelingAdapter(object):
     return None if result is None else self.kb.factory.wrap(result)
 
   def get_objects(self, klass):
-    query = "select o from %s o" % klass.get_ome_table()
+    query = "from %s o" % klass.get_ome_table()
     pars = None
     results = self.kb.ome_operation('getQueryService', 'findAllByQuery',
                                     query, pars)

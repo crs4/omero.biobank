@@ -36,6 +36,8 @@ from genotyping import Marker
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 
+
+
 class Proxy(ProxyCore):
   """
   An omero driver for KB.
@@ -61,6 +63,19 @@ class Proxy(ProxyCore):
     if not isinstance(val, ftype):
       msg = 'bad type for %s(%s)' % (fname, val)
       raise ValueError(msg)
+
+  def __resolve_action_id(self, action):
+    """
+    Utility function
+    """
+    if isinstance(action, self.Action):
+      if not action.is_loaded():
+        action.reload()
+      avid = action.id
+    else:
+      avid = action
+    return avid
+
 
   # High level ops
   # ==============
@@ -183,7 +198,7 @@ class Proxy(ProxyCore):
 
     :return list: of (<label>, <vid>) tuples
     """
-    op_vid = action.id if isinstance(action, self.Action) else action
+    op_vid = self.__resolve_action_id(action)
     return self.gadpt.add_snp_marker_definitions(stream, op_vid, batch_size)
 
   def get_snp_marker_definitions(self, selector=None, batch_size=50000):
@@ -211,11 +226,11 @@ class Proxy(ProxyCore):
     return mdefs, msetc
 
   def add_snp_markers_set(self, maker, model, release, action):
-    avid = action.id if isinstance(action, self.Action) else action
+    avid = self.__resolve_action_id(action)
     return self.gadpt.add_snp_markers_set(maker, model, release, avid)
 
   def fill_snp_markers_set(self, set_vid, stream, action, batch_size=50000):
-    avid = action.id if isinstance(action, self.Action) else action
+    avid = self.__resolve_action_id(action)
     return self.gadpt.fill_snp_markers_set(set_vid, stream, avid, batch_size)
 
   def get_snp_alignments(self, selector=None, batch_size=50000):
@@ -224,8 +239,8 @@ class Proxy(ProxyCore):
   def create_gdo_repository(self, set_vid, N):
     return self.gadpt.create_gdo_repository(set_vid, N)
 
-  def get_gdo(self, set_vid, vid):
-    return self.gadpt.get_gdo(set_vid, vid)
+  def get_gdo(self, set_vid, vid, indices=None):
+    return self.gadpt.get_gdo(set_vid, vid, indices)
 
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
@@ -305,6 +320,7 @@ class Proxy(ProxyCore):
         add param docs.
 
     """
+    # FIXME this is extremely inefficient,
     marker_defs = [t for t in stream]
     marker_labels = [t[0] for t in marker_defs]
     if len(marker_labels) > len(set(marker_labels)):
@@ -471,7 +487,7 @@ class Proxy(ProxyCore):
     :type probs: numpy.darray
 
     """
-    avid = action.id if isinstance(action, self.Action) else action
+    avid = self.__resolve_action_id(action)
     if not isinstance(sample, self.GenotypeDataSample):
       raise ValueError('sample should be an instance of GenotypeDataSample')
     # FIXME we delegate to gadpt checking that probs and confs have the
@@ -493,13 +509,33 @@ class Proxy(ProxyCore):
     gds = self.factory.create(self.DataObject, conf).save()
     return gds
 
-
-  def get_gdo_iterator(self, mset, batch_size=100):
+  def get_gdo_iterator(self, mset,
+                       data_samples=None,
+                       indices = None,
+                       batch_size=100):
     """
     FIXME this is the basic object, we should have some support for
     selection.
     """
-    return self.gadpt.get_gdo_iterator(mset.markersSetVID, batch_size)
+    def get_gdo_iterator_on_list(dos):
+      for do in dos:
+        table, vid = do.path.split('=')
+        mset_vid = table[:-3].split(':')[1]
+        print 'mset_vid: %s, mset.markersSetVID: %s' % (mset_vid,
+                                                        mset.markersSetVID)
+        # if mset_vid != mset.markersSetVID:
+        #   raise ValueError('DataObject %s map to data with a wrong SNPMarkersSet'
+        #                    % (do.path))
+        # yield self.get_gdo(mset.markersSetVID, vid, indices)
+        yield do.path
+
+    if not data_samples:
+      return self.gadpt.get_gdo_iterator(mset.markersSetVID, indices,
+                                         batch_size)
+    ids = ','.join('%s' % ds.omero_id for ds in data_samples)
+    query = 'from DataObject do where do.sample.id in (%s)' % ids
+    dos = self.find_all_by_query(query, None)
+    return get_gdo_iterator_on_list(dos)
 
   # EVA related utility functions
   # =============================

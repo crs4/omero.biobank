@@ -1,4 +1,4 @@
-"""
+""" ...
 Given a list of SDS 2.3 AD (text) files, all related to the same set
 of samples but for different snp markers, we will show how to
 do the following:
@@ -22,6 +22,13 @@ do the following:
     #. for each sample write out all the relevant snp calls as a SSC
        (SampleSnpCall) file in the x-protobuf-ssc format.
 
+Usage:
+
+.. code-block:: bash
+
+   python define_taq_markers.py --device-label pula01 --prefix foobar -P romeo --ifile data/file_list.lst --run-id foobar
+
+
 """
 import sys, argparse, logging
 from datetime import datetime
@@ -31,6 +38,7 @@ from bl.core.io import MessageStreamWriter
 
 from bl.vl.kb import KnowledgeBase as KB
 
+import sys, os
 import csv
 import urllib2
 from BeautifulSoup import BeautifulSoup
@@ -72,6 +80,31 @@ def get_markers_definition(found_markers, sds, abi_service):
     v['abi_definition'] = abi_service.get_marker_definition(abi_id=m)
     found_markers[m] = v
 
+from bl.vl.utils.snp import split_mask, approx_equal_masks, convert_to_top
+from bl.core.seq.utils import reverse_complement as rc
+
+import bl.core.gt.messages.SnpCall as SnpCall
+
+
+def canonize_call(mask, abi_call):
+  """
+  Canonize call against top mask. Directly uses the base
+  called by TaqMan to understand the allele code.
+  """
+  if abi_call.upper() == 'BOTH':
+    return SnpCall.AB
+  if abi_call.upper() == 'UNDETERMINED':
+    return SnpCall.NOCALL
+  _, call_base = abi_call.split('-')
+
+  _, alleles, _ = split_mask(mask)
+  if call_base in [alleles[0], rc(alleles[0])]:
+    return SnpCall.AA
+  elif call_base in [alleles[1], rc(alleles[1])]:
+    return SnpCall.BB
+  else:
+    raise ValueError('Cannot map %s (alleles: %s)' % (abi_call, alleles))
+
 def add_kb_marker_objects(kb, found_markers):
   missing_kb_markers = []
   for m, v in found_markers.iteritems():
@@ -79,6 +112,12 @@ def add_kb_marker_objects(kb, found_markers):
       kb_mrk = kb.get_snp_markers(rs_labels=[v['abi_definition']['rs_label']])
       if len(kb_mrk) > 0:
         v['kb_marker'] = kb_mrk[0]
+        mask_vl, mask_abi = v['kb_marker'].mask, v['abi_definition']['mask']
+        if not approx_equal_masks(mask_vl, convert_to_top(mask_abi)):
+          print 'mask_vl: %s, mask_abi: %s' % (mask_vl, mask_abi)
+          sys.exit(1)
+          raise ValueError('inconsistent mask definition for %s'
+                           % v['abi_definition']['rs_label'])
       else:
         v['kb_marker'] = None
         missing_kb_markers.append(m)
@@ -110,9 +149,6 @@ def write_markers_set_def_file(fname, found_markers):
   fo.writeheader()
   for i, m in enumerate(found_markers):
     marker = found_markers[m]
-    #FIXME:here we should be comparing marker['kb_marker'].mask with
-    #     marker['abi_definition']['mask'] to check if there has been
-    #     a flip in alleles enumeration.
     flip = False
     r = {
       'marker_vid' : marker['kb_marker'].id,
@@ -121,15 +157,6 @@ def write_markers_set_def_file(fname, found_markers):
       }
     fo.writerow(r)
 
-def write_ssc_data_set_file(fname, found_markers, device_id, sample_id,
-                            datetime_start, datetime_stop, data):
-  payload_msg_type = 'core.gt.messages.SampleSnpCall'
-  msw = MessageStreamWriter(fname, payload_msg_type,
-                            header={'device_id' : device_id,
-                                    'sample_id' : sample_id,
-                                    'datetime_start' : datetime_start,
-                                    'datetime_stop' : datetime_stop})
-  print data
 
 def write_ssc_data_samples_import_file(fname, ssc_data_set):
   fo = csv.DictWriter(open(fname, mode='w'),
@@ -147,7 +174,7 @@ def write_ssc_data_samples_import_file(fname, ssc_data_set):
 
 def write_ssc_data_objects_import_file(fname, ssc_data_set):
   fo = csv.DictWriter(open(fname, mode='w'),
-                      fieldnames=['path', 'data_sample', 'mimetype',
+                      fieldnames=['path', 'data_sample_label', 'mimetype',
                                   'size', 'sha1'],
                       delimiter='\t')
   fo.writeheader()
@@ -156,7 +183,7 @@ def write_ssc_data_objects_import_file(fname, ssc_data_set):
       'path' : os.path.join('<FIXME>', fname),
       'data_sample_label' : label,
       'mimetype' : 'x-ssc-messages-flow',
-      'size' : FIXME,
+      'size' : 0,
       'sha1' : 'FIXME',
       })
 
@@ -166,15 +193,16 @@ def write_ssc_data_set_file(fname, found_markers,
   payload_msg_type = 'core.gt.messages.SampleSnpCall'
   header = {'device_id' : device_id,
             'sample_id' : sample_id,
-            'min_datetime' : min_datetime,
-            'max_datetime' : max_datetime}
+            'min_datetime' : '%s' % min_datetime,
+            'max_datetime' : '%s' % max_datetime}
   stream = MessageStreamWriter(fname, payload_msg_type, header)
   for d in data:
-    m = markers[d['Marker Name']]
+    found_marker = found_markers[d['Marker Name']]
+    m = found_marker['kb_marker']
     stream.write({
       'sample_id' : sample_id,
-      'snp_id' : marker['kb_marker'].id,
-      'call' : canonize_call(m, d['Call']),
+      'snp_id' : m.id,
+      'call' : canonize_call(m.mask, d['Call']),
       'confidence' : d['Quality Value'],
       'sig_A' : d['Allele X Rn']*d['Passive Ref'],
       'sig_B' : d['Allele X Rn']*d['Passive Ref'],
@@ -193,6 +221,9 @@ def make_parser():
   parser.add_argument('--ifile', type=argparse.FileType('r'),
                       help='file with the list of files',
                       default=sys.stdin)
+  parser.add_argument('--run-id', type=str,
+                      help='an unique identifier for this run',
+                      required=True)
   parser.add_argument('--device-label', type=str,
                       help='device label')
   parser.add_argument('--prefix', type=str,
@@ -254,14 +285,14 @@ def main(argv):
   ssc_data_set = {}
   device = kb.get_device(args.device_label)
   for sample_id, d in data.iteritems():
-    fname = '%s%s-%s.ssc' % (args.prefix, device.id)
+    fname = '%s%s-%s.ssc' % (args.prefix, device.id, sample_id)
     write_ssc_data_set_file(fname, found_markers,
                             device.id, sample_id,
                             min_datetime, max_datetime, d)
-    ssc_data_set[s] = ('taqman-%s-%s' % (args.run_id, sample_id, min_datetime),
-                       sample_id, device.id, fname)
+    ssc_data_set[sample_id] = ('taqman-%s-%s' % (args.run_id, sample_id),
+                               sample_id, device.id, fname)
   fname = '%simport.ssc' % args.prefix
-  write_ssc_data_samples_import_file(fname, ssc_data_set)
-  write_ssc_data_objects_import_file(fname, ssc_data_set)
+  write_ssc_data_samples_import_file(fname, ssc_data_set.values())
+  write_ssc_data_objects_import_file(fname, ssc_data_set.values())
 
 main(sys.argv[1:])

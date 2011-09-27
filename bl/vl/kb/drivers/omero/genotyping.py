@@ -234,31 +234,31 @@ class GenotypingAdapter(object):
   def __normalize_size(self, string, size):
     return string + chr(0) * (size - len(string))
 
-  def __unwrap_gdo(self, set_id, row):
+  def __unwrap_gdo(self, set_id, row, indices=None):
     r = {'vid' :  row['vid'], 'op_vid' : row['op_vid'], 'set_id' : set_id}
     #--
     p = np.fromstring(self.__normalize_size(row['probs'],
                                             row.dtype['probs'].itemsize),
                       dtype=np.float32)
     p.shape = (2, p.shape[0]/2)
-    r['probs'] = p
+    r['probs'] = p[:, indices] if indices else p
     #--
     c = np.fromstring(self.__normalize_size(row['confidence'],
                                             row.dtype['confidence'].itemsize),
                       dtype=np.float32)
-    r['confidence'] = c
+    r['confidence'] = c[indices] if indices else c
     #--
     return r
 
-  def get_gdo(self, set_vid, vid):
+  def get_gdo(self, set_vid, vid, indices=None):
     table_name = self._gdo_table_name(set_vid)
     rows = self.kb.get_table_rows(table_name, selector='(vid == "%s")' % vid)
     assert len(rows) == 1
-    return self.__unwrap_gdo(set_vid, rows[0])
+    return self.__unwrap_gdo(set_vid, rows[0], indices)
 
-  def get_gdo_iterator(self, set_vid, batch_size=100):
+  def get_gdo_iterator(self, set_vid, indices=None, batch_size=100):
     def iterator(stream):
       for d in stream:
-        yield self.__unwrap_gdo(set_vid, d)
+        yield self.__unwrap_gdo(set_vid, d, indices)
     table_name = self._gdo_table_name(set_vid)
     return iterator(self.kb.get_table_rows_iterator(table_name, batch_size))

@@ -1,3 +1,15 @@
+2011-09-27    <zag@manzanillo>
+
+	* bl/vl/utils/snp.py (approx_equal_masks): Added.
+
+	* bl/vl/kb/drivers/omero/proxy_core.py
+	(ProxyCore.find_all_by_query): Now it is possible to pass None as
+	params.
+
+	* bl/vl/kb/drivers/omero/modeling.py
+	(ModelingAdapter.get_objects): removed redundant 'select' from
+	query.
+
 2011-09-26    <zag@manzanillo>
 
 	* bl/vl/genotype/io.py (PedWriter): Added a plink compliant ped

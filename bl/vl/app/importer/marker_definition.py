@@ -104,7 +104,7 @@ class Recorder(Core):
     tsv = csv.DictReader(ifile, delimiter='\t')
     self.logger.info('start loading markers defs from %s' % ifile.name)
     vmap = self.kb.add_snp_marker_definitions(ns(tsv, cnt),
-                                              op_vid=self.action.id)
+                                              action=self.action)
     o = csv.DictWriter(ofile,
                        fieldnames=['study', 'label', 'type', 'vid'],
                        delimiter='\t')

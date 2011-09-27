@@ -139,10 +139,13 @@ class ProxyCore(object):
 
   @debug_boundary
   def find_all_by_query(self, query, params, factory):
-    xpars = {}
-    for k,v in params.iteritems():
-      xpars[k] = ome_wrap(*v) if type(v) == tuple else ome_wrap(v)
-    pars = self.ome_query_params(xpars)
+    if params:
+      xpars = {}
+      for k,v in params.iteritems():
+        xpars[k] = ome_wrap(*v) if type(v) == tuple else ome_wrap(v)
+      pars = self.ome_query_params(xpars)
+    else:
+      pars = None
     result = self.ome_operation("getQueryService", "findAllByQuery",
                                 query, pars)
     return [] if result is None else [factory.wrap(r) for r in result]

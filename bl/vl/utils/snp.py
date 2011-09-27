@@ -32,6 +32,16 @@ def split_mask(mask):
   else:
     return (lflank, tuple(alleles.split("/")), rflank)
 
+def approx_equal_masks(a_mask, b_mask, width=10):
+  def check_flank(a_flank, b_flank, width, right):
+    w = min([len(a_flank), len(b_flank), width])
+    s = slice(None, w) if right else slice(-w, None)
+    return a_flank[s] == b_flank[s]
+  a_lflank, a_alleles, a_rflank = split_mask(a_mask)
+  b_lflank, b_alleles, b_rflank = split_mask(b_mask)
+  return (a_alleles == b_alleles
+          and check_flank(a_lflank, b_lflank, width, False)
+          and check_flank(a_rflank, b_rflank, width, True))
 
 def join_mask(mask):
   try:
@@ -74,7 +84,7 @@ def convert_to_top(mask, toupper=True):
   the returned mask has the same type as the input one.
 
   See the following reference for algorithm description:
-  
+
   Illumina, Inc., "TOP/BOT" Strand and "A/B" Allele, technical note, 2006.
   """
   if isinstance(mask, basestring):
