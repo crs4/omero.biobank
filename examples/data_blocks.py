@@ -76,7 +76,7 @@ gds0_by_individual = extract_data_sample(group, mset0, 'GenotypeDataSample')
 """ ..
 
 Note that what we have now is a dictionary that maps individual ids to
-GenotypeDataSample objects and the latter are only handlers to get to
+GenotypeDataSample objects  and the latter are only handlers to get to
 the actual genotyping data, not the data itself.
 
 We can, now, do a global check on data quality.
@@ -87,7 +87,7 @@ def do_check(s):
   hwe  = algo.hwe(None, counts)
   return mafs, hwe
 
-gds_0_data_samples = [x.id for x in gds0_by_individual.values])
+gds_0_data_samples = gds0_by_individual.values()
 s = kb.get_gdo_iterator(mset0, data_samples=gds_0_data_samples)
 mafs, hwe = do_check(s)
 
@@ -140,7 +140,7 @@ for k in gds_0_by_individual:
     data_sample_0.append(gds_0_by_individual[k])
     data_sample_1.append(gds_1_by_individual[k])
 
-indices = kb.SNPMarkersSet.intersect(mset0, mset1)
+indices_0, indices_1 = kb.SNPMarkersSet.intersect(mset0, mset1)
 
 """ ..
 To compare we use a suitable function such as the following:
@@ -148,9 +148,9 @@ To compare we use a suitable function such as the following:
 def compare(a, b):
   ....
 
-for (a, b) in it.izip(kb.get_gdo_iterator(mset0, indices=indices,
+for (a, b) in it.izip(kb.get_gdo_iterator(mset0, indices=indices_0,
                                           data_samples=data_sample_0),
-                      kb.get_gdo_iterator(mset1, indices=indices,
+                      kb.get_gdo_iterator(mset1, indices=indices_1,
                                           data_samples=data_sample_1)):
   compare(a, b)
 

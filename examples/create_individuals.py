@@ -14,6 +14,12 @@ First, as usual, we open the connection to the KnowledgeBase.
 from bl.vl.kb import KnowledgeBase as KB
 import numpy as np
 
+import os
+
+OME_HOST   = os.getenv('OME_HOST', 'localhost')
+OME_USER   = os.getenv('OME_USER', 'root')
+OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
+
 kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
 
 

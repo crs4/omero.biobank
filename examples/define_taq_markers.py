@@ -19,7 +19,7 @@ do the following:
 
     #. write out the relevant marker set import file
 
-    #. for each sample write out all the relevant calls as a SSC
+    #. for each sample write out all the relevant snp calls as a SSC
        (SampleSnpCall) file in the x-protobuf-ssc format.
 
 """
@@ -27,10 +27,11 @@ import sys, argparse, logging
 from datetime import datetime
 
 from bl.core.io.abi import SDSReader
-from bl.core.gt.io import SnpCallStream
+from bl.core.io import MessageStreamWriter
 
 from bl.vl.kb import KnowledgeBase as KB
 
+import csv
 import urllib2
 from BeautifulSoup import BeautifulSoup
 
@@ -62,7 +63,7 @@ class ABISnpService(object):
 
 #----------------------------------------------------------------------
 
-def get_markers_definition(found_markers, sds):
+def get_markers_definition(found_markers, sds, abi_service):
   for m,v in sds.header['markers_info'].iteritems():
     if m in found_markers:
       logger.critical('the same marker (%s) is appearing twice' % m)
@@ -71,16 +72,16 @@ def get_markers_definition(found_markers, sds):
     v['abi_definition'] = abi_service.get_marker_definition(abi_id=m)
     found_markers[m] = v
 
-def add_kb_marker_objects(found_markers):
+def add_kb_marker_objects(kb, found_markers):
   missing_kb_markers = []
   for m, v in found_markers.iteritems():
     if v['abi_definition']:
       kb_mrk = kb.get_snp_markers(rs_labels=[v['abi_definition']['rs_label']])
-      if kb_mrk is None:
+      if len(kb_mrk) > 0:
+        v['kb_marker'] = kb_mrk[0]
+      else:
         v['kb_marker'] = None
         missing_kb_markers.append(m)
-      else:
-        v['kb_marker'] = kb_mrk[0]
   return missing_kb_markers
 
 def write_import_markers_file(fname, found_markers, missing_kb_markers):
@@ -95,7 +96,7 @@ def write_import_markers_file(fname, found_markers, missing_kb_markers):
     r = {
       'source' : 'ABI',
       'context' : 'TaqMan',
-      'release' : 'SNP Genotyping Assays',
+      'release' : 'SNP_Genotyping_Assays',
       'label' : marker['abi_definition']['label'],
       'rs_label' : marker['abi_definition']['rs_label'],
       'mask' : marker['abi_definition']['mask'],
@@ -122,7 +123,13 @@ def write_markers_set_def_file(fname, found_markers):
 
 def write_ssc_data_set_file(fname, found_markers, device_id, sample_id,
                             datetime_start, datetime_stop, data):
-  pass
+  payload_msg_type = 'core.gt.messages.SampleSnpCall'
+  msw = MessageStreamWriter(fname, payload_msg_type,
+                            header={'device_id' : device_id,
+                                    'sample_id' : sample_id,
+                                    'datetime_start' : datetime_start,
+                                    'datetime_stop' : datetime_stop})
+  print data
 
 def write_ssc_data_samples_import_file(fname, ssc_data_set):
   fo = csv.DictWriter(open(fname, mode='w'),
@@ -221,20 +228,20 @@ def main(argv):
   data = {}
   min_datetime = datetime(2999, 12, 31, 23, 59, 59)
   max_datetime = datetime(1000, 1,  1,  0, 0, 1)
-  for f in (_ for _ in args.ifile if _.strip()):
+  for f in (_.strip() for _ in args.ifile if _.strip()):
     logger.info('processing %s' % f)
 
     sds = SDSReader(open(f), swap_sample_well_columns=True)
     min_datetime = min(min_datetime, sds.datetime)
     max_datetime = max(max_datetime, sds.datetime)
 
-    get_marker_definition(found_markers, sds)
+    get_markers_definition(found_markers, sds, abi_service)
 
     for r in sds:
       data.setdefault(r['Sample Name'], []).append(r)
 
   kb = KB(driver='omero')(args.host, args.user, args.passwd)
-  missing_kb_markers = add_kb_marker_objects(found_markers)
+  missing_kb_markers = add_kb_marker_objects(kb, found_markers)
   if missing_kb_markers:
     logger.info('there are missing markers. Cannot proceed further.')
     fname = '%smarker-defs.tsv' % args.prefix

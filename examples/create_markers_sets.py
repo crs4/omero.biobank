@@ -24,6 +24,12 @@ First, as usual, we open the connection to the KnowledgeBase
 from bl.vl.kb import KnowledgeBase as KB
 import numpy as np
 
+import os
+
+OME_HOST   = os.getenv('OME_HOST', 'localhost')
+OME_USER   = os.getenv('OME_USER', 'root')
+OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
+
 kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
 
 
@@ -32,13 +38,13 @@ The following is the collection of (fake) markers used for the TaqMan
 assays.
 """
 taq_man_markers = [
-  ('A0001', 'xrs122652',  'TCACTTCTTCAAAGCT[A/G]AGCTACAAGCATTATT'),
-  ('A0002', 'xrs741592',  'GGAAGGAAGAAATAAA[C/G]CAGCACTATGTCTGGC'),
-  ('A0003', 'xrs807079',  'CCGACCTAGTAGGCAA[A/G]TAGACACTGAGGCTGA'),
-  ('A0004', 'xrs567736',  'AGGTCTATGTTAATAC[A/G]GAATCAGTTTCTCACC'),
-  ('A0005', 'xrs4693427', 'AGATTACCATGCAGGA[A/T]CTGTTCTGAGATTAGC'),
-  ('A0006', 'xrs4757019', 'TCTACCTCTGTGACTA[C/G]AAGTGTTCTTTTATTT'),
-  ('A0007', 'xrs7958813', 'AAGGCAATACTGTTCA[C/T]ATTGTATGGAAAGAAG')
+  ('A001', 'xrs122652',  'TCACTTCTTCAAAGCT[A/G]AGCTACAAGCATTATT'),
+  ('A002', 'xrs741592',  'GGAAGGAAGAAATAAA[C/G]CAGCACTATGTCTGGC'),
+  ('A003', 'xrs807079',  'CCGACCTAGTAGGCAA[A/G]TAGACACTGAGGCTGA'),
+  ('A004', 'xrs567736',  'AGGTCTATGTTAATAC[A/G]GAATCAGTTTCTCACC'),
+  ('A005', 'xrs4693427', 'AGATTACCATGCAGGA[A/T]CTGTTCTGAGATTAGC'),
+  ('A006', 'xrs4757019', 'TCTACCTCTGTGACTA[C/G]AAGTGTTCTTTTATTT'),
+  ('A007', 'xrs7958813', 'AAGGCAATACTGTTCA[C/T]ATTGTATGGAAAGAAG')
   ]
 
 """ ..
@@ -112,6 +118,7 @@ representation of the 'inverse' of the creation process.
 
 """
 
+mset.load_markers()
 data_sample_by_id = {}
 family = []
 for i, ind in enumerate(kb.get_individuals(study)):
