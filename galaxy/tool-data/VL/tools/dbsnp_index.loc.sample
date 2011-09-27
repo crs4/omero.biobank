@@ -1,0 +1,7 @@
+# This file has the following format (longer white space characters are TAB characters):
+#
+#<id>   <dbkey>   <display_name>   <mask_len>   <file_path>
+#
+#example:
+#
+#20110712_hg18_251   20110712_hg18_251   dbSNP v. 20110712, hg18, len_k=251   hg18   251   /tmp/hg18/dbSNP/20110712/dbsnp_index_hg18_251.db

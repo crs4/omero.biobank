@@ -3,9 +3,8 @@
   <command interpreter="python">
     convert_sam.py --logfile ${log_file} convert_sam -i ${input_file}
     -o ${output_file} --reftag ${dbkey} --output-format ${output_type}
-    #if $output_type == "segment_extractor":
-      --flank-size $flank_size
-    #end if
+    ## FIXME: find a way to import the default from the relevant module
+    --flank-size 125
   </command>
   <inputs>
     <param name="input_file" type="data" format="sam" label="SAM input file" />
@@ -13,7 +12,6 @@
       <option value="marker_alignment">VL marker alignment</option>
       <option value="segment_extractor">Genome segment extractor</option>
     </param>
-    <param name="flank_size" type="integer" value="125" label="size of the flanks to extract around the SNP. Has no effect with VL marker alignment output type" />
   </inputs>
   <outputs>
     <data name="output_file">

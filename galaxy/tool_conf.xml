@@ -15,6 +15,7 @@
   <section name="VL Tools" id="vlSection.tools">
     <tool file="VL/tools/markers_to_fastq.xml"/>
     <tool file="VL/tools/convert_sam.xml"/>
+    <tool file="VL/tools/lookup_index.xml"/>
     <tool file="VL/tools/map_vid.xml"/>
   </section>
   <!-- OMERO/VL END -->
