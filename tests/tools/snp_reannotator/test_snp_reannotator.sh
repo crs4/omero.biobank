@@ -24,8 +24,8 @@ ${SNP_REANNOTATOR} --logfile convert_sam_to_ma.log convert_sam -i reads.sam -o m
 ${SNP_REANNOTATOR} --logfile convert_sam_to_se.log convert_sam -i reads.sam -o segment_extractor.tsv --reftag hg18 --output-format segment_extractor
 
 echo "Testing build_index"
-${SNP_REANNOTATOR} --logfile build_index.log build_index -i extracted_segments.tsv -o dbsnp_index_251.db
-python dump_db.py dbsnp_index_251.db
+${SNP_REANNOTATOR} --logfile build_index.log build_index -i extracted_segments.tsv -o ./ --reftag hg18
+python dump_db.py dbsnp_index_hg18_251.db
 
 echo "Testing lookup_index"
-${SNP_REANNOTATOR} --logfile lookup_index.log lookup_index -i test_extracted_segments.tsv --index-file dbsnp_index_251.db -o affy_marker_definitions_reannot.tsv
+${SNP_REANNOTATOR} --logfile lookup_index.log lookup_index -i test_extracted_segments.tsv --index-file dbsnp_index_hg18_251.db -o affy_marker_definitions_reannot.tsv
