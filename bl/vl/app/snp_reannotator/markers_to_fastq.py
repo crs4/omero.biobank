@@ -20,7 +20,8 @@ HELP_DOC = __doc__
 ALLELE_CODES = ('A', 'B', 'C', 'D')
 
 
-def build_fastq_records(label, mask, name_serializer):
+def build_fastq_records(label, mask, name_serializer, logger=None):
+  logger = logger or NullLogger()
   records = []
   try:
     lflank, alleles, rflank = split_mask(mask)
@@ -41,7 +42,9 @@ def write_output(reader, outf, logger=None):
   seq_count = 0
   name_serializer = SeqNameSerializer()
   for r in reader:
-    fastq_records = build_fastq_records(r['label'], r['mask'], name_serializer)
+    fastq_records = build_fastq_records(
+      r['label'], r['mask'], name_serializer, logger=logger
+      )
     seq_count += len(fastq_records)
     for r in fastq_records:
       outf.write("%s\n" % "\n".join(r))
