@@ -1,10 +1,10 @@
-IMPORTER='../../../tools/importer -P romeo --operator aen'
-KB_QUERY='../../../tools/kb_query -P romeo --operator aen'
+IMPORTER='../../../tools/importer -P test --operator aen'
+KB_QUERY='../../../tools/kb_query -P test --operator aen'
 
-${IMPORTER} -i study.tsv -o study_mapping.tsv study
-${IMPORTER} -i individual.tsv -o individual_mapping.tsv individual
+${IMPORTER} -i small/study.tsv -o study_mapping.tsv study
+${IMPORTER} -i small/individual.tsv -o individual_mapping.tsv individual
 ${KB_QUERY} -o blood_sample_mapped.tsv \
-             map_vid -i blood_sample.tsv \
+             map_vid -i small/blood_sample.tsv \
                  --column individual_label\
                  --source-type Individual \
                  --study BSTUDY
@@ -16,7 +16,7 @@ ${IMPORTER} -i blood_sample_mapped.tsv -o blood_sample_mapping.tsv \
              --vessel-type Tube
 
 ${KB_QUERY} -o dna_sample_mapped.tsv \
-             map_vid -i dna_sample.tsv \
+             map_vid -i small/dna_sample.tsv \
                  --column bio_sample_label \
                  --source-type Tube \
                  --study BSTUDY
@@ -27,12 +27,12 @@ ${IMPORTER} -i dna_sample_mapped.tsv -o dna_sample_mapping.tsv \
              --vessel-content DNA --vessel-status CONTENTUSABLE \
              --vessel-type Tube
 
-${IMPORTER} -i titer_plate.tsv -o titer_plate_mapping.tsv \
+${IMPORTER} -i small/titer_plate.tsv -o titer_plate_mapping.tsv \
             titer_plate --study BSTUDY --plate-shape=32x48 \
             --maker=foomak --model=foomod
 
 ${KB_QUERY} -o plate_well_mapped_1.tsv \
-             map_vid -i plate_well.tsv \
+             map_vid -i small/plate_well.tsv \
                  --column bio_sample_label \
                  --source-type Tube \
                  --study BSTUDY
@@ -49,11 +49,11 @@ ${IMPORTER} -i plate_well_mapped_2.tsv -o plate_well_mapping.tsv \
              --vessel-status CONTENTUSABLE --vessel-type PlateWell
 
 
-${IMPORTER} -i devices.tsv -o devices_mapping.tsv device --study BSTUDY
+${IMPORTER} -i small/devices.tsv -o devices_mapping.tsv device --study BSTUDY
 
 
 ${KB_QUERY} -o data_sample_mapped_1.tsv \
-             map_vid -i data_sample.tsv \
+             map_vid -i small/data_sample.tsv \
                  --column sample_label \
                  --source-type PlateWell \
                  --study BSTUDY
@@ -71,7 +71,7 @@ ${IMPORTER} -i data_sample_mapped_2.tsv -o data_sample_mapping.tsv \
              --device-type Chip --scanner ${SCANNER}
 
 ${KB_QUERY} -o data_object_mapped.tsv \
-             map_vid -i data_object.tsv \
+             map_vid -i small/data_object.tsv \
                  --column data_sample_label,data_sample \
                  --source-type DataSample \
                  --study BSTUDY
@@ -82,7 +82,7 @@ ${IMPORTER} -i data_object_mapped.tsv -o data_object_mapping.tsv \
              --study BSTUDY --mimetype=x-vl/affymetrix-cel
 
 ${KB_QUERY} -o data_collection_mapped.tsv \
-             map_vid -i data_collection.tsv \
+             map_vid -i small/data_collection.tsv \
                  --column data_sample_label,data_sample \
                  --source-type DataSample \
                  --study BSTUDY
@@ -104,7 +104,7 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
 
 
 ${KB_QUERY} -o diagnosis_mapped.tsv \
-             map_vid -i diagnosis.tsv \
+             map_vid -i small/diagnosis.tsv \
                  --column individual_label,individual \
                  --source-type Individual \
                  --study BSTUDY
@@ -115,25 +115,25 @@ ${IMPORTER} -i diagnosis_mapped.tsv \
 
 
 
-${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus.tsv \
-            -o AppliedBioSystem_TaqMan_MSstatus_mapping.tsv \
+${IMPORTER} -i small/marker_definition.tsv \
+            -o marker_definition_mapping.tsv \
             marker_definition --study BSTUDY --source CNR-IGMB \
             --context TaqMan --release MSstatus
 
 
-${KB_QUERY} -o AppliedBioSystem_TaqMan_MSstatus_aligned_mapped.tsv \
-            map_vid -i AppliedBioSystem_TaqMan_MSstatus_aligned.tsv\
+${KB_QUERY} -o marker_alignment_mapped.tsv \
+            map_vid -i small/marker_alignment.tsv\
             --source-type Marker --column label,marker_vid
 
-${IMPORTER} -i AppliedBioSystem_TaqMan_MSstatus_aligned_mapped.tsv \
+${IMPORTER} -i marker_alignment_mapped.tsv \
             marker_alignment --study BSTUDY --ref-genome hg28  \
             --message 'alignment done using libbwa'
 
-${KB_QUERY} -o taq_man_ms_status_markers_set_mapped.tsv \
-            map_vid -i taq_man_ms_status_markers_set.tsv \
+${KB_QUERY} -o markers_set_mapped.tsv \
+            map_vid -i small/markers_set.tsv \
             --source-type Marker --column marker_label,marker_vid
 
-${IMPORTER} -i taq_man_ms_status_markers_set_mapped.tsv \
+${IMPORTER} -i markers_set_mapped.tsv \
             markers_set \
             --study BSTUDY \
             --label MSET0 --maker CRS4 --model TaqMan --release MSstudy
