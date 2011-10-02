@@ -1,0 +1,8 @@
+study	label	sample_label	device_label
+TEST01	foobar-00	P001:A01	chip001	
+TEST01	foobar-01	P001:A02	chip002
+TEST01	foobar-02	P002:A03	chip003
+TEST01	foobar-03	P003:E04	chip004
+TEST01	foobar-04	P004:A05	chip005
+TEST01	foobar-05	P004:B06	chip006
+

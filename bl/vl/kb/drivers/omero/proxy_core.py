@@ -315,8 +315,23 @@ class ProxyCore(object):
     col_objs = t.getHeaders()
     return iter_on_rows(t, len(col_objs))
 
+  def __convert_col_names_to_indices(self, table, col_names):
+    col_objs = table.getHeaders()
+    if col_names:
+      col_numbers = []
+      by_name = dict(((c.name, i) for i, c in enumerate(col_objs)))
+      for name in col_names:
+        if name in by_name:
+          col_numbers.append(by_name[name])
+        else:
+          raise ValueError('%s not in table' % name)
+    else:
+      col_numbers = range(len(col_objs))
+    return col_numbers
+
   @debug_boundary
-  def get_table_rows(self, table_name, selector, batch_size=50000):
+  def get_table_rows(self, table_name, selector, col_names=None,
+                     batch_size=50000):
     """
     FIXME
     selector can now be either a selection or a list of selections. In
@@ -326,16 +341,18 @@ class ProxyCore(object):
     s = self.connect()
     try:
       t = self._get_table(s, table_name)
+      col_numbers = self.__convert_col_names_to_indices(t, col_names)
       if selector:
-        res = self.__get_table_rows_selected(t, selector, batch_size)
+        res = self.__get_table_rows_selected(t, selector, col_numbers,
+                                             batch_size)
       else:
-        res = self.__get_table_rows_bulk(t, batch_size)
+        res = self.__get_table_rows_bulk(t, col_numbers, batch_size)
     finally:
       self.disconnect()
     return res
 
   @debug_boundary
-  def __get_table_rows_selected(self, table, selector, batch_size):
+  def __get_table_rows_selected(self, table, selector, col_numbers, batch_size):
     res, row_read, max_row = [], 0, table.getNumberOfRows()
     if isinstance(selector, str):
       selector = [selector]
@@ -343,21 +360,48 @@ class ProxyCore(object):
       for s in selector:
         ids = table.getWhereList(s, {}, row_read, row_read + batch_size, 1)
         if ids:
-          d = table.readCoordinates(ids)
+          d = table.slice(col_numbers, ids)
           res.append(convert_coordinates_to_np(d))
       row_read += batch_size
     return np.concatenate(tuple(res)) if res else []
 
+
   @debug_boundary
-  def __get_table_rows_bulk(self, table, batch_size):
+  def __get_table_rows_bulk(self, table, col_numbers, batch_size=50000):
     res, row_read, max_row = [], 0, table.getNumberOfRows()
-    col_objs = table.getHeaders()
     while row_read < max_row:
-      d = table.read(range(len(col_objs)), row_read, row_read + batch_size)
+      d = table.read(col_numbers, row_read, row_read + batch_size)
       if d:
         res.append(convert_coordinates_to_np(d))
       row_read += batch_size
     return np.concatenate(tuple(res)) if res else []
+
+  @debug_boundary
+  def __get_table_rows_slice(self, table, row_numbers, col_numbers, batch_size):
+    res, n_rows, row_read = [], len(row_numbers), 0
+
+    while row_read < n_rows:
+      ids = row_numbers[row_read : (row_read + batch_size)]
+      if ids:
+        d = table.slice(col_numbers, ids)
+        res.append(convert_coordinates_to_np(d))
+      row_read += batch_size
+    return np.concatenate(tuple(res)) if res else []
+
+  @debug_boundary
+  def get_table_slice(self, table_name, row_numbers, col_names=None,
+                      batch_size=50000):
+    """
+    FIXME
+    """
+    s = self.connect()
+    try:
+      t = self._get_table(s, table_name)
+      col_numbers = self.__convert_col_names_to_indices(t, col_names)
+      res = self.__get_table_rows_slice(t, row_numbers, col_numbers, batch_size)
+    finally:
+      self.disconnect()
+    return res
 
   #--
   @debug_boundary

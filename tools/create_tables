@@ -47,9 +47,10 @@ def make_parser():
                       default='localhost')
   parser.add_argument('-U', '--user', type=str,
                       help='omero user',
-                      default='root')
+                      default='test')
   parser.add_argument('-P', '--passwd', type=str,
-                      help='omero user passwd')
+                      help='omero user passwd',
+                      required=True)
   parser.add_argument('--do-it', action='store_true',
                       default=False, help='I known the risks. I still want to do it.')
   return parser
@@ -57,10 +58,6 @@ def make_parser():
 def main():
   parser = make_parser()
   args = parser.parse_args()
-  if not (args.host and args.user and args.passwd):
-    print '\nERROR: missing host, user and passwd\n'
-    parser.print_usage()
-    sys.exit(0)
   if not args.do_it:
     print 'Are you sure? Really? Then enable the --do-it flag.'
     parser.print_usage()

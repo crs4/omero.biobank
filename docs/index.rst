@@ -23,6 +23,7 @@ Contents:
    usage/index
    api_tour/index
    dev_manual/index
+   installation
 
 Todo List
 =========

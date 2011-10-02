@@ -148,7 +148,7 @@ class App(object):
                         default='localhost')
     parser.add_argument('-U', '--user', type=str,
                         help='omero user',
-                        default='root')
+                        default='test')
     parser.add_argument('-P', '--passwd', type=str,
                         help='omero user passwd',
                         required=True)

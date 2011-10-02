@@ -17,8 +17,8 @@ import numpy as np
 import os
 
 OME_HOST   = os.getenv('OME_HOST', 'localhost')
-OME_USER   = os.getenv('OME_USER', 'root')
-OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
+OME_USER   = os.getenv('OME_USER', 'test')
+OME_PASSWD = os.getenv('OME_PASSWD', 'test')
 
 kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
 

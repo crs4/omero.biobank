@@ -9,4 +9,5 @@ Contents:
    omero
    openehr
    galaxy
+   examples
    api_ref

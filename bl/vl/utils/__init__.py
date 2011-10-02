@@ -1,3 +1,13 @@
+"""
+Plumbing and duct tape
+======================
+
+.. todo::
+
+   write doc of the bl/vl/utils module.
+
+"""
+
 import uuid
 
 

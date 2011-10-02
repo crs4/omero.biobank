@@ -27,8 +27,8 @@ import numpy as np
 import os
 
 OME_HOST   = os.getenv('OME_HOST', 'localhost')
-OME_USER   = os.getenv('OME_USER', 'root')
-OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
+OME_USER   = os.getenv('OME_USER', 'test')
+OME_PASSWD = os.getenv('OME_PASSWD', 'test')
 
 kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
 
@@ -69,6 +69,27 @@ action = kb.create_an_action(study, doc='importing markers')
 source, context, release = 'foobar', 'fooctx', 'foorel'
 
 lvs = kb.create_markers(source, context, release, taq_man_markers, action)
+
+""" ..
+
+where lvs is a list of (label, vid) tuples.
+
+We can suppose that the markers above have been alligned against a
+reference genome, say fake18, and save in omero/vl the alignment information.
+We will fake the alignment results as follows.
+"""
+
+aligns = [(t[1], 1, i*1000, True, 'A' if (i%2)== 0 else 'B', 1)
+          for i, v in enumerate(lvs)]
+
+ref_genome = 'fake19'
+kb.save_snp_markers_alignments(ref_genome, aligns, action)
+
+""" ..
+
+We can now create an actual markers set.
+
+"""
 
 taq_man_set = [ (t[1], i, False) for i, t in enumerate(lvs)]
 label, maker, model, release = 'FakeTaqSet01', 'CRS4', 'TaqManSet', '23/09/2011'
@@ -141,7 +162,7 @@ saved as a plink pedfile.
 """
 from bl.vl.genotype.io import PedWriter
 
-pw = PedWriter(mset, base_path="./foo")
+pw = PedWriter(mset, base_path="./foo", ref_genome=ref_genome)
 
 pw.write_map()
 

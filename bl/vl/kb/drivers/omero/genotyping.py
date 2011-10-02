@@ -6,7 +6,7 @@ import bl.vl.utils.snp as vlu_snp
 class Marker(object):
   "FIXME This is a place-holder"
 
-  def __init__(self, vid, label, rs_label, mask, position=(0,0)):
+  def __init__(self, vid, label=None, rs_label=None, mask=None, position=(0,0)):
     self.id = vid
     self.label = label
     self.rs_label = rs_label
@@ -107,20 +107,21 @@ class GenotypingAdapter(object):
                                        i_s, batch_size)
     return vid_correspondence
 
-  def get_snp_marker_definitions(self, selector=None, batch_size=50000):
-    """
-    selector = "(source == 'affymetrix') & (context == 'GW6.0')"
-    """
+  def get_snp_marker_definitions(self, selector=None, col_names=None,
+                                 batch_size=50000):
     return self.kb.get_table_rows(self.SNP_MARKER_DEFINITIONS_TABLE,
-                                  selector, batch_size)
+                                  selector, col_names, batch_size)
 
-  def marker_maker(self, r):
+  def marker_maker(self, r, names):
+    if names:
+      args = dict(zip(names, r))
+      return Marker(**args)
     vid, label, rs_label, mask = map(str, [r[0], r[4], r[5], r[6]])
     return Marker(vid, label, rs_label, mask)
 
-  def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
-                      batch_size=50000):
-    selector_critical_size = 10000
+  def get_snp_markers_disabled(self, labels=None, rs_labels=None, vids=None,
+                               col_names=None,
+                               batch_size=50000, selector_critical_size=100):
     count = (labels is None) + (rs_labels is None) + (vids is None)
     if count == 3:
       raise ValueError('labels, rs_labels and vids cannot be all None')
@@ -148,9 +149,34 @@ class GenotypingAdapter(object):
         selector.append('|'.join(['(%s=="%s")' % (field_name, l)
                                   for l in requested[start:end]]))
         start = end
-    res = self.get_snp_marker_definitions(selector, batch_size)
-    return [self.marker_maker(r) for r in res]
+    res = self.get_snp_marker_definitions(selector, col_names, batch_size)
+    return [self.marker_maker(r, col_names) for r in res]
 
+  def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
+                      col_names=None,
+                      batch_size=50000):
+    count = (labels is None) + (rs_labels is None) + (vids is None)
+    if count == 3:
+      raise ValueError('labels, rs_labels and vids cannot be all None')
+    if count == 1:
+      raise ValueError('only one of labels, rs_labels and vids should be assigned')
+    if labels:
+      field_name = 'label'
+      requested = labels
+    elif rs_labels:
+      field_name = 'rs_label'
+      requested = rs_labels
+    else:
+      field_name = 'vid'
+      requested = vids
+    recs = self.get_snp_marker_definitions(col_names=[field_name],
+                                           batch_size=max(batch_size,
+                                                          len(requested)))
+    by_field = dict(((l[0], i) for i, l in enumerate(recs)))
+    row_indices = [by_field[x] for x in requested]
+    res = self.kb.get_table_slice(self.SNP_MARKER_DEFINITIONS_TABLE,
+                                  row_indices, col_names, batch_size)
+    return [self.marker_maker(r, col_names) for r in res]
 
   #-- marker sets
   def create_snp_markers_set_table(self):
@@ -206,9 +232,22 @@ class GenotypingAdapter(object):
     return self.kb.add_table_rows_from_stream(self.SNP_ALIGNMENT_TABLE,
                                               i_s, batch_size)
 
-  def get_snp_alignments(self, selector=None, batch_size=50000):
+  def get_snp_alignments(self, selector=None, col_names=None, batch_size=50000):
     return self.kb.get_table_rows(self.SNP_ALIGNMENT_TABLE, selector,
-                                  batch_size)
+                                  col_names, batch_size)
+
+  def get_snp_alignment_positions(self, ref_genome, marker_vids,
+                                  batch_size=5000):
+    selector = '(ref_genome == "%s")' % ref_genome
+    res = self.get_snp_alignments(selector, col_names=['marker_vid'],
+                                  batch_size=batch_size)
+    if len(res) == 0:
+      return []
+    by_vid = dict(((l[0], i) for i, l in enumerate(recs)))
+    row_indices = [by_vid[x] for x in marker_vids]
+    return self.kb.get_table_slice(self.SNP_ALIGNMENT_TABLE,
+                                   row_indices, ['chromosome', 'pos'],
+                                   batch_size)
 
   #-- gdo
   def _gdo_table_name(self, set_vid):

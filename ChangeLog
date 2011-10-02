@@ -1,3 +1,17 @@
+2011-10-02    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/proxy.py (Proxy.update_snp_positions):
+	Now we use slice here too.
+
+2011-10-01    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/proxy_core.py (ProxyCore.get_table_rows):
+	Now we use slice and we allow for column selection.
+
+2011-09-28    <zag@manzanillo>
+
+	* examples/import_taqman_results.py: new name for define_taq_markers.
+
 2011-09-27    <zag@manzanillo>
 
 	* bl/vl/utils/snp.py (approx_equal_masks): Added.

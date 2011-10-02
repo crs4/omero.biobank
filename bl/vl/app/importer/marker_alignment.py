@@ -77,7 +77,9 @@ class Recorder(Core):
 
     markers = dict([(m.id, m) for m in
                     self.kb.get_snp_markers(vids=[r['marker_vid']
-                                                  for r in records])])
+                                                  for r in records],
+                                            col_names=['vid'])
+                    ])
     accepted = []
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i

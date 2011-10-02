@@ -11,8 +11,8 @@ FIXME: Here goes a general intro. Points to touch:
  * A major complication is do decide what stays in memory and what
    should be projected in db.
  * For the time being, we try to be clear first and efficient second.
- * Explations concerning how to open a connection to a KnowledgeBase
-   and what it is are left to other, preliminary, parts of the
+ * Explanations concerning how to open a connection to a KnowledgeBase
+   and what it is are left to other, antecedent, parts of the
    documentation.
 
 """

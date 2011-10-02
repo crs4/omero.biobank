@@ -201,11 +201,31 @@ class Proxy(ProxyCore):
     op_vid = self.__resolve_action_id(action)
     return self.gadpt.add_snp_marker_definitions(stream, op_vid, batch_size)
 
-  def get_snp_marker_definitions(self, selector=None, batch_size=50000):
-    return self.gadpt.get_snp_marker_definitions(selector, batch_size)
+  def get_snp_marker_definitions(self, selector=None, col_names=None,
+                                 batch_size=50000):
+    """
+    Returns an array with the marker definitions that satisfy
+    selector. If selector is None, returns all markers definitions. It
+    is possible to request only specific columns of the markers
+    definition by assigning to col_names a list with the names of
+    the selected columns.
 
-  def get_snp_markers(self, labels=None, rs_labels=None, vids=None):
-    return self.gadpt.get_snp_markers(labels, rs_labels, vids)
+    .. code-block:: python
+
+       selector = "(source == 'affymetrix') & (context == 'GW6.0')"
+
+       col_names = ['vid', 'label']
+
+       mrks = kb.get_snp_marker_definitions(selector, col_names)
+
+    """
+    return self.gadpt.get_snp_marker_definitions(selector, col_names,
+                                                 batch_size)
+
+  def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
+                      col_names=None):
+    return self.gadpt.get_snp_markers(labels, rs_labels, vids,
+                                      col_names=col_names)
 
   def add_snp_alignments(self, stream, op_vid, batch_size=50000):
     return self.gadpt.add_snp_alignments(stream, op_vid, batch_size)
@@ -222,7 +242,8 @@ class Proxy(ProxyCore):
   def get_snp_markers_set_content(self, snp_markers_set, batch_size=50000):
     selector = '(vid=="%s")' % snp_markers_set.markersSetVID
     msetc = self.gadpt.get_snp_markers_set(selector, batch_size)
-    mdefs = self.get_snp_markers(vids=[mv for mv in msetc['marker_vid']])
+    mdefs = self.get_snp_markers(vids=[mv for mv in msetc['marker_vid']],
+                                 col_names=['vid', 'label'])
     return mdefs, msetc
 
   def add_snp_markers_set(self, maker, model, release, action):
@@ -233,8 +254,8 @@ class Proxy(ProxyCore):
     avid = self.__resolve_action_id(action)
     return self.gadpt.fill_snp_markers_set(set_vid, stream, avid, batch_size)
 
-  def get_snp_alignments(self, selector=None, batch_size=50000):
-    return self.gadpt.get_snp_alignments(selector, batch_size)
+  def get_snp_alignments(self, selector=None, col_names=None, batch_size=50000):
+    return self.gadpt.get_snp_alignments(selector, col_names, batch_size)
 
   def create_gdo_repository(self, set_vid, N):
     return self.gadpt.create_gdo_repository(set_vid, N)
@@ -345,6 +366,39 @@ class Proxy(ProxyCore):
                                                      action)
     return label_vid_list
 
+  def save_snp_markers_alignments(self, ref_genome, stream, action):
+    """
+    Given a stream of five values tuples, will save allignment
+    information of markers against a reference genome. The tuple field
+    are, respectively, the marker vid, the chromosome number (with 23
+    for X, 24 for Y, 25 for XY and 26 MT), a boolean that indicates if
+    the marker alligns on the 5' strand (True), the allele seen on the
+    reference genome and the number of times the given marker has been
+    seen on the reference genome. If the latter is N larger than 1,
+    there should be N records pertaining to the same marker.
+
+    .. code-blocK:: python
+
+        s = [('V8238983', 1, 200, True, 'A', 1),
+             ('V8238983', 2, 300, True, 'B', 1),
+             ('V8238983', 4, 400, True, 'A', 1),
+             ('V8238983', 2, 400, True, 'A', 2)]
+
+        kb.save_snp_markers_alignments('hg19', s, action)
+
+    """
+    # FIXME no checking....
+    def generator(s):
+      for x in s:
+        y = {'marker_vid' : x[0], 'ref_genome' : ref_genome,
+             'chromosome' : x[1], 'position' : x[2],
+             'global_pos' : (x[1]*10**10 + x[2]),
+             'strand' : x[3],
+             'allele' : x[4],
+             'copies' : x[5]}
+        yield y
+    self.add_snp_marker_definitions(generator(stream), action.id)
+
   def create_snp_markers_set(self, label, maker, model, release,
                              stream, action):
     """
@@ -390,34 +444,14 @@ class Proxy(ProxyCore):
     return mset
 
   def update_snp_positions(self, markers, ref_genome, batch_size=50000):
-    def build_selector(ref_genome, markers):
-      selector = '(ref_genome == "%s")&(' % ref_genome
-      for m in markers:
-        selector += '(marker_vid=="%s")|' % m.id
-      return selector[:-1] + ')'
-    selector_critical_size = 10000
-    if len(markers) < critical_size:
-      selector = build_selector(ref_genome, markers)
-    else:
-      n = len(markers)
-      n_chunks = (n / selector_critical_size
-                  + 1 if n % selector_critical_size else 0)
-      start = 0
-      selector = []
-      while start < n:
-        end = start + selector_critical_size
-        selector.append(build_selector(markers[start:end]))
-        start = end
-    res = self.get_snp_alignments(selector, batch_size=50000)
+    vids = [m.id for m in markers]
+    res = self.gadpt.get_snp_alignment_positions(ref_genome, vids,
+                                                 batch_size)
     if not res:
       raise ValueError('missing markers alignments')
 
-    by_vid = dict(it.izip(res['marker_vid'], it.izip(res['chromosome'],
-                                                     res['pos'])))
-    if len(by_vid) != len(markers):
-      raise ValueError('missing markers alignments')
-    for m in markers:
-      m.position = by_vid[m.id]
+    for m, r in it.izip(markers, res):
+      m.position = r
 
   def get_individuals(self, group):
     """

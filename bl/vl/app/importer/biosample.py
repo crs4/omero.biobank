@@ -16,12 +16,12 @@ and they should be provided as command line options.
 .. code-block:: bash
 
    ${IMPORT} ${SERVER_OPTS} -i bio_samples.tsv
-                            -o bio_mapping.tsv biosample \
-                            --study  ${DEFAULT_STUDY} \
-                            --source-type Individual \
-                            --vessel-type Tube \
-                            --vessel-content BLOOD \
-                            --vessel-status  USABLE \
+                            -o bio_mapping.tsv biosample
+                            --study  ${DEFAULT_STUDY}
+                            --source-type Individual
+                            --vessel-type Tube
+                            --vessel-content BLOOD
+                            --vessel-status  USABLE
                             --current-volume 20
 
 where vessel-content is taken from the enum VesselContent possible
@@ -39,11 +39,11 @@ microliters.
 .. code-block:: bash
 
    ${IMPORT} ${SERVER_OPTS} -i bio_samples.tsv
-                            -o bio_mapping.tsv biosample \
-                            --study  ${DEFAULT_STUDY} \
-                            --vessel-type Tube \
-                            --source-type Tube \
-                            --vessel-content DNA \
+                            -o bio_mapping.tsv biosample
+                            --study  ${DEFAULT_STUDY}
+                            --vessel-type Tube
+                            --source-type Tube
+                            --vessel-content DNA
                             --vessel-status  USABLE
 
 
@@ -83,10 +83,10 @@ biosample objects. The following is a complete example.
    I004-bs-2  I004
    I005-bs-2  I005
    I006-bs-2  I006
-   bash> ${KB_QUERY} -o blood_sample_mapped.tsv \
-                map_vid -i blood_sample.tsv \
-                 --column individual_label\
-                 --source-type Individual \
+   bash> ${KB_QUERY} -o blood_sample_mapped.tsv
+                map_vid -i blood_sample.tsv
+                 --column individual_label
+                 --source-type Individual
                  --study BSTUDY
    bash> cat blood_sample_mapped.tsv
    label  source
@@ -96,10 +96,10 @@ biosample objects. The following is a complete example.
    I004-bs-2  V080331A3E763348F4879A71FEAA11C699
    I005-bs-2  V00FE62DB1758648CFB91F354A7EF9AAE2
    I006-bs-2  V01654DCFC5BB640C0BB7EE088194E629D
-   bash> ${IMPORTER} -i blood_sample_mapped.tsv -o blood_sample_mapping.tsv \
-             biosample \
-             --study BSTUDY --source-type Individual \
-             --vessel-content BLOOD --vessel-status CONTENTUSABLE \
+   bash> ${IMPORTER} -i blood_sample_mapped.tsv -o blood_sample_mapping.tsv
+             biosample
+             --study BSTUDY --source-type Individual
+             --vessel-content BLOOD --vessel-status CONTENTUSABLE
              --vessel-type Tube
    bash> cat blood_sample_mapping.tsv
    study  label type  vid
@@ -115,21 +115,21 @@ One more complete examples for plate wells import.
 
 .. code-block:: bash
 
-  ${KB_QUERY} -o plate_well_mapped_1.tsv \
-               map_vid -i plate_well.tsv \
-                   --column bio_sample_label \
-                   --source-type Tube \
+  ${KB_QUERY} -o plate_well_mapped_1.tsv
+               map_vid -i plate_well.tsv
+                   --column bio_sample_label
+                   --source-type Tube
                    --study BSTUDY
 
-  ${KB_QUERY} -o plate_well_mapped_2.tsv \
-               map_vid -i plate_well_mapped_1.tsv \
-                   --column plate_label,plate \
-                   --source-type TiterPlate \
+  ${KB_QUERY} -o plate_well_mapped_2.tsv
+               map_vid -i plate_well_mapped_1.tsv
+                   --column plate_label,plate
+                   --source-type TiterPlate
                    --study BSTUDY
 
-  ${IMPORTER} -i plate_well_mapped_2.tsv -o plate_well_mapping.tsv \
-               biosample \
-               --study BSTUDY --source-type Tube --action-category ALIQUOTING \
+  ${IMPORTER} -i plate_well_mapped_2.tsv -o plate_well_mapping.tsv
+               biosample
+               --study BSTUDY --source-type Tube --action-category ALIQUOTING
                --vessel-status CONTENTUSABLE --vessel-type PlateWell
 
 

@@ -1,0 +1,8 @@
+study	path	data_sample_label	mimetype	size	sha1
+TEST01	file:/share/fs/v000.cel	foobar-00	x-vl/affymetrix-cel	8989	SHA1SHA1
+TEST01	file:/share/fs/v001.cel	foobar-01	x-vl/affymetrix-cel	8989	SHA1SHA1
+TEST01	file:/share/fs/v002.cel	foobar-02	x-vl/affymetrix-cel	8989	SHA1SHA1
+TEST01	file:/share/fs/v003.cel	foobar-03	x-vl/affymetrix-cel	8989	SHA1SHA1
+TEST01	file:/share/fs/v004.cel	foobar-04	x-vl/affymetrix-cel	8989	SHA1SHA1
+TEST01	file:/share/fs/v005.cel	foobar-05	x-vl/affymetrix-cel	8989	SHA1SHA1
+TEST01	file:/share/fs/v051.cel	foobar-05	x-vl/affymetrix-cel	8989	SHA1SHA1

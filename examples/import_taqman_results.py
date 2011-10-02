@@ -20,13 +20,15 @@ do the following:
     #. write out the relevant marker set import file
 
     #. for each sample write out all the relevant snp calls as a SSC
-       (SampleSnpCall) file in the x-protobuf-ssc format.
+       (SampleSnpCall) file in the x-ssc-messages format.
 
 Usage:
 
 .. code-block:: bash
 
-   python define_taq_markers.py --device-label pula01 --prefix foobar -P romeo --ifile data/file_list.lst --run-id foobar
+   python define_taq_markers.py --device-label pula01 \
+                                --prefix foobar -P romeo \
+                                --ifile data/file_list.lst --run-id foobar
 
 
 """
@@ -44,6 +46,13 @@ import urllib2
 from BeautifulSoup import BeautifulSoup
 
 logger = None
+
+""" ..
+
+The following is a simple utility class to look-up markers definition
+in the Applied Biosystems markers database.
+
+"""
 
 class ABISnpService(object):
   SERVER='https://products.appliedbiosystems.com/'
@@ -70,6 +79,17 @@ class ABISnpService(object):
     return mark_def
 
 #----------------------------------------------------------------------
+import hashlib
+
+def compute_sha1(fname):
+  BUFSIZE = 10000000
+  sha1 = hashlib.sha1()
+  with open(fname) as fi:
+    s = fi.read(BUFSIZE)
+    while s:
+      sha1.update(s)
+      s = fi.read(BUFSIZE)
+  return sha1.hexdigest()
 
 def get_markers_definition(found_markers, sds, abi_service):
   for m,v in sds.header['markers_info'].iteritems():
@@ -89,7 +109,7 @@ import bl.core.gt.messages.SnpCall as SnpCall
 def canonize_call(mask, abi_call):
   """
   Canonize call against top mask. Directly uses the base
-  called by TaqMan to understand the allele code.
+  called by TaqMan to compute the relevant allele code.
   """
   if abi_call.upper() == 'BOTH':
     return SnpCall.AB
@@ -114,8 +134,6 @@ def add_kb_marker_objects(kb, found_markers):
         v['kb_marker'] = kb_mrk[0]
         mask_vl, mask_abi = v['kb_marker'].mask, v['abi_definition']['mask']
         if not approx_equal_masks(mask_vl, convert_to_top(mask_abi)):
-          print 'mask_vl: %s, mask_abi: %s' % (mask_vl, mask_abi)
-          sys.exit(1)
           raise ValueError('inconsistent mask definition for %s'
                            % v['abi_definition']['rs_label'])
       else:
@@ -149,7 +167,7 @@ def write_markers_set_def_file(fname, found_markers):
   fo.writeheader()
   for i, m in enumerate(found_markers):
     marker = found_markers[m]
-    flip = False
+    flip = False # Since TaqMan assays directly report the actual base called
     r = {
       'marker_vid' : marker['kb_marker'].id,
       'marker_indx' : i,
@@ -179,12 +197,14 @@ def write_ssc_data_objects_import_file(fname, ssc_data_set):
                       delimiter='\t')
   fo.writeheader()
   for label, sample_id, device_id, fname in ssc_data_set:
+    size = os.stat(fname).st_size
+    sha1 = compute_sha1(fname)
     fo.writerow({
-      'path' : os.path.join('<FIXME>', fname),
+      'path' : 'file://' + os.path.realpath(fname),
       'data_sample_label' : label,
-      'mimetype' : 'x-ssc-messages-flow',
-      'size' : 0,
-      'sha1' : 'FIXME',
+      'mimetype' : 'x-ssc-messages',
+      'size' : size,
+      'sha1' : sha1,
       })
 
 def write_ssc_data_set_file(fname, found_markers,
