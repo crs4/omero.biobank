@@ -203,7 +203,8 @@ class GenotypingAdapter(object):
     return set_vid
 
   def get_snp_markers_sets(self, selector=None, batch_size=50000):
-    return self.kb.get_table_rows(self.SNP_SET_DEF_TABLE, selector, batch_size)
+    return self.kb.get_table_rows(self.SNP_SET_DEF_TABLE, selector,
+                                  batch_size=batch_size)
 
   def fill_snp_markers_set(self, set_vid, stream, op_vid, batch_size=50000):
     def add_op_vid(stream, N):
