@@ -104,13 +104,13 @@ class GenotypingAdapter(object):
         yield x
     i_s = add_vid_filter_and_op_vid(stream, op_vid)
     self.kb.add_table_rows_from_stream(self.SNP_MARKER_DEFINITIONS_TABLE,
-                                       i_s, batch_size)
+                                       i_s, batch_size=batch_size)
     return vid_correspondence
 
   def get_snp_marker_definitions(self, selector=None, col_names=None,
                                  batch_size=50000):
     return self.kb.get_table_rows(self.SNP_MARKER_DEFINITIONS_TABLE,
-                                  selector, col_names, batch_size)
+                                  selector, col_names, batch_size=batch_size)
 
   def marker_maker(self, r, names):
     if names:
@@ -214,11 +214,13 @@ class GenotypingAdapter(object):
         yield x
     N = [0]
     i_s = add_op_vid(stream, N)
-    self.kb.add_table_rows_from_stream(self.SNP_SET_TABLE, i_s, batch_size)
+    self.kb.add_table_rows_from_stream(self.SNP_SET_TABLE, i_s,
+                                       batch_size=batch_size)
     return N[0]
 
   def get_snp_markers_set(self, selector=None, batch_size=50000):
-    return self.kb.get_table_rows(self.SNP_SET_TABLE, selector, batch_size)
+    return self.kb.get_table_rows(self.SNP_SET_TABLE, selector,
+                                  batch_size=batch_size)
 
   #-- alignment
   def create_snp_alignment_table(self):
@@ -235,7 +237,7 @@ class GenotypingAdapter(object):
 
   def get_snp_alignments(self, selector=None, col_names=None, batch_size=50000):
     return self.kb.get_table_rows(self.SNP_ALIGNMENT_TABLE, selector,
-                                  col_names, batch_size)
+                                  col_names=col_names, batch_size=batch_size)
 
   def get_snp_alignment_positions(self, ref_genome, marker_vids,
                                   batch_size=5000):
@@ -248,7 +250,7 @@ class GenotypingAdapter(object):
     row_indices = [by_vid[x] for x in marker_vids]
     return self.kb.get_table_slice(self.SNP_ALIGNMENT_TABLE,
                                    row_indices, ['chromosome', 'pos'],
-                                   batch_size)
+                                   batch_size=batch_size)
 
   #-- gdo
   def _gdo_table_name(self, set_vid):
@@ -301,4 +303,5 @@ class GenotypingAdapter(object):
       for d in stream:
         yield self.__unwrap_gdo(set_vid, d, indices)
     table_name = self._gdo_table_name(set_vid)
-    return iterator(self.kb.get_table_rows_iterator(table_name, batch_size))
+    return iterator(self.kb.get_table_rows_iterator(table_name,
+                                                    batch_size=batch_size))

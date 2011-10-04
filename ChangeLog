@@ -1,3 +1,8 @@
+2011-10-03    <zag@manzanillo>
+
+	* models/actions.ome.xml: Added GenotypingProgram as a clean way
+	to automatize the attaching of a SnpMarkersSet to GenotypeDataSample.
+
 2011-10-02    <zag@manzanillo>
 
 	* bl/vl/kb/drivers/omero/proxy.py (Proxy.update_snp_positions):

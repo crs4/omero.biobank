@@ -35,6 +35,12 @@ FIXME
 	superclass="ome.model.vl.Device">
   </type>
 
+  <type id="ome.model.vl.GenotypingProgram"
+	superclass="ome.model.vl.SoftwareProgram">
+    <properties>
+      <required name="snpMarkersSet"  type="ome.model.vl.SNPMarkersSet" />
+    </properties>
+  </type>
 
   <type id="ome.model.vl.Chip"
 	superclass="ome.model.vl.Device">

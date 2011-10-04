@@ -162,7 +162,7 @@ saved as a plink pedfile.
 """
 from bl.vl.genotype.io import PedWriter
 
-pw = PedWriter(mset, base_path="./foo", ref_genome=ref_genome)
+pw = PedWriter(mset, base_path="./foo")
 
 pw.write_map()
 

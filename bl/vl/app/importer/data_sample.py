@@ -26,6 +26,9 @@ maker,model,release.
 The optional column '''scanner''', the vid of the scanner device, is
 used in cases, such as affymetrix genotyping where it is relevant.
 
+The optional column '''data_sample_type''' over-rides all of the
+automatic decisions that could be taken by the importer.
+
 It is also possible to import DataSample(s) that are the results of
 processing on other DataSample(s). This is an example::
 
@@ -33,6 +36,19 @@ processing on other DataSample(s). This is an example::
   ASTUDY foo01 v03909 v99021 SoftwareProgram conf1=...,conf2=...
   ASTUDY foo02 v03909 v99021 SoftwareProgram conf1=...,conf2=...
   ....
+
+A special case are GenotypeDataSample where it is mandatory to assign
+a SNPMarkerSet using the column  'markers_set' with the vid of
+the relevant SNPMarkersSet. As an example::
+
+  study  label source device device_type     data_sample_type   markers_set
+  ASTUDY foo01 v03909 v99021 SoftwareProgram GenotypeDataSample V20202
+  ASTUDY foo02 v03909 v99021 SoftwareProgram GenotypeDataSample V20202
+  ....
+
+
+Usage
+-----
 
 .. code-block:: bash
 
@@ -79,7 +95,7 @@ import itertools as it
 
 #-----------------------------------------------------------------------------
 
-def conf_affymetrix_cel_6(kb, r, a, options):
+def conf_affymetrix_cel_6(kb, r, a, device, options):
   conf = {'label' : r['label'],
           'status' : kb.DataSampleStatus.USABLE,
           'action' : a,
@@ -89,7 +105,7 @@ def conf_affymetrix_cel_6(kb, r, a, options):
     conf['celID'] = options['celID']
   return kb.factory.create(kb.AffymetrixCel, conf)
 
-def conf_illumina_beadchip_1m_duo(kb, r, a, options):
+def conf_illumina_beadchip_1m_duo(kb, r, a, device, options):
   conf = {'label' : r['label'],
           'status' : kb.DataSampleStatus.USABLE,
           'action' : a,
@@ -97,7 +113,7 @@ def conf_illumina_beadchip_1m_duo(kb, r, a, options):
           }
   return kb.factory.create(kb.IlluminaBeadChipAssay, conf)
 
-def conf_illumina_beadchip_immuno(kb, r, a, options):
+def conf_illumina_beadchip_immuno(kb, r, a, device, options):
   conf = {'label' : r['label'],
           'status' : kb.DataSampleStatus.USABLE,
           'action' : a,
@@ -105,11 +121,30 @@ def conf_illumina_beadchip_immuno(kb, r, a, options):
           }
   return kb.factory.create(kb.IlluminaBeadChip, conf)
 
+def conf_crs4_genotyper_by_device(kb, r, a, device, options):
+  device.reload()
+  conf = {'label' : r['label'],
+          'status' : kb.DataSampleStatus.USABLE,
+          'action' : a,
+          'snpMarkersSet' : device.snpMarkersSet,
+          }
+  return kb.factory.create(kb.GenotypeDataSample, conf)
+
+def conf_crs4_genotyper_by_markers_set(kb, r, a, device, options):
+  conf = {'label' : r['label'],
+          'status' : kb.DataSampleStatus.USABLE,
+          'action' : a,
+          'snpMarkersSet' : r['markers_set'],
+          }
+  return kb.factory.create(kb.GenotypeDataSample, conf)
+
 
 data_sample_configurator = {
   ('Affymetrix', 'Genome-Wide Human SNP Array', '6.0') : conf_affymetrix_cel_6,
   ('Illumina', 'BeadChip', 'HUMAN1M_DUO') : conf_illumina_beadchip_1m_duo,
   ('Illumina', 'BeadChip', 'IMMUNOCHIP') : conf_illumina_beadchip_1m_duo,
+  ('CRS4', 'Genotyper', 'by_device') : conf_crs4_genotyper_by_device,
+  ('CRS4', 'Genotyper', 'by_markers_set') : conf_crs4_genotyper_by_markers_set,
   }
 
 class Recorder(Core):
@@ -127,6 +162,7 @@ class Recorder(Core):
     self.preloaded_scanners = {}
     self.preloaded_sources  = {}
     self.preloaded_data_samples = {}
+    self.preloaded_markers_sets = {}
 
   def record(self, records, otsv):
     def records_by_chunk(batch_size, records):
@@ -146,6 +182,7 @@ class Recorder(Core):
     self.preload_scanners()
     self.preload_devices()
     self.preload_sources()
+    self.preload_markers_sets()
     self.preload_data_samples()
 
     records = self.do_consistency_checks(records)
@@ -170,6 +207,10 @@ class Recorder(Core):
   def preload_scanners(self):
     self.preload_by_type('scanners', self.kb.Scanner, self.preloaded_scanners)
 
+  def preload_markers_sets(self):
+    self.preload_by_type('markers_sets', self.kb.SNPMarkersSet,
+                         self.preloaded_markers_sets)
+
   def preload_sources(self):
     self.preload_by_type('sources', self.source_klass, self.preloaded_sources)
 
@@ -187,7 +228,7 @@ class Recorder(Core):
     #--
     k_map = {}
     good_records = []
-    mandatory_fields = ['label', 'source', 'device', 'scanner', 'options']
+    mandatory_fields = ['label', 'source', 'device']
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
 
@@ -222,6 +263,17 @@ class Recorder(Core):
         self.logger.error(f % r['label'])
         continue
 
+      if r['data_sample_type'] == 'GenotypeDataSample':
+        device = self.preloaded_devices[r['device']]
+        if not isinstance(device, self.kb.GenotypingProgram):
+          if not r['markers_set']:
+            f = reject + 'no markers_set vid for GenotypeDataSample %s.'
+            self.logger.error(f % r['label'])
+            continue
+          elif not r['markers_set'] in self.preloaded_markers_sets:
+            f = reject + 'illegal markers_set vid for GenotypeDataSample %s.'
+            self.logger.error(f % r['label'])
+            continue
       if r['options'] :
         try:
           kvs = r['options'].split(',')
@@ -280,6 +332,9 @@ class Recorder(Core):
       elif issubclass(self.source_klass, self.kb.Individual):
         a_klass = self.kb.ActionOnIndividual
         acat = self.kb.ActionCategory.MEASUREMENT
+      elif issubclass(self.source_klass, self.kb.DataCollectionItem):
+        a_klass = self.kb.ActionOnDataCollectionItem
+        acat = self.kb.ActionCategory.PROCESSING
       else:
         assert False
 
@@ -296,9 +351,15 @@ class Recorder(Core):
     data_samples = []
     for a, r in it.izip(actions, chunk):
       device = a.device
-      k = (device.maker, device.model, device.release)
+      if isinstance(device, self.kb.GenotypingProgram):
+        k = ('CRS4', 'Genotyper', 'by_device')
+      elif 'markers_set' in r:
+        r['markers_set'] = self.preloaded_markers_sets[r['markers_set']]
+        k = ('CRS4', 'Genotyper', 'by_markers_set')
+      else:
+        k = (device.maker, device.model, device.release)
       a.unload()# FIXME we need to do this, otherwise the next save will choke.
-      d = data_sample_configurator[k](self.kb, r, a, get_options(r))
+      d = data_sample_configurator[k](self.kb, r, a, device, get_options(r))
       data_samples.append(d)
 
     assert len(data_samples) == len(chunk)
@@ -310,7 +371,8 @@ class Recorder(Core):
                      'vid'   : d.id })
 
 def canonize_records(args, records):
-  fields = ['study', 'scanner', 'source_type', 'device_type']
+  fields = ['study', 'scanner', 'source_type', 'device_type',
+            'data_sample_type', 'markers_set']
   for f in fields:
     if hasattr(args, f) and getattr(args,f) is not None:
       for r in records:
@@ -324,19 +386,32 @@ def canonize_records(args, records):
       if not (t in r and r[t].upper() != 'NONE'):
         r[t] = None
 
-
 def make_parser_data_sample(parser):
   parser.add_argument('--study', type=str,
                       help="""default study assumed as context for the
                       import action.  It will
                       over-ride the study column value, if any.""")
   parser.add_argument('--source-type', type=str,
-                      choices=['Tube', 'PlateWell', 'DataSample', 'Individual'],
+                      choices=['Tube', 'PlateWell', 'DataSample', 'Individual',
+                               'DataCollectionItem'],
                       help="""default source type.  It will
                       over-ride the source_type column value, if any.
                       """)
+  parser.add_argument('--data-sample-type', type=str,
+                      choices=['GenotypeDataSample',
+                               # FIXME this is a temporary
+                               # solution. It should be something that
+                               # checks that the required type is
+                               # derived from DataSample. Use this
+                               # flag only if GenotypeDataSample is
+                               # needed.
+                               ],
+                      help="""default data sample type.  It will
+                      over-ride the data_sample_type column value, if any.
+                      """)
   parser.add_argument('--device-type', type=str,
-                      choices=['Device', 'Chip', 'Scanner', 'SoftwareProgram'],
+                      choices=['Device', 'Chip', 'Scanner', 'SoftwareProgram',
+                               'GenotypingProgram'],
                       help="""default device type.  It will
                       over-ride the device_type column value, if any""")
   parser.add_argument('--scanner', type=str,
@@ -344,6 +419,10 @@ def make_parser_data_sample(parser):
                       It will over-ride the scanner column value, if
                       any. If a record does not provide a device, it will be
                       set to be a Scanner with this vid. """)
+  parser.add_argument('--markers-set', type=str,
+                      help="""default markers set vid for GenotypeDataSample.
+                      It will over-ride the
+                      markers_set column value, if any.""")
   parser.add_argument('--batch-size', type=int,
                       help="""Size of the batch of objects
                       to be processed in parallel (if possible)""",
@@ -361,6 +440,7 @@ def import_data_sample_implementation(logger, args):
 
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
+
   records = [r for r in f]
 
   canonize_records(args, records)
@@ -378,7 +458,7 @@ def import_data_sample_implementation(logger, args):
 
 
 help_doc = """
-import new data sample definitions into a virgil system and attach
+import new data sample definitions into an omero/vl system and attach
 them to previously registered samples.
 """
 

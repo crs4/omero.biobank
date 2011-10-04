@@ -13,9 +13,10 @@ FIXME
 import logging
 
 LOG_FILENAME='create_tables.log'
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    level=logging.INFO,
-                    filename=LOG_FILENAME)
+logging.basicConfig(
+  format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+  level=logging.INFO,
+  filename=LOG_FILENAME)
 
 logger = logging.getLogger()
 

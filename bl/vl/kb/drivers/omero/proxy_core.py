@@ -433,12 +433,13 @@ class ProxyCore(object):
     def stream(rows):
       for r in rows:
         yield dict([(k, convert_from_numpy(r[k])) for k in dtype.names])
-    return self.add_table_rows_from_stream(table_name, stream(rows), batch_size)
+    return self.add_table_rows_from_stream(table_name, stream(rows),
+                                           batch_size=batch_size)
 
   @debug_boundary
   def add_table_rows_from_stream(self, table_name, stream, batch_size=10000):
     return self.__extend_table(table_name, self.__load_batch, stream,
-                               batch_size)
+                               batch_size=batch_size)
 
   @debug_boundary
   def __extend_table(self, table_name, batch_loader, records_stream, batch_size=10000):

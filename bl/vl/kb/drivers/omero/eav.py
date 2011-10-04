@@ -99,4 +99,4 @@ class EAVAdapter(object):
 
   def get_eav_record_rows(self, selector, batch_size=50000):
     return  self.kb.get_table_rows(self.EAV_EHR_TABLE, selector,
-                                   batch_size)
+                                   batch_size=batch_size)

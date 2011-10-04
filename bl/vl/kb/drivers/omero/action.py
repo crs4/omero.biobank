@@ -7,6 +7,9 @@ from utils import assign_vid_and_timestamp
 
 import wrapper as wp
 
+from snp_markers_set import SNPMarkersSet
+
+
 class Study(wp.OmeroWrapper):
   OME_TABLE = 'Study'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
@@ -31,6 +34,11 @@ class Device(wp.OmeroWrapper):
 class SoftwareProgram(Device):
   OME_TABLE = 'SoftwareProgram'
   __fields__ = []
+
+
+class GenotypingProgram(SoftwareProgram):
+  OME_TABLE = 'GenotypingProgram'
+  __fields__ = [('snpMarkersSet', SNPMarkersSet, wp.REQUIRED)]
 
 class HardwareDevice(Device):
   OME_TABLE = 'HardwareDevice'

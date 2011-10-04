@@ -1,5 +1,6 @@
 IMPORTER='../../../tools/importer -P test --operator aen'
 KB_QUERY='../../../tools/kb_query -P test --operator aen'
+CREATE_FAKE_GDO='python create_fake_gdo.py --P test'
 
 function help() {
     cat <<EOF
@@ -28,6 +29,7 @@ echo 'Running tests on dataset:' ${DATA_DIR}
 
 STUDY_LABEL=TEST01
 
+if false ; then
 
 ${IMPORTER} -i ${DATA_DIR}/study.tsv -o study_mapping.tsv study
 ${IMPORTER} -i ${DATA_DIR}/individuals.tsv -o individual_mapping.tsv individual
@@ -186,12 +188,13 @@ ${IMPORTER} -i marker_alignments.tsv \
 #             map_vid -i ${DATA_DIR}/markers_sets.tsv \
 #             --source-type Marker --column marker_label,marker_vid
 
+echo "* define a marker set that uses all known markers"
 python <<EOF
 import csv, random
 
 i = csv.DictReader(open('marker_definition_mapping.tsv'), delimiter='\t')
 o = csv.DictWriter(open('markers_sets.tsv', 'w'), 
-                   fieldnames=['label', 'marker_vid', 'marker_indx',
+                   fieldnames=['marker_vid', 'marker_indx',
                                'allele_flip'],
                    delimiter='\t')
 o.writeheader()
@@ -207,20 +210,94 @@ ${IMPORTER} -i markers_sets.tsv \
             -o markers_set_mapping.tsv \
             markers_set \
             --study ${STUDY_LABEL} \
-            --label MSET0-`date +"%f-%R"` \
+            --label MSET0-`date +"%F-%R"` \
             --maker CRS4 --model TEST --release `date +"%F-%R"`
 
 
-${KB_QUERY} --ofile group_foo.tsv selector --study ${STUDY_LABEL} --group-label foo \
-            --total-number=2 \
+MSET1=MSET1-`date +"%F-%R"`
+
+echo "* define ${MSET1} a marker set that uses 1024 known markers"
+python <<EOF
+import csv, random
+
+i = csv.DictReader(open('marker_definition_mapping.tsv'), delimiter='\t')
+o = csv.DictWriter(open('markers_sets_1024.tsv', 'w'), 
+                   fieldnames=['marker_vid', 'marker_indx',
+                               'allele_flip'],
+                   delimiter='\t')
+o.writeheader()
+
+recs = [ r for r in i]
+for k,r in enumerate(random.sample(recs, 1024)):
+  y = {'marker_vid' : r['vid'], 
+       'allele_flip' : random.choice([True, False]),
+       'marker_indx'  : k}
+  o.writerow(y)
+
+EOF
+
+${IMPORTER} -i markers_sets_1024.tsv \
+            -o markers_sets_1024_mapping.tsv \
+            markers_set \
+            --study ${STUDY_LABEL} \
+            --label ${MSET1} \
+            --maker CRS4 --model TEST --release `date +"%F-%R"`
+
+MSET_VID=`grep ${MSET1} markers_sets_1024_mapping.tsv | perl -ane "print @F[3];"`
+echo "* define a  GenotypingProgram device that generates datasets on ${MSET1}"
+DEVICE_FILE=foo_device.tsv
+python -c "print 'device_type\tlabel\tmaker\tmodel\trelease\tmarkers_set'" > ${DEVICE_FILE}
+python -c "print 'GenotypingProgram\t${MSET1}\tCRS4\tTest\t${MSET1}\t${MSET_VID}'" >> ${DEVICE_FILE}
+
+${IMPORTER} -i foo_device.tsv -o foo_device_mapping.tsv device --study ${STUDY_LABEL}
+
+DEVICE_VID=`grep ${MSET1} foo_device_mapping.tsv | perl -ane "print @F[3];"`
+
+echo "* extracting a subset of 512 individuals"
+
+FOO_GROUP=foo-`date +"%F-%R"`
+
+${KB_QUERY} --ofile group_foo.tsv \
+            selector --study ${STUDY_LABEL} \
+            --group-label ${FOO_GROUP} \
+            --total-number=512 \
             --male-fraction=0.5\
             --reference-disease=icd10-cm:G35 \
-            --control-fraction=0.0
+            --control-fraction=0.5
 
-${IMPORTER} -i group_foo.tsv group 
+echo "* importing them as study ${FOO_GROUP}"
+${IMPORTER} -i group_foo.tsv group
+
+echo "* adding fake GenotypeDataSample(s) on ${MSET1}."
+python <<EOF
+import csv, random
+
+i = csv.DictReader(open('group_foo.tsv'), delimiter='\t')
+o = csv.DictWriter(open('data_samples_mset1.tsv', 'w'), 
+                   fieldnames=['label', 'source', 'device'],
+                   delimiter='\t')
+o.writeheader()
+
+for k,r in enumerate(i):
+  y = {'label' : r['group_code'] + '.' + "${MSET1}",
+       'source' : r['individual'],
+       'device'  : "${DEVICE_VID}"}
+  o.writerow(y)
+
+EOF
+
+${IMPORTER} -i data_samples_mset1.tsv -o data_samples_mset1_mapping.tsv \
+             data_sample \
+             --device-type GenotypingProgram \
+             --data-sample-type GenotypeDataSample \
+             --study ${STUDY_LABEL} --source-type Individual
 
 
+fi
 
+
+echo "* attaching fake DataObject(s) to data samples."
+${CREATE_FAKE_GDO} --data-samples data_samples_mset1.tsv -o ssc_file_list.tsv
 
 
 

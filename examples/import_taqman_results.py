@@ -277,8 +277,8 @@ def main(argv):
   abi_service = ABISnpService()
   found_markers = {}
   data = {}
-  min_datetime = datetime(2999, 12, 31, 23, 59, 59)
-  max_datetime = datetime(1000, 1,  1,  0, 0, 1)
+  min_datetime = datetime.max #datetime(2999, 12, 31, 23, 59, 59)
+  max_datetime = datetime.min #datetime(1000, 1,  1,  0, 0, 1)
   for f in (_.strip() for _ in args.ifile if _.strip()):
     logger.info('processing %s' % f)
 

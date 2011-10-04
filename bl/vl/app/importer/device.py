@@ -12,7 +12,7 @@ All devices have a type, a label, an optional barcode, a maker, a
 model and a release, and, possibly a physical location. In the example
 above, in the first line we have defined a scanner, which is
 physically in the lab in Pula, building 5.  The following line defines
-a chip.
+a chip. A special case
 
 .. code-block:: bash
 
@@ -67,6 +67,7 @@ class Recorder(Core):
     self.operator = operator
     self.action_setup_conf = action_setup_conf
     self.preloaded_devices = {}
+    self.preloaded_markers_sets = {}
     self.known_barcodes = []
 
   def record(self, records, otsv):
@@ -82,6 +83,7 @@ class Recorder(Core):
     #--
     study  = self.find_study(records)
     self.preload_devices()
+    self.preload_markers_sets()
 
     records = self.do_consistency_checks(records)
 
@@ -99,6 +101,10 @@ class Recorder(Core):
         self.known_barcodes.append(d.barcode)
     self.logger.info('there are %d Device(s) in the kb'
                      % (len(self.preloaded_devices)))
+
+  def preload_markers_sets(self):
+    self.preload_by_type('markers_sets', self.kb.SNPMarkersSet,
+                         self.preloaded_markers_sets)
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
@@ -138,6 +144,17 @@ class Recorder(Core):
              'device_type of device label %s is not a subclass of Device')
         self.logger.error(f % r['label'])
         continue
+      elif r['device_type'] == 'GenotypingProgram':
+        if not r.get('markers_set', None):
+          f = (reject +
+               'device label %s is a GenotypingProgram, missing markers_set')
+          self.logger.error(f % r['label'])
+          continue
+        elif r['markers_set'] not in self.preloaded_markers_sets:
+          f = (reject +
+               'device label %s is a GenotypingProgram, unknown markers_set')
+          self.logger.error(f % r['label'])
+          continue
 
       k_map['label'] = r
       good_records.append(r)
@@ -156,6 +173,8 @@ class Recorder(Core):
         conf['physicalLocation'] = r['location']
       if r['barcode']:
         conf['barcode'] = r['barcode']
+      if r['markers_set']:
+        conf['snpMarkersSet'] = self.preloaded_markers_sets[r['markers_set']]
       devices.append(self.kb.factory.create(dklass, conf))
     self.kb.save_array(devices)
     #--
@@ -165,7 +184,6 @@ class Recorder(Core):
                      'type'  : d.get_ome_table(),
                      'vid'   : d.id })
 
-
 def canonize_records(args, records):
   fields = ['study', 'maker', 'model', 'release', 'device_type']
   for f in fields:
@@ -173,9 +191,9 @@ def canonize_records(args, records):
       for r in records:
         r[f] = getattr(args, f)
   # specific fixes
-  for k in ['location', 'barcode']:
+  for k in ['location', 'barcode', 'markers_set']:
     for r in records:
-      if not (k in r and r[k].upper() != 'NONE'):
+      if not (k in r and (r[k] and r[k].upper() != 'NONE')):
         r[k] = None
 
 help_doc = """
@@ -187,7 +205,8 @@ def make_parser_device(parser):
                       help="""default conxtest study label.
                       It will over-ride the study column value""")
   parser.add_argument('--device-type', type=str,
-                      choices=['Chip', 'Scanner'],
+                      choices=['Chip', 'Scanner',
+                               'SoftwareProgram', 'GenotypingProgram'],
                       help="""default device type.  It will
                       over-ride the container_type column value, if any.
                       """)

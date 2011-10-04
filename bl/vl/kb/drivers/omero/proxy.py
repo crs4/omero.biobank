@@ -15,6 +15,7 @@ from proxy_core import ProxyCore
 
 from wrapper import ObjectFactory, MetaWrapper
 
+import snp_markers_set
 import action
 import vessels
 import objects_collections
@@ -241,7 +242,7 @@ class Proxy(ProxyCore):
 
   def get_snp_markers_set_content(self, snp_markers_set, batch_size=50000):
     selector = '(vid=="%s")' % snp_markers_set.markersSetVID
-    msetc = self.gadpt.get_snp_markers_set(selector, batch_size)
+    msetc = self.gadpt.get_snp_markers_set(selector, batch_size=batch_size)
     mdefs = self.get_snp_markers(vids=[mv for mv in msetc['marker_vid']],
                                  col_names=['vid', 'label'])
     return mdefs, msetc
@@ -483,7 +484,7 @@ class Proxy(ProxyCore):
     .. code-block:: python
 
       for i in kb.get_individuals(study):
-        for d in kb.get_data_samples(i, 'AffymetrixCel'):
+        for d in kb.get_data_samples(i, 'GenotypeDataSample'):
           gds = filter(lambda x: x.snpMarkersSet == mset)
 
     :param individual: the root individual object.
