@@ -20,6 +20,8 @@ def make_parser():
                         default='extracted-')
   parser.add_argument('-s', '--study', type=str,
                       help='study label', required=True)
+  parser.add_argument('--no-tubes', action='store_true',
+                      default=False, help='short circuit plate wells to individuals.')
   parser.add_argument('--logfile', type=str,
                       help='logfile. Will write to stderr if not specified')
   parser.add_argument('--loglevel', type=str,
@@ -511,17 +513,26 @@ def main():
 
   dump_pedigree(pedigree, args.study, args.ofile_root + 'individuals.tsv')
   #--
-  dump_blood_samples(by_sample, pedigree, args.study,
-                     args.ofile_root + 'blood_samples.tsv')
-  #--
-  dump_dna_samples(by_sample, args.study,
-                   args.ofile_root + 'dna_samples.tsv')
+  if not args.no_tubes:
+    dump_blood_samples(by_sample, pedigree, args.study,
+                       args.ofile_root + 'blood_samples.tsv')
+    #--
+    dump_dna_samples(by_sample, args.study,
+                     args.ofile_root + 'dna_samples.tsv')
 
   dump_titer_plates(titer_plates, args.study,
                     args.ofile_root + 'titer_plates.tsv')
 
+  if args.no_tubes:
+    for p in titer_plates.values():
+      for r in p['wells']:
+        k = r['sample_label'].replace('-dna', '')
+        s = by_sample[k]
+        ik = (s[0]['Fam_ID'], s[0]['ID'])
+        r['sample_label'] = pedigree[ik].label
+
   dump_plate_wells(titer_plates, args.study,
-                    args.ofile_root + 'plate_wells.tsv')
+                   args.ofile_root + 'plate_wells.tsv')
 
   dump_scanners(titer_plates, args.study,
                 args.ofile_root + 'scanners.tsv')

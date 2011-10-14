@@ -1,3 +1,8 @@
+2011-10-15    <zag@manzanillo>
+
+	* bl/vl/app/importer/data_sample.py
+	(Recorder.do_consistency_checks): Added a missing safety check.
+
 2011-10-03    <zag@manzanillo>
 
 	* models/actions.ome.xml: Added GenotypingProgram as a clean way
