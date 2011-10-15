@@ -19,12 +19,12 @@
     --logfile=${logfile}
     selector
     #if str($study) != 'use_all'
-       --study=${source_type.study}
+       --study=$study
     #end if
     --group-label=$group_label
     --total-number=$total_number
     --male-fraction=$male_fraction
-    --reference-disease=$reference_disease
+    --reference-disease=$reference_diagnosis
     --control-fraction=$control_fraction
     #if str($required_datasample) !=  'unselect'
       --required-datasample=$required_datasample
@@ -95,12 +95,12 @@
 	<option value="IlluminaBeadChipAssay">IlluminaBeadChipAssay</option>
       </param>
 	   
-    <param name="seed" type="int" value="0"
+    <param name="seed" type="integer" value="0"
 	   lavel="Random seed"
 	   help="Seed for the random number generator. A value of 0 
                  will force to the default initialization.">
       <validator type="in_range" message="should be non negative" 
-		 min="0.0" max="inf"/>
+		 min="0" max="inf"/>
     </param>
 
     <!-- ************************************************** -->
