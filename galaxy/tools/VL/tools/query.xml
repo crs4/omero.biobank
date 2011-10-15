@@ -37,13 +37,7 @@
     </param>
     <param name="query_code" type="text" area="True" size="10x60" 
            optional="False"
-           value="
-writeheader('study', 'id', 'gender', 'father', 'mother')
-for i in Individuals(group):
-   writerow(group.id, enum_label(i.gender), 
-            i.father.id if i.father else 'None', 
-            i.mother.id if i.mother else 'None')
-"
+           value=""
 	   />
     <!-- ************************************************** -->
     <conditional name="advanced_configuration">
@@ -65,10 +59,7 @@ for i in Individuals(group):
   </inputs>
 
   <configfiles>
-    <configfile name="code_file">
-      ## dump query_code
-      $query_code
-    </configfile>
+    <configfile name="code_file">${str($query_code).replace('__sq__', "'").replace('__cr____cn__', '\n')}</configfile>
   </configfiles>
 
   <outputs>
@@ -77,10 +68,18 @@ for i in Individuals(group):
   </outputs>
 
   <help>
+The following is an example of a query that will dump family relations
+within the group::
 
-The following is an example of the text that 
+   writeheader('study', 'id', 'gender', 'father', 'mother')
+   for i in Individuals(group):
+      writerow(group.id, enum_label(i.gender), 
+               i.father.id if i.father else 'None', 
+               i.mother.id if i.mother else 'None')
 
-.. code-block:: python
+
+The next example will prepare a file that could be used to define a
+data collection and then as the input for a genotyping run::
 
    writeheader('dc_id', 'gender', 'data_sample', 
                'path', 'mimetype', 'size', 'sha1')
@@ -90,8 +89,8 @@ The following is an example of the text that
             writerow(group.id, enum_label(i.gender), d.id,
                      o.path, o.mimetype, o.size, o.sha1)
 
-Where '''group''' (actually a study) corresponds to the group whose
-label is assigned by the '''--group''' flag.
+In the examples above, '''group''' (actually a study) corresponds to
+the group whose label is assigned by the '''--group''' flag.
 
 **Note** This is clearly an extremely dangerous tool.
     
