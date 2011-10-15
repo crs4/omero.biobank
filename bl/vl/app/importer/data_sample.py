@@ -263,7 +263,8 @@ class Recorder(Core):
         self.logger.error(f % r['label'])
         continue
 
-      if r['data_sample_type'] and r['data_sample_type'] == 'GenotypeDataSample':
+      if (r['data_sample_type']
+          and r['data_sample_type'] == 'GenotypeDataSample'):
         device = self.preloaded_devices[r['device']]
         if not isinstance(device, self.kb.GenotypingProgram):
           if not r['markers_set']:
