@@ -2,7 +2,7 @@
   <description>
     Map labels of objects known to Omero/VL to their VID
   </description>
-  <command interpreter="python2.7">
+  <command interpreter="python">
     map_vid.py
     ${selected_column}
     ${new_column_name}
@@ -18,7 +18,7 @@
     #end if
     --operator=galaxy
     --ofile=${output1}
-    --loglevel=WARNING
+    --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
     map_vid
     --ifile=${input1}

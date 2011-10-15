@@ -1,5 +1,8 @@
 2011-10-15    <zag@manzanillo>
 
+	* bl/vl/kb/drivers/omero/proxy_core.py (ProxyCore.reload_object):
+	Added support for deep reload. Untested.
+
 	* bl/vl/app/importer/data_sample.py
 	(Recorder.do_consistency_checks): Added a missing safety check.
 

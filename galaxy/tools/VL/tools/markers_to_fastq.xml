@@ -1,6 +1,6 @@
 <tool id="vl_tools_markers_to_fastq" name="VLT.markers_to_fastq">
   <description>converter</description>
-  <command interpreter="python2.7">
+  <command interpreter="python">
     markers_to_fastq.py --logfile ${log_file} markers_to_fastq
     -i ${input_file} -o ${output_file}
   </command>

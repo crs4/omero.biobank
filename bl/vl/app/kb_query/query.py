@@ -68,7 +68,7 @@ class Selector(Core):
    for i in Individuals(group):
       for d in DataSamples(i, AffymetrixCel):
          for o in DataObjects(d):
-            writerow(group.id, i.gender.enum_label(), d.id,
+            writerow(group.id, enum_label(i.gender), d.id,
                      o.path, o.mimetype, o.size, o.sha1)
 
   """
@@ -100,7 +100,7 @@ class Selector(Core):
       self.ots.writerow(d)
 
     def Individuals(group):
-      return [e.individual for e in self.kb.get_enrolled(group)]
+      return self.kb.get_individuals(group)
 
     def DataSamples(individual, data_sample_klass_name='DataSample'):
       klass = getattr(self.kb, data_sample_klass_name)
@@ -125,7 +125,7 @@ class Selector(Core):
 
 #-------------------------------------------------------------------------
 help_doc = """
-Select a group of individuals
+Perform (almost) arbitrary queries against BIOBANK
 """
 
 def make_parser(parser):

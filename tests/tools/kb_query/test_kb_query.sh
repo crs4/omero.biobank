@@ -1,4 +1,4 @@
-KB_QUERY='../../../tools/kb_query -P romeo --operator aen'
+KB_QUERY='../../../tools/kb_query -P test --operator aen'
 
 MARKERS_SET="(CRS4,TaqMan,MSstudy)"
 

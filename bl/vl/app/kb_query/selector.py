@@ -12,8 +12,9 @@ controlled by the following parameters:
   * control fraction
   * presence of specific datasets
 
-FIXME: defining what we mean by presence of specific datasets will be
-a mess...
+.. todo::
+
+   defining what we mean by presence of specific datasets will be a mess...
 
 The basic command is the following::
 

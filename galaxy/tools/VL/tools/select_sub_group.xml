@@ -1,9 +1,8 @@
 <tool id="vl_tools_select_sub_group" name="VLT.select_sub_group">
   <description>
-    Selects groups of individuals and enrolls them into a new group
-    (which, for the time being, we model as a study.).
+    Selects groups of individuals.
   </description>
-  <command interpreter="python2.7">
+  <command interpreter="python">
     kb_query.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=${advanced_configuration.vl_host}
@@ -16,7 +15,7 @@
     #end if
     --operator=galaxy
     --ofile=${output1}
-    --loglevel=WARNING
+    --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
     selector
     #if str($study) != 'use_all'
@@ -70,6 +69,9 @@
 		 min="0.0" max="1.0"/>
     </param>
 
+    <!-- FIXME we should be getting this from some list of known
+         diagnosis codes file.
+    -->
     <param name="reference_diagnosis" type="select" 
 	   label="Phenotypic profile (diagnosis, for the time being)">
 	<option value="icd10-cm:E10">Type 1 Diabetes</option>	
@@ -84,11 +86,13 @@
 		 min="0.0" max="1.0"/>
     </param>
 
+    <!-- FIXME we should be getting this directly 
+         from bl.vl.app.kb_query.selector.SUPPORTED_DATA_SAMPLE_TYPES -->
     <param name="required_datasample" type="select"
 	   label="Required datasample type">
 	<option value="unselect">none</option>
 	<option value="AffymetrixCel">AffymetrixCel</option>	
-	<option value="IlluminaBeadChipAssay"></option>
+	<option value="IlluminaBeadChipAssay">IlluminaBeadChipAssay</option>
       </param>
 	   
     <param name="seed" type="int" value="0"
@@ -98,26 +102,6 @@
       <validator type="in_range" message="should be non negative" 
 		 min="0.0" max="inf"/>
     </param>
-
-    <!-- repeat name="ehr_series" title="EHR archetypes">
-      <conditional name="ehr_selector">
-        <param name="archetype" type="select" label="Archetype">
-          <option value="openEHR-EHR-EVALUATION.problem-diagnosis.v1"
-          selected="true">Diagnosis</option>
-          <option value="foo">Foo</option>
-        </param>
-	<when value="openEHR-EHR-EVALUATION.problem-diagnosis.v1">
-	  <param name="term" type="text" label="term" size="30"
-		 help="Coded text in the format terminology:code"/>
-	</when>	  
-	<when value="foo">
-	  <param name="termA" type="text" label="term1" size="30"
-		 help="Coded text in the format terminology:code"/>
-	  <param name="termB" type="text" label="term2" size="30"
-		 help="Coded text in the format terminology:code"/>
-	</when>	  
-      </conditional>
-    </repeat -->       
 
     <!-- ************************************************** -->
     <conditional name="advanced_configuration">
@@ -143,7 +127,27 @@
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-    
+It will select a group of individuals from a specific group (from all
+avalable individuals, if no group is selected). The selection is
+controlled by the following parameters:
+
+  * total number of individuals selected
+  * male fraction
+  * reference disease
+  * control fraction
+  * presence of specific datasets
+
+The results will be presented as a file that can be used to generate a
+new group (actually a study). The file will have the following columns::
+
+    study label individual
+    XXX   0001  V20940239409
+    XXX   0002  V20940239509
+    XXX   0003  V20940239609
+    XXX   0004  V20940239709
+    ...
+
+  where study is the name of the new study
   </help>
 
 </tool>

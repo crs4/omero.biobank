@@ -158,14 +158,23 @@ class ProxyCore(object):
     o.proxy = self
 
 
-  def reload_object(self, o):
-    res = self.ome_operation("getQueryService", "get",
-                             o.get_ome_table(), o.omero_id)
-    if not res:
-      raise ValueError('cannot get %s'  % o)
+  def reload_object(self, o, fields=None):
+    "FIXME this is an hack...."
+    def load_ome_obj(ome_obj):
+      tbl = ome_obj.__class__.__name__[:-1]
+      res = self.ome_operation("getQueryService", "get",
+                               tbl, ome_obj.id.val)
+      if not res:
+        raise ValueError('cannot load ome_obj %s'  % ome_obj)
+      return res
+
+    res = load_ome_obj(o.ome_obj)
+    if fields:
+      for f in fields:
+        x = load_ome_obj(getattr(res, f))
+        setattr(res, f, x)
     o.ome_obj = res
     o.proxy = self
-
 
   @debug_boundary
   def save(self, obj):
