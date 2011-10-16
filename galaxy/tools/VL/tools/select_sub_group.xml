@@ -98,7 +98,7 @@
     <param name="seed" type="integer" value="0"
 	   lavel="Random seed"
 	   help="Seed for the random number generator. A value of 0 
-                 will force to the default initialization.">
+                 will force to the default (time.time()) initialization.">
       <validator type="in_range" message="should be non negative" 
 		 min="0" max="inf"/>
     </param>

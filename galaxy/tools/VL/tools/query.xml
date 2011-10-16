@@ -84,7 +84,7 @@ data collection and then as the input for a genotyping run::
    writeheader('dc_id', 'gender', 'data_sample', 
                'path', 'mimetype', 'size', 'sha1')
    for i in Individuals(group):
-      for d in DataSamples(i, AffymetrixCel):
+      for d in DataSamples(i, 'AffymetrixCel'):
          for o in DataObjects(d):
             writerow(group.id, enum_label(i.gender), d.id,
                      o.path, o.mimetype, o.size, o.sha1)
