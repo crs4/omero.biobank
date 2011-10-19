@@ -6,7 +6,7 @@ Expects single-end BWA alignment data produced by the previous steps
 in the workflow (see markers_to_fastq).
 """
 
-import os, argparse
+import os
 from contextlib import nested
 
 from bl.core.seq.align.mapping import SAMMapping

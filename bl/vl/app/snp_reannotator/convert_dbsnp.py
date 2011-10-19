@@ -1,7 +1,7 @@
 """
 Convert dbSNP files to the VL marker definition format.
 """
-import os, argparse
+import os
 
 from bl.core.seq.io import DbSnpReader
 from bl.core.utils import NullLogger

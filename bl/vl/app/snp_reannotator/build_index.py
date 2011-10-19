@@ -2,8 +2,10 @@
 Build dbSNP index database from Galaxy genome segment extractor output
 in interval format.
 """
-import argparse, shelve, csv, os, tempfile
+import shelve, csv, os, tempfile
 from cPickle import HIGHEST_PROTOCOL as HP
+
+from common import build_index_key
 
 
 HELP_DOC = __doc__
@@ -45,7 +47,8 @@ def main(logger, args):
           logger.critical(msg)
           raise ValueError(msg)
         else:
-          index.setdefault(seq, []).append(tag)
+          key = build_index_key(seq)
+          index.setdefault(key, []).append(tag)
           if (i+1) % SYNC_INTERVAL == 0:
             logger.info("processed %d records: syncing db" % (i+1))
             index.sync()

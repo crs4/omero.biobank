@@ -1,7 +1,7 @@
 """
 Convert Affymetrix SNP annotation files to the VL marker definition format.
 """
-import os, argparse, csv
+import os, csv
 from contextlib import nested
 
 from bl.core.utils import NullLogger

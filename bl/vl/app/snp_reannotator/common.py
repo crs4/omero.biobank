@@ -1,3 +1,4 @@
+from bl.core.seq.utils import reverse_complement as rc
 from bl.vl.utils.snp import split_mask
 
 
@@ -70,3 +71,7 @@ def check_mask(mask):
     else:
       problem = None
   return problem
+
+
+def build_index_key(seq):
+  return min(seq, rc(seq))

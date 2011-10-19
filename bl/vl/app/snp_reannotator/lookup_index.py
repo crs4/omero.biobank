@@ -2,12 +2,12 @@
 Read a Galaxy genome segment extractor output in interval format and
 perform a lookup in the dbSNP index database (see build_index) to get
 the true rs label; output a new marker definitions file with the true
-rs labels and masks.
+rs label and the extended mask.
 """
 
-import argparse, shelve, csv, os
+import shelve, csv, os
 from contextlib import nested
-from common import MARKER_DEF_FIELDS, SeqNameSerializer
+from common import MARKER_DEF_FIELDS, SeqNameSerializer, build_index_key
 
 
 HELP_DOC = __doc__
@@ -37,17 +37,19 @@ def write_output(logger, args):
           label = r[3]
           seq = r[-1].upper()
         except IndexError:
-          msg = "%r: bad input format, bailing out" % bn
+          msg = "%r: bad input format, bailing out" % input_bn
           logger.critical(msg)
           raise ValueError(msg)
         else:
-          tags = index.get(seq, [])
+          label, _, _, alleles = serializer.deserialize(label)
+          mask = build_mask(seq, alleles)
+          key = build_index_key(seq)
+          tags = index.get(key, [])
           if len(tags) != 1:
             logger.warning("%r maps to != 1 tags: %r" % (label, tags))
-            rs_label = mask = 'None'
+            rs_label = 'None'
           else:
-            rs_label, _, _, alleles = serializer.deserialize(tags[0])
-            mask = build_mask(seq, alleles)
+            rs_label, _, _, _ = serializer.deserialize(tags[0])
           outf.write("%s\t%s\t%s\n" % (label, rs_label, mask))
       logger.info("processed %d records overall" % (i+1))
   finally:

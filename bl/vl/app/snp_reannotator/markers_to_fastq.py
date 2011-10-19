@@ -7,7 +7,7 @@ by joining (with the '|' character) four fields: label, allele code (A
 for the first one in the mask, B for the second, etc.), SNP offset
 (i.e., length of the left flank) and original alleles (string).
 """
-import os, argparse, csv
+import os, csv
 from contextlib import nested
 from itertools import izip
 
