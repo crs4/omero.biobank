@@ -28,4 +28,4 @@ ${SNP_REANNOTATOR} --logfile build_index.log build_index -i extracted_segments.t
 python dump_db.py dbsnp_index_hg18_251.db
 
 echo "Testing lookup_index"
-${SNP_REANNOTATOR} --logfile lookup_index.log lookup_index -i test_extracted_segments.tsv --index-file dbsnp_index_hg18_251.db -o affy_marker_definitions_reannot.tsv
+${SNP_REANNOTATOR} --logfile lookup_index.log lookup_index -i test_extracted_segments.tsv --index-file dbsnp_index_hg18_251.db -O affy_marker_definitions_mod.tsv -o affy_marker_definitions_reannot.tsv
