@@ -4,7 +4,37 @@ Chipal run example
 .. todo::
 
    this is currently a note for ourselves, the idea is to transform it
-   in an example of both omero.biobank and various tools cross usage.
+   in an example of both how to use BIOBANK and various tools cross usage.
+
+
+In this example, we will show how to do the following.
+
+ * Run a gender check on all the individuals known that have an
+   AffymetrixCell DataSample file available.
+
+ * Run a quality check on the same set of DataSets and register the
+   results as 'Archetyped' info on the DataSample
+
+ * Create a new group G containing a given number of individuals, with
+   an assigned proportion of male/female and affected/control cases
+   and such that all the individuals in the group have at least one
+   AffymetrixCel DataSample (we could be also filtering on quality).
+
+ * Create a DataCollection containing all the AffymetrixCel
+   DataSamples found above.
+
+ * Run Chipal on the latter and save results as GenotypeDataSample
+   objects.
+
+ * Subselect subgroups from G by random sampling while keeping the
+   same male/female and affected/control ratios.
+
+ * Create DataCollection(s) corresponding to the subgroups.
+
+ * Run Chipal on the latter and save results as GenotypeDataSample
+   objects.
+
+ * Do a systematic check on result consistency.
 
 
 Ilenia writes

@@ -1,10 +1,10 @@
-A tour of Omero/VL python API
-=============================
+A tour of BIOBANK python API
+============================
 
 This section of the documentation is organized as follows.
 
   * A tutorial on KnowledgeBase, the interface to data and metadata
-    stored in omero/VL.
+    stored in BIOBANK.
   * An example of genotyping data import.
   * An example of computation on stored data.
 

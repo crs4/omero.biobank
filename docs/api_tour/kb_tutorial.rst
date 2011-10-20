@@ -2,12 +2,12 @@ Knowledge Base Tutorial
 =======================
 
 The Knowledge Base (KB for short) provides a uniform access to all
-available meta-information stored in the backend (e.g., Omero).
+available meta-information stored in the BIOBANK backend (e.g., Omero).
 
 .. code-block:: python
 
   from bl.vl.kb import KnowledgeBase as KB
-  kb = KB(driver='omero')(host='localhost', user='root', passwd='xxx')
+  kb = KB(driver='omero')(host='localhost', user='test', passwd='xxx')
 
 For instance, in the code snippet above, we have established a
 connection to an Omero metadata bank.
@@ -27,6 +27,10 @@ Currently, the KB handles the following object types:
  * DataObject
  * Marker
  * ... FIXME
+
+.. todo::
+
+   divide objects type in groups
 
 
 Basic Object operations

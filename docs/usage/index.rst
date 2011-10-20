@@ -8,7 +8,8 @@ line/galaxy tools. Specifically, deals with the following:
  * query  and its sub commands, including galaxy interfaces;
  * compute and its sub commands, including galaxy interfaces;
  * a collection of examples, from loading sequence using the command
-   line apps to how to use galaxy history.
+   line apps to how one could use galaxy history to record computation
+   results insided BIOBANK
 
 Contents:
 

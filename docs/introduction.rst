@@ -1,16 +1,37 @@
 Introduction
 ============
 
-Omero/VL data model
--------------------
+BIOBANK is a framework built upon OMERO that is expected to provide
+compact and efficient ways to handle the computational aspects of
+large scale biomedical studies. 
+
+BIOBANK infrastucture, sdk and command line apps provide:
+
+ * models for all relevant objects, from laboratory samples to ehr,
+   together with data structures and patters to describe and track the
+   actions that link one to the other;
+
+ * uniform computational access to all data;
+
+ * well defined ways (??) to extend the set of known models;
+
+
+All main BIOBANK commandline tools have galaxy front-end. 
+
+In the following, we will first describe the BIOBANK data model, then
+the general approach for basic computation of genotype data.
 
 .. todo::
 
-  fill the omero/vl data model section
+  what general approach?
 
 
+BIOBANK data model
+------------------
 
+.. todo::
 
+  fill the BIOBANK data model section
 
 
 Basic computations on genotype data
