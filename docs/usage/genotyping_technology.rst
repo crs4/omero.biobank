@@ -27,6 +27,14 @@ In this example, we will show how to do the following.
 
  * Create a SNPMarkersSet for the specific technology.
 
+
+Workflow:
+
+.. image:: marker_alignment.svg
+   :width: 540 px
+   :height: 1010 px
+
+
 .. todo::
   
    Birdseed just appeared out of nowhere...
