@@ -16,7 +16,7 @@ vid
 probs
   that is an np array with structure
   ``np.zeros((2,N), dtype=np.float32)`` where (0,:) (1,:) are, respectively,
-   the prob_A and prob_B arrays.
+  the prob_A and prob_B arrays.
 
 confs
   that is an np array with structure

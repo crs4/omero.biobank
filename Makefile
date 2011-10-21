@@ -13,6 +13,9 @@ install: build
 install_user: build
 	python setup.py install --skip-build --user
 
+docs: install_user
+	make -C docs html
+
 clean:
 	rm -rf build
 	make -C docs clean

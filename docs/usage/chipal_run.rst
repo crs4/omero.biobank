@@ -43,7 +43,7 @@ Ilenia writes
 
 Come vi ho anticipato, ecco di seguito alcune prove che vorrei fare
 con Chipal.  Si tratta di prove che avrei voluto fare prima, ma che ho
-sempre rimandato perché il run durava troppo, ma ora che c'è Chipal
+sempre rimandato perche' il run durava troppo, ma ora che c'e' Chipal
 possiamo provare e vedere se si ottiene un risultato qualitativamente
 migliore rispetto al run precedente.
 
@@ -78,12 +78,12 @@ differenze?
     che abbiamo mandato, ma separando per malattia, quindi un run con
     controlli + casi di diabete e uno con controlli + casi di
     sclerosi?  Per questo punto non sono necessari i punti precedenti,
-    anzi è meglio un run con gli stessi parametri dell'altro in modo
-    da avere risultati confrontabili.  Più che altro sarebbe utile
-    poter risalire all'affection status dell'individuo a cui è
+    anzi e' meglio un run con gli stessi parametri dell'altro in modo
+    da avere risultati confrontabili.  Piu' che altro sarebbe utile
+    poter risalire all'affection status dell'individuo a cui e'
     associato ciascun cel file mediante il database, ma probabilmente
-    anche questo non è ancora possibile farlo.  Mi ci è voluto un po',
-    come al solito non è semplice lavorare con i files e recuparare i
+    anche questo non e' ancora possibile farlo.  Mi ci e' voluto un po',
+    come al solito non e' semplice lavorare con i files e recuparare i
     familiari in famiglie "con buchi", ma ho preparato i seguenti
     elenchi per i due runs da mandare che contengono rispettivamente
     CT+MS+doppia_patologia e relativi familiari, e

@@ -34,15 +34,17 @@ quick repairs
  this is probably not the best place for this.... Missing pieces too.
 
 
-.. code-block:: ipython
+.. code-block:: python
 
-   In [8]: for d in dss:
-             if d.label.find(' ') > -1:
-                print '%s has an hole' % d.label
-		d.label = d.label.replace(' '. '_')
-		d.save()
+   for d in dss:
+     if d.label.find(' ') > -1:
+       print '%s has an hole' % d.label
+       d.label = d.label.replace(' ', '_')
+       d.save()
 
-   7051_MS CA_673-2.CEL has an hole
-   7022_MS CA_1851-3.CEL has an hole
-   7026_MS CA_2626-1.CEL has an hole
-   7053_MS CA_673-3.CEL has an hole
+Output::
+
+  7051_MS CA_673-2.CEL has an hole
+  7022_MS CA_1851-3.CEL has an hole
+  7026_MS CA_2626-1.CEL has an hole
+  7053_MS CA_673-3.CEL has an hole
