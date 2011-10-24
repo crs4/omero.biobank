@@ -26,7 +26,8 @@ def build_fastq_records(label, mask, name_serializer, logger=None):
   try:
     lflank, alleles, rflank = split_mask(mask)
   except ValueError:
-    logger.warn("%r: bad mask format, skipping" % (label,))
+    status = "no mask" if mask == "None" else "bad mask format"
+    logger.warn("%r: %s, skipping" % (label, status))
   else:
     snp_offset = len(lflank)
     for a, c in izip(alleles, ALLELE_CODES):
@@ -35,7 +36,7 @@ def build_fastq_records(label, mask, name_serializer, logger=None):
       r = ('@%s' % seq_id, seq, '+%s' % seq_id, '~'*len(seq))
       records.append(r)
   return records
-    
+
 
 def write_output(reader, outf, logger=None):
   logger = logger or NullLogger()

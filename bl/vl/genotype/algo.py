@@ -116,10 +116,10 @@ def hwe(it, counts=None):
 
   .. math::
 
-     P_\hbox{HWE} = \sum_{n'_\hbox{ab}}
-                          \theta\(P(N_\hbox{AB} = n_\hbox{AB}|N, n_A) -
-                                 P(N_\hbox{AB} = n'_\hbox{AB}|N, n_A)\)
-                                 P(N_\hbox{AB} = n'_\hbox{AB}|N, n_A)
+     P_{HWE} = \sum_{n^*_{AB}} I[P(N_{AB}=n_{AB}|N,n_A) \geq P(N_{AB}=n^*_{AB}|N,n_A)] \\times P(N_{AB}=n^*_{AB}|N,n_A)
+
+  Where :math:`I[x]` is an indicator function that is equal to 1 when
+  :math:`x` is true and equal to 0 otherwise.
 
   That is, we are computing the probability that the real value of the
   HWE will be below the one that would be predicted from N (total

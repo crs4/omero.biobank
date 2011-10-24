@@ -34,11 +34,11 @@ def write_output(reader, outf, logger=None):
       rs_label = 'None'
     mask = r['Flank']
     problem = check_mask(mask)
-    if not problem:
-      outf.write("%s\t%s\t%s\n" % (label, rs_label, mask))
-    else:
-      logger.warn("%r: %s, skipping" % (label, problem))
+    if problem:
+      mask = 'None'
+      logger.warn("%r: %s, setting mask to 'None'" % (label, problem))
       bad_count += 1
+    outf.write("%s\t%s\t%s\n" % (label, rs_label, mask))
   return bad_count
 
 
