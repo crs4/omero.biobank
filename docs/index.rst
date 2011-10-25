@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to BIOBANK's documentation!
-==============================
+===================================
 
 This documentation is organized as follows.
 

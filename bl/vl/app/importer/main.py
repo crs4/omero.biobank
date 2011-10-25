@@ -4,22 +4,22 @@ Import Utility
 
 The purpose of this utility is to import in vl externally generated data.
 
-The import operations can almost always be descrived as:
+The import operations can almost always be described as:
 
-  * reading a tsv input file with one column named '''label''', an
+  * reading a tsv input file with one column named **label**, an
     unique id for the specific object defined, and other fields, when
     the specific object is linked to another, e.g., a blood sample to
-    an individual, there will be one column named '''source''' with the
+    an individual, there will be one column named **source** with the
     vid of an object to which this object should be linked to;
 
   * saving the information there contained, plus other data provided
     as parameters, the record and the context should provide enough
     information to be able to generate, together with the object, also
     the relavant action linking the saved object to the source
-    specified in the '''source''' column;
+    specified in the **source** column;
 
   * outputting an object mapping tsv file with four columns,
-    '''study''', '''label''', '''object_type''', '''vid''', where vid
+    **study**, **label**, **object_type**, **vid**, where vid
     is the unique VL id assigned by Omero/VL to the object, and
     object_type is Omero/VL object type of the object.
 

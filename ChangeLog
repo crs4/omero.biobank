@@ -1,3 +1,10 @@
+2011-10-25    <simleo@neuron.crs4.it>
+
+	* bl/vl/app/importer/marker_definition.py (Recorder.record): added
+	check for known markers; changed to save manufacturer's SNP label
+	when there is no rs label and original mask when it can't be
+	converted to top.
+
 2011-10-15    <zag@manzanillo>
 
 	* bl/vl/kb/drivers/omero/proxy_core.py (ProxyCore.reload_object):

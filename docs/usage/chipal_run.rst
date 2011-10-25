@@ -48,22 +48,22 @@ possiamo provare e vedere se si ottiene un risultato qualitativamente
 migliore rispetto al run precedente.
 
  #.  Sarebbe possibile aggiornare i files di libreria listati sotto in
-   base ai risultati del vostro allineamento dei probeset sul genoma
-   di referenza?  ::
+     base ai risultati del vostro allineamento dei probeset sul genoma
+     di referenza? ::
 
-   /SHARE/USERFS/bigspace/apt_runs/lib/GenomeWideSNP_6.chrYprobes 
-   /SHARE/USERFS/bigspace/apt_runs/lib/GenomeWideSNP_6.chrXprobes 
-   /SHARE/USERFS/bigspace/apt_runs/lib/GenomeWideSNP_6.Full.specialSNPs 
+       /SHARE/USERFS/bigspace/apt_runs/lib/GenomeWideSNP_6.chrYprobes 
+       /SHARE/USERFS/bigspace/apt_runs/lib/GenomeWideSNP_6.chrXprobes 
+       /SHARE/USERFS/bigspace/apt_runs/lib/GenomeWideSNP_6.Full.specialSNPs 
 
 
-Simone, ricordo che hai confrontato i risultati del vostro
-allineamento con il file che utilizziamo noi::
+     Simone, ricordo che hai confrontato i risultati del vostro
+     allineamento con il file che utilizziamo noi::
 
-  /SHARE/USERFS/Genomafs/Data/zara/libfiles_affy_vcf_110301/INFO_SNP_vcf_affy_chrpos_sorted_110421.txt
+       /SHARE/USERFS/Genomafs/Data/zara/libfiles_affy_vcf_110301/INFO_SNP_vcf_affy_chrpos_sorted_110421.txt
 
-A parte quei 28 probeset [N/N] che Peter ha allineato (ma che se sono
-solo 28 potremmo anche decidere di scartare), c'erano altre
-differenze?
+     A parte quei 28 probeset [N/N] che Peter ha allineato (ma che se
+     sono solo 28 potremmo anche decidere di scartare), c'erano altre
+     differenze?
 
  #. Sarebbe possibile aggiornare il file con i parametri del modello,
     nel file sotto, con dati provenienti dal nostro dataset, ossia far

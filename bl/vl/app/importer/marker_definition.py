@@ -87,19 +87,31 @@ class Recorder(Core):
     self.logger.info('start preloading known markers defs from kb')
     known_markers = self.kb.get_snp_marker_definitions()
     if len(known_markers) > 0:
-      known_markers = known_markers['rs_label']
+      known_markers = set(known_markers['rs_label'])
 
     self.logger.info('done preloading known markers defs')
     self.logger.info('preloaded %d known markers defs' % len(known_markers))
     #--
-    cnt = [0]
+    cnt = {"good": 0, "bad": 0}
     def ns(stream, cnt):
       for x in stream:
+        if x['rs_label'] == 'None':
+          x['rs_label'] = x['label']
+        if x['rs_label'] in known_markers:
+          self.logger.warn('%s: already loaded (%s)' %
+                           (x['label'], x['rs_label']))
+          continue
         y = {'source': source, 'context' : context, 'release' : release,
              'label' : x['label'],
              'rs_label' : x['rs_label']}
-        y['mask'] = convert_to_top(x['mask'])
-        cnt[0] += 1
+        try:
+          y['mask'] = convert_to_top(x['mask'])
+        except ValueError:
+          y['mask'] = x['mask']
+          self.logger.warn('%s: could not convert mask to top' % x['label'])
+          cnt["bad"] += 1
+        else:
+          cnt["good"] += 1
         yield y
     tsv = csv.DictReader(ifile, delimiter='\t')
     self.logger.info('start loading markers defs from %s' % ifile.name)
@@ -114,8 +126,9 @@ class Recorder(Core):
                   'label' : t[0],
                   'type'  : 'Marker',
                   'vid'   : t[1]})
-    self.logger.info('done loading markers defs there were %s new markers.' %
-                     cnt[0])
+    self.logger.info('done loading markers defs')
+    self.logger.info('good masks: %d' % cnt["good"])
+    self.logger.info('bad masks: %d' % cnt["bad"])
 
 #-----------------------------------------------------------------------------
 

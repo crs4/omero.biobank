@@ -28,7 +28,7 @@ class GenotypingAdapter(object):
   SNP_SET_DEF_TABLE    = 'snp_set_def.h5'
   SNP_SET_TABLE        = 'snp_set.h5'
   SNP_FLANK_SIZE       = vlu_snp.SNP_FLANK_SIZE
-  SNP_MASK_SIZE        = vlu_snp.SNP_MASK_SIZE
+  SNP_MASK_SIZE        = 2 * SNP_FLANK_SIZE + len("[A/B]")
 
   SNP_MARKER_DEFINITIONS_COLS = \
   [('string', 'vid',    'This marker VID', len(vlu.make_vid()), None),
@@ -39,7 +39,7 @@ class GenotypingAdapter(object):
    ('string', 'rs_label', 'dbSNP_id if available', 32, None),
    ('string', 'mask',
     """SNP definition mask in the format <FLANK>[A/B]<FLANK>. It expected to be
-    on the Illumina convention TOP strand.""", 133, None),
+    on the Illumina convention TOP strand.""", SNP_MASK_SIZE, None),
    ('string', 'op_vid', 'Last operation that modified this row',
     len(vlu.make_vid()), None)]
 
