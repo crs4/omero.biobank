@@ -39,12 +39,16 @@ def write_output(reader, outf, logger=None):
     else:
       rs_label = 'None'
     mask = r['TopGenomicSeq']
+    # alleles are the same as those extracted from the mask if strand
+    # is TOP; if strand is BOT they are their complement (NOT reversed)
+    allele_a, allele_b = r['SNP'].strip("[]").split("/")
     problem = check_mask(mask)
     if problem:
       mask = 'None'
       logger.warn("%r: %s, setting mask to 'None'" % (label, problem))
       bad_count += 1
-    outf.write("%s\t%s\t%s\n" % (label, rs_label, mask))
+    outf.write("%s\t%s\t%s\t%s\t%s\n" %
+               (label, rs_label, mask, allele_a, allele_b))
   return bad_count
 
 

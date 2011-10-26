@@ -38,7 +38,8 @@ def write_output(reader, outf, logger=None):
       mask = 'None'
       logger.warn("%r: %s, setting mask to 'None'" % (label, problem))
       bad_count += 1
-    outf.write("%s\t%s\t%s\n" % (label, rs_label, mask))
+    outf.write("%s\t%s\t%s\t%s\t%s\n" %
+               (label, rs_label, mask, r['Allele A'], r['Allele B']))
   return bad_count
 
 

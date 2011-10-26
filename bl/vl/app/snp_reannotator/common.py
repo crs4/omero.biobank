@@ -3,7 +3,7 @@ from bl.vl.utils.snp import split_mask
 
 
 POSSIBLE_ALLELES = frozenset(['A', 'C', 'G', 'T'])
-MARKER_DEF_FIELDS = ("label", "rs_label", "mask")
+MARKER_DEF_FIELDS = ("label", "rs_label", "mask", "allele_a", "allele_b")
 MARKER_AL_FIELDS = ("marker_vid", "ref_genome", "chromosome", "pos", "strand",
                     "allele", "copies")
 
