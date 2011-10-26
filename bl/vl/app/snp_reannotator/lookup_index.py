@@ -46,7 +46,7 @@ def get_extracted_seqs(fn):
 def write_output(logger, args):
   serializer = SeqNameSerializer()
   index = None
-  fields = MARKER_DEF_FIELDS + ("status", "old_mask")
+  fields = MARKER_DEF_FIELDS + ("status", "extended_mask")
   try:
     index = shelve.open(args.index_file, "r")
     logger.info("getting extracted sequences")
@@ -58,14 +58,14 @@ def write_output(logger, args):
       for i, r in enumerate(reader):
         label = r['label']
         old_rs_label = r['rs_label']
-        old_mask = r['mask']
+        mask = r['mask']
         try:
           seq, alleles = extracted_seqs[label]
         except KeyError:
-          rs_label = mask = 'None'
+          rs_label = extended_mask = 'None'
           status = Status.NO_INFO
         else:
-          mask = build_mask(seq, alleles)
+          extended_mask = build_mask(seq, alleles)
           key = build_index_key(seq)
           tags = index.get(key, [])
           n_matches = len(tags)
@@ -80,9 +80,8 @@ def write_output(logger, args):
             else:
               status = (Status.CONFIRMED if rs_label == old_rs_label
                         else Status.REPLACED)
-        outf.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\n" %
-        (label, rs_label, mask, r['allele_a'], r['allele_b'], status, old_mask)
-        )
+        outf.write("%s\n" % "\t".join((label, rs_label, mask, r['allele_a'],
+                                       r['allele_b'], status, extended_mask)))
       logger.info("processed %d records overall" % (i+1))
   finally:
     if index:
