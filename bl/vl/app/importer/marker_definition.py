@@ -76,18 +76,17 @@ class Recorder(Core):
     self.logger.info('start preloading known markers defs from kb')
     known_markers = self.kb.get_snp_marker_definitions()
     if len(known_markers) > 0:
-      known_markers = set(zip(known_markers['rs_label'],
-                              known_markers['ref_genome']))
-
+      known_markers = zip(known_markers['rs_label'],
+                          known_markers['ref_genome'])
+    known_markers = set(known_markers)
     self.logger.info('done preloading known markers defs')
     self.logger.info('preloaded %d known markers defs' % len(known_markers))
     #--
     cnt = {"good": 0, "bad": 0}
     def ns(stream, cnt):
       for x in stream:
-        if x['rs_label'] == 'None':
-          x['rs_label'] = x['label']
-        if (x['rs_label'], ref_genome) in known_markers:
+        k = (x['rs_label'], ref_genome)
+        if k in known_markers:
           self.logger.warn('%s: already loaded (%s)' %
                            (x['label'], x['rs_label']))
           continue
@@ -103,6 +102,7 @@ class Recorder(Core):
         else:
           cnt["good"] += 1
         yield y
+        known_markers.add(k)
     tsv = csv.DictReader(ifile, delimiter='\t')
     self.logger.info('start loading markers defs from %s' % ifile.name)
     vmap = self.kb.add_snp_marker_definitions(ns(tsv, cnt),
@@ -161,5 +161,3 @@ def do_register(registration_list):
   registration_list.append(('marker_definition', help_doc,
                             make_parser_marker_definition,
                             import_marker_definition_implementation))
-
-

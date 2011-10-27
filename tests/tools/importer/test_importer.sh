@@ -154,7 +154,7 @@ python ./make_marker_defs.py 1000000
 ${IMPORTER} -i marker_definitions.tsv \
             -o marker_definition_mapping.tsv \
             marker_definition --study ${STUDY_LABEL} --source CRS4 \
-            --context TEST --release `date +"%F-%R"`
+            --context TEST --release `date +"%F-%R"` --ref-genome hg19
 
 
 python <<EOF

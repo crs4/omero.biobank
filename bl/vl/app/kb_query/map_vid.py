@@ -129,10 +129,10 @@ class MapVIDApp(Core):
     self.logger.debug('mapping: %s' % mapping)
     return mapping
 
-  def resolve_mapping_marker(self, source_type, labels):
+  def resolve_mapping_marker(self, source_type, rs_labels):
     mapping = {}
     self.logger.info('start selecting %s' % source_type.get_ome_table())
-    objs = self.kb.get_snp_markers(labels=labels)
+    objs = self.kb.get_snp_markers(rs_labels=rs_labels)
     for o in objs:
       mapping[o.label] = o.id
     self.logger.info('done selecting %s' % source_type.get_ome_table())
