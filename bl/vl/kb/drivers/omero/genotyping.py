@@ -37,6 +37,7 @@ class GenotypingAdapter(object):
    ('string', 'release', 'Release within the context.', 16, None),
    ('string', 'label', 'Label of marker in the definition context.', 48, None),
    ('string', 'rs_label', 'dbSNP_id if available', 32, None),
+   ('string', 'ref_genome', 'Reference alignment genome.', 16, None),
    ('string', 'mask',
     """SNP definition mask in the format <FLANK>[A/B]<FLANK>. It expected to be
     on the Illumina convention TOP strand.""", SNP_MASK_SIZE, None),

@@ -260,7 +260,8 @@ class ProxyCore(object):
   @debug_boundary
   def delete_table(self, table_name):
     """
-    FIXME: Actual file removal is left to something else...
+    FIXME: Actual file removal: get numerical ID from omero API: this is the
+    same as the file's basename, e.g., 61 --> /var/tmp/omero/data/Files/61.
     """
     try:
       ofiles = self._list_table_copies(table_name)

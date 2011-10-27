@@ -1,6 +1,6 @@
 """
 Import Marker Definitions
-==========================
+=========================
 
 Will read in a tsv file with the following columns::
 
@@ -10,32 +10,21 @@ Will read in a tsv file with the following columns::
 
 Where label is supposed to be the unique label for this marker in the
 (source, context, release) context, rs_label is the dbSNP db label for
-this snp (it could be the string ``None`` if it not defined/not
-known). The column mask contains the SNP definition.
+this snp (it could be the string "None" if not defined or not
+known). The ``mask`` column contains the SNP definition.
 
 It will, for each row, convert mask to the TOP strand following
 Illumina conventions and then save a record for it in VL.
 
 The saved tuple is::
 
- (source, context, release, label, rs_label, TOP_mask)
-
-There are no collision controls.
+   (source, context, release, label, rs_label, ref_genome, TOP_mask)
 
 It will output a a tsv file with the following columns::
 
    study    label     type    vid
    ASTUDY   SNP_A-xxx Marker  V000002222
    ...
-
-
-
-Example usage::
-
-  bash$ importer -i markers.tsv marker_definition \
-                 --source='Affymetrix' --context='GenomeWide-6.0' \
-                 --release='na28'
-
 """
 
 from bl.vl.kb import KBError
@@ -83,11 +72,12 @@ class Recorder(Core):
 
 
 
-  def record(self, source, context, release, ifile, ofile):
+  def record(self, source, context, release, ifile, ofile, ref_genome):
     self.logger.info('start preloading known markers defs from kb')
     known_markers = self.kb.get_snp_marker_definitions()
     if len(known_markers) > 0:
-      known_markers = set(known_markers['rs_label'])
+      known_markers = set(zip(known_markers['rs_label'],
+                              known_markers['ref_genome']))
 
     self.logger.info('done preloading known markers defs')
     self.logger.info('preloaded %d known markers defs' % len(known_markers))
@@ -97,13 +87,13 @@ class Recorder(Core):
       for x in stream:
         if x['rs_label'] == 'None':
           x['rs_label'] = x['label']
-        if x['rs_label'] in known_markers:
+        if (x['rs_label'], ref_genome) in known_markers:
           self.logger.warn('%s: already loaded (%s)' %
                            (x['label'], x['rs_label']))
           continue
         y = {'source': source, 'context' : context, 'release' : release,
-             'label' : x['label'],
-             'rs_label' : x['rs_label']}
+             'label' : x['label'], 'rs_label' : x['rs_label'],
+             'ref_genome': ref_genome}
         try:
           y['mask'] = convert_to_top(x['mask'])
         except ValueError:
@@ -140,7 +130,8 @@ def make_parser_marker_definition(parser):
   parser.add_argument('--study', type=str,
                       default='default_study',
                       help="""context study label""")
-
+  parser.add_argument('--ref-genome', type=str, required=True,
+                      help="""reference genome (e.g., hg19)""")
   parser.add_argument('--source', type=str,
                       help="""marker definition source""")
   parser.add_argument('--context', type=str,
@@ -164,7 +155,7 @@ def import_marker_definition_implementation(logger, args):
                       keep_tokens=args.keep_tokens, logger=logger)
 
   recorder.record(args.source, args.context, args.release,
-                  args.ifile, args.ofile)
+                  args.ifile, args.ofile, args.ref_genome)
 
 def do_register(registration_list):
   registration_list.append(('marker_definition', help_doc,
