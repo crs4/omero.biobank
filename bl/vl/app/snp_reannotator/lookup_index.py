@@ -43,6 +43,18 @@ def get_extracted_seqs(fn):
     return data
 
 
+def get_sort_idx(fn):
+  with open(fn) as f:
+    reader = csv.DictReader(f, delimiter="\t")
+    data = []
+    for r in reader:
+      if r['copies'] == '1':
+        data.append((int(r['chromosome']), int(r['pos']), r['marker_vid']))
+  data.sort()
+  data = [d[-1] for d in data]
+  return dict((l, i) for (i, l) in enumerate(data))
+
+
 def write_output(logger, args):
   serializer = SeqNameSerializer()
   index = None
@@ -51,6 +63,11 @@ def write_output(logger, args):
     index = shelve.open(args.index_file, "r")
     logger.info("getting extracted sequences")
     extracted_seqs = get_extracted_seqs(args.input_file)
+    if args.align_file:
+      logger.info("getting sorting order from %r" % (args.align_file))
+      idx_map = get_sort_idx(args.align_file)
+      max_idx = max(idx_map.itervalues())
+      fields += ("marker_indx",)
     with nested(open(args.orig_file), open(args.output_file,'w')) as (f, outf):
       outf.write("\t".join(fields)+"\n")
       reader = csv.DictReader(f, delimiter="\t")
@@ -80,8 +97,18 @@ def write_output(logger, args):
             else:
               status = (Status.CONFIRMED if rs_label == old_rs_label
                         else Status.REPLACED)
-        outf.write("%s\n" % "\t".join((label, rs_label, mask, r['allele_a'],
-                                       r['allele_b'], status, extended_mask)))
+        if rs_label == 'None':
+          rs_label = label
+        out_r = [label, rs_label, mask, r['allele_a'], r['allele_b'],
+                 status, extended_mask]
+        if args.align_file:
+          try:
+            idx = idx_map[label]
+          except KeyError:
+            max_idx += 1
+            idx = max_idx
+          out_r.append(str(idx))
+        outf.write("%s\n" % "\t".join(out_r))
       logger.info("processed %d records overall" % (i+1))
   finally:
     if index:
@@ -97,6 +124,8 @@ def make_parser(parser):
                       help='output reannotated VL marker definitions file')
   parser.add_argument("--index-file", metavar="FILE", required=True,
                       help="dbSNP index file")
+  parser.add_argument("--align-file", metavar="FILE",
+                      help="marker alignments file (if provided, adds index)")
 
 
 def main(logger, args):
