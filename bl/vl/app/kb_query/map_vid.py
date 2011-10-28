@@ -1,6 +1,6 @@
 """
 Map user visible labels to vid
-================================
+==============================
 
 A tool to resolve labels to VID ids.
 The basic command is the following::
@@ -25,8 +25,6 @@ The basic command is the following::
 
 **FIXME**
 
-Map user defined objects label to vid.
-
 usage example::
 
    kb_query -H biobank05  -o bs_mapped.tsv map \
@@ -38,21 +36,14 @@ special case::
 
     foo  well_label
     xx   fooplate:A01
-
-
 """
+import csv, argparse
+import itertools as it
 
 from bl.vl.app.importer.core import Core
-from version import version
 
-# FIXME this is an hack that specific to the omero driver...
+# FIXME this is a hack that's specific to the omero driver...
 from bl.vl.kb.drivers.omero.utils import make_unique_key
-
-
-import csv, json
-import argparse
-import time, sys
-import itertools as it
 
 
 class MapVIDApp(Core):
@@ -66,9 +57,7 @@ class MapVIDApp(Core):
 
     foo  well_label
     xx   fooplate:A01
-
   """
-
   SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
                             'Chip', 'DataSample', 'Marker', 'Scanner']
 
@@ -79,9 +68,9 @@ class MapVIDApp(Core):
     FIXME
     """
     super(MapVIDApp, self).__init__(host, user, passwd,
-                                 keep_tokens=keep_tokens,
-                                 study_label=study_label,
-                                 logger=logger)
+                                    keep_tokens=keep_tokens,
+                                    study_label=study_label,
+                                    logger=logger)
 
   def resolve_mapping_individual(self, labels):
     mapping = {}
@@ -129,10 +118,10 @@ class MapVIDApp(Core):
     self.logger.debug('mapping: %s' % mapping)
     return mapping
 
-  def resolve_mapping_marker(self, source_type, rs_labels):
+  def resolve_mapping_marker(self, source_type, labels):
     mapping = {}
     self.logger.info('start selecting %s' % source_type.get_ome_table())
-    objs = self.kb.get_snp_markers(rs_labels=rs_labels)
+    objs = self.kb.get_snp_markers(labels=labels)
     for o in objs:
       mapping[o.label] = o.id
     self.logger.info('done selecting %s' % source_type.get_ome_table())
@@ -155,19 +144,15 @@ class MapVIDApp(Core):
       self.logger.critical(msg)
       raise ValueError(msg)
     source_type = getattr(self.kb, source_type_label)
-
     self.logger.info('start reading %s' % ifile.name)
     f = csv.DictReader(ifile, delimiter='\t')
     records = [r for r in f]
     self.logger.info('done reading %s' % ifile.name)
-
     if len(records) == 0:
       self.logger.info('file %s is empty.' % ifile.name)
       return
-
     labels = [r[column_label] for r in records]
     mapping = self.resolve_mapping(source_type, labels)
-
     self.logger.info('start writing %s' % ofile.name)
     fieldnames = [k for k in records[0].keys() if k != column_label]
     fieldnames.append(transformed_column_label)
@@ -177,7 +162,9 @@ class MapVIDApp(Core):
       r[transformed_column_label] = mapping[r.pop(column_label)]
       o.writerow(r)
     self.logger.info('done writing %s' % ofile.name)
+
 #-------------------------------------------------------------------------
+
 help_doc = """
 Map user defined objects label to vid.
 
@@ -187,7 +174,6 @@ usage example:
                           -i blood_sample.tsv \
                           --column 'individual_label' --study BSTUDY \
                           --source-type Individual
-
 """
 
 def make_parser_map(parser):
@@ -199,7 +185,6 @@ def make_parser_map(parser):
       return tuple(parts)
     else:
       raise ValueError()
-
   parser.add_argument('-i', '--ifile', type=argparse.FileType('r'),
                       help='the input tsv file',
                       required=True)
@@ -216,8 +201,8 @@ def make_parser_map(parser):
   parser.add_argument('--study', type=str,
                       help="study label")
 
+
 def import_map_implementation(logger, args):
-  #--
   app = MapVIDApp(host=args.host, user=args.user, passwd=args.passwd,
                keep_tokens=args.keep_tokens,
                study_label=args.study, logger=logger)
@@ -225,9 +210,8 @@ def import_map_implementation(logger, args):
   app.dump(args.ifile, args.source_type,
            args.column[0], args.column[1], args.ofile)
 
+
 def do_register(registration_list):
   registration_list.append(('map_vid', help_doc,
                             make_parser_map,
                             import_map_implementation))
-
-

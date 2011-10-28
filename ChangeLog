@@ -1,3 +1,13 @@
+2011-10-28    <simleo@neuron.crs4.it>
+
+	* bl/vl/app/importer/marker_definition.py (Recorder.record):
+	manufacturer's label is now treated as the unique marker row
+	attribute.
+
+	* bl/vl/app/kb_query/map_vid.py
+	(MapVIDApp.resolve_mapping_marker): changed back to expect chip
+	manufacturer's labels instead of rs_labels for mapping to VIDs.
+
 2011-10-25    <simleo@neuron.crs4.it>
 
 	* bl/vl/app/importer/marker_definition.py (Recorder.record): added

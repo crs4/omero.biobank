@@ -26,14 +26,11 @@ It will output a a tsv file with the following columns::
    ASTUDY   SNP_A-xxx Marker  V000002222
    ...
 """
+import csv, json, time, sys, os
 
-from bl.vl.kb import KBError
 from bl.vl.utils.snp import convert_to_top
-from core import Core, BadRecord
+from core import Core
 from version import version
-
-import csv, json
-import time, sys
 
 
 class Recorder(Core):
@@ -70,25 +67,20 @@ class Recorder(Core):
     #-- FIXME what happens if we do not have markers to save?
     self.action.save()
 
-
-
   def record(self, source, context, release, ifile, ofile, ref_genome):
     self.logger.info('start preloading known markers defs from kb')
     known_markers = self.kb.get_snp_marker_definitions()
     if len(known_markers) > 0:
-      known_markers = zip(known_markers['rs_label'],
-                          known_markers['ref_genome'])
+      known_markers = known_markers['label']
     known_markers = set(known_markers)
-    self.logger.info('done preloading known markers defs')
     self.logger.info('preloaded %d known markers defs' % len(known_markers))
     #--
     cnt = {"good": 0, "bad": 0}
     def ns(stream, cnt):
       for x in stream:
-        k = (x['rs_label'], ref_genome)
+        k = x['label']
         if k in known_markers:
-          self.logger.warn('%s: already loaded (%s)' %
-                           (x['label'], x['rs_label']))
+          self.logger.warn('%s: already loaded' % x['label'])
           continue
         y = {'source': source, 'context' : context, 'release' : release,
              'label' : x['label'], 'rs_label' : x['rs_label'],
@@ -105,11 +97,9 @@ class Recorder(Core):
         known_markers.add(k)
     tsv = csv.DictReader(ifile, delimiter='\t')
     self.logger.info('start loading markers defs from %s' % ifile.name)
-    vmap = self.kb.add_snp_marker_definitions(ns(tsv, cnt),
-                                              action=self.action)
-    o = csv.DictWriter(ofile,
-                       fieldnames=['study', 'label', 'type', 'vid'],
-                       delimiter='\t')
+    vmap = self.kb.add_snp_marker_definitions(ns(tsv, cnt), action=self.action)
+    o = csv.DictWriter(ofile, delimiter='\t', lineterminator=os.linesep,
+                       fieldnames=['study', 'label', 'type', 'vid'])
     o.writeheader()
     for t in vmap:
       o.writerow({'study' : self.default_study.label,
@@ -139,23 +129,21 @@ def make_parser_marker_definition(parser):
   parser.add_argument('--release', type=str,
                       help="""marker definition release""")
 
+
 def import_marker_definition_implementation(logger, args):
   if not (args.study and args.source and args.context and args.release):
     msg = 'missing command line options'
     logger.critical(msg)
     sys.exit(1)
-
   action_setup_conf = Recorder.find_action_setup_conf(args)
-
-
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf,
                       keep_tokens=args.keep_tokens, logger=logger)
-
   recorder.record(args.source, args.context, args.release,
                   args.ifile, args.ofile, args.ref_genome)
+
 
 def do_register(registration_list):
   registration_list.append(('marker_definition', help_doc,
