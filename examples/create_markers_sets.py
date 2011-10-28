@@ -15,7 +15,7 @@ enough to illustrate the procedure.
 **Note:** DO NOT run this examples against a production
   database. Also, what will be shown here is supposed to be
   didactically clear, not efficient. See the implementation of the
-  importer tools for more efficiency solutions.
+  importer tools for more efficient solutions.
 
 
 First, as usual, we open the connection to the KnowledgeBase
@@ -34,7 +34,7 @@ kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
 
 
 """ ..
-The following is the collection of (fake) markers used for the TaqMan
+The following is the collection of (fake) markers used in the TaqMan
 assays.
 """
 taq_man_markers = [
@@ -56,10 +56,10 @@ is the dbSNP db label, if available, while the third is the marker mask.
 
   put a reference to reference documentation
 
-Now we will load the markers set definition into Omero/VL.
+Now we will load the markers set definition into Omero.biobank.
 
 **Note:** We are considering an ideal case where none of the markers
-  are already in the db.
+  is already in the db.
 
 """
 study = kb.get_study('TEST01')
@@ -74,9 +74,9 @@ lvs = kb.create_markers(source, context, release, taq_man_markers, action)
 
 where lvs is a list of (label, vid) tuples.
 
-We can suppose that the markers above have been alligned against a
-reference genome, say fake18, and save in omero/vl the alignment information.
-We will fake the alignment results as follows.
+We can assume that the markers above have been alligned against a
+reference genome, say fake18, and save in omero.biobank the alignment
+information.  We will fake the alignment results as follows.
 """
 
 aligns = [(t[1], 1, i*1000, True, 'A' if (i%2)== 0 else 'B', 1)
@@ -153,6 +153,17 @@ for i, ind in enumerate(kb.get_individuals(study)):
   probs, conf = make_fake_data(mset)
   do = kb.add_gdo_data_object(action, data_sample, probs, conf)
   data_sample_by_id[ind.id] = data_sample
+
+""" ..
+
+Note how we first create a DataSample object (GenotypeDataSample)
+which basically keeps track of the fact that there exists a genotyping
+data set defined on a given snp markers set, and then we provide an
+actual data object that describes the physical object that contains
+the real data. The idea is that there could be many instances, data
+equivalent, that link to the same DataSample, e.g., on different file
+systems, in different formats and so on.
+"""
 
 """ ..
 

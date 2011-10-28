@@ -84,9 +84,9 @@ class MapVIDApp(Core):
     diff = set(labels) - set(mapping.keys())
     if len(diff) > 0:
       for x in diff:
-        self.logger.critical('cannot map %s as an individual in study %s' %
-                             (x, self.default_study.label))
-      raise ValueError('cannot map required individuals')
+        self.logger.error('cannot map %s as an individual in study %s' %
+                          (x, self.default_study.label))
+      self.logger.error('the lines with unmapped individuals will be ignored.')
     self.logger.info('done selecting enrolled individuals')
     return mapping
 
@@ -159,8 +159,9 @@ class MapVIDApp(Core):
     o = csv.DictWriter(ofile, fieldnames=fieldnames, delimiter='\t')
     o.writeheader()
     for r in records:
-      r[transformed_column_label] = mapping[r.pop(column_label)]
-      o.writerow(r)
+      if r[column_label] in mapping:
+        r[transformed_column_label] = mapping[r.pop(column_label)]
+        o.writerow(r)
     self.logger.info('done writing %s' % ofile.name)
 
 #-------------------------------------------------------------------------

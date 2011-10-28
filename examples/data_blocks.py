@@ -45,7 +45,6 @@ mset0[0::10]
 mset0[11]
 mset0[1].label
 mset0[1].rs_label
-mset0[22].mask
 
 """ ..
 
@@ -144,9 +143,14 @@ indices_0, indices_1 = kb.SNPMarkersSet.intersect(mset0, mset1)
 
 """ ..
 To compare we use a suitable function such as the following:
+
+.. todo::
+
+   TBD
+
 """
 def compare(a, b):
-  ....
+  pass
 
 for (a, b) in it.izip(kb.get_gdo_iterator(mset0, indices=indices_0,
                                           data_samples=data_sample_0),

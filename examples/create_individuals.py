@@ -3,10 +3,10 @@
 The goal of this examples is to show how one can define individuals
 and enroll them in a study, that we will call 'TEST01'.
 
-**Note:** DO NOT run this examples against a production
+**Note:** DO NOT run this example against a production
   database. Also, what will be shown here is supposed to be
   didactically clear, not efficient. See the implementation of the
-  importer tools for more efficiency solutions.
+  importer tools for more efficient solutions.
 
 First, as usual, we open the connection to the KnowledgeBase.
 """
