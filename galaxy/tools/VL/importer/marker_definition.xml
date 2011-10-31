@@ -9,7 +9,7 @@
     #else
       --host=$__app__.config.omero_default_host
       --user=$__app__.config.omero_default_user
-      --passwd=$__app__.config.omero_default_passwd
+      --passwd="$__app__.config.omero_default_passwd"
     #end if
     --operator=galaxy
     --ifile=$input1

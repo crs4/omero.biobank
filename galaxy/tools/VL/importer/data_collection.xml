@@ -9,7 +9,7 @@
     #else
       --host=$__app__.config.omero_default_host
       --user=$__app__.config.omero_default_user
-      --passwd=$__app__.config.omero_default_passwd
+      --passwd="$__app__.config.omero_default_passwd"
     #end if
     --operator=galaxy
     --ifile=$input1
@@ -70,7 +70,7 @@
 	       label="Omero/VL host"/>
 	<param name="vl_user" size="20" type="text" value="root" 
 	       label="Omero/VL user"/>
-	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	<param name="vl_passwd" size="20" type="text" value="What? Me worry?" 
 	       label="Omero/VL passwd"/>
       </when>
     </conditional>
