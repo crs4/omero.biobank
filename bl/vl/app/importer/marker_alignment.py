@@ -75,6 +75,7 @@ class Recorder(Core):
     mandatory_fields = ['marker_vid', 'ref_genome',
                         'chromosome', 'pos', 'strand', 'allele', 'copies']
 
+
     markers = dict([(m.id, m) for m in
                     self.kb.get_snp_markers(vids=[r['marker_vid']
                                                   for r in records],

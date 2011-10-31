@@ -16,9 +16,10 @@ known). The ``mask`` column contains the SNP definition.
 It will, for each row, convert mask to the TOP strand following
 Illumina conventions and then save a record for it in VL.
 
-The saved tuple is::
+.. todo::
 
-   (source, context, release, label, rs_label, ref_genome, TOP_mask)
+   add a reference to the data structure documentation.
+
 
 It will output a a tsv file with the following columns::
 
@@ -67,9 +68,16 @@ class Recorder(Core):
     #-- FIXME what happens if we do not have markers to save?
     self.action.save()
 
-  def record(self, source, context, release, ifile, ofile, ref_genome):
+  def record(self, source, context, release, ifile, ofile,
+             ref_genome, dbsnp_build):
     self.logger.info('start preloading known markers defs from kb')
-    known_markers = self.kb.get_snp_marker_definitions()
+    selector = '(source=="%s")' % source
+    if context:
+      selector += '&(context=="%s")' % context
+    if release:
+      selector += '&(release=="%s")' % release
+    known_markers = self.kb.get_snp_marker_definitions(selector=selector,
+                                                       col_names=['label'])
     if len(known_markers) > 0:
       known_markers = known_markers['label']
     known_markers = set(known_markers)
@@ -84,7 +92,8 @@ class Recorder(Core):
           continue
         y = {'source': source, 'context' : context, 'release' : release,
              'label' : x['label'], 'rs_label' : x['rs_label'],
-             'ref_genome': ref_genome}
+             'ref_rs_genome': ref_genome,
+             'dbSNP_build' : dbsnp_build}
         try:
           y['mask'] = convert_to_top(x['mask'])
         except ValueError:
@@ -121,17 +130,19 @@ def make_parser_marker_definition(parser):
                       default='default_study',
                       help="""context study label""")
   parser.add_argument('--ref-genome', type=str, required=True,
-                      help="""reference genome (e.g., hg19)""")
-  parser.add_argument('--source', type=str,
+                      help="""reference genome used to resolve rs mapping, (e.g., hg19)""")
+  parser.add_argument('--dbsnp-build', type=int, required=True,
+                      help="""dbsnp build id used to resolve the rs mapping, (e.g., 134)""")
+  parser.add_argument('--source', type=str, required=True,
                       help="""marker definition source""")
-  parser.add_argument('--context', type=str,
+  parser.add_argument('--context', type=str, required=True,
                       help="""marker definition context""")
-  parser.add_argument('--release', type=str,
+  parser.add_argument('--release', type=str, required=True,
                       help="""marker definition release""")
 
-
 def import_marker_definition_implementation(logger, args):
-  if not (args.study and args.source and args.context and args.release):
+  if not (args.study and args.source and args.context and args.release
+          and args.ref_genome and args.dbsnp_build):
     msg = 'missing command line options'
     logger.critical(msg)
     sys.exit(1)
@@ -142,7 +153,8 @@ def import_marker_definition_implementation(logger, args):
                       action_setup_conf=action_setup_conf,
                       keep_tokens=args.keep_tokens, logger=logger)
   recorder.record(args.source, args.context, args.release,
-                  args.ifile, args.ofile, args.ref_genome)
+                  args.ifile, args.ofile,
+                  args.ref_genome, args.dbsnp_build)
 
 
 def do_register(registration_list):

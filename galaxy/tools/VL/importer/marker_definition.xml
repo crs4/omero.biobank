@@ -20,15 +20,11 @@
     #if str($study) != 'use_provided'
       --study ${study}
     #end if 
-    #if str($source)
-      --source ${source}
-    #end if 
-    #if str($context)
-      --context ${context}
-    #end if 
-    #if str($release)
-      --release ${release}
-    #end if 
+    --source ${source}
+    --context ${context}
+    --release ${release}
+    --ref-genome  ${ref_genome}
+    --dbsnp-build ${dbsnp_build}
   </command>  
   <inputs>
     <param format="tabular" name="input1" type="data"
@@ -49,11 +45,20 @@
     </param>
 
     <param name="source" size="40" type="text" value="" 
+	   optional="false"
 	   label="source"/>
     <param name="context" size="40" type="text" value="" 
+	   optional="false"
 	   label="context"/>
     <param name="release" size="40" type="text" value="" 
+	   optional="false"
 	   label="release"/>
+    <param name="ref_genome" size="40" type="text" value="" 
+	   optional="false"
+	   label="reference genome"/>
+    <param name="dbsnp_build" size="40" type="integer"
+	   optional="false"
+	   label="dbSNP build"/>
 
 
     <!-- ************************************************** -->

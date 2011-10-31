@@ -2,12 +2,24 @@ IMPORTER='../../../tools/importer -P test --operator aen'
 KB_QUERY='../../../tools/kb_query -P test --operator aen'
 CREATE_FAKE_GDO='python create_fake_gdo.py --P test'
 
-DATA_DIR='./large'
+function help() {
+    cat <<EOF
+usage: $0 [-d DATASET]
 
+with -d it will use the dataset contained in the DATASET dir. Defaults to
+DATASET=./small dataset.
+EOF
+    exit 0
+
+}
+
+DATA_DIR='./small'
 
 echo 'Running tests on dataset:' ${DATA_DIR}
 
 STUDY_LABEL=TEST01
+
+if false; then
 
 
 ${IMPORTER} -i ${DATA_DIR}/study.tsv -o study_mapping.tsv study
@@ -91,8 +103,6 @@ ${IMPORTER} -i data_object_mapped.tsv -o data_object_mapping.tsv \
              --study ${STUDY_LABEL} --mimetype=x-vl/affymetrix-cel
 
 
-
-
 ${KB_QUERY} -o data_collection_mapped.tsv \
              map_vid -i ${DATA_DIR}/data_collections.tsv \
                  --column data_sample_label,data_sample \
@@ -125,9 +135,11 @@ ${IMPORTER} -i diagnosis_mapped.tsv \
              --study ${STUDY_LABEL} 
 
 
+fi
 
 # this will generate the marker_defintions file.
-python ./make_marker_defs.py 1000000
+#python ./make_marker_defs.py 1000000
+python ./make_marker_defs.py 100
 
 ${IMPORTER} -i marker_definitions.tsv \
             -o marker_definition_mapping.tsv \
@@ -190,24 +202,24 @@ ${IMPORTER} -i markers_sets.tsv \
             markers_set \
             --study ${STUDY_LABEL} \
             --label MSET0-`date +"%F-%R"` \
-            --maker CRS4 --model TEST0 --release `date +"%F-%R"`
+            --maker CRS4 --model MSET0 --release `date +"%F-%R"`
 
 
 MSET1=MSET1-`date +"%F-%R"`
 
-echo "* define ${MSET1} a marker set that uses 1024 known markers"
+echo "* define ${MSET1} a marker set that uses 16 known markers"
 python <<EOF
 import csv, random
 
 i = csv.DictReader(open('marker_definition_mapping.tsv'), delimiter='\t')
-o = csv.DictWriter(open('markers_sets_1024.tsv', 'w'), 
+o = csv.DictWriter(open('markers_sets_16.tsv', 'w'), 
                    fieldnames=['marker_vid', 'marker_indx',
                                'allele_flip'],
                    delimiter='\t')
 o.writeheader()
 
 recs = [ r for r in i]
-for k,r in enumerate(random.sample(recs, 1024)):
+for k,r in enumerate(random.sample(recs, 16)):
   y = {'marker_vid' : r['vid'], 
        'allele_flip' : random.choice([True, False]),
        'marker_indx'  : k}
@@ -215,14 +227,14 @@ for k,r in enumerate(random.sample(recs, 1024)):
 
 EOF
 
-${IMPORTER} -i markers_sets_1024.tsv \
-            -o markers_sets_1024_mapping.tsv \
+${IMPORTER} -i markers_sets_16.tsv \
+            -o markers_sets_16_mapping.tsv \
             markers_set \
             --study ${STUDY_LABEL} \
             --label ${MSET1} \
-            --maker CRS4 --model TEST1 --release `date +"%F-%R"`
+            --maker CRS4 --model MSET1 --release `date +"%F-%R"`
 
-MSET_VID=`grep ${MSET1} markers_sets_1024_mapping.tsv | perl -ane "print @F[3];"`
+MSET_VID=`grep ${MSET1} markers_sets_16_mapping.tsv | perl -ane "print @F[3];"`
 echo "* define a  GenotypingProgram device that generates datasets on ${MSET1}"
 DEVICE_FILE=foo_device.tsv
 python -c "print 'device_type\tlabel\tmaker\tmodel\trelease\tmarkers_set'" > ${DEVICE_FILE}
@@ -232,14 +244,14 @@ ${IMPORTER} -i foo_device.tsv -o foo_device_mapping.tsv device --study ${STUDY_L
 
 DEVICE_VID=`grep ${MSET1} foo_device_mapping.tsv | perl -ane "print @F[3];"`
 
-echo "* extracting a subset of 512 individuals"
+echo "* extracting a subset of 3 individuals"
 
 FOO_GROUP=foo-`date +"%F-%R"`
 
 ${KB_QUERY} --ofile group_foo.tsv \
             selector --study ${STUDY_LABEL} \
             --group-label ${FOO_GROUP} \
-            --total-number=512 \
+            --total-number=4 \
             --male-fraction=0.5\
             --reference-disease=icd10-cm:G35 \
             --control-fraction=0.5
