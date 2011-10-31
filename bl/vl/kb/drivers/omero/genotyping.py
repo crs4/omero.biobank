@@ -1,15 +1,82 @@
+"""
+
+.. todo::
+
+   Explain why handling markers is a mess.
+
+A SNP marker is defined by:
+
+ * a SNP definition mask in the format <FLANK>[A/B]<FLANK>. Alleles
+    order is defined by the order within the square brackets. The mask
+    is is expected to be on the Illumina convention TOP strand, if the
+    Illumina strand determination algorithm gets a definite result.
+
+ * a string, '''source''', declaring the origin of the marker
+   definition. E.g., 'Affymetrix', 'Illumina', 'ABI'
+
+ * a string, '''context''', declaring the context of the
+   definition. E.g., 'TaqMan-SNP_Genotyping_Assays'
+
+ * a string, '''release''', declaring the specific release within the
+   context. E.g., '12-Nov-2010'
+
+ * a string, '''label''', declaring how this marker is known within
+   the triple source, context, release above.
+
+SNP markers could have a dbSNP assigned rs_label. Unfortunately, this
+is a property of the marker that is conditioned on a specific dbSNP
+release and a specific reference genome. In fact, the procedure we follow,
+
+.. todo::
+
+  add link to rs label identification procedure
+
+
+The association of markers to their rs label is based on the comparison of
+the aligment position against a given reference genome of the marker
+mask with what is obtained by aligning all the SNP markers of dbSNP
+against the same reference genome.  To keep track of this, each marker
+record has the following additional fields:
+
+  * a string, '''rs_label''', declaring the label of the marker in
+    dbSNP that correspond to this specific marker. When no
+    correspondence is known, it is set to the same value of the
+    '''label''' field.
+
+  * a long, '''dbSNP_build''', declaring the dbSNP markers build used
+    in the identification procedure.
+
+  * a string, '''ref_rs_genome''', declaring the reference genome used
+    to find the rs corrispondence.
+
+"""
+
 import numpy as np
 import bl.vl.utils as vlu
 import bl.vl.utils.snp as vlu_snp
 
 
 class Marker(object):
-  "FIXME This is a place-holder"
+  """
+  This is a wrapper used to export as a python object the contents of
+  a snp marker definition and associate information.
 
-  def __init__(self, vid, label=None, rs_label=None, mask=None, position=(0,0)):
+  .. todo::
+
+    define args.
+  """
+
+  def __init__(self, vid, label=None, rs_label=None,
+               source=None, context=None, release=None,
+               dbSNP_build=None, ref_rs_genome=None,
+               mask=None, position=(0,0)):
     self.id = vid
     self.label = label
     self.rs_label = rs_label
+    self.source = source
+    self.contect = context
+    self.dbSNP_build = dbSNP_build
+    self.ref_rs_genome = ref_rs_genome
     self.mask = mask
     self.position = position
 
@@ -37,7 +104,8 @@ class GenotypingAdapter(object):
    ('string', 'release', 'Release within the context.', 16, None),
    ('string', 'label', 'Label of marker in the definition context.', 48, None),
    ('string', 'rs_label', 'dbSNP_id if available', 32, None),
-   ('string', 'ref_genome', 'Reference alignment genome.', 16, None),
+   ('long',   'dbSNP_build', 'dbSNP build version.', None),
+   ('string', 'ref_rs_genome', 'Reference rs alignment genome.', 16, None),
    ('string', 'mask',
     """SNP definition mask in the format <FLANK>[A/B]<FLANK>. It expected to be
     on the Illumina convention TOP strand.""", SNP_MASK_SIZE, None),
@@ -113,71 +181,50 @@ class GenotypingAdapter(object):
     return self.kb.get_table_rows(self.SNP_MARKER_DEFINITIONS_TABLE,
                                   selector, col_names, batch_size=batch_size)
 
-  def marker_maker(self, r, names):
-    if names:
-      args = dict(zip(names, r))
-      return Marker(**args)
-    vid, label, rs_label, mask = map(str, [r[0], r[4], r[5], r[6]])
-    return Marker(vid, label, rs_label, mask)
+  def marker_maker(self, r, names=None):
+    names = ['vid', 'label', 'rs_label'] if names is None else names
+    args = dict( (x[1], v)
+                 for x,v in zip(self.SNP_MARKER_DEFINITIONS_COLS,r)
+                 if x[1] in names)
+    return Marker(**args)
 
-  def get_snp_markers_disabled(self, labels=None, rs_labels=None, vids=None,
-                               col_names=None,
-                               batch_size=50000, selector_critical_size=100):
-    count = (labels is None) + (rs_labels is None) + (vids is None)
-    if count == 3:
-      raise ValueError('labels, rs_labels and vids cannot be all None')
-    if count == 1:
-      raise ValueError('only one of labels, rs_labels and vids should be assigned')
-    if labels:
-      field_name = 'label'
-      requested = labels
-    elif rs_labels:
-      field_name = 'rs_label'
-      requested = rs_labels
-    else:
-      field_name = 'vid'
-      requested = vids
+  def get_snp_markers_by_source(self, source, context=None, release=None,
+                                col_names=None):
+    selector = '(source=="%s")' % source
+    if context:
+      selector += '&(context=="%s")' % context
+    # FIXME: unclear if release without a context is meaningful.
+    if release:
+      selector += '&(release=="%s")' % release
+    recs = self.get_snp_marker_definitions(selector=selector)
+    return [self.marker_maker(r, col_names) for r in recs]
 
-    if len(requested) < selector_critical_size:
-      selector = '|'.join(['(%s=="%s")' % (field_name, l) for l in requested])
-    else:
-      n_chunks = (len(requested) / selector_critical_size
-                  + 1 if len(requested) % selector_critical_size else 0)
-      start = 0
-      selector = []
-      while start < len(requested):
-        end = start + selector_critical_size
-        selector.append('|'.join(['(%s=="%s")' % (field_name, l)
-                                  for l in requested[start:end]]))
-        start = end
-    res = self.get_snp_marker_definitions(selector, col_names, batch_size)
-    return [self.marker_maker(r, col_names) for r in res]
 
-  def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
-                      col_names=None,
-                      batch_size=50000):
-    count = (labels is None) + (rs_labels is None) + (vids is None)
-    if count == 3:
-      raise ValueError('labels, rs_labels and vids cannot be all None')
-    if count == 1:
-      raise ValueError('only one of labels, rs_labels and vids should be assigned')
-    if labels:
-      field_name = 'label'
-      requested = labels
-    elif rs_labels:
-      field_name = 'rs_label'
-      requested = rs_labels
-    else:
-      field_name = 'vid'
-      requested = vids
-    recs = self.get_snp_marker_definitions(col_names=[field_name],
-                                           batch_size=max(batch_size,
-                                                          len(requested)))
-    by_field = dict(((l[0], i) for i, l in enumerate(recs)))
-    row_indices = [by_field[x] for x in requested]
-    res = self.kb.get_table_slice(self.SNP_MARKER_DEFINITIONS_TABLE,
-                                  row_indices, col_names, batch_size)
-    return [self.marker_maker(r, col_names) for r in res]
+  # def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
+  #                     col_names=None,
+  #                     batch_size=50000):
+  #   count = (labels is None) + (rs_labels is None) + (vids is None)
+  #   if count == 3:
+  #     raise ValueError('labels, rs_labels and vids cannot be all None')
+  #   if count == 1:
+  #     raise ValueError('only one of labels, rs_labels and vids should be assigned')
+  #   if labels:
+  #     field_name = 'label'
+  #     requested = labels
+  #   elif rs_labels:
+  #     field_name = 'rs_label'
+  #     requested = rs_labels
+  #   else:
+  #     field_name = 'vid'
+  #     requested = vids
+  #   recs = self.get_snp_marker_definitions(col_names=[field_name],
+  #                                          batch_size=max(batch_size,
+  #                                                         len(requested)))
+  #   by_field = dict(((l[0], i) for i, l in enumerate(recs)))
+  #   row_indices = [by_field[x] for x in requested]
+  #   res = self.kb.get_table_slice(self.SNP_MARKER_DEFINITIONS_TABLE,
+  #                                 row_indices, col_names, batch_size)
+  #   return [self.marker_maker(r, col_names) for r in res]
 
   #-- marker sets
   def create_snp_markers_set_table(self):

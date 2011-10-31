@@ -26,7 +26,7 @@ Usage:
 
 .. code-block:: bash
 
-   python define_taq_markers.py --device-label pula01 \
+   python import_taqman_results.py --device-label pula01 \
                                 --prefix foobar -P romeo \
                                 --ifile data/file_list.lst --run-id foobar
 
@@ -81,6 +81,10 @@ class ABISnpService(object):
 #----------------------------------------------------------------------
 import hashlib
 
+ABI_SOURCE = 'ABI'
+ABI_CONTEXT = 'TaqMan-SNP_Genotyping_Assays'
+ABI_RELEASE = '12/12/2009' # arbitrary date
+
 def compute_sha1(fname):
   BUFSIZE = 10000000
   sha1 = hashlib.sha1()
@@ -127,35 +131,34 @@ def canonize_call(mask, abi_call):
 
 def add_kb_marker_objects(kb, found_markers):
   missing_kb_markers = []
+  by_label = dict(((m.label, m) for m in
+                   kb.get_snp_markers_by_source(source=ABI_SOURCE,
+                                                context=ABI_CONTEXT,
+                                                release=ABI_RELEASE)))
   for m, v in found_markers.iteritems():
     if v['abi_definition']:
-      kb_mrk = kb.get_snp_markers(rs_labels=[v['abi_definition']['rs_label']])
-      if len(kb_mrk) > 0:
-        v['kb_marker'] = kb_mrk[0]
-        mask_vl, mask_abi = v['kb_marker'].mask, v['abi_definition']['mask']
-        if not approx_equal_masks(mask_vl, convert_to_top(mask_abi)):
-          raise ValueError('inconsistent mask definition for %s'
-                           % v['abi_definition']['rs_label'])
-      else:
+      label = v['abi_definition']['label']
+      if label not in by_label:
         v['kb_marker'] = None
         missing_kb_markers.append(m)
+      else:
+        v['kb_marker'] = by_label[label]
   return missing_kb_markers
 
 def write_import_markers_file(fname, found_markers, missing_kb_markers):
   "FIXME: The generated markers list is not sorted on the alignments"
   fo = csv.DictWriter(open(fname, mode='w'),
                       fieldnames=['source', 'context', 'release',
-                                  'label', 'rs_label', 'mask'],
+                                  'label', 'mask'],
                       delimiter='\t')
   fo.writeheader()
   for m in missing_kb_markers:
     marker = found_markers[m]
     r = {
-      'source' : 'ABI',
-      'context' : 'TaqMan',
-      'release' : 'SNP_Genotyping_Assays',
+      'source' : ABI_SOURCE,
+      'context' : ABI_CONTEXT,
+      'release' : ABI_RELEASE,
       'label' : marker['abi_definition']['label'],
-      'rs_label' : marker['abi_definition']['rs_label'],
       'mask' : marker['abi_definition']['mask'],
       }
     fo.writerow(r)
@@ -254,7 +257,7 @@ def make_parser():
                       default='localhost')
   parser.add_argument('-U', '--user', type=str,
                       help='omero user',
-                      default='root')
+                      default='test')
   parser.add_argument('-P', '--passwd', type=str,
                       help='omero user passwd',
                       required=True)
@@ -297,6 +300,7 @@ def main(argv):
     logger.info('there are missing markers. Cannot proceed further.')
     fname = '%smarker-defs.tsv' % args.prefix
     write_import_markers_file(fname, found_markers, missing_kb_markers)
+    logger.info('the list of the missing marker is in %s.' % fname)
     sys.exit(0)
 
   fname = '%smarkers-set-def.tsv' % args.prefix

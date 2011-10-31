@@ -1,3 +1,9 @@
+2011-10-31    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/genotyping.py
+	(GenotypingAdapter.get_snp_markers_by_source): added a new
+	markers list query method.
+
 2011-10-28    <zag@manzanillo>
 
 	* bl/vl/app/kb_query/map_vid.py
