@@ -56,7 +56,7 @@
     <param name="ref_genome" size="40" type="text" value="" 
 	   optional="false"
 	   label="reference genome"/>
-    <param name="dbsnp_build" size="40" type="integer"
+    <param name="dbsnp_build" size="40" type="integer" value="0"
 	   optional="false"
 	   label="dbSNP build"/>
 
