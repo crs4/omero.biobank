@@ -72,7 +72,7 @@
 	   help="Choose from the possible scanners. See below.">    
       <options from_parameter="tool.app.known_scanners" 
 	       transform_lines="[ &quot;%s%s%s(%s)&quot; 
-                                  % ( l[0], self.separator, l[1], l[2][:40] ) 
+                                  % ( l[0], self.separator, l[1], l[2]) 
                                   for l in obj ]">
         <column name="value" index="0"/>
         <column name="name" index="1"/>

@@ -1,5 +1,8 @@
 2011-10-31    <zag@manzanillo>
 
+	* galaxy/tools/VL/importer/data_sample.xml: It could happen that
+	physicalLocation is None. 
+
 	* bl/vl/kb/drivers/omero/genotyping.py
 	(GenotypingAdapter.get_snp_markers_by_source): added a new
 	markers list query method.
