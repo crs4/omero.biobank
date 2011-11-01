@@ -19,16 +19,17 @@ class UniverseApplication(OrigUniverseApplication):
     self.config.omero_default_user = kwargs.get('omero_default_user')
     self.config.omero_default_passwd = kwargs.get('omero_default_passwd')
     self.config.vl_loglevel = kwargs.get('vl_loglevel', 'INFO')
+    self.config.vl_import_enabled_users = kwargs.get('vl_import_enabled_users')
 
 
   @property
   def known_studies(self):
     studies = self.kb.get_objects(self.kb.Study)
     if studies:
-      return [(s.label, s.description) if s.description else (s.label, '') for s in studies]      
+      return [(s.label, s.description) if s.description else (s.label, '') for s in studies]
     else:
       return []
-    
+
   @property
   def known_scanners(self):
     scanners = self.kb.get_objects(self.kb.Scanner)

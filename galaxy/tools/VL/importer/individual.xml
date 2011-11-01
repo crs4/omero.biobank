@@ -1,7 +1,9 @@
 <tool id="vl_import_individual" name="VLI.individual">
   <description>import individual definitions within omero/vl</description>
   <command interpreter="python">
-    importer.py
+    #if $__app__.config.vl_import_enabled_users.split(',').count($__user_email__)==1 #importer.py
+    #else #unauthorized_access.py
+    #end if
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user

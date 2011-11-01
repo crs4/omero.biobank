@@ -295,7 +295,9 @@ def main(argv):
       data.setdefault(r['Sample Name'], []).append(r)
 
   kb = KB(driver='omero')(args.host, args.user, args.passwd)
+  logger.info('qui - main')
   missing_kb_markers = add_kb_marker_objects(kb, found_markers)
+
   if missing_kb_markers:
     logger.info('there are missing markers. Cannot proceed further.')
     fname = '%smarker-defs.tsv' % args.prefix
