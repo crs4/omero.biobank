@@ -1,5 +1,7 @@
 2011-11-02    <zag@manzanillo>
 
+	* bl/vl/kb/drivers/omero/admin.py (Admin): Added basic admin support.
+
 	* bl/vl/kb/drivers/omero/proxy.py (Proxy.create_markers): Added
 	ref_rs_genome, dbsnp_build
 

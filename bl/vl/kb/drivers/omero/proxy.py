@@ -34,6 +34,7 @@ from modeling   import ModelingAdapter
 from eav        import EAVAdapter
 from ehr        import EHR
 from genotyping import Marker
+from admin      import Admin
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 
@@ -57,6 +58,7 @@ class Proxy(ProxyCore):
     self.gadpt = GenotypingAdapter(self)
     self.madpt = ModelingAdapter(self)
     self.eadpt = EAVAdapter(self)
+    self.admin = Admin(self)
     #-- depencency_tree service
     self.dt = None
 
