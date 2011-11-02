@@ -44,8 +44,8 @@ class Proxy(ProxyCore):
   An omero driver for KB.
   """
 
-  def __init__(self, host, user, passwd, session_keep_tokens=1):
-    super(Proxy, self).__init__(host, user, passwd, session_keep_tokens)
+  def __init__(self, host, user, passwd, group=None, session_keep_tokens=1):
+    super(Proxy, self).__init__(host, user, passwd, group, session_keep_tokens)
     self.factory = ObjectFactory(proxy=self)
     #-- learn
     for k in KOK:

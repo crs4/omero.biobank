@@ -1,3 +1,9 @@
+2011-11-01    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/proxy.py (Proxy.__init__): Added group
+	support. It can be set at initialization and run time with a new
+	change_group method.
+
 2011-10-31    <zag@manzanillo>
 
 	* galaxy/tools/VL/importer/data_sample.xml: It could happen that

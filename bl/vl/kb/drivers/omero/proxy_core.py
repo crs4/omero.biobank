@@ -87,9 +87,10 @@ class ProxyCore(object):
                       'bool'   : omero.grid.BoolColumn,
                       }
 
-  def __init__(self, host, user, passwd, session_keep_tokens=1):
+  def __init__(self, host, user, passwd, group=None, session_keep_tokens=1):
     self.user = user
     self.passwd = passwd
+    self.group_name = group
     self.client = omero.client(host)
     self.session_keep_tokens = session_keep_tokens
     self.transaction_tokens = 0
@@ -100,10 +101,24 @@ class ProxyCore(object):
     if self.current_session:
       self.client.closeSession()
 
+  def change_group(self, group_name):
+    self.group_name = group_name
+    self.transaction_tokens = 0
+    self.disconnect()
+
   def connect(self):
     if not self.current_session:
       self.current_session = self.client.createSession(self.user, self.passwd)
       self.transaction_tokens = self.session_keep_tokens
+      if self.group_name:
+        a = self.current_session.getAdminService()
+        groups = a.lookupGroups()
+        for g in groups:
+          if g.name.val == self.group_name:
+            self.current_session.setSecurityContext(g)
+            break
+        else:
+          raise ValueError('%s is an invalid group name.' % self.group_name)
     self.transaction_tokens -= 1
     return self.current_session
 

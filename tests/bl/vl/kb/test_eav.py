@@ -13,7 +13,6 @@ from kb_object_creator import KBObjectCreator
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
-OME_KEEP = int(os.getenv("OME_KEEP", 1))
 
 class TestKB(KBObjectCreator, unittest.TestCase):
   " "
@@ -23,7 +22,7 @@ class TestKB(KBObjectCreator, unittest.TestCase):
 
   def setUp(self):
     logger.info('start setup')
-    self.kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASS, OME_KEEP)
+    self.kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
     logger.info('done with setup')
 
   def tearDown(self):
