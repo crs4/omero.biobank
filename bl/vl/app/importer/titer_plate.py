@@ -60,9 +60,8 @@ class Recorder(Core):
     FIXME
 
     """
-    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
-                                   study_label=study_label,
-                                   logger=logger)
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
+                                   study_label=study_label, logger=logger)
     self.batch_size = batch_size
     self.operator = operator
     self.action_setup_conf = action_setup_conf

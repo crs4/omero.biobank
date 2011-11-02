@@ -182,10 +182,11 @@ class GenotypingAdapter(object):
                                   selector, col_names, batch_size=batch_size)
 
   def marker_maker(self, r, names=None):
-    names = ['vid', 'label', 'rs_label'] if names is None else names
-    args = dict( (x[1], v)
-                 for x,v in zip(self.SNP_MARKER_DEFINITIONS_COLS,r)
-                 if x[1] in names)
+    if names is None:
+      names = ['vid']
+    elif 'vid' not in names:
+      raise ValueError("need at least the VID field to create marker")
+    args = dict(zip(names, r))
     return Marker(**args)
 
   def get_snp_markers_by_source(self, source, context=None, release=None,

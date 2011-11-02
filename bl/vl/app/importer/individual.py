@@ -91,7 +91,7 @@ class Recorder(Core):
                action_setup_conf=None,
                logger=None
                ):
-    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
                                    study_label=study_label, logger=logger)
     self.operator = operator
     self.action_setup_conf = action_setup_conf

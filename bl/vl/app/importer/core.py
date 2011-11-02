@@ -20,9 +20,9 @@ class Core(object):
   """
   The common set of methods used by the importer's modules.
   """
-  def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
-               study_label=None, logger=None):
-    self.kb = KB(driver='omero')(host, user, passwd, keep_tokens)
+  def __init__(self, host=None, user=None, passwd=None, group=None,
+               keep_tokens=1, study_label=None, logger=None):
+    self.kb = KB(driver='omero')(host, user, passwd, group, keep_tokens)
     self.logger = logger if logger else logging.getLogger()
     self.record_counter = 0
     self.default_study = None

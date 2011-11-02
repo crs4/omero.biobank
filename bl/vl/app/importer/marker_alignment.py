@@ -39,15 +39,15 @@ class Recorder(Core):
   into VL.
   """
   def __init__(self, study_label,
-               host=None, user=None, passwd=None,  keep_tokens=1,
+               host=None, user=None, passwd=None, keep_tokens=1,
                action_setup_conf=None,
                logger=None,
                operator='Alfred E. Neumann'):
     """
     FIXME
     """
-    super(Recorder, self).__init__(host, user, passwd, study_label=study_label,
-                                   logger=logger)
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
+                                   study_label=study_label, logger=logger)
     self.action_setup_conf = action_setup_conf
     #--
     #--

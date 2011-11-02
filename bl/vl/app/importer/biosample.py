@@ -162,8 +162,8 @@ class Recorder(Core):
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                operator='Alfred E. Neumann', batch_size=10000,
                action_setup_conf=None, logger=None):
-    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
-                                            logger=logger)
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
+                                   logger=logger)
     self.operator = operator
     self.batch_size = batch_size
     self.action_setup_conf = action_setup_conf

@@ -1,25 +1,12 @@
-IMPORTER='../../../tools/importer -P test --operator aen'
-KB_QUERY='../../../tools/kb_query -P test --operator aen'
-CREATE_FAKE_GDO='python create_fake_gdo.py --P test'
-
-function help() {
-    cat <<EOF
-usage: $0 [-d DATASET]
-
-with -d it will use the dataset contained in the DATASET dir. Defaults to
-DATASET=./small dataset.
-EOF
-    exit 0
-
-}
+IMPORTER='../../../tools/importer -U root -P romeo --operator aen'
+KB_QUERY='../../../tools/kb_query -U root -P romeo --operator aen'
+CREATE_FAKE_GDO='python create_fake_gdo.py --U root -P romeo'
 
 DATA_DIR='./small'
 
 echo 'Running tests on dataset:' ${DATA_DIR}
 
 STUDY_LABEL=TEST01
-
-if false; then
 
 
 ${IMPORTER} -i ${DATA_DIR}/study.tsv -o study_mapping.tsv study
@@ -120,7 +107,7 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
 # use the following command to scratch and recreate the markers tables
 # THIS IS A VERY DANGEOURS THING TO DO.
 # If you are not sure, DO NOT DO IT!
-#../../../tools/create_tables  -P test --do-it
+#../../../tools/create_tables  -U root -P romeo --do-it
 #-----------------
 
 
@@ -132,13 +119,9 @@ ${KB_QUERY} -o diagnosis_mapped.tsv \
 
 ${IMPORTER} -i diagnosis_mapped.tsv \
              diagnosis \
-             --study ${STUDY_LABEL} 
-
-
-fi
+             --study ${STUDY_LABEL}
 
 # this will generate the marker_defintions file.
-#python ./make_marker_defs.py 1000000
 python ./make_marker_defs.py 100
 
 ${IMPORTER} -i marker_definitions.tsv \
@@ -287,7 +270,3 @@ ${IMPORTER} -i data_samples_mset1.tsv -o data_samples_mset1_mapping.tsv \
 
 echo "* attaching fake DataObject(s) to data samples."
 #${CREATE_FAKE_GDO} --data-samples data_samples_mset1.tsv -o ssc_file_list.tsv
-
-
-
-

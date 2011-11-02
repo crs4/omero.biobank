@@ -88,6 +88,7 @@ class ProxyCore(object):
                       }
 
   def __init__(self, host, user, passwd, group=None, session_keep_tokens=1):
+    # FIXME: check method calls broken by the moving of session_keep_tokens
     self.user = user
     self.passwd = passwd
     self.group_name = group

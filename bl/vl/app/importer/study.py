@@ -51,8 +51,8 @@ class Recorder(Core):
     """
     FIXME
     """
-    super(Recorder, self).__init__(host, user, passwd, keep_tokens,
-                                   None, logger=logger)
+    super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
+                                   study_label=None, logger=logger)
     self.out_stream = out_stream
     if self.out_stream:
       self.out_stream.writeheader()
