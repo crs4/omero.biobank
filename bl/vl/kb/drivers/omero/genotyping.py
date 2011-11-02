@@ -58,12 +58,13 @@ import bl.vl.utils.snp as vlu_snp
 
 class Marker(object):
   """
-  This is a wrapper used to export as a python object the contents of
-  a snp marker definition and associate information.
+  This is a wrapper used to export the contents of
+  a snp marker definition and associate information as a python object.
 
   .. todo::
 
     define args.
+
   """
 
   def __init__(self, vid, label=None, rs_label=None,

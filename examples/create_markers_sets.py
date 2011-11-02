@@ -67,8 +67,10 @@ study = kb.get_study('TEST01')
 action = kb.create_an_action(study, doc='importing markers')
 
 source, context, release = 'foobar', 'fooctx', 'foorel'
+ref_rs_genome, dbsnp_build = 'foo-rs-genome', 13200
 
-lvs = kb.create_markers(source, context, release, taq_man_markers, action)
+lvs = kb.create_markers(source, context, release, ref_rs_genome, dbsnp_build,
+                        taq_man_markers, action)
 
 """ ..
 

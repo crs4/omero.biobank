@@ -81,6 +81,16 @@ class Proxy(ProxyCore):
   # High level ops
   # ==============
   def find_all_by_query(self, query, params):
+    """
+    .. code-block:: python
+
+        ids = ','.join('%s' % ds.omero_id for ds in data_samples)
+        query = 'from DataObject do where do.sample.id in (%s)' % ids
+        dos = self.find_all_by_query(query, None)
+        for do in dos:
+          print do.path
+
+    """
     return super(Proxy, self).find_all_by_query(query, params, self.factory)
 
   def update_dependency_tree(self):
@@ -327,7 +337,8 @@ class Proxy(ProxyCore):
     return action
 
 
-  def create_markers(self, source, context, release, stream, action):
+  def create_markers(self, source, context, release,
+                     ref_rs_genome, dbsnp_build, stream, action):
     """
     Given a stream of tuples (label, rs_label, mask), will create and
     save the associated markers objets and return the label, vid
@@ -340,7 +351,11 @@ class Proxy(ProxyCore):
         ('A0002', 'xrs741592',  'GGAAGGAAGAAATAAA[C/G]CAGCACTATGTCTGGC')]
 
       source, context, release = 'foobar', 'fooctx', 'foorel'
-      lvs = kb.create_markers(source, context, release, taq_man_markers, action)
+      ref_rs_genome, dbsnp_build = 'fake-hg-18', 132
+
+      lvs = kb.create_markers(source, context, release,
+                              ref_rs_genome, dbsnp_build,
+                              taq_man_markers, action)
       for tmm, t in zip(taq_man_markers, lvs):
         assert (tmm[0] == t[0])
         print 'label:%s -> vid: %s' % (t[0], t[1])
@@ -368,6 +383,8 @@ class Proxy(ProxyCore):
         yield {'source' : source,
                'context' :context,
                'release' : release,
+               'ref_rs_genome' : ref_rs_genome,
+               'dbSNP_build' : dbsnp_build,
                'label' : t[0],
                'rs_label' : t[1],
                'mask' : convert_to_top(t[2])}
@@ -413,6 +430,16 @@ class Proxy(ProxyCore):
     """
     Given a stream of tuples (marker_vid, marker_indx, allele_flip),
     will build and save a new marker set.
+
+    .. code-blocK:: python
+
+        taq_man_set = [ (t[1], i, False) for i, t in enumerate(lvs)]
+        label, maker   = 'FakeTaqSet01', 'CRS4'
+        model, release = 'TaqManSet', '23/09/2011'
+
+        mset = kb.create_snp_markers_set(label, maker, model, release,
+                                         taq_man_set, action)
+
 
     **NOTE:** with the current implementation, this is not an atomic
       op. FIXME so?

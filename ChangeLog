@@ -1,3 +1,8 @@
+2011-11-02    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/proxy.py (Proxy.create_markers): Added
+	ref_rs_genome, dbsnp_build
+
 2011-11-01    <zag@manzanillo>
 
 	* bl/vl/kb/drivers/omero/proxy.py (Proxy.__init__): Added group
