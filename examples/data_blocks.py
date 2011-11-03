@@ -8,7 +8,7 @@ Genomic data set manipulations
   We are missing some sort of introduction.
 
 FIXME: Here goes a general intro. Points to touch:
- * A major complication is do decide what stays in memory and what
+ * A major complication is to decide what stays in memory and what
    should be projected in db.
  * For the time being, we try to be clear first and efficient second.
  * Explanations concerning how to open a connection to a KnowledgeBase
@@ -48,8 +48,8 @@ mset0[1].rs_label
 
 """ ..
 
-Note that, apart from the len(mset0), all these informations will not
-be available unless one requests a '.reload()', see above. The latter,
+Note that, apart from the len(mset0), all this information will not
+be available unless one requests a '.load_markers()', see above. The latter,
 however, is a rather expensive operation that could take a
 considerable time and require large amounts of memory. E.g., a 1M
 markers set, will result in an object of about (48+32+133) * 1M bytes.
@@ -120,8 +120,10 @@ this subranging will clearly fail if the markers in mset0 have not
 been aligned against the reference genome.
 """
 
-s = kb.get_gdo_iterator(mset0, indices=indices,
-                        data_samples=[x.id for x in gds_0_by_individual.values])
+s = kb.get_gdo_iterator(
+  mset0, indices=indices,
+  data_samples=[x.id for x in gds_0_by_individual.itervalues()]
+  )
 mafs, hwe = do_check(s)
 
 """ ..
@@ -132,12 +134,14 @@ results on the shared markers.
 mset1 = kb.get_snp_markers_set(label="bar")
 gds_1_by_individual = extract_data_sample(group, mset1, 'GenotypeDataSample')
 
+#--- ??? ---
 data_sample_0 = []
 data_sample_1 = []
 for k in gds_0_by_individual:
   if k in gds_1_by_individual:
     data_sample_0.append(gds_0_by_individual[k])
     data_sample_1.append(gds_1_by_individual[k])
+#-----------
 
 indices_0, indices_1 = kb.SNPMarkersSet.intersect(mset0, mset1)
 
@@ -157,11 +161,3 @@ for (a, b) in it.izip(kb.get_gdo_iterator(mset0, indices=indices_0,
                       kb.get_gdo_iterator(mset1, indices=indices_1,
                                           data_samples=data_sample_1)):
   compare(a, b)
-
-
-
-
-
-
-
-

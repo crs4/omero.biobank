@@ -76,8 +76,8 @@ lvs = kb.create_markers(source, context, release, ref_rs_genome, dbsnp_build,
 
 where lvs is a list of (label, vid) tuples.
 
-We can assume that the markers above have been alligned against a
-reference genome, say fake18, and save in omero.biobank the alignment
+We can assume that the markers above have been aligned against a
+reference genome, say fake19, and save in omero.biobank the alignment
 information.  We will fake the alignment results as follows.
 """
 
@@ -102,7 +102,7 @@ mset = kb.create_snp_markers_set(label, maker, model, release,
 """ ...
 
 The function below will provide us with the data needed to fake the
-results of a genotyping assays on the given SNPMarkersSet.  As
+results of a genotyping assay on the given SNPMarkersSet.  As
 discussed in XXXX, we need a numpy array of shape '''(2, N)''', where
 '''N''' is the number of markers, that represents the probability of
 being homozygous on allele A and allele B, and a numpy array of shape
@@ -130,7 +130,7 @@ individual to the experiment, but we directly link the dataset to the
 individuals. To register this dependency and how the dependency was
 established, each DataSample object is linked with an action to the
 the relevant Individual instance. Mainly for historical reasons, the
-action is though as an arrow that starts from the 'newer' object, the
+action is thought as an arrow that starts from the 'newer' object, the
 GenotypeDataSample instance in this case, and has as a 'target' the
 object on which the process operated. It is, essentially, a
 representation of the 'inverse' of the creation process.
@@ -183,8 +183,3 @@ family_label = study.label
 pw.write_family(family_label, family, data_sample_by_id)
 
 pw.close()
-
-
-
-
-
