@@ -9,12 +9,12 @@ and enroll them in a study, that we will call 'TEST01'.
   importer tools for more efficient solutions.
 
 First, as usual, we open the connection to the KnowledgeBase.
+
 """
 
-from bl.vl.kb import KnowledgeBase as KB
-import numpy as np
-
 import os
+from bl.vl.kb import KnowledgeBase as KB
+
 
 OME_HOST   = os.getenv('OME_HOST', 'localhost')
 OME_USER   = os.getenv('OME_USER', 'test')
@@ -89,10 +89,18 @@ for label, gender, father, mother in individuals_defs:
 
 """ ..
 
-As a test, we now loop on all the individual enrolled in the study and
-check if they are who we think they should be.
+Note that studyCode is the code assigned to each individual in a
+specific study. As a test, we now loop on all the individuals enrolled
+in the study and check if they are who we think they should be.
+
 """
 
 for e in kb.get_enrolled(study):
   assert e.individual == by_label[e.studyCode]
 
+""" ..
+
+See CoreOmeroWrapper.__eq__ for details on what we actually checked
+for with the == operator.
+
+"""
