@@ -25,9 +25,8 @@ import individual
 import location
 import demographic
 
-
 import hashlib, time, pwd, json, os
-
+import itertools as it
 
 from genotyping import GenotypingAdapter
 from modeling   import ModelingAdapter
@@ -247,6 +246,7 @@ class Proxy(ProxyCore):
     return self.gadpt.get_snp_markers(labels, rs_labels, vids,
                                       col_names, batch_size)
 
+  get_snp_markers.__doc__ = GenotypingAdapter.get_snp_markers.__doc__
 
   def add_snp_alignments(self, stream, op_vid, batch_size=50000):
     return self.gadpt.add_snp_alignments(stream, op_vid, batch_size)
@@ -374,12 +374,8 @@ class Proxy(ProxyCore):
       raise ValueError('duplicate marker definitions in stream')
 
     old_markers = self.get_snp_markers(labels=marker_labels)
-    if len(old_markers) > 0:
-      if len(old_markers) < 10:
-        msg = 'redefined markers: %s ' % [t.label for t in old_markers]
-      else:
-        msg = 'there are %s redefined markers' % len(old_markers)
-      raise ValueError(msg)
+    if old_markers:
+      raise ValueError('there are duplicate markers')
     def generator(mdefs):
       for t in mdefs:
         yield {'source' : source,
@@ -419,13 +415,13 @@ class Proxy(ProxyCore):
     def generator(s):
       for x in s:
         y = {'marker_vid' : x[0], 'ref_genome' : ref_genome,
-             'chromosome' : x[1], 'position' : x[2],
+             'chromosome' : x[1], 'pos' : x[2],
              'global_pos' : (x[1]*10**10 + x[2]),
              'strand' : x[3],
              'allele' : x[4],
              'copies' : x[5]}
         yield y
-    self.add_snp_marker_definitions(generator(stream), action.id)
+    self.add_snp_alignments(generator(stream), action.id)
 
   def create_snp_markers_set(self, label, maker, model, release,
                              stream, action):
@@ -433,7 +429,7 @@ class Proxy(ProxyCore):
     Given a stream of tuples (marker_vid, marker_indx, allele_flip),
     will build and save a new marker set.
 
-    .. code-blocK:: python
+    .. code-block:: python
 
         taq_man_set = [ (t[1], i, False) for i, t in enumerate(lvs)]
         label, maker   = 'FakeTaqSet01', 'CRS4'
@@ -483,11 +479,9 @@ class Proxy(ProxyCore):
 
   def update_snp_positions(self, markers, ref_genome, batch_size=50000):
     vids = [m.id for m in markers]
-    res = self.gadpt.get_snp_alignment_positions(ref_genome, vids,
-                                                 batch_size)
-    if not res:
+    res = self.gadpt.get_snp_alignment_positions(ref_genome, vids, batch_size)
+    if len(res) == 0:
       raise ValueError('missing markers alignments')
-
     for m, r in it.izip(markers, res):
       m.position = r
 

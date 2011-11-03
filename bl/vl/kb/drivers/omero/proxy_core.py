@@ -203,9 +203,12 @@ class ProxyCore(object):
       # result = self.ome_operation("getQueryService", "get",
       #                             obj.OME_TABLE, result.id._val)
     except omero.ValidationException, e:
-      self.logger.error('omero.ValidationException: %s' % e.message)
+      msg = 'omero.ValidationException: %s' % e.message
+      self.logger.error(msg)
       self.logger.error('omero.ValidationException object: %s' % type(obj))
-    obj.ome_obj = result
+      raise kb.KBError(msg)
+    else:
+      obj.ome_obj = result
     return obj
 
   @debug_boundary
@@ -262,7 +265,7 @@ class ProxyCore(object):
     finally:
       self.disconnect()
 
-    if len(ofile) != 1:
+    if len(ofiles) != 1:
       raise kb.KBError('the requested %s table is missing' % table_name)
     r = s.sharedResources()
     t = r.openTable(ofile)

@@ -3,8 +3,9 @@
 The goal of this example is to show how Markers and SNPMarkersSet are
 defined.
 
-We will assume that, as explained in FIXME, we already have a set of
-individuals in omero and that they are enrolled in 'TEST01'.
+We will assume that, as explained in create_individuals.py, we already
+have a set of individuals in omero and that they are enrolled in
+'TEST01'.
 
 For each individual, we have a sample of DNA in a well of a work
 plate, and we assume that we have run a series of TaqMan genotyping
@@ -17,14 +18,14 @@ enough to illustrate the procedure.
   didactically clear, not efficient. See the implementation of the
   importer tools for more efficient solutions.
 
-
 First, as usual, we open the connection to the KnowledgeBase
+
 """
 
-from bl.vl.kb import KnowledgeBase as KB
-import numpy as np
-
 import os
+import numpy as np
+from bl.vl.kb import KnowledgeBase as KB
+
 
 OME_HOST   = os.getenv('OME_HOST', 'localhost')
 OME_USER   = os.getenv('OME_USER', 'test')
@@ -32,11 +33,12 @@ OME_PASSWD = os.getenv('OME_PASSWD', 'test')
 
 kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
 
-
 """ ..
-The following is the collection of (fake) markers used in the TaqMan
-assays.
+
+The following is the collection of (fake) markers used in the TaqMan assays.
+
 """
+
 taq_man_markers = [
   ('A001', 'xrs122652',  'TCACTTCTTCAAAGCT[A/G]AGCTACAAGCATTATT'),
   ('A002', 'xrs741592',  'GGAAGGAAGAAATAAA[C/G]CAGCACTATGTCTGGC'),
@@ -62,9 +64,11 @@ Now we will load the markers set definition into Omero.biobank.
   is already in the db.
 
 """
+
 study = kb.get_study('TEST01')
 
 action = kb.create_an_action(study, doc='importing markers')
+action.reload()
 
 source, context, release = 'foobar', 'fooctx', 'foorel'
 ref_rs_genome, dbsnp_build = 'foo-rs-genome', 13200
@@ -79,9 +83,10 @@ where lvs is a list of (label, vid) tuples.
 We can assume that the markers above have been aligned against a
 reference genome, say fake19, and save in omero.biobank the alignment
 information.  We will fake the alignment results as follows.
+
 """
 
-aligns = [(t[1], 1, i*1000, True, 'A' if (i%2)== 0 else 'B', 1)
+aligns = [(v[1], 1, i*1000, True, 'A' if (i%2)== 0 else 'B', 1)
           for i, v in enumerate(lvs)]
 
 ref_genome = 'fake19'
@@ -93,7 +98,7 @@ We can now create an actual markers set.
 
 """
 
-taq_man_set = [ (t[1], i, False) for i, t in enumerate(lvs)]
+taq_man_set = [(v[1], i, False) for i, v in enumerate(lvs)]
 label, maker, model, release = 'FakeTaqSet01', 'CRS4', 'TaqManSet', '23/09/2011'
 
 mset = kb.create_snp_markers_set(label, maker, model, release,
@@ -142,6 +147,7 @@ representation of the 'inverse' of the creation process.
 """
 
 mset.load_markers()
+kb.update_snp_positions(mset.markers, ref_genome)
 data_sample_by_id = {}
 family = []
 for i, ind in enumerate(kb.get_individuals(study)):
@@ -175,7 +181,7 @@ saved as a plink pedfile.
 """
 from bl.vl.genotype.io import PedWriter
 
-pw = PedWriter(mset, base_path="./foo")
+pw = PedWriter(mset, base_path="/tmp/foo")
 
 pw.write_map()
 

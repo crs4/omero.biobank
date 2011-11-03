@@ -205,6 +205,16 @@ class GenotypingAdapter(object):
   def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
                       col_names=None,
                       batch_size=50000):
+    """
+    Return a list of marker objects corresponding to the given list
+    (labels, rs_labels or vids). Return an empty list if at least one
+    of the items in the list does not correspond to any marker.
+
+    .. todo::
+
+       add documentation on col_names
+    
+    """
     count = (labels is None) + (rs_labels is None) + (vids is None)
     if count == 3:
       raise ValueError('labels, rs_labels and vids cannot be all None')
@@ -223,7 +233,12 @@ class GenotypingAdapter(object):
                                            batch_size=max(batch_size,
                                                           len(requested)))
     by_field = dict(((l[0], i) for i, l in enumerate(recs)))
-    row_indices = [by_field[x] for x in requested]
+    row_indices = []
+    for x in requested:
+      try:
+        row_indices.append(by_field[x])
+      except KeyError:
+        return []
     res = self.kb.get_table_slice(self.SNP_MARKER_DEFINITIONS_TABLE,
                                   row_indices, col_names, batch_size)
     return [self.marker_maker(r, col_names) for r in res]
@@ -296,7 +311,7 @@ class GenotypingAdapter(object):
                                   batch_size=batch_size)
     if len(res) == 0:
       return []
-    by_vid = dict(((l[0], i) for i, l in enumerate(recs)))
+    by_vid = dict(((l[0], i) for i, l in enumerate(res)))
     row_indices = [by_vid[x] for x in marker_vids]
     return self.kb.get_table_slice(self.SNP_ALIGNMENT_TABLE,
                                    row_indices, ['chromosome', 'pos'],
