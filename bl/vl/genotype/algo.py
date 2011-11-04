@@ -91,6 +91,8 @@ def maf(it, counts=None):
 
 def hwe_probabilites(n_a, n_ab, N):
   n_a = n_a if n_a <= N else 2*N - n_a
+  if n_a == 0:
+    return (1.0, np.array([1.0,]))
   n_b = 2*N - n_a
   N_ab = np.arange(n_a & 0x01, n_a , 2, dtype=np.float64)
   log_fact = np.log((n_a - N_ab) * (n_b - N_ab) / ((N_ab + 2.0) * (N_ab + 1.0)))
