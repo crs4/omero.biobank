@@ -112,13 +112,11 @@ class ProxyCore(object):
       self.transaction_tokens = self.session_keep_tokens
       if self.group_name:
         a = self.current_session.getAdminService()
-        groups = a.lookupGroups()
-        for g in groups:
-          if g.name.val == self.group_name:
-            self.current_session.setSecurityContext(g)
-            break
-        else:
-          raise ValueError('%s is an invalid group name.' % self.group_name)
+        try:
+          g = a.lookupGroup(self.group_name)
+          self.current_session.setSecurityContext(g)
+        except omero.ApiUsageException, aue:
+          raise ValueError(aue.message)
     self.transaction_tokens -= 1
     return self.current_session
 
