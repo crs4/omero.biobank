@@ -264,7 +264,7 @@ class ProxyCore(object):
       self.disconnect()
 
     if len(ofiles) != 1:
-      raise kb.KBError('the requested %s table is missing' % table_name)
+       raise kb.KBError('the requested %s table is missing' % table_name)
     r = s.sharedResources()
     t = r.openTable(ofile)
     return t
@@ -278,6 +278,19 @@ class ProxyCore(object):
     """
     FIXME: Actual file removal: get numerical ID from omero API: this is the
     same as the file's basename, e.g., 61 --> /var/tmp/omero/data/Files/61.
+    
+    In order to retrieve the directory used by omero to store files and delete
+    the table files, something like this must be implemented
+
+    cs = self.current_sessgion.getConfigService()
+    ome_data_dir = cs.getConfigValue('omero.data.dir')
+    ....
+    for o in ofiles:
+      table_file_path = '%s/Files/%d' % (ome_data_dir, o.id._val)
+      self.ome_operation('getUpdateService', 'deleteObject', o)
+      os.remove(table_file_path)
+    ....
+    
     """
     try:
       ofiles = self._list_table_copies(table_name)
