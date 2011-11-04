@@ -11,6 +11,7 @@ import bl.vl.kb as kb
 import itertools as it
 import numpy as np
 import time as time
+import os
 
 from wrapper import ome_wrap
 
@@ -275,27 +276,17 @@ class ProxyCore(object):
 
   @debug_boundary
   def delete_table(self, table_name):
-    """
-    FIXME: Actual file removal: get numerical ID from omero API: this is the
-    same as the file's basename, e.g., 61 --> /var/tmp/omero/data/Files/61.
-    
-    In order to retrieve the directory used by omero to store files and delete
-    the table files, something like this must be implemented
-
-    cs = self.current_sessgion.getConfigService()
-    ome_data_dir = cs.getConfigValue('omero.data.dir')
-    ....
-    for o in ofiles:
-      table_file_path = '%s/Files/%d' % (ome_data_dir, o.id._val)
-      self.ome_operation('getUpdateService', 'deleteObject', o)
-      os.remove(table_file_path)
-    ....
-    
-    """
     try:
+      self.connect()
+
+      cs = self.current_session.getConfigService()
+      ome_data_dir = cs.getConfigValue('omero.data.dir')
+      
       ofiles = self._list_table_copies(table_name)
       for o in ofiles:
+        table_file_path = os.path.join(ome_data_dir, 'Files', str(o.id._val))
         self.ome_operation('getUpdateService' , 'deleteObject', o)
+        os.remove(table_file_path)
     finally:
       self.disconnect()
 
