@@ -17,8 +17,14 @@ FIXME: Here goes a general intro. Points to touch:
 
 """
 
-from bl.vl.kb import KnowledgeBase as KB
+import os
 import itertools as it
+from bl.vl.kb import KnowledgeBase as KB
+import bl.vl.genotype.algo as algo
+
+OME_HOST   = os.getenv('OME_HOST', 'localhost')
+OME_USER   = os.getenv('OME_USER', 'test')
+OME_PASSWD = os.getenv('OME_PASSWD', 'test')
 
 kb = KB(driver="omero")(OME_HOST, OME_USER, OME_PASSWD)
 
@@ -28,6 +34,7 @@ The first thing we will do is to select a markers set. See FIXME:XXX
 for its definition. We will first obtain an handle to it, and then
 invoke a '.load_markers()' that will bring in memory the actual definition
 data.
+
 """
 
 mset_name = 'FakeTaqSet01'
@@ -39,6 +46,7 @@ mset0.load_markers()
 For the time being, we can think the SNPMarkerSet mset0 as analogous to an array
 of markers. The following is a list of expressions that are expected
 to be legal.
+
 """
 len(mset0)
 mset0[0::10]
@@ -59,6 +67,7 @@ supported on mset0, linked to an individual contained in a given
 group. Just to keep things simple, we will select, for each
 individual, the first of the list of known GenotypeDataSample for that
 mset, if there is at least one, otherwise we will skip the individual.
+
 """
 def extract_data_sample(group, mset, dsample_name):
   by_individual = {}
@@ -79,6 +88,7 @@ GenotypeDataSample objects  and the latter are only handlers to get to
 the actual genotyping data, not the data itself.
 
 We can, now, do a global check on data quality.
+
 """
 def do_check(s):
   counts = algo.count_homozygotes(s)
@@ -86,22 +96,26 @@ def do_check(s):
   hwe  = algo.hwe(None, counts)
   return mafs, hwe
 
-gds_0_data_samples = gds0_by_individual.values()
-s = kb.get_gdo_iterator(mset0, data_samples=gds_0_data_samples)
+gds0_data_samples = gds0_by_individual.values()
+s = kb.get_gdo_iterator(mset0, data_samples=gds0_data_samples)
 mafs, hwe = do_check(s)
 
 """ ..
+
 Similar to above, but now we subselect on a slice of the markers
+
 """
 
-s = kb.get_gdo_iterator(mset0, indices=slice(0, len(mset0), 100),
-                        data_samples=gds_0_data_samples)
+s = kb.get_gdo_iterator(mset0, indices=slice(1, len(mset0)-1),
+                        data_samples=gds0_data_samples)
 mafs, hwe = do_check(s)
 
 """ ..
+
 Same as above, but now we work on a subset of possible markers
 selected as the one that have genomic coordinates in the interval
 defined as from gc_begin (included) to gc_end (excluded).
+
 """
 
 ref_genome = 'hg19'
@@ -116,36 +130,42 @@ gc_end  =(ref_genome, end_chrom, end_pos)
 indices = kb.SNPMarkersSet.extract_range(mset0, gc_range=(gc_begin, gc_end))
 
 """ ..
+
 this subranging will clearly fail if the markers in mset0 have not
 been aligned against the reference genome.
+
 """
 
 s = kb.get_gdo_iterator(
   mset0, indices=indices,
-  data_samples=[x.id for x in gds_0_by_individual.itervalues()]
+  data_samples=[x.id for x in gds0_by_individual.itervalues()]
   )
 mafs, hwe = do_check(s)
 
 """ ..
+
 Let's now suppose that we have obtained genotyping data with two
 different technologies ('foo' and 'bar') and we would like to compare
 results on the shared markers.
+
 """
+
 mset1 = kb.get_snp_markers_set(label="bar")
-gds_1_by_individual = extract_data_sample(group, mset1, 'GenotypeDataSample')
+gds1_by_individual = extract_data_sample(group, mset1, 'GenotypeDataSample')
 
 #--- ??? ---
 data_sample_0 = []
 data_sample_1 = []
-for k in gds_0_by_individual:
-  if k in gds_1_by_individual:
-    data_sample_0.append(gds_0_by_individual[k])
-    data_sample_1.append(gds_1_by_individual[k])
+for k in gds0_by_individual:
+  if k in gds1_by_individual:
+    data_sample_0.append(gds0_by_individual[k])
+    data_sample_1.append(gds1_by_individual[k])
 #-----------
 
 indices_0, indices_1 = kb.SNPMarkersSet.intersect(mset0, mset1)
 
 """ ..
+
 To compare we use a suitable function such as the following:
 
 .. todo::
@@ -153,6 +173,7 @@ To compare we use a suitable function such as the following:
    TBD
 
 """
+
 def compare(a, b):
   pass
 

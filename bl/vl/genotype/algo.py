@@ -94,12 +94,15 @@ def hwe_probabilites(n_a, n_ab, N):
   if n_a == 0:
     return (1.0, np.array([1.0,]))
   n_b = 2*N - n_a
-  N_ab = np.arange(n_a & 0x01, n_a , 2, dtype=np.float64)
+  N_ab = np.arange(n_a & 0x01, n_a, 2, dtype=np.float64)
   log_fact = np.log((n_a - N_ab) * (n_b - N_ab) / ((N_ab + 2.0) * (N_ab + 1.0)))
   weight = np.cumsum(log_fact)
   prob = np.exp(weight - weight.max())
   prob /= prob.sum()
-  return (prob[N_ab == n_ab], prob)
+  if n_a != n_ab:
+    return (prob[N_ab == n_ab], prob)
+  else:
+    return (0, np.hstack((prob, 0)))
 
 def hwe_scalar(n_a, n_ab, N):
   p, probs = hwe_probabilites(n_a, n_ab, N)

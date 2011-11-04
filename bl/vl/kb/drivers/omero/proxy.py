@@ -584,17 +584,18 @@ class Proxy(ProxyCore):
     selection.
     """
     def get_gdo_iterator_on_list(dos):
+      seen_data_samples = set([])
       for do in dos:
-        table, vid = do.path.split('=')
-        mset_vid = table[:-3].split(':')[1]
-        print 'mset_vid: %s, mset.markersSetVID: %s' % (mset_vid,
-                                                        mset.markersSetVID)
-        # if mset_vid != mset.markersSetVID:
-        #   raise ValueError('DataObject %s map to data with a wrong SNPMarkersSet'
-        #                    % (do.path))
-        # yield self.get_gdo(mset.markersSetVID, vid, indices)
-        yield do.path
-
+        if do.mimetype == "x-bl/gdo-table":
+          table, vid = do.path.split('=')
+          mset_vid = table.split(':')[1].rsplit(".")[0]          
+          if mset_vid != mset.markersSetVID:
+            raise ValueError(
+              'DataObject %s map to data with a wrong SNPMarkersSet' % do.path
+              )
+          yield self.get_gdo(mset.markersSetVID, vid, indices)
+        else:
+          raise ValueError("cannot handle mimetype %r" % (do.mimetype,))
     if not data_samples:
       return self.gadpt.get_gdo_iterator(mset.markersSetVID, indices,
                                          batch_size)
