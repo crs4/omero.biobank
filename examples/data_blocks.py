@@ -118,15 +118,16 @@ defined as from gc_begin (included) to gc_end (excluded).
 
 """
 
-ref_genome = 'hg19'
+ref_genome = 'fake19'
 begin_chrom = 10
-begin_pos = 190000
+begin_pos = 63000000
 end_chrom = 10
-end_pos = 300000
+end_pos = 116000000
 
-gc_begin=(ref_genome, begin_chrom, begin_pos)
-gc_end  =(ref_genome, end_chrom, end_pos)
+gc_begin=(begin_chrom, begin_pos)
+gc_end  =(end_chrom, end_pos)
 
+mset0.load_alignments(ref_genome)
 indices = kb.SNPMarkersSet.extract_range(mset0, gc_range=(gc_begin, gc_end))
 
 """ ..
@@ -136,10 +137,7 @@ been aligned against the reference genome.
 
 """
 
-s = kb.get_gdo_iterator(
-  mset0, indices=indices,
-  data_samples=[x.id for x in gds0_by_individual.itervalues()]
-  )
+s = kb.get_gdo_iterator(mset0, indices=indices, data_samples=gds0_data_samples)
 mafs, hwe = do_check(s)
 
 """ ..
@@ -153,15 +151,14 @@ results on the shared markers.
 mset1 = kb.get_snp_markers_set(label="bar")
 gds1_by_individual = extract_data_sample(group, mset1, 'GenotypeDataSample')
 
-#--- ??? ---
 data_sample_0 = []
 data_sample_1 = []
 for k in gds0_by_individual:
   if k in gds1_by_individual:
     data_sample_0.append(gds0_by_individual[k])
     data_sample_1.append(gds1_by_individual[k])
-#-----------
 
+# FIXME: there is no intersect method yet
 indices_0, indices_1 = kb.SNPMarkersSet.intersect(mset0, mset1)
 
 """ ..

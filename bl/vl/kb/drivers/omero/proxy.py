@@ -483,7 +483,7 @@ class Proxy(ProxyCore):
     if len(res) == 0:
       raise ValueError('missing markers alignments')
     for m, r in it.izip(markers, res):
-      m.position = r
+      m.position = tuple(r)
 
   def get_individuals(self, group):
     """

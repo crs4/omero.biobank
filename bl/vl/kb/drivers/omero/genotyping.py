@@ -348,12 +348,12 @@ class GenotypingAdapter(object):
                                             row.dtype['probs'].itemsize),
                       dtype=np.float32)
     p.shape = (2, p.shape[0]/2)
-    r['probs'] = p[:, indices] if indices else p
+    r['probs'] = p[:, indices] if indices is not None else p
     #--
     c = np.fromstring(self.__normalize_size(row['confidence'],
                                             row.dtype['confidence'].itemsize),
                       dtype=np.float32)
-    r['confidence'] = c[indices] if indices else c
+    r['confidence'] = c[indices] if indices is not None else c
     #--
     return r
 
