@@ -276,17 +276,16 @@ class ProxyCore(object):
 
   @debug_boundary
   def delete_table(self, table_name):
+    """
+    This method only removes OriginalFile table entry from database.
+    For actual file removal run on the server:
+    $OMERO_HOME/bin/omero admin cleanse $OMERO_DATA_DIR
+    """
     try:
       self.connect()
-
-      #cs = self.current_session.getConfigService()
-      #ome_data_dir = cs.getConfigValue('omero.data.dir')
-      
       ofiles = self._list_table_copies(table_name)
       for o in ofiles:
-        #table_file_path = os.path.join(ome_data_dir, 'Files', str(o.id._val))
         self.ome_operation('getUpdateService' , 'deleteObject', o)
-        #os.remove(table_file_path)
     finally:
       self.disconnect()
 
