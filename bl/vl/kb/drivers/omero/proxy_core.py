@@ -279,14 +279,14 @@ class ProxyCore(object):
     try:
       self.connect()
 
-      cs = self.current_session.getConfigService()
-      ome_data_dir = cs.getConfigValue('omero.data.dir')
+      #cs = self.current_session.getConfigService()
+      #ome_data_dir = cs.getConfigValue('omero.data.dir')
       
       ofiles = self._list_table_copies(table_name)
       for o in ofiles:
-        table_file_path = os.path.join(ome_data_dir, 'Files', str(o.id._val))
+        #table_file_path = os.path.join(ome_data_dir, 'Files', str(o.id._val))
         self.ome_operation('getUpdateService' , 'deleteObject', o)
-        os.remove(table_file_path)
+        #os.remove(table_file_path)
     finally:
       self.disconnect()
 
