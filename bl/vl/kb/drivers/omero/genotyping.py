@@ -84,7 +84,7 @@ class Marker(object):
   @classmethod
   def get_ome_table(klass):
     "FIXME this is to make app.importer.map_vid happy"
-    return "Marker"
+    return klass.__name__
 
 
 class GenotypingAdapter(object):
