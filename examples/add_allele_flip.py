@@ -21,7 +21,6 @@ OME_PASSWD = os.getenv('OME_PASSWD', 'test')
 
 kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
 
-# FIXME: hardwired for now
 fn = sys.argv[1] # "affy_na32_reannot_vids.tsv"
 outfn = sys.argv[2] # "affy_na32_markers_set_def.tsv"
 
@@ -54,5 +53,6 @@ with open(outfn, 'w') as outf:
       else:
         raise ValueError("%s: got inconsistent mask from db: %r" %
                          (m.id, m.mask))
-    writer.writerow({"marker_vid": m.id, "marker_indx": i,
+    index = r.get("marker_indx", i)
+    writer.writerow({"marker_vid": m.id, "marker_indx": index,
                      "allele_flip": flip})
