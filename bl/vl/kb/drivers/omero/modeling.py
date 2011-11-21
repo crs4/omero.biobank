@@ -162,7 +162,7 @@ class ModelingAdapter(object):
                  """
       pars = self.kb.ome_query_params({'label' : wp.ome_wrap(label)})
     else:
-      if not (marker and model and release):
+      if not (maker and model and release):
         raise ValueError('maker model and release should be all provided')
       query = """select ms
                  from SNPMarkersSet ms
