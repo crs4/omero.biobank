@@ -47,6 +47,7 @@ import convert_dbsnp, convert_affy, convert_ill, markers_to_fastq, \
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
+LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
 class App(object):
@@ -65,8 +66,7 @@ class App(object):
     parser = argparse.ArgumentParser(description="A SNP reannotator app")
     parser.add_argument('--logfile', type=str,
                         help='logfile. Will write to stderr if not specified')
-    parser.add_argument('--loglevel', type=str,
-                        choices=['DEBUG', 'INFO', 'WARNING', 'CRITICAL'],
+    parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
                         help='logging level', default='INFO')
     subparsers = parser.add_subparsers()
     for k, h, addp, impl in self.supported_submodules:

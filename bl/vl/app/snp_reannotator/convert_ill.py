@@ -5,28 +5,11 @@ import os, csv
 from contextlib import nested
 
 from bl.core.utils import NullLogger
+from bl.core.io.illumina import IllSNPReader
 from common import check_mask, MARKER_DEF_FIELDS
 
 
 HELP_DOC = __doc__
-
-
-class IllSNPReader(csv.DictReader):
-  """
-  Reads Illumina SNP annotation files.
-  """
-  def __init__(self, f):
-    def ill_filter(f):
-      open = False
-      for line in f:
-        if line.startswith('[Assay]'):
-          open = True
-          continue
-        elif line.startswith('[Controls]'):
-          open = False
-        if open:
-          yield line
-    csv.DictReader.__init__(self, ill_filter(f))
 
 
 def write_output(reader, outf, logger=None):
