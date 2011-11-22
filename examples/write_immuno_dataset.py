@@ -4,20 +4,8 @@ Read Illumina 'Final Report' text files and write snp calls for each
 well as an SSC (SampleSnpCall) file in the x-ssc-messages format.
 
 """
-
-# 'call' --> 'Allele1 - AB' + 'Allele2 - AB'
-# 'confidence' --> 'GC Score' (1-gc_score? 1/gc_score?)
-# 'sig_A' --> 'X Raw'
-# 'sig_B' --> 'Y Raw'
-# 'weight_AA' --> ?
-# 'weight_AB' --> ?
-# 'weight_BB' --> ?
-#
-# weights: for now, whatever fits the call (e.g., (1, 0, 0) for AA).
-#
-# FIXME: NOT FINISHED!
-
 import sys, argparse, logging
+from datetime import datetime
 
 from bl.core.io.illumina import GenomeStudioFinalReportReader as DataReader
 from bl.core.io.illumina import IllSNPReader
@@ -25,6 +13,7 @@ from bl.core.io import MessageStreamWriter
 import bl.core.gt.messages.SnpCall as SnpCall
 from bl.vl.kb import KBError
 from bl.vl.app.importer.core import Core  # move this script to importer app?
+
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
@@ -38,9 +27,23 @@ DEVICE_MODEL = "GenomeStudio"
 
 PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
+PAD_SIZE = 12
+
+
+def adjust_immuno_sample_id(old_sample_id, plate_barcode, pad_size=PAD_SIZE):
+  """
+  This is a CRS4-specific hack to fix ambiguous immunochip labels.
+  """
+  padded_id = old_sample_id.rjust(pad_size, '0')
+  return "%s|%s" % (padded_id, plate_barcode)
+
 
 class Writer(Core):
 
+  MIN_DATETIME = datetime.max
+  MAX_DATETIME = datetime.min
+  WEIGHTS = {'AA': (1., 0., 0.), 'AB': (0., 1., 0.), 'BB': (0., 0., 1.)}
+  
   def critical(msg):
     self.logger.critical(msg)
     raise KBError(msg)
@@ -76,30 +79,42 @@ class Writer(Core):
       self.critical("no container in kb is labeled as %s" % plate_label)
     return plate.barcode
 
-  def write_ssc_data_set_file(self, prefix, plate_barcode, data_block,
-                              min_datetime, max_datetime):
-    #-NOTE: this is a CRS4-specific hack to fix ambiguous immunochip labels-
-    padded_id = data_block.sample_id.rjust(12, '0')
-    sample_id = "%s|%s" % (padded_id, plate_barcode)
-    #-----------------------------------------------------------------------
-    header = {'device_id' : device_id,
-              'sample_id' : sample_id,
-              'min_datetime' : '%s' % min_datetime,
-              'max_datetime' : '%s' % max_datetime}
+  def write_dataset_files(self, in_fnames, prefix):
+    for fn in in_fnames:
+      self.logger.info("processing %s" % fn)
+      plate_barcode = self.get_plate_barcode(fn)
+      with open(fn) as f:
+        data_reader = DataReader(f)
+        release = data_reader.header.get("GSGT Version", "UNKNOWN_RELEASE")
+        label = "%s.%s.%s" % (DEVICE_MAKER, DEVICE_MODEL, release)
+        device = self.get_device(label, DEVICE_MAKER, DEVICE_MODEL, release)
+        for block in data_reader.get_sample_iterator():
+          self.write(block, device_id, plate_barcode, prefix)
+
+  def write(self, data_block, device_id, plate_barcode, prefix):
+    sample_id = adjust_immuno_sample_id(data_block.sample_id, plate_barcode)
+    header = {'device_id': device_id,
+              'sample_id': sample_id,
+              'min_datetime': str(self.MIN_DATETIME),
+              'max_datetime': str(self.MAX_DATETIME)}
+    out_fn = '%s%s-%s.ssc' % (prefix, device_id, sample_id)
     stream = MessageStreamWriter(out_fn, PAYLOAD_MSG_TYPE, header)
     for k in data_block.snp_names():
       snp = data_block.snp[k]
-      snp_id = marker_name_to_id[snp['SNP Name']]
+      snp_id = self.marker_name_to_id[snp['SNP Name']]
+      call = '%s%s' % (snp['Allele1 - AB'], snp['Allele2 - AB'])
+      w_aa, w_ab, w_bb = self.WEIGHTS[call]
       stream.write({
-        'sample_id' : sample_id,
-        'snp_id' : snp_id,
-        'call' : 'FIXME',
-        'confidence' : 'FIXME',
-        'sig_A' : 'FIXME',
-        'sig_B' : 'FIXME',
-        'weight_AA' : 'FIXME',
-        'weight_AB' : 'FIXME',
-        'weight_BB' : 'FIXME',
+        'sample_id': sample_id,
+        'snp_id': snp_id,
+        'call': getattr(SnpCall, call),
+        'confidence': float(snp['GC Score']),  # 1-gc_score? 1/gc_score?
+        'sig_A': float('X Raw'),
+        'sig_B': float('Y Raw'),
+        'weight_AA': w_aa,
+        'weight_AB': w_ab,
+        'weight_BB': w_bb,
+        })
     stream.close()
 
 
@@ -138,16 +153,8 @@ def main(argv):
   writer.get_marker_ids(MSET_LABEL)
   writer.get_marker_name_to_label(args.annot_file)
   writer.get_marker_name_to_id()
-  for fn in args.ifile:
-    sample_id = writer.build_sample_id(fn)
-    with open(fn) as f:
-      data_reader = DataReader(f)
-      release = data_reader.header["GSGT Version"]
-      device_label = "%s.%s.%s" % (DEVICE_MAKER, DEVICE_MODEL, release)
-      out_fname = '%s%s-%s.ssc' % (args.prefix, device.id, sample_id)
-      for block in data_reader.get_sample_iterator():
-        write_ssc_data_set_file(out_fn, marker_name_to_id, device_id,
-                                min_datetime, max_datetime, data_block)
+  writer.write_dataset_files(args.ifile, args.prefix)
 
 
-main(sys.argv[1:])
+if __name__ == "__main__":
+  main(sys.argv[1:])
