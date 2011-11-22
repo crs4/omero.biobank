@@ -1,3 +1,8 @@
+2011-11-22    <simleo@neuron.crs4.it>
+
+	* bl/vl/kb/drivers/omero/proxy.py: added a method for getting a
+	container object by label.
+
 2011-11-04    <zag@manzanillo>
 
 	* bl/vl/genotype/algo.py (hwe_probabilites): bugfx: Added handling

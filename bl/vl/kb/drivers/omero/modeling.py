@@ -154,6 +154,17 @@ class ModelingAdapter(object):
                                     query, pars)
     return [self.kb.factory.wrap(v) for v in results]
 
+  def get_container(self, label):
+    assert isinstance(label, str)
+    query = """select c
+               from Container c
+               where c.label = :label
+               """
+    pars = self.kb.ome_query_params({'label' : wp.ome_wrap(label)})
+    result = self.kb.ome_operation("getQueryService", "findByQuery",
+                                   query, pars)
+    return None if result is None else self.kb.factory.wrap(result)
+
   def get_snp_markers_set(self, label, maker, model, release):
     if label:
       query = """select ms

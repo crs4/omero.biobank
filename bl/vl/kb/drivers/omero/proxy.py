@@ -141,6 +141,13 @@ class Proxy(ProxyCore):
   def get_containers(self, klass=objects_collections.Container):
     return self.madpt.get_containers(klass)
 
+  def get_container(self, label):
+    """
+    Return the container object labeled 'label' or None if nothing
+    matches 'label'.
+    """
+    return self.madpt.get_container(label)
+
   def get_data_objects(self, sample):
     return self.madpt.get_data_objects(sample)
 
