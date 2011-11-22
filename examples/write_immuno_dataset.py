@@ -4,7 +4,7 @@ Read Illumina 'Final Report' text files and write snp calls for each
 well as an SSC (SampleSnpCall) file in the x-ssc-messages format.
 
 """
-import sys, argparse, logging
+import sys, os, argparse, logging
 from datetime import datetime
 
 from bl.core.io.illumina import GenomeStudioFinalReportReader as DataReader
@@ -44,7 +44,7 @@ class Writer(Core):
   MAX_DATETIME = datetime.min
   WEIGHTS = {'AA': (1., 0., 0.), 'AB': (0., 1., 0.), 'BB': (0., 0., 1.)}
   
-  def critical(msg):
+  def critical(self, msg):
     self.logger.critical(msg)
     raise KBError(msg)
   
@@ -72,9 +72,9 @@ class Writer(Core):
         self.critical("no marker in kb is labeled as %s" % label)
 
   def get_plate_barcode(self, fn):
-    plate_fields = os.path.splitext(fn)[0].split("_")[1:-1]
+    plate_fields = os.path.splitext(os.path.basename(fn))[0].split("_")[1:-1]
     plate_label = "_".join(plate_fields+["imm"])
-    plate = kb.get_container(plate_label)
+    plate = self.kb.get_container(plate_label)
     if plate is None:
       self.critical("no container in kb is labeled as %s" % plate_label)
     return plate.barcode
@@ -89,7 +89,7 @@ class Writer(Core):
         label = "%s.%s.%s" % (DEVICE_MAKER, DEVICE_MODEL, release)
         device = self.get_device(label, DEVICE_MAKER, DEVICE_MODEL, release)
         for block in data_reader.get_sample_iterator():
-          self.write(block, device_id, plate_barcode, prefix)
+          self.write(block, device.id, plate_barcode, prefix)
 
   def write(self, data_block, device_id, plate_barcode, prefix):
     sample_id = adjust_immuno_sample_id(data_block.sample_id, plate_barcode)
@@ -109,8 +109,8 @@ class Writer(Core):
         'snp_id': snp_id,
         'call': getattr(SnpCall, call),
         'confidence': float(snp['GC Score']),  # 1-gc_score? 1/gc_score?
-        'sig_A': float('X Raw'),
-        'sig_B': float('Y Raw'),
+        'sig_A': float(snp['X Raw']),
+        'sig_B': float(snp['Y Raw']),
         'weight_AA': w_aa,
         'weight_AB': w_ab,
         'weight_BB': w_bb,
@@ -149,7 +149,7 @@ def main(argv):
     kwargs['filename'] = args.logfile
   logging.basicConfig(**kwargs)
   logger = logging.getLogger()
-  writer = Writer(args.host, args.user, args.passwd)
+  writer = Writer(args.host, args.user, args.passwd, logger=logger)
   writer.get_marker_ids(MSET_LABEL)
   writer.get_marker_name_to_label(args.annot_file)
   writer.get_marker_name_to_id()
