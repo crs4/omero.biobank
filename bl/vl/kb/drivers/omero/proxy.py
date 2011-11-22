@@ -544,6 +544,27 @@ class Proxy(ProxyCore):
     return (d for d in self.dt.get_connected(individual, aklass=klass))
 
 
+  def get_vessels_by_individual(self, individual, vessel_klass_name='Vessel'):
+    """
+    Syntactic sugar to simplify the looping in Vessels connected to an
+    individual.
+
+    :param individual: the root individual object
+    :type group: Individual
+
+    :param vessel_klass_name: the name of the selected vessel class,
+                              e.g. 'Vial' or 'PlateWell'
+    :type vessel_klass_name: str
+
+    :type return: generator of a sequence of Vessel objects
+    """
+    klass = getattr(self, vessel_klass_name)
+    if not issubclass(klass, getattr(self, 'Vessel')):
+      raise ValueError('klass should be a subclass of Vessel')
+    if not self.dt:
+      self.update_dependency_tree()
+    return (v for v in self.dt.get_connected(individual, aklass=klass))
+
 
   def add_gdo_data_object(self, action, sample, probs, confs):
     """

@@ -1,3 +1,8 @@
+2011-11-22  Luca Lianas  <luca@tensa-zangetsu>
+
+	* bl/vl/kb/drivers/omero/proxy.py: added a method for retrieving
+	all vessels related to an individual.
+
 2011-11-22    <simleo@neuron.crs4.it>
 
 	* bl/vl/kb/drivers/omero/proxy.py: added a method for getting a
