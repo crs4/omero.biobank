@@ -42,7 +42,12 @@ class Writer(Core):
 
   MIN_DATETIME = datetime.max
   MAX_DATETIME = datetime.min
-  WEIGHTS = {'AA': (1., 0., 0.), 'AB': (0., 1., 0.), 'BB': (0., 0., 1.)}
+  WEIGHTS = {
+    'AA': (1., 0., 0.),
+    'AB': (0., 1., 0.),
+    'BB': (0., 0., 1.),
+    '--': (.5, 0., .5),
+    }
   
   def critical(self, msg):
     self.logger.critical(msg)
@@ -88,7 +93,9 @@ class Writer(Core):
         release = data_reader.header.get("GSGT Version", "UNKNOWN_RELEASE")
         label = "%s.%s.%s" % (DEVICE_MAKER, DEVICE_MODEL, release)
         device = self.get_device(label, DEVICE_MAKER, DEVICE_MODEL, release)
-        for block in data_reader.get_sample_iterator():
+        n_blocks = data_reader.header.get('Num Samples', '?')
+        for i, block in enumerate(data_reader.get_sample_iterator()):
+          self.logger.info("processing block %d/%s " % (i+1, n_blocks))
           self.write(block, device.id, plate_barcode, prefix)
 
   def write(self, data_block, device_id, plate_barcode, prefix):
@@ -104,10 +111,11 @@ class Writer(Core):
       snp_id = self.marker_name_to_id[snp['SNP Name']]
       call = '%s%s' % (snp['Allele1 - AB'], snp['Allele2 - AB'])
       w_aa, w_ab, w_bb = self.WEIGHTS[call]
+      # GC Score = 0.0 ==> call = '--'
       stream.write({
         'sample_id': sample_id,
         'snp_id': snp_id,
-        'call': getattr(SnpCall, call),
+        'call': getattr(SnpCall, call, SnpCall.NOCALL),
         'confidence': float(snp['GC Score']),  # 1-gc_score? 1/gc_score?
         'sig_A': float(snp['X Raw']),
         'sig_B': float(snp['Y Raw']),
@@ -120,9 +128,9 @@ class Writer(Core):
 
 def make_parser():
   parser = argparse.ArgumentParser(description="write Immunochip data files")
-  parser.add_argument('ifiles', metavar='FILE', type=str, nargs='+',
+  parser.add_argument('ifiles', metavar='DATA_FILE', type=str, nargs='+',
                       help='input FinalReport text files')
-  parser.add_argument('-a', '--annot-file', metavar='FILE', required=True,
+  parser.add_argument('-a', '--annot-file', metavar='ANN_FILE', required=True,
                       help='Original Illumina SNP annotation file')
   parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
   parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
@@ -153,7 +161,7 @@ def main(argv):
   writer.get_marker_ids(MSET_LABEL)
   writer.get_marker_name_to_label(args.annot_file)
   writer.get_marker_name_to_id()
-  writer.write_dataset_files(args.ifile, args.prefix)
+  writer.write_dataset_files(args.ifiles, args.prefix)
 
 
 if __name__ == "__main__":
