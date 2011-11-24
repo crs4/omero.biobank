@@ -43,7 +43,7 @@ class Enrollment(wp.OmeroWrapper):
                 #  Multi-field unique keys
                 #  stCodeUK = STUDY-VID_STUDYCODE
                 ('stCodeUK', wp.STRING, wp.REQUIRED),
-                # stIndUK = STUDY-VID_INDIVIDUAL-ID
+                # stIndUK = STUDY-VID_INDIVIDUAL-VID
                 ('stIndUK',  wp.STRING, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
