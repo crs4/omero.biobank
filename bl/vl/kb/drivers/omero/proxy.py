@@ -10,6 +10,7 @@ import bl.vl.utils as vlu
 from bl.vl.utils.snp import convert_to_top
 
 from bl.vl.kb.dependency import DependencyTree
+from bl.vl.kb import mimetypes
 
 from proxy_core import ProxyCore
 
@@ -596,7 +597,7 @@ class Proxy(ProxyCore):
 
     conf = {'sample' : sample,
             'path'   : 'table:%s/vid=%s' % (tname, vid),
-            'mimetype' : 'x-bl/gdo-table',
+            'mimetype' : mimetypes.GDO_TABLE,
             'sha1'   : sha1.hexdigest(),
             'size'   : size,
             }
@@ -614,7 +615,7 @@ class Proxy(ProxyCore):
     def get_gdo_iterator_on_list(dos):
       seen_data_samples = set([])
       for do in dos:
-        if do.mimetype == "x-bl/gdo-table":
+        if do.mimetype == mimetypes.GDO_TABLE:
           table, vid = do.path.split('=')
           mset_vid = table.split(':')[1].rsplit(".")[0]          
           if mset_vid != mset.markersSetVID:

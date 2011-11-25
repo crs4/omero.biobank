@@ -2,10 +2,13 @@ import wrapper as wp
 
 import numpy as np
 
+
+from bl.vl.kb import mimetypes
 from action import Action
 from snp_markers_set import SNPMarkersSet
 
 from utils import assign_vid_and_timestamp, make_unique_key
+
 
 class DataSampleStatus(wp.OmeroWrapper):
   OME_TABLE = 'DataSampleStatus'
@@ -74,8 +77,8 @@ class GenotypeDataSample(DataSample):
       raise ValueError('no connected DataObject(s)')
     do = dos[0]
     do.reload()
-    if do.mimetype != 'x-bl/gdo-table':
-      raise ValueError('DataObject is not a x-bl/gdo-table')
+    if do.mimetype != mimetypes.GDO_TABLE:
+      raise ValueError('DataObject is not a %s' % mimetypes.GDO_TABLE)
     jnk, vid = do.path.split('=')
     mset = self.snpMarkersSet
     mset.reload()

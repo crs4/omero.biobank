@@ -1,7 +1,7 @@
 """ ...
 
 Read Illumina 'Final Report' text files and write snp calls for each
-well as an SSC (SampleSnpCall) file in the x-ssc-messages
+well as an SSC (SampleSnpCall) file in the mimetypes.SSC_FILE
 format. Also, write tsv input files for DataSample and DataObject
 importers.
 
@@ -17,7 +17,7 @@ from bl.core.io.illumina import GenomeStudioFinalReportReader as DataReader
 from bl.core.io.illumina import IllSNPReader
 from bl.core.io import MessageStreamWriter
 import bl.core.gt.messages.SnpCall as SnpCall
-from bl.vl.kb import KBError
+from bl.vl.kb import KBError, mimetypes
 from bl.vl.app.importer.core import Core  # move this script to importer app?
 
 
@@ -132,7 +132,7 @@ class Writer(Core):
             size = str(os.stat(fn).st_size)
             ds_w.writerow([label, sample_id, device.id, DEVICE_TYPE,
                            DATA_SAMPLE_TYPE, self.markers_set_id])
-            do_w.writerow([path, sample_id, 'x-ssc-messages', size, sha1])
+            do_w.writerow([path, sample_id, mimetypes.SSC_FILE, size, sha1])
 
   def write(self, data_block, device_id, plate_barcode, prefix):
     sample_id = adjust_immuno_sample_id(data_block.sample_id, plate_barcode)

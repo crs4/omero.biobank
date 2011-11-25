@@ -129,7 +129,7 @@ def main():
     otsv.writerow({
       'path' : 'file://' + os.path.realpath(fname),
       'data_sample' : ds.id,
-      'mimetype' : 'x-ssc-messages',
+      'mimetype' : mimetypes.SSC_FILE,
       'size' : size,
       'sha1' : sha1,
       })

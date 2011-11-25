@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+"""
+Add missing GDOs for a given marker set
+=======================================
+
+FIXME
+"""
+
+import os, sys
+import argparse
+import logging
+
+LOG_FILENAME='gdoize_ms.log'
+logging.basicConfig(
+  format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+  level=logging.INFO,
+  filename=LOG_FILENAME)
+
+logger = logging.getLogger()
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter(
+  fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  )
+
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)
+
+
+from bl.vl.kb import KnowledgeBase as KB
+from bl.vl.kb import KBError, mimetypes
+from bl.vl.genotype.io import read_ssc
+
+
+def make_parser():
+  desc="Add missing GDOs for a given marker set"
+  parser = argparse.ArgumentParser(
+    description=desc,
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+  parser.add_argument('-H', '--host', type=str,
+                      help='omero host system',
+                      default='localhost')
+  parser.add_argument('-U', '--user', type=str,
+                      help='omero user',
+                      default='test')
+  parser.add_argument('-P', '--passwd', type=str,
+                      help='omero user passwd',
+                      required=True)
+  parser.add_argument('-m', '--markers-set-label', required=True,
+                      help='markers set label')
+  parser.add_argument('-s', '--study-label', required=True, help='study label')
+  return parser
+
+
+def critical(logger, msg):
+  logger.critical(msg)
+  raise KBError(msg)
+
+
+def add_gdo(kb, action, gt_data_sample, ssc_data_object):
+  probs, confs = read_ssc(ssc_data_object.path, gt_data_sample.snpMarkersSet)
+  kb.add_gdo_data_object(action, gt_data_sample, probs, confs)
+
+
+def main():
+  parser = make_parser()
+  args = parser.parse_args()
+  host, user, passwd = args.host, args.user, args.passwd
+  logger.info('connecting to %s with user %s' % (host, user))
+  kb = KB(driver="omero")(host, user, passwd)
+  ms = kb.get_snp_markers_set(label=args.markers_set_label)
+  if ms is None:
+    critical(logger, "no marker set in db with label %s"
+             % args.markers_set_label)
+  study = kb.get_study(label=args.study_label)
+  if study is None:
+    critical(logger, "no study in db with label %s" % args.study_label)
+  query = "from GenotypeDataSample g where g.snpMarkersSet.id = :id"
+  params = {"id": ms.omero_id}
+  gds = kb.find_all_by_query(query, params)
+  logger.info("found %d genotype data samples related to %s"
+              % (len(gds), args.markers_set_label))
+  action = kb.create_an_action(study)  # FIXME: create a device for this script
+  n_created_gdos = 0
+  for g in gds:
+    dos = kb.get_data_objects(g)
+    ssc_do = None
+    for do in dos:
+      if do.mimetype == mimetypes.GDO_TABLE:
+        break
+      if do.mimetype == mimetypes.SSC_FILE:
+        ssc_do = do
+    else:
+      if ssc_do:
+        add_gdo(kb, action, g, ssc_do)
+        logger.info("created gdo for %s" % g.label)
+        n_created_gdos += 1
+  if n_created_gdos == 0:
+    kb.delete(action)
+
+
+if __name__ == "__main__":
+  main()
+
+
+# Local Variables: **
+# mode: python **
+# End: **

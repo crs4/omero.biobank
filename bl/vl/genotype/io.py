@@ -300,7 +300,7 @@ class PedWriter(object):
 
 def read_ssc(fn, mset):
   """
-  Read a file with 'x-ssc-messages' mimetpye and return the prob and
+  Read a file with mimetypes.SSC_FILE mimetype and return the prob and
   conf arrays for a given SNPMarkersSet mset.
 
   :param mset: a reference markers set

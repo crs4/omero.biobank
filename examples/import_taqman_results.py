@@ -20,7 +20,7 @@ do the following:
     #. write out the relevant marker set import file
 
     #. for each sample write out all the relevant snp calls as a SSC
-       (SampleSnpCall) file in the x-ssc-messages format.
+       (SampleSnpCall) file in the mimetypes.SSC_FILE format.
 
 Usage:
 
@@ -205,7 +205,7 @@ def write_ssc_data_objects_import_file(fname, ssc_data_set):
     fo.writerow({
       'path' : 'file://' + os.path.realpath(fname),
       'data_sample_label' : label,
-      'mimetype' : 'x-ssc-messages',
+      'mimetype' : mimetypes.SSC_FILE,
       'size' : size,
       'sha1' : sha1,
       })
