@@ -1,6 +1,9 @@
-import wrapper as wp
-from utils import assign_vid_and_timestamp, make_unique_key
+from itertools import izip
 import numpy as np
+
+from utils import assign_vid_and_timestamp, make_unique_key
+import wrapper as wp
+
 
 class SNPMarkersSet(wp.OmeroWrapper):
   OME_TABLE = 'SNPMarkersSet'
@@ -76,9 +79,14 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def id(self):
     return self.markersSetVID
 
-  def load_markers(self):
+  def load_markers(self, load_flip=False):
     self.reload()
     mdefs, msetc = self.proxy.get_snp_markers_set_content(self)
+    if load_flip:
+      for (m, r) in izip(mdefs, msetc):
+        m.flip = r['allele_flip']
+    indices = msetc.argsort(order='marker_indx')
+    mdefs = [mdefs[i] for i in indices]
     self.__set_markers(mdefs)
 
   def load_alignments(self, ref_genome):

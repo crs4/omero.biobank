@@ -70,7 +70,7 @@ class Marker(object):
   def __init__(self, vid, label=None, rs_label=None,
                source=None, context=None, release=None,
                dbSNP_build=None, ref_rs_genome=None,
-               mask=None, position=(0,0)):
+               mask=None, position=(0,0), flip=None):
     self.id = vid
     self.label = label
     self.rs_label = rs_label
@@ -80,6 +80,7 @@ class Marker(object):
     self.ref_rs_genome = ref_rs_genome
     self.mask = mask
     self.position = position
+    self.flip = flip
 
   @classmethod
   def get_ome_table(klass):
@@ -104,7 +105,7 @@ class GenotypingAdapter(object):
    ('string', 'context', 'Context of definition.', 16, None),
    ('string', 'release', 'Release within the context.', 16, None),
    ('string', 'label', 'Label of marker in the definition context.', 48, None),
-   ('string', 'rs_label', 'dbSNP_id if available', 32, None),
+   ('string', 'rs_label', 'dbSNP_id if available', 32, None),  # too small!
    ('long',   'dbSNP_build', 'dbSNP build version.', None),
    ('string', 'ref_rs_genome', 'Reference rs alignment genome.', 16, None),
    ('string', 'mask',

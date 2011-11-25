@@ -229,9 +229,9 @@ def write_ssc_data_set_file(fname, found_markers,
       'confidence' : d['Quality Value'],
       'sig_A' : d['Allele X Rn']*d['Passive Ref'],
       'sig_B' : d['Allele X Rn']*d['Passive Ref'],
-      'weight_AA' : d['Allele X Rn'],
-      'weight_AB' : 0.0,
-      'weight_BB' : d['Allele X Rn']})
+      'w_AA' : d['Allele X Rn'],
+      'w_AB' : 0.0,
+      'w_BB' : d['Allele X Rn']})
   stream.close()
 
 def make_parser():

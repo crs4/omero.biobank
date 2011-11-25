@@ -11,7 +11,6 @@ external tool
 
 """
 import sys, os, argparse, hashlib, csv, logging
-from datetime import datetime
 from contextlib import nested
 
 from bl.core.io.illumina import GenomeStudioFinalReportReader as DataReader
@@ -62,13 +61,11 @@ def adjust_immuno_sample_id(old_sample_id, plate_barcode, pad_size=PAD_SIZE):
 
 class Writer(Core):
 
-  MIN_DATETIME = datetime.max
-  MAX_DATETIME = datetime.min
   WEIGHTS = {
     'AA': (1., 0., 0.),
     'AB': (0., 1., 0.),
     'BB': (0., 0., 1.),
-    '--': (.5, 0., .5),
+    '--': (1/3., 1/3., 1/3.),
     }
   DS_HEADER = ["label", "source", "device", "device_type", "data_sample_type",
                "markers_set"]
@@ -140,9 +137,7 @@ class Writer(Core):
   def write(self, data_block, device_id, plate_barcode, prefix):
     sample_id = adjust_immuno_sample_id(data_block.sample_id, plate_barcode)
     header = {'device_id': device_id,
-              'sample_id': sample_id,
-              'min_datetime': str(self.MIN_DATETIME),
-              'max_datetime': str(self.MAX_DATETIME)}
+              'sample_id': sample_id,}
     out_fn = '%s%s-%s.ssc' % (prefix, device_id, sample_id)
     stream = MessageStreamWriter(out_fn, PAYLOAD_MSG_TYPE, header)
     for k in data_block.snp_names():
@@ -158,9 +153,9 @@ class Writer(Core):
         'confidence': float(snp['GC Score']),  # 1-gc_score? 1/gc_score?
         'sig_A': float(snp['X Raw']),
         'sig_B': float(snp['Y Raw']),
-        'weight_AA': w_aa,
-        'weight_AB': w_ab,
-        'weight_BB': w_bb,
+        'w_AA': w_aa,
+        'w_AB': w_ab,
+        'w_BB': w_bb,
         })
     stream.close()
     return sample_id, out_fn

@@ -1,4 +1,6 @@
 import array, struct
+import numpy as np
+from bl.core.io import MessageStreamReader
 
 
 class Error(Exception):
@@ -296,8 +298,33 @@ class PedWriter(object):
     self.ped_file = None
 
 
+def read_ssc(fn, mset):
+  """
+  Read a file with 'x-ssc-messages' mimetpye and return the prob and
+  conf arrays for a given SNPMarkersSet mset.
 
+  :param mset: a reference markers set
+  :type mset: SNPMarkersSet
 
-
-
-
+  :param fn: ssc file name
+  :type fn: str
+  """
+  if not mset.has_markers():
+    mset.load_markers()
+  n_markers = len(mset)
+  probs = np.empty((2, n_markers), dtype=np.float32)
+  probs[:] = 1/3.
+  confs = np.zeros((n_markers,), dtype=np.float32)
+  vid_to_marker = dict((m.id, (m, i)) for (i, m) in enumerate(mset.markers))
+  reader = MessageStreamReader(fn)
+  for i in xrange(n_markers):
+    _, snp_id, _, conf, _, _, w_AA, w_AB, w_BB = reader.read()
+    m, idx = vid_to_marker[snp_id]
+    S = w_AA + w_AB + w_BB
+    p_AA, p_BB = w_AA / S, w_BB / S
+    if m.flip:
+      p_AA, p_BB = p_BB, p_AA
+    probs[0,idx] = p_AA
+    probs[1,idx] = p_BB
+    confs[idx] = conf
+  return probs, confs
