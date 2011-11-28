@@ -76,15 +76,28 @@ class Writer(Core):
     self.logger.critical(msg)
     raise KBError(msg)
   
-  def get_marker_ids(self, mset_label):
+  def get_marker_ids(self, mset_label, mapping_fn=None, dump=False):
     ms = self.kb.get_snp_markers_set(label=mset_label)
     if ms is None:
       self.critical("unable to retrieve marker set %s" % mset_label)
-    self.logger.info("loading markers for marker set %s" % mset_label)
-    ms.load_markers()
-    self.logger.info("%s has %d markers" % (mset_label, len(ms.markers)))
     self.markers_set_id = ms.id
-    self.marker_ids = dict((m.label, m.id) for m in ms.markers)
+    if mapping_fn and not dump:
+      self.logger.info("getting marker to id mapping from %s" % mapping_fn)
+      with open(mapping_fn) as f:
+        reader = csv.reader(f, delimiter="\t")
+        self.marker_ids = dict((r[0], r[1]) for r in reader)
+    else:
+      self.logger.info("loading markers for marker set %s" % mset_label)
+      ms.load_markers()
+      self.logger.info("%s has %d markers" % (mset_label, len(ms.markers)))
+      if dump:
+        self.logger.info("dumping marker to id mapping to %s" % mapping_fn)
+        with open(mapping_fn, "w") as outf:
+          writer = csv.writer(outf, delimiter="\t", lineterminator=os.linesep)
+          for m in ms.markers:
+            writer.writerow([m.label, m.id])
+      else:
+        self.marker_ids = dict((m.label, m.id) for m in ms.markers)
 
   def get_marker_name_to_label(self, ill_annot_file):
     with open(ill_annot_file) as f:
@@ -185,12 +198,18 @@ def make_parser():
                       help='output path for import data sample tsv file')
   parser.add_argument('--do-fn', metavar='DO_FILE', default=DO_FN,
                       help='output path for import data object tsv file')
+  parser.add_argument('--dump-marker-ids', action='store_true',
+                      help='dump marker label to id mapping and exit')
+  parser.add_argument('--marker-ids-file', metavar='MARKER_IDS_FILE',
+                      help='tsv file with marker label to id mapping')
   return parser
 
 
 def main(argv):
   parser = make_parser()
   args = parser.parse_args(argv)
+  if args.dump_marker_ids and not args.marker_ids_file:
+    parser.error("--dump-marker-ids requires --marker-ids-file")
   log_level = getattr(logging, args.loglevel)
   kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
   if args.logfile:
@@ -198,7 +217,10 @@ def main(argv):
   logging.basicConfig(**kwargs)
   logger = logging.getLogger()
   writer = Writer(args.host, args.user, args.passwd, logger=logger)
-  writer.get_marker_ids(MSET_LABEL)
+  writer.get_marker_ids(MSET_LABEL, args.marker_ids_file, args.dump_marker_ids)
+  if args.dump_marker_ids:
+    logger.info("dumping complete, nothing left to do, bye")
+    sys.exit(0)
   writer.get_marker_name_to_label(args.annot_file)
   writer.get_marker_name_to_id()
   writer.write_output_files(args.ifiles, args.prefix, args.ds_fn, args.do_fn)
