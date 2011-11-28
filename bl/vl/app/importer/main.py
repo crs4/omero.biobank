@@ -110,6 +110,7 @@ import bl.vl.app.importer.marker_definition
 import bl.vl.app.importer.marker_alignment
 import bl.vl.app.importer.markers_set
 import bl.vl.app.importer.diagnosis
+import bl.vl.app.importer.enrollment
 
 
 
@@ -129,6 +130,7 @@ class App(object):
     bl.vl.app.importer.marker_alignment.do_register(self.supported_submodules)
     bl.vl.app.importer.markers_set.do_register(self.supported_submodules)
     bl.vl.app.importer.diagnosis.do_register(self.supported_submodules)
+    bl.vl.app.importer.enrollment.do_register(self.supported_submodules)
 
   def make_parser(self):
     parser = argparse.ArgumentParser(description="A magic importer")
