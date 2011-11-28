@@ -25,14 +25,15 @@ LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
+DS_FN = "import_data_sample.tsv"
+DO_FN = "import_data_object.tsv"
+
 # FIXME should (some of) these be available as parameters?
 MSET_LABEL = "IMMUNO_BC_11419691_B"
 DEVICE_MAKER = "Illumina"
 DEVICE_MODEL = "GenomeStudio"
 DEVICE_TYPE = "SoftwareProgram"
 DATA_SAMPLE_TYPE = "GenotypeDataSample"
-DS_FN = "import_data_sample.tsv"
-DO_FN = "import_data_object.tsv"
 
 PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
@@ -107,8 +108,8 @@ class Writer(Core):
       self.critical("no container in kb is labeled as %s" % plate_label)
     return plate.barcode
 
-  def write_output_files(self, in_fnames, prefix):
-    with nested(open(DS_FN, "w"), open(DO_FN, "w")) as (ds_f, do_f):
+  def write_output_files(self, in_fnames, prefix, ds_fn, do_fn):
+    with nested(open(ds_fn, "w"), open(do_fn, "w")) as (ds_f, do_f):
       ds_w = csv.writer(ds_f, delimiter="\t", lineterminator=os.linesep)
       do_w = csv.writer(do_f, delimiter="\t", lineterminator=os.linesep)
       ds_w.writerow(self.DS_HEADER)
@@ -180,6 +181,10 @@ def make_parser():
                       default='root')
   parser.add_argument('-P', '--passwd', type=str, help='omero password',
                       required=True)
+  parser.add_argument('--ds-fn', metavar='DS_FILE', default=DS_FN,
+                      help='output path for import data sample tsv file')
+  parser.add_argument('--do-fn', metavar='DO_FILE', default=DO_FN,
+                      help='output path for import data object tsv file')
   return parser
 
 
@@ -196,7 +201,7 @@ def main(argv):
   writer.get_marker_ids(MSET_LABEL)
   writer.get_marker_name_to_label(args.annot_file)
   writer.get_marker_name_to_id()
-  writer.write_output_files(args.ifiles, args.prefix)
+  writer.write_output_files(args.ifiles, args.prefix, args.ds_fn, args.do_fn)
 
 
 if __name__ == "__main__":
