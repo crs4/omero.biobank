@@ -142,6 +142,7 @@ from version import version
 import csv, json, time
 
 import itertools as it
+import re
 
 # FIXME this is an hack...
 from bl.vl.kb.drivers.omero.vessels import VesselContent, VesselStatus
@@ -377,18 +378,20 @@ def canonize_records(args, records):
     return '%s%02d' % (chr(row + ord('A') - 1), column)
 
   def find_well_coords(label):
-    # FIXME this is ugly, but who cares...
-    for i in range(len(label)-1, 0, -1):
-      if not label[i].isdigit():
-        break
-    column = int(label[i+1:])
-    label = label[:i+1]
+    label = label.upper()
+    reg_exp = r'([A-Z]+)(\d+)'
+    m = re.match(reg_exp, label)
+    if not m:
+      raise ValueError('%s is not a valid well label' % label)
+    row_label, col_label = m.groups()
+    column = int(col_label)
     row  = 0
     base = 1
-    for x in label[::-1]:
-      row += (ord(x)-ord('A') + 1) * base
-      base *= 26
-    return row, column
+    num_chars = ord('Z') - ord('A') + 1
+    for x in row_label[::-1]:
+      row += (ord(x)-ord('A')) * base
+      base *= num_chars
+    return row+1, column
 
   fields = ['study', 'source_type',
             'vessel_type', 'vessel_content', 'vessel_status',
