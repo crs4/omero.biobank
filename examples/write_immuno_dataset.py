@@ -133,6 +133,8 @@ class Writer(Core):
             ds_w.writerow([label, sample_id, device.id, DEVICE_TYPE,
                            DATA_SAMPLE_TYPE, self.markers_set_id])
             do_w.writerow([path, sample_id, mimetypes.SSC_FILE, size, sha1])
+            for outf in ds_f, do_f:
+              outf.flush(); os.fsync(outf.fileno())
 
   def write(self, data_block, device_id, plate_barcode, prefix):
     sample_id = adjust_immuno_sample_id(data_block.sample_id, plate_barcode)
@@ -170,8 +172,6 @@ def make_parser():
   parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
   parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
                       help='logging level', default='INFO')
-  parser.add_argument('--run-id', type=str, required=True,
-                      help='a unique identifier for this run')
   parser.add_argument('--prefix', type=str, help='output files prefix',
                       default='vl-immuno-')
   parser.add_argument('-H', '--host', type=str, help='omero hostname',
