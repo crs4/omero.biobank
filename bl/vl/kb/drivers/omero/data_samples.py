@@ -75,12 +75,13 @@ class GenotypeDataSample(DataSample):
     dos = self.proxy.get_data_objects(self)
     if not dos:
       raise ValueError('no connected DataObject(s)')
-    do = dos[0]
-    do.reload()
-    if do.mimetype != mimetypes.GDO_TABLE:
+    for do in dos:
+      do.reload()
+      if do.mimetype == mimetypes.GDO_TABLE:
+        jnk, vid = do.path.split('=')
+        mset = self.snpMarkersSet
+        mset.reload()
+        res = self.proxy.get_gdo(mset.id, vid)
+        return res['probs'], res['confidence']
+    else:
       raise ValueError('DataObject is not a %s' % mimetypes.GDO_TABLE)
-    jnk, vid = do.path.split('=')
-    mset = self.snpMarkersSet
-    mset.reload()
-    res = self.proxy.get_gdo(mset.id, vid)
-    return res['probs'], res['confidence']
