@@ -20,9 +20,13 @@ enrollments with the same code related to the same study and it is not
 possible to enroll a patient twice in the same study, even with
 different codes.
 
+bash> ${IMPORTER} -i enrollments.tsv -o enrollments_mapping.tsv \
+      -H ${OME_HOST} -U ${OME_USER} -P ${OME_PASSWD} \
+      --operator ${OPERATOR}
+      enrollment --study ${STUDY_LABEL}
+
 """
 
-#import itertools as it
 import time
 import csv
 
@@ -39,10 +43,6 @@ class Recorder(Core):
                  ):
         super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
                                        study_label=study_label, logger=logger)
-
-        # self.out_stream = out_stream
-        # if self.out_stream:
-        #     self.out_stream.writeheader()
 
         self.batch_size = batch_size
         self.preloaded_sources = {}
