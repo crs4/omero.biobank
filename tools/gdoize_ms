@@ -19,17 +19,6 @@ logging.basicConfig(
 
 logger = logging.getLogger()
 
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter(
-  fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-  )
-
-ch.setFormatter(formatter)
-
-logger.addHandler(ch)
-
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb import KBError, mimetypes
@@ -88,6 +77,7 @@ def main():
   action = kb.create_an_action(study)  # FIXME: create a device for this script
   n_created_gdos = 0
   for g in gds:
+    logger.info("loading data objects for %s" % g.label)
     dos = kb.get_data_objects(g)
     ssc_do = None
     for do in dos:
@@ -100,6 +90,8 @@ def main():
         add_gdo(kb, action, g, ssc_do)
         logger.info("created gdo for %s" % g.label)
         n_created_gdos += 1
+      else:
+        logger.info("%s already has a gdo" % g.label)
   if n_created_gdos == 0:
     kb.delete(action)
 

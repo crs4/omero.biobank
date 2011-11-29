@@ -588,6 +588,7 @@ class Proxy(ProxyCore):
     # FIXME we delegate to gadpt checking that probs and confs have the
     #       right numpy dtype.
     mset = sample.snpMarkersSet
+    mset.reload()
     tname, vid = self.gadpt.add_gdo(mset.markersSetVID, probs, confs, avid)
 
     size = 0
