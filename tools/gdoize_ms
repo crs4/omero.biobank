@@ -51,8 +51,10 @@ def critical(logger, msg):
   raise KBError(msg)
 
 
-def add_gdo(kb, action, gt_data_sample, ssc_data_object):
-  probs, confs = read_ssc(ssc_data_object.path, gt_data_sample.snpMarkersSet)
+# we need to pass marker set to avoid reloading at each read_ssc
+def add_gdo(kb, action, gt_data_sample, ssc_data_object, mset):
+  assert mset == gt_data_sample.snpMarkersSet
+  probs, confs = read_ssc(ssc_data_object.path, mset)
   kb.add_gdo_data_object(action, gt_data_sample, probs, confs)
 
 
@@ -66,6 +68,9 @@ def main():
   if ms is None:
     critical(logger, "no marker set in db with label %s"
              % args.markers_set_label)
+  logger.info("loading markers for %s" % ms.label)
+  ms.load_markers()
+  logger.info("finished loading markers for %s" % ms.label)
   study = kb.get_study(label=args.study_label)
   if study is None:
     critical(logger, "no study in db with label %s" % args.study_label)
@@ -82,16 +87,17 @@ def main():
     ssc_do = None
     for do in dos:
       if do.mimetype == mimetypes.GDO_TABLE:
+        logger.info("%s already has a gdo" % g.label)
         break
       if do.mimetype == mimetypes.SSC_FILE:
         ssc_do = do
     else:
       if ssc_do:
-        add_gdo(kb, action, g, ssc_do)
-        logger.info("created gdo for %s" % g.label)
+        logger.info("creating gdo for %s" % g.label)
+        add_gdo(kb, action, g, ssc_do, ms)
+        logger.info("finished creating gdo for %s" % g.label)
         n_created_gdos += 1
-      else:
-        logger.info("%s already has a gdo" % g.label)
+        
   if n_created_gdos == 0:
     kb.delete(action)
 
