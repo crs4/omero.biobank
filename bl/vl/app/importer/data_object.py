@@ -41,7 +41,8 @@ import csv, json, time
 
 import itertools as it
 
-SUPPORTED_MIME_TYPES = ['x-vl/affymetrix-cel']
+from bl.vl.kb.mimetypes import DATA_OBJECT_FILES as SUPPORTED_MIME_TYPES
+
 
 class Recorder(Core):
   def __init__(self, study_label=None,

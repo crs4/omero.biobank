@@ -146,7 +146,7 @@ class Writer(Core):
             size = str(os.stat(fn).st_size)
             ds_w.writerow([label, sample_id, device.id, DEVICE_TYPE,
                            DATA_SAMPLE_TYPE, self.markers_set_id])
-            do_w.writerow([path, sample_id, mimetypes.SSC_FILE, size, sha1])
+            do_w.writerow([path, label, mimetypes.SSC_FILE, size, sha1])
             for outf in ds_f, do_f:
               outf.flush(); os.fsync(outf.fileno())
 
