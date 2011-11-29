@@ -47,6 +47,7 @@ class Recorder(Core):
         self.batch_size = batch_size
         self.preloaded_sources = {}
         self.preloaded_enrollments = {}
+        self.preloaded_enrolled_inds = {}
 
     def record(self, records, otsv):
         def records_by_chunk(batch_size, records):
@@ -80,9 +81,14 @@ class Recorder(Core):
     def preload_enrollments(self, study):
         self.logger.info('start preloading enrollments for study %s' % study.label)
         if study:
-            enrolls = self.kb.get_enrolled(study)
+            query = '''SELECT en FROM Enrollment en 
+                       JOIN FETCH en.individual ind 
+                       JOIN en.study st 
+                       WHERE st.label = :st_label'''
+            enrolls = self.kb.find_all_by_query(query, {'st_label' : study.label})
             for e in enrolls:
                 self.preloaded_enrollments[e.studyCode] = e
+                self.preloaded_enrolled_inds[e.individual.vid] = e
         self.logger.info('done preloading enrollments')
         self.logger.info('preloaded %d enrollments' % len(self.preloaded_enrollments.keys()))
 
@@ -103,6 +109,11 @@ class Recorder(Core):
             if r['label'] in self.preloaded_enrollments:
                 f = reject + 'there is a pre-existing Enrollment with label %s.'
                 self.logger.warn(f % r['label'])
+                continue
+
+            if r['source'] in self.preloaded_enrolled_inds:
+                f = reject + 'Individual with VID %s already enrolled'
+                self.logger.warn(f % r['source'])
                 continue
 
             if r['label'] in k_map:
