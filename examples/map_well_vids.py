@@ -6,7 +6,10 @@ write_immuno_dataset.py
 """
 import sys, os, argparse, csv, logging
 from contextlib import nested
-
+try:
+  from collections import Counter
+except ImportError:
+  sys.exit("ERROR: This script needs python >=2.7")
 from bl.vl.kb import KnowledgeBase as KB
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
@@ -39,16 +42,26 @@ class VidMapper(object):
   def map_vid(self, r):
     en_code = r["source"]
     pl_barcode = en_code.split("|")[1]
-    wells = self.enroll_map[en_code]
+    try:
+      wells = self.enroll_map[en_code]
+    except KeyError:
+      msg = "%s is not enrolled in %s" % (en_code, STUDY)
+      self.logger.error(msg)
+      raise ValueError(msg)
     self.logger.info("found %d wells for %s" % (len(wells), en_code))
-    for w in wells:
-      if self.plate_map[w.container.omero_id] == pl_barcode:
-        r["source"] = w.id
-        break
-    else:
-      msg = "no well for plate %s" % pl_barcode
+    imm_wells = [w for w in wells
+                 if self.plate_map[w.container.omero_id] == pl_barcode]
+    if len(imm_wells) > 1:
+      msg = ("more than 1 (%d) immuno wells for plate %s" %
+             (len(imm_wells), pl_barcode))
+      self.logger.error(msg)
+      raise ValueError(msg)
+    elif len(imm_wells) == 0:
+      msg = "no immuno well for plate %s" % pl_barcode
       self.logger.warn(msg)
       raise ValueError(msg)
+    else:
+      r["source"] = imm_wells[0].id
 
 
 def make_parser():
@@ -84,13 +97,19 @@ def main(argv):
                             lineterminator=os.linesep)
     writer.writeheader()
     vid_mapper = VidMapper(args.host, args.user, args.passwd, logger)
+    counter = Counter()
     for r in reader:
+      counter["input_lines"] += 1
       try:
         vid_mapper.map_vid(r)
       except ValueError:
+        counter["skipped_lines"] += 1
         continue
       else:
+        counter["output_lines"] += 1
         writer.writerow(r)
+    for k, v in counter.iteritems():
+      logger.info("%s: %d" % (k, v))
 
 
 if __name__ == "__main__":
