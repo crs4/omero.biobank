@@ -15,6 +15,10 @@ import os
 
 from wrapper import ome_wrap
 
+
+BATCH_SIZE = 5000
+
+
 def convert_coordinates_to_np(d):
   def convert_type(o):
     if isinstance(o, omero.grid.LongColumn):
@@ -360,7 +364,7 @@ class ProxyCore(object):
 
   @debug_boundary
   def get_table_rows(self, table_name, selector, col_names=None,
-                     batch_size=50000):
+                     batch_size=BATCH_SIZE):
     """
     FIXME
     selector can now be either a selection or a list of selections. In
@@ -396,7 +400,7 @@ class ProxyCore(object):
 
 
   @debug_boundary
-  def __get_table_rows_bulk(self, table, col_numbers, batch_size=50000):
+  def __get_table_rows_bulk(self, table, col_numbers, batch_size=BATCH_SIZE):
     res, row_read, max_row = [], 0, table.getNumberOfRows()
     while row_read < max_row:
       d = table.read(col_numbers, row_read, row_read + batch_size)
@@ -419,7 +423,7 @@ class ProxyCore(object):
 
   @debug_boundary
   def get_table_slice(self, table_name, row_numbers, col_names=None,
-                      batch_size=50000):
+                      batch_size=BATCH_SIZE):
     """
     FIXME
     """
@@ -457,7 +461,7 @@ class ProxyCore(object):
     return self.add_table_rows_from_stream(table_name, stream(row), 10)
 
   @debug_boundary
-  def add_table_rows(self, table_name, rows, batch_size=10000):
+  def add_table_rows(self, table_name, rows, batch_size=BATCH_SIZE):
     dtype = rows.dtype
     def stream(rows):
       for r in rows:
@@ -466,12 +470,14 @@ class ProxyCore(object):
                                            batch_size=batch_size)
 
   @debug_boundary
-  def add_table_rows_from_stream(self, table_name, stream, batch_size=10000):
+  def add_table_rows_from_stream(self, table_name, stream,
+                                 batch_size=BATCH_SIZE):
     return self.__extend_table(table_name, self.__load_batch, stream,
                                batch_size=batch_size)
 
   @debug_boundary
-  def __extend_table(self, table_name, batch_loader, records_stream, batch_size=10000):
+  def __extend_table(self, table_name, batch_loader, records_stream,
+                     batch_size=BATCH_SIZE):
     s = self.connect()
     try:
       t = self._get_table(s, table_name)

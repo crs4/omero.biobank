@@ -96,7 +96,6 @@ class EAVAdapter(object):
     self.encode_field_value(row)
     self.kb.add_table_row(self.EAV_EHR_TABLE, row)
 
-
-  def get_eav_record_rows(self, selector, batch_size=50000):
+  def get_eav_record_rows(self, selector, batch_size=5000):
     return  self.kb.get_table_rows(self.EAV_EHR_TABLE, selector,
                                    batch_size=batch_size)

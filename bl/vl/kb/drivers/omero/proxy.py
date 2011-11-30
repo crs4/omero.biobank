@@ -37,7 +37,7 @@ from genotyping import Marker
 from admin      import Admin
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
-
+BATCH_SIZE = 5000
 
 
 class Proxy(ProxyCore):
@@ -180,7 +180,7 @@ class Proxy(ProxyCore):
   def create_snp_set_table(self):
     self.gadpt.create_snp_set_table()
 
-  def add_snp_marker_definitions(self, stream, action, batch_size=50000):
+  def add_snp_marker_definitions(self, stream, action, batch_size=BATCH_SIZE):
     """
     Save a stream of markers definitions.  For efficiency reasons,
     markers are written in batches, whose size is controlled by
@@ -222,7 +222,7 @@ class Proxy(ProxyCore):
     return self.gadpt.add_snp_marker_definitions(stream, op_vid, batch_size)
 
   def get_snp_marker_definitions(self, selector=None, col_names=None,
-                                 batch_size=50000):
+                                 batch_size=BATCH_SIZE):
     """
     Returns an array with the marker definitions that satisfy
     selector. If selector is None, returns all markers definitions. It
@@ -250,13 +250,13 @@ class Proxy(ProxyCore):
 
   def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
                       col_names=None,
-                      batch_size=50000):
+                      batch_size=BATCH_SIZE):
     return self.gadpt.get_snp_markers(labels, rs_labels, vids,
                                       col_names, batch_size)
 
   get_snp_markers.__doc__ = GenotypingAdapter.get_snp_markers.__doc__
 
-  def add_snp_alignments(self, stream, op_vid, batch_size=50000):
+  def add_snp_alignments(self, stream, op_vid, batch_size=BATCH_SIZE):
     return self.gadpt.add_snp_alignments(stream, op_vid, batch_size)
 
   def snp_markers_set_exists(self, label=None,
@@ -268,7 +268,7 @@ class Proxy(ProxyCore):
     "returns a SNPMarkersSet object"
     return self.madpt.get_snp_markers_set(label, maker, model, release)
 
-  def get_snp_markers_set_content(self, snp_markers_set, batch_size=50000):
+  def get_snp_markers_set_content(self, snp_markers_set, batch_size=BATCH_SIZE):
     selector = '(vid=="%s")' % snp_markers_set.markersSetVID
     msetc = self.gadpt.get_snp_markers_set(selector, batch_size=batch_size)
     mdefs = self.get_snp_markers(vids=[mv for mv in msetc['marker_vid']],
@@ -279,11 +279,13 @@ class Proxy(ProxyCore):
     avid = self.__resolve_action_id(action)
     return self.gadpt.add_snp_markers_set(maker, model, release, avid)
 
-  def fill_snp_markers_set(self, set_vid, stream, action, batch_size=50000):
+  def fill_snp_markers_set(self, set_vid, stream, action,
+                           batch_size=BATCH_SIZE):
     avid = self.__resolve_action_id(action)
     return self.gadpt.fill_snp_markers_set(set_vid, stream, avid, batch_size)
 
-  def get_snp_alignments(self, selector=None, col_names=None, batch_size=50000):
+  def get_snp_alignments(self, selector=None, col_names=None,
+                         batch_size=BATCH_SIZE):
     return self.gadpt.get_snp_alignments(selector, col_names, batch_size)
 
   def create_gdo_repository(self, set_vid, N):
@@ -485,7 +487,7 @@ class Proxy(ProxyCore):
     mset.save()
     return mset
 
-  def update_snp_positions(self, markers, ref_genome, batch_size=50000):
+  def update_snp_positions(self, markers, ref_genome, batch_size=BATCH_SIZE):
     vids = [m.id for m in markers]
     res = self.gadpt.get_snp_alignment_positions(ref_genome, vids, batch_size)
     if len(res) == 0:

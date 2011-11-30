@@ -56,6 +56,9 @@ import bl.vl.utils as vlu
 import bl.vl.utils.snp as vlu_snp
 
 
+BATCH_SIZE = 5000
+
+
 class Marker(object):
   """
   This is a wrapper used to export the contents of
@@ -165,7 +168,7 @@ class GenotypingAdapter(object):
     self.kb.create_table(self.SNP_MARKER_DEFINITIONS_TABLE,
                          self.SNP_MARKER_DEFINITIONS_COLS)
 
-  def add_snp_marker_definitions(self, stream, op_vid, batch_size=50000):
+  def add_snp_marker_definitions(self, stream, op_vid, batch_size=BATCH_SIZE):
     vid_correspondence = []
     def add_vid_filter_and_op_vid(stream, op_vid):
       for x in stream:
@@ -179,7 +182,7 @@ class GenotypingAdapter(object):
     return vid_correspondence
 
   def get_snp_marker_definitions(self, selector=None, col_names=None,
-                                 batch_size=50000):
+                                 batch_size=BATCH_SIZE):
     return self.kb.get_table_rows(self.SNP_MARKER_DEFINITIONS_TABLE,
                                   selector, col_names, batch_size=batch_size)
 
@@ -205,7 +208,7 @@ class GenotypingAdapter(object):
 
   def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
                       col_names=None,
-                      batch_size=50000):
+                      batch_size=BATCH_SIZE):
     """
     Return a list of marker objects corresponding to the given list
     (labels, rs_labels or vids). Return an empty list if at least one
@@ -268,11 +271,12 @@ class GenotypingAdapter(object):
     self.kb.add_table_row(self.SNP_SET_DEF_TABLE, row)
     return set_vid
 
-  def get_snp_markers_sets(self, selector=None, batch_size=50000):
+  def get_snp_markers_sets(self, selector=None, batch_size=BATCH_SIZE):
     return self.kb.get_table_rows(self.SNP_SET_DEF_TABLE, selector,
                                   batch_size=batch_size)
 
-  def fill_snp_markers_set(self, set_vid, stream, op_vid, batch_size=50000):
+  def fill_snp_markers_set(self, set_vid, stream, op_vid,
+                           batch_size=BATCH_SIZE):
     def add_op_vid(stream, N):
       for x in stream:
         x['vid'], x['op_vid'] = set_vid, op_vid
@@ -284,7 +288,7 @@ class GenotypingAdapter(object):
                                        batch_size=batch_size)
     return N[0]
 
-  def get_snp_markers_set(self, selector=None, batch_size=50000):
+  def get_snp_markers_set(self, selector=None, batch_size=BATCH_SIZE):
     return self.kb.get_table_rows(self.SNP_SET_TABLE, selector,
                                   batch_size=batch_size)
 
@@ -292,7 +296,7 @@ class GenotypingAdapter(object):
   def create_snp_alignment_table(self):
     self.kb.create_table(self.SNP_ALIGNMENT_TABLE, self.SNP_ALIGNMENT_COLS)
 
-  def add_snp_alignments(self, stream, op_vid, batch_size=50000):
+  def add_snp_alignments(self, stream, op_vid, batch_size=BATCH_SIZE):
     def add_op_vid(stream):
       for x in stream:
         x['op_vid'] = op_vid
@@ -301,12 +305,12 @@ class GenotypingAdapter(object):
     return self.kb.add_table_rows_from_stream(self.SNP_ALIGNMENT_TABLE,
                                               i_s, batch_size)
 
-  def get_snp_alignments(self, selector=None, col_names=None, batch_size=50000):
+  def get_snp_alignments(self, selector=None, col_names=None, batch_size=BATCH_SIZE):
     return self.kb.get_table_rows(self.SNP_ALIGNMENT_TABLE, selector,
                                   col_names=col_names, batch_size=batch_size)
 
   def get_snp_alignment_positions(self, ref_genome, marker_vids,
-                                  batch_size=5000):
+                                  batch_size=BATCH_SIZE):
     selector = '(ref_genome == "%s")' % ref_genome
     res = self.get_snp_alignments(selector, col_names=['marker_vid'],
                                   batch_size=batch_size)
