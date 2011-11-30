@@ -79,9 +79,9 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def id(self):
     return self.markersSetVID
 
-  def load_markers(self, load_flip=False):
+  def load_markers(self, load_flip=False, batch_size=5000):
     self.reload()
-    mdefs, msetc = self.proxy.get_snp_markers_set_content(self)
+    mdefs, msetc = self.proxy.get_snp_markers_set_content(self, batch_size)
     if load_flip:
       for (m, r) in izip(mdefs, msetc):
         m.flip = r['allele_flip']
