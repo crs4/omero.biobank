@@ -111,20 +111,54 @@ def analyze(family):
   %s
 
   """ % INDIVIDUAL_DEFINITION_DOC
+  if len(family) == 0:
+    return ([], [], [], [], {})
+
   founders     = []
   non_founders = []
   children = {}
   couples = set([])
+  by_id = {}
+  # HACK in special case for omero objects (see ticket:101)
+  #
+  if hasattr(family[0], 'omero_id'):
+    by_omero_id = {}
+    for x in family:
+      by_omero_id[x.omero_id] = x
+    def resolve(x):
+      if x is None:
+        return None
+      return by_omero_id[x.omero_id]
+  else:
+    def resolve(x):
+      return x
   for i in family:
+    by_id[i.id] = i
     if i.father is None and i.mother is None:
       founders.append(i)
     else:
       non_founders.append(i)
-      children.setdefault(i.father, set()).add(i)
-      children.setdefault(i.mother, set()).add(i)
-      couples.add((i.father, i.mother))
-  dangling = set(children) - set([x.id for x in (founders + non_founders)])
-  return (founders, non_founders, list(dangling), list(couples), children)
+      children.setdefault(resolve(i.father), set()).add(i)
+      children.setdefault(resolve(i.mother), set()).add(i)
+      couples.add((resolve(i.father), resolve(i.mother)))
+  if len(children) > 0:
+    insiders = founders + non_founders
+    parents = children.keys()
+    # HACK in special case when father and mother are given as labels,
+    # HACK this is needed because of a legacy bug in import.individual
+    if isinstance(parents[0], str):
+      insiders = [x.id for x in insiders]
+      dangling = [by_id[x.id] for x in
+                  filter(lambda x: x not in insiders, parents)]
+    else:
+      dangling = filter(lambda x: x not in insiders, parents)
+      tmp_children = {}
+      for k in children:
+        tmp_children[k.id] = children[k]
+      children = tmp_children
+  else:
+    dangling = []
+  return (founders, non_founders, dangling, list(couples), children)
 
 def compute_bit_complexity(family, genotyped):
   """
@@ -156,23 +190,24 @@ def compute_bit_complexity(family, genotyped):
   return 2*len(non_founders) - len(founders) - len(not_gt_couples)
 
 def down_propagate_front(family, children):
-  down_front = map(lambda x: set(children.get(x, [])), family)
+  down_front = map(lambda x: children.get(x.id, set([])), family)
   down_front = set([]).union(*down_front)
   return down_front
 
-def up_propagate_front(family):
-  up_front = map(lambda x: set([x.father, x.mother]), family)
+def up_propagate_front(family, resolve):
+  up_front = map(lambda x: set([resolve(x.father), resolve(x.mother)]), family)
   up_front = set([]).union(*up_front) - set([None])
   return up_front
 
-def propagate_family_helper(family, children):
+def propagate_family_helper(family, children, resolve):
+  # FIXME, remove tail recursion
   pre_size = len(family)
   down_front = down_propagate_front(family, children)
   family = family.union(down_front)
-  up_front = up_propagate_front(family)
+  up_front = up_propagate_front(family, resolve)
   family = family.union(up_front)
   if len(family) > pre_size:
-    return propagate_family_helper(family, children)
+    return propagate_family_helper(family, children, resolve)
   else:
     return family
 
@@ -180,10 +215,25 @@ def propagate_family(family, children):
   return list(propagate_family_helper(set(family), children))
 
 def split_disjoint(family, children):
+  if len(family) == 0:
+    return []
+  # HACK required by bug in CoreOmeroWrapper (see ticket:101)
+  if hasattr(family[0], 'omero_id'):
+    by_omero_id = {}
+    for x in family:
+      by_omero_id[x.omero_id] = x
+    def resolve(x):
+      if x is None:
+        return None
+      return by_omero_id[x.omero_id]
+  else:
+    def resolve(x):
+      return x
   splits = []
   family = set(family)
   while len(family) > 0:
-    split = propagate_family_helper(set([family.pop()]), children)
+    item = iter(family).next()
+    split = propagate_family_helper(set([item]), children, resolve)
     family = family - split
     splits.append(list(split))
   return splits
