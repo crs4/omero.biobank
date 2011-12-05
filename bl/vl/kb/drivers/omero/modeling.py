@@ -58,6 +58,17 @@ class ModelingAdapter(object):
     else:
       raise ValueError('Bad label %s value' % label)
 
+  def get_data_sample(self, label):
+    """
+    Return the DataSample object labeled 'label' or None if nothing
+    matches 'label'.
+    """
+    query = 'select d from DataSample d where d.label = :label'
+    pars = self.kb.ome_query_params({'label' : wp.ome_wrap(label, wp.STRING)})
+    result = self.kb.ome_operation("getQueryService", "findByQuery",
+                                   query, pars)
+    return None if result is None else self.kb.factory.wrap(result)
+
   def get_data_collection(self, label):
     """
     Return the DataCollection object labeled 'label' or

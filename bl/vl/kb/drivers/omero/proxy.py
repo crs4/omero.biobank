@@ -136,6 +136,9 @@ class Proxy(ProxyCore):
   def get_vessel(self, label):
     return self.madpt.get_vessel(label)
 
+  def get_data_sample(self, label):
+    return self.madpt.get_data_sample(label)
+
   def get_vessels(self, klass=vessels.Vessel, content=None):
     return self.madpt.get_vessels(klass, content)
 
