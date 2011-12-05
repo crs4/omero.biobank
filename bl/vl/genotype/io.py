@@ -269,7 +269,13 @@ class PedWriter(object):
 
     allele_patterns = { 0 : 'A A', 1 : 'B B', 2 : 'A B', 3 : '0 0'}
     def dump_genotype(fo, data_sample):
-      probs, conf = data_sample.resolve_to_data()
+      if data_sample is None:
+        N = len(self.selected_markers)
+        probs = np.zeros((2, N), dtype=np.float32)
+        probs[:] = 1/3.
+        confs = np.zeros((N,), dtype=np.float32)
+      else:
+        probs, conf = data_sample.resolve_to_data()
       probs = probs[:, self.selected_markers] if self.selected_markers \
                                               else probs
       fo.write('\t'.join([allele_patterns[x]
@@ -287,7 +293,7 @@ class PedWriter(object):
       pheno  = 0 if not phenotype_by_id else phenotype_by_id[i.id]
       self.ped_file.write('%s\t%s\t%s\t%s\t%s\t%s\t' %
                           (family_label, i.id, fat_id, mot_id, gender, pheno))
-      dump_genotype(self.ped_file, data_sample_by_id[i.id])
+      dump_genotype(self.ped_file, data_sample_by_id.get(i.id))
 
   def close(self):
     """

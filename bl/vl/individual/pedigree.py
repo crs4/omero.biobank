@@ -212,7 +212,22 @@ def propagate_family_helper(family, children, resolve):
     return family
 
 def propagate_family(family, children):
-  return list(propagate_family_helper(set(family), children))
+  # FIXME: duplicate code with split_disjoint
+  if len(family) == 0:
+    return []
+  # HACK required by bug in CoreOmeroWrapper (see ticket:101)
+  if hasattr(family[0], 'omero_id'):
+    by_omero_id = {}
+    for x in family:
+      by_omero_id[x.omero_id] = x
+    def resolve(x):
+      if x is None:
+        return None
+      return by_omero_id[x.omero_id]
+  else:
+    def resolve(x):
+      return x
+  return list(propagate_family_helper(set(family), children, resolve))
 
 def split_disjoint(family, children):
   if len(family) == 0:
