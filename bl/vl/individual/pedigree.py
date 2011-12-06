@@ -1,8 +1,6 @@
 """
 A quick and dirty collection of pedigree manipulation functions.
-
 """
-import itertools as it
 
 INDIVIDUAL_DEFINITION_DOC = """
   An individual I is, as far this function is concerned, an object
@@ -16,8 +14,6 @@ INDIVIDUAL_DEFINITION_DOC = """
 
 MAX_COMPLEXITY=19
 
-
-#-----------------------------------------------------------------------------
 
 def import_pedigree(recorder, istream):
   """
@@ -41,7 +37,6 @@ def import_pedigree(recorder, istream):
   for i in istream:
     family.append(i)
     by_id[i.id] = (i, None)
-
   def register(x):
     i = recorder.retrieve(x.id)
     if not i:
@@ -113,34 +108,20 @@ def analyze(family):
   """ % INDIVIDUAL_DEFINITION_DOC
   if len(family) == 0:
     return ([], [], [], [], {})
-
   founders     = []
   non_founders = []
   children = {}
   couples = set([])
   by_id = {}
-  # HACK in special case for omero objects (see ticket:101)
-  #
-  if hasattr(family[0], 'omero_id'):
-    by_omero_id = {}
-    for x in family:
-      by_omero_id[x.omero_id] = x
-    def resolve(x):
-      if x is None:
-        return None
-      return by_omero_id[x.omero_id]
-  else:
-    def resolve(x):
-      return x
   for i in family:
     by_id[i.id] = i
     if i.father is None and i.mother is None:
       founders.append(i)
     else:
       non_founders.append(i)
-      children.setdefault(resolve(i.father), set()).add(i)
-      children.setdefault(resolve(i.mother), set()).add(i)
-      couples.add((resolve(i.father), resolve(i.mother)))
+      children.setdefault(i.father, set()).add(i)
+      children.setdefault(i.mother, set()).add(i)
+      couples.add((i.father, i.mother))
   if len(children) > 0:
     insiders = founders + non_founders
     parents = children.keys()
@@ -159,6 +140,7 @@ def analyze(family):
   else:
     dangling = []
   return (founders, non_founders, dangling, list(couples), children)
+
 
 def compute_bit_complexity(family, genotyped):
   """
@@ -189,69 +171,50 @@ def compute_bit_complexity(family, genotyped):
                           couples)
   return 2*len(non_founders) - len(founders) - len(not_gt_couples)
 
+
 def down_propagate_front(family, children):
   down_front = map(lambda x: children.get(x.id, set([])), family)
   down_front = set([]).union(*down_front)
   return down_front
 
-def up_propagate_front(family, resolve):
-  up_front = map(lambda x: set([resolve(x.father), resolve(x.mother)]), family)
+
+def up_propagate_front(family):
+  up_front = map(lambda x: set([x.father, x.mother]), family)
   up_front = set([]).union(*up_front) - set([None])
   return up_front
 
-def propagate_family_helper(family, children, resolve):
+
+def propagate_family_helper(family, children):
   # FIXME, remove tail recursion
   pre_size = len(family)
   down_front = down_propagate_front(family, children)
   family = family.union(down_front)
-  up_front = up_propagate_front(family, resolve)
+  up_front = up_propagate_front(family)
   family = family.union(up_front)
   if len(family) > pre_size:
-    return propagate_family_helper(family, children, resolve)
+    return propagate_family_helper(family, children)
   else:
     return family
 
+
 def propagate_family(family, children):
-  # FIXME: duplicate code with split_disjoint
   if len(family) == 0:
     return []
-  # HACK required by bug in CoreOmeroWrapper (see ticket:101)
-  if hasattr(family[0], 'omero_id'):
-    by_omero_id = {}
-    for x in family:
-      by_omero_id[x.omero_id] = x
-    def resolve(x):
-      if x is None:
-        return None
-      return by_omero_id[x.omero_id]
-  else:
-    def resolve(x):
-      return x
-  return list(propagate_family_helper(set(family), children, resolve))
+  return list(propagate_family_helper(set(family), children))
+
 
 def split_disjoint(family, children):
   if len(family) == 0:
-    return []
-  # HACK required by bug in CoreOmeroWrapper (see ticket:101)
-  if hasattr(family[0], 'omero_id'):
-    by_omero_id = {}
-    for x in family:
-      by_omero_id[x.omero_id] = x
-    def resolve(x):
-      if x is None:
-        return None
-      return by_omero_id[x.omero_id]
-  else:
-    def resolve(x):
-      return x
+    return []    
   splits = []
   family = set(family)
   while len(family) > 0:
     item = iter(family).next()
-    split = propagate_family_helper(set([item]), children, resolve)
+    split = propagate_family_helper(set([item]), children)
     family = family - split
     splits.append(list(split))
   return splits
+
 
 def grow_family(seeds, children, genotyped, max_complexity=MAX_COMPLEXITY):
   """
@@ -289,6 +252,7 @@ def grow_family(seeds, children, genotyped, max_complexity=MAX_COMPLEXITY):
     family = new_fam
   return list(family)
 
+
 def split_family(family, genotyped, max_complexity=MAX_COMPLEXITY):
   """
   Split a family pedigree in partially overlapping sub pedigrees with
@@ -324,6 +288,8 @@ def split_family(family, genotyped, max_complexity=MAX_COMPLEXITY):
   non_founders_not_genotyped = filter(lambda i: not genotyped[i.id],
                                       non_founders)
 
+  # import itertools as it
+  #
   # distance = {}
   # for c in it.combinations(non_founders_not_genotyped):
   #   distance[c] = distance(c[0], c[1])
