@@ -1,15 +1,10 @@
-"""
-Tries to write out
-
-"""
+#FIXME: needs a specific setup on the local omero server
 
 import unittest
-import time, os
-
-import numpy as np
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.genotype.io import PedWriter
+
 
 class ped_writer(unittest.TestCase):
 
@@ -49,4 +44,3 @@ def suite():
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)
   runner.run((suite()))
-

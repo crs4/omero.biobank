@@ -1,9 +1,8 @@
-import unittest
-import time, os
+# FIXME: update and merge with tests/bl/vl/individual/test_pedigree.py
 
-import numpy as np
+import unittest, os
+import bl.vl.individual.pedigree as ped
 
-import bl.vl.genotype.pedigree as ped
 
 class individual(object):
   def __init__(self, iid, sex, father=None, mother=None, genotyped=False):
@@ -12,6 +11,7 @@ class individual(object):
     self.father = father
     self.mother = mother
     self.genotyped = genotyped
+
 
 def read_ped_file(pedfile):
   fin = open(pedfile)
@@ -29,6 +29,7 @@ def read_ped_file(pedfile):
     inds[k].father = inds[inds[k].father] if inds.has_key(inds[k].father) else None
     inds[k].mother = inds[inds[k].mother] if inds.has_key(inds[k].mother) else None
   return inds.values()
+
 
 class split(unittest.TestCase):
 
@@ -105,6 +106,7 @@ class split(unittest.TestCase):
         for s in subfs:
           self.assertTrue(ped.compute_bit_complexity(s) <= max_complexity)
 
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(split('compute_bit_complexity'))
@@ -118,4 +120,3 @@ def suite():
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)
   runner.run((suite()))
-

@@ -1,3 +1,9 @@
+die() {
+    echo $1 1>&2
+    exit 1
+}
+
+
 IMPORTER='../../../tools/importer -U root -P romeo --operator aen'
 KB_QUERY='../../../tools/kb_query -U root -P romeo --operator aen'
 CREATE_FAKE_GDO='python create_fake_gdo.py --U root -P romeo'
@@ -9,8 +15,13 @@ echo 'Running tests on dataset:' ${DATA_DIR}
 STUDY_LABEL=TEST01
 
 
-${IMPORTER} -i ${DATA_DIR}/study.tsv -o study_mapping.tsv study
-${IMPORTER} -i ${DATA_DIR}/individuals.tsv -o individual_mapping.tsv individual
+${IMPORTER} -i ${DATA_DIR}/study.tsv -o study_mapping.tsv study || die "import study failed"
+
+${IMPORTER} -i ${DATA_DIR}/individuals.tsv -o individual_mapping.tsv individual || die "import individual failed"
+
+
+# FIXME: add "|| die MSG" to all steps
+
 ${KB_QUERY} -o blood_sample_mapped.tsv \
              map_vid -i ${DATA_DIR}/blood_samples.tsv \
                  --column individual_label\
