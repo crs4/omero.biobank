@@ -1,9 +1,6 @@
-import os, unittest, time
-import itertools as it
-import numpy as np
-from bl.vl.kb import KBError
-
+import unittest
 from bl.vl.kb.drivers.omero.wrapper import OmeroWrapper
+
 
 class TestOmeroWrapper(unittest.TestCase):
   def setUp(self):
@@ -30,10 +27,12 @@ class TestOmeroWrapper(unittest.TestCase):
     self.assertTrue(hasattr(f, 'bar'))
     self.assertEqual(f.get_bar(), 22)
 
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestOmeroWrapper('test_bare_attrs'))
   return suite
+
 
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)

@@ -1,9 +1,3 @@
-import omero.model as om
-import omero.rtypes as ort
-
-import bl.vl.utils as vlu
-import bl.vl.utils.ome_utils as vluo
-
 """
 
 Omero Objects Wrapping
@@ -14,6 +8,13 @@ Omero Objects Wrapping
    write docs.
 
 """
+import omero.model as om
+import omero.rtypes as ort
+
+import bl.vl.utils as vlu
+import bl.vl.utils.ome_utils as vluo
+from bl.vl.kb import KBError
+
 
 REQUIRED = 'required'
 OPTIONAL = 'optional'
@@ -59,13 +60,18 @@ class CoreOmeroWrapper(object):
     super(CoreOmeroWrapper, self).__setattr__('ome_obj', ome_obj)
     super(CoreOmeroWrapper, self).__setattr__('proxy', proxy)
 
+  def __hash__(self):
+    if not self.is_mapped():
+      raise TypeError("non-persistent objects are not hashable")
+    return hash((self.ome_obj.__class__.__name__, self.ome_obj.id._val))
 
   def __eq__(self, obj):
     if type(obj) != self.__class__:
       return False
-    return ( type(obj.ome_obj) == type(self.ome_obj)
-             and
-             obj.omero_id == self.omero_id)
+    try:
+      return hash(self) == hash(obj)
+    except TypeError:
+      raise KBError("non-persistent objects are not comparable")
 
   def __config__(self, ome_obj, conf):
     pass
@@ -233,6 +239,7 @@ class MetaWrapper(type):
       klass.__enums__ = enums
     return klass
 
+
 class ObjectFactory(object):
   def __init__(self, proxy):
     self.proxy = proxy
@@ -246,6 +253,7 @@ class ObjectFactory(object):
     o.configure(conf)
     return o
 
+
 class OmeroWrapper(CoreOmeroWrapper):
   """
   All kb.drivers.omero classes should derive from this class.
@@ -255,7 +263,6 @@ class OmeroWrapper(CoreOmeroWrapper):
   __metaclass__ = MetaWrapper
 
   OME_TABLE = None
-
 
   @classmethod
   def is_enum(klass):
@@ -268,11 +275,8 @@ class OmeroWrapper(CoreOmeroWrapper):
       if not o.is_mapped():
         proxy.update_by_example(o)
 
-
   def __preprocess_conf__(self, conf):
     return conf
 
   def configure(self, conf):
     self.__config__(self.ome_obj, conf)
-
-
