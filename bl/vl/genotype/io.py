@@ -1,6 +1,7 @@
 import array, struct
 import numpy as np
 from bl.core.io import MessageStreamReader
+from bl.vl.genotype.algo import project_to_discrete_genotype
 
 
 class Error(Exception):
@@ -14,7 +15,6 @@ class Error(Exception):
 
 class InvalidRecordError(Error): pass
 class MismatchError(Error): pass
-
 
 
 # merlin-1.1.2/libsrc/PedigreeDescription.cpp
@@ -143,14 +143,12 @@ class PedLineParser(object):
         raise MismatchError("%r is not consistent with DAT types" % preview)
 
 
-from bl.vl.genotype.algo import project_to_discrete_genotype
-
 class PedWriter(object):
   """
   A ped file writer.
 
   It will output a plink formatted ped and map pair for a collection
-  of families and related genotyping and phenotyping infomation.
+  of families and related genotype and phenotype information.
 
   Expected usage:
 
@@ -169,7 +167,6 @@ class PedWriter(object):
   './foo.map', in the format described in `ped link`_.
 
   .. _ped link: http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped
-
   """
   def __init__(self, mset, base_path="bl_vl_ped",
                ref_genome=None, selected_markers=None):
@@ -178,8 +175,8 @@ class PedWriter(object):
     subset of the markers if selected_markers is set.  It is possible
     to request that the map file contains genomic markers positions
     against a reference genome. If the latter is not provided, the map
-    file will contain default values, i.d., (0, 0). It will raise a
-    ValueError if there are no alignment information for the markers
+    file will contain default values, i. e., (0, 0). It will raise a
+    ValueError if there is no alignment information for the markers
     in mset on ref_genome.
 
     :param mset: a reference markers set that will be used to generate
@@ -187,17 +184,16 @@ class PedWriter(object):
     :type mset: SNPMarkersSet
 
     :param base_path: optional base_path that will be used to create the
-                      .ped and .map files. Defaults to 'bl_vl_ped'.
-    :type str:
+                      .ped and .map files. Defaults to 'bl_vl_ped'
+    :type base_path: str
 
     :param ref_genome: optional reference genome against which the
                        markers are aligned in the map file.
-    :type str:
+    :type ref_genome: str
 
     :param selected_markers: an array with the indices of the selected
                              markers.
-    :type numpy.array of numpy.int32:
-
+    :type selected_markers: numpy.array of numpy.int32
     """
 
     self.mset = mset
@@ -207,9 +203,13 @@ class PedWriter(object):
     self.ped_file = None
 
     try:
-      len(self.mset)
+      N = len(self.mset)
     except ValueError as e:
       self.mset.load_markers()
+      N = len(self.mset)
+
+    self.null_probs = np.empty((2, N), dtype=np.float32)
+    self.null_probs.fill(1/3.)
 
     if self.ref_genome:
       self.mset.load_alignments(self.ref_genome)
@@ -223,7 +223,7 @@ class PedWriter(object):
     """
     Write out the map file.
 
-    **NOTE:** we currently do not have a way to estimate the # genetic
+    **NOTE:** we currently do not have a way to estimate the genetic
     distance, so we force it to 0.
     """
     def chrom_label(x):
@@ -237,7 +237,6 @@ class PedWriter(object):
         # FIXME: we currently do not have a way to estimate the
         # genetic distance, so we force it to 0
         fo.write('%s\t%s\t%s\t%s\n' % (chrom, m.label, 0, pos))
-
     with open(self.base_path + '.map', 'w') as fo:
       fo.write('# map based on mset %s aligned on %s\n' %
                (self.mset.id, self.ref_genome))
@@ -248,40 +247,36 @@ class PedWriter(object):
   def write_family(self, family_label, family_members, data_sample_by_id,
                    phenotype_by_id=None):
     """
-    Write out ped file lines corresponding to individual in a given
-    list, together with genotypes and, optional, phenotypic information.
+    Write out ped file lines corresponding to individuals in a given
+    list, together with genotypes and, optionally, phenotypes.
 
-    :param family_label: what to write as the family id.
-    :type str:
+    :param family_label: what to write as the family id
+    :type family_label: str
 
     :param family_members: relevant elements of the family
-    :type iterator on Individual:
+    :type family_members: iterator on Individual
 
     :param data_sample_by_id: a dict like object that maps individual ids to
-                              GenotypeDataSample objects.
-    :type dict:
+                              GenotypeDataSample objects
+    :type data_sample_by_id: dict
 
-    :param phenotype_by_id: an optional dict like object that maps
-                            individual ids to value that can be put in
-                            column 6 (phenotype) of a ped file.
-    :type dict:
+    :param phenotype_by_id: an optional dict-like object that maps
+                            individual ids to values that can be put in
+                            column 6 (phenotype) of a ped file
+    :type phenotype_by_id: dict
     """
 
     allele_patterns = { 0 : 'A A', 1 : 'B B', 2 : 'A B', 3 : '0 0'}
     def dump_genotype(fo, data_sample):
       if data_sample is None:
-        N = len(self.selected_markers)
-        probs = np.zeros((2, N), dtype=np.float32)
-        probs[:] = 1/3.
-        confs = np.zeros((N,), dtype=np.float32)
+        probs = self.null_probs
       else:
-        probs, conf = data_sample.resolve_to_data()
-      probs = probs[:, self.selected_markers] if self.selected_markers \
-                                              else probs
+        probs, _ = data_sample.resolve_to_data()
+      if self.selected_markers:
+        probs = probs[:, self.selected_markers]
       fo.write('\t'.join([allele_patterns[x]
                           for x in project_to_discrete_genotype(probs)]))
       fo.write('\n')
-
     if self.ped_file is None:
       self.ped_file = open(self.base_path + '.ped', 'w')
     for i in family_members:
@@ -296,9 +291,6 @@ class PedWriter(object):
       dump_genotype(self.ped_file, data_sample_by_id.get(i.id))
 
   def close(self):
-    """
-    Flush the files and close them.
-    """
     if self.ped_file:
       self.ped_file.close()
     self.ped_file = None
