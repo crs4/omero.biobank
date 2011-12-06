@@ -40,8 +40,8 @@ def import_pedigree(recorder, istream):
   def register(x):
     i = recorder.retrieve(x.id)
     if not i:
-      father = None if x.father is None else by_id[x.father][1]
-      mother = None if x.mother is None else by_id[x.mother][1]
+      father = None if x.father is None else by_id[x.father.id][1]
+      mother = None if x.mother is None else by_id[x.mother.id][1]
       i = recorder.record(x.id, x.gender, father, mother)
     by_id[x.id] = (x, i)
 
@@ -97,7 +97,7 @@ def analyze(family):
 
      - C  the list of couples
 
-     - CH a dictionary of children set with individual id as key.
+     - CH a dictionary of children set with individual as key.
 
   :param family: a list of individuals
   :type  family: list
@@ -112,9 +112,7 @@ def analyze(family):
   non_founders = []
   children = {}
   couples = set([])
-  by_id = {}
   for i in family:
-    by_id[i.id] = i
     if i.father is None and i.mother is None:
       founders.append(i)
     else:
@@ -125,18 +123,7 @@ def analyze(family):
   if len(children) > 0:
     insiders = founders + non_founders
     parents = children.keys()
-    # HACK in special case when father and mother are given as labels,
-    # HACK this is needed because of a legacy bug in import.individual
-    if isinstance(parents[0], str):
-      insiders = [x.id for x in insiders]
-      dangling = [by_id[x.id] for x in
-                  filter(lambda x: x not in insiders, parents)]
-    else:
-      dangling = filter(lambda x: x not in insiders, parents)
-      tmp_children = {}
-      for k in children:
-        tmp_children[k.id] = children[k]
-      children = tmp_children
+    dangling = filter(lambda x: x not in insiders, parents)
   else:
     dangling = []
   return (founders, non_founders, dangling, list(couples), children)

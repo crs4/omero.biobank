@@ -52,6 +52,7 @@ import time
 import json
 
 
+# FIXME: move this class somewhere else
 class Ind(object):
   """
   An utility class that quacks as expected by import_pedigree
@@ -70,8 +71,14 @@ class Ind(object):
 
   def __str__(self):
     return '%s (%s) [%s, %s]' % (self.id, self.gender,
-                                 self.father if self.father else None,
-                                 self.mother if self.mother else None)
+                                 self.father.id if self.father else None,
+                                 self.mother.id if self.mother else None)
+  def __hash__(self):
+    return hash(self.id)
+
+  def __eq__(self, obj):
+    return hash(self) == hash(obj)
+
 
 
 from bl.vl.individual.pedigree  import import_pedigree
@@ -250,6 +257,20 @@ class Recorder(Core):
           self.logger.critical(reject + msg)
           raise ValueError(msg)
 
+
+def make_ind_by_label(records):
+  by_label = {}
+  for r in records:
+    k = (r['study'], r['label'])
+    father = None if r['father'] == 'None' else (r['study'], r['father'])
+    mother = None if r['mother'] == 'None' else (r['study'], r['mother'])
+    by_label[k] = Ind(k, r['gender'], father, mother)
+  for k, i in by_label.iteritems():
+    i.father = by_label.get(i.father)
+    i.mother = by_label.get(i.mother)
+  return by_label
+
+
 help_doc = """
 import new individual definitions into a virgil system and register
 them to a study.
@@ -267,9 +288,11 @@ def make_parser_individual(parser):
 def canonize_records(args, records):
   fields = ['study']
   for f in fields:
-    if hasattr(args, f) and getattr(args, f) is not None:
+    v = getattr(args, f, None)
+    if v is not None:
       for r in records:
-        r[f] = getattr(args, f)
+        r[f] = v
+
 
 def import_individual_implementation(logger, args):
 
@@ -291,15 +314,8 @@ def import_individual_implementation(logger, args):
                       action_setup_conf=action_setup_conf, logger=logger)
 
   recorder.do_consistency_checks(records)
-
-  def istream():
-    for r in records:
-      k = (r['study'], r['label'])
-      i = Ind(k, r['gender'],
-              None if r['father'] == 'None' else (r['study'], r['father']),
-              None if r['mother'] == 'None' else (r['study'], r['mother']))
-      yield i
-  import_pedigree(recorder, istream())
+  by_label = make_ind_by_label(records)
+  import_pedigree(recorder, by_label.itervalues())
   recorder.clean_up()
 
 

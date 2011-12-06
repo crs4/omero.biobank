@@ -5,13 +5,8 @@ import numpy as np
 import csv
 
 from bl.vl.individual.pedigree import import_pedigree, analyze
+from bl.vl.app.importer.individual import Ind, make_ind_by_label
 
-class Ind(object):
-  def __init__(self, label, father, mother, gender):
-    self.id = label
-    self.father = father if not father == 'None' else None
-    self.mother = mother if not mother == 'None' else None
-    self.gender = gender
 
 class TestProxyCore(unittest.TestCase):
   def setUp(self):
@@ -32,34 +27,31 @@ class TestProxyCore(unittest.TestCase):
         return True
       def dump_out(self):
         print 'dumping out'
-
-    def istream(fname):
-      f = csv.DictReader(open(fname), delimiter='\t')
-      for t in f:
-        father = t['father'] if not t['father'] == 'None' else None
-        mother = t['mother'] if not t['mother'] == 'None' else None
-        yield Ind(t['label'], father, mother, t['gender'])
-    import_pedigree(Recorder(), istream('individuals.tsv'))
+    with open("individuals.tsv") as f:
+      reader = csv.DictReader(f, delimiter='\t')
+      records = [r for r in reader]
+    by_label = make_ind_by_label(records)
+    import_pedigree(Recorder(), by_label.itervalues())
 
   def test_analyze(self):
     Male, Female = ['male', 'female']
     founders = [
-      Ind(0, None, None, Male),
-      Ind(1, None, None, Female),
-      Ind(2, None, None, Male),
-      Ind(3, None, None, Female),
+      Ind(0, Male, None, None),
+      Ind(1, Female, None, None),
+      Ind(2, Male, None, None),
+      Ind(3, Female, None, None),
       ]
     outsiders = [
-      Ind(100, None, None, Male),
-      Ind(101, None, None, Female),
+      Ind(100, Male, None, None),
+      Ind(101, Female, None, None),
       ]
     non_founders = [
-      Ind(4, founders[0], founders[1], Male),
-      Ind(5, founders[0], founders[1], Female),
-      Ind(6, founders[2], founders[3], Male),
-      Ind(7, founders[2], founders[3], Female),
-      Ind(8, outsiders[0], outsiders[1], Male),
-      Ind(9, outsiders[0], outsiders[1], Female),
+      Ind(4, Male, founders[0], founders[1]),
+      Ind(5, Female, founders[0], founders[1]),
+      Ind(6, Male, founders[2], founders[3]),
+      Ind(7, Female, founders[2], founders[3]),
+      Ind(8, Male, outsiders[0], outsiders[1]),
+      Ind(9, Female, outsiders[0], outsiders[1]),
       ]
     couples = [(founders[0], founders[1]),
                (founders[2], founders[3]),
@@ -88,8 +80,8 @@ class TestProxyCore(unittest.TestCase):
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(TestProxyCore('test_import_pedigree'))
   suite.addTest(TestProxyCore('test_analyze'))
+  suite.addTest(TestProxyCore('test_import_pedigree'))
   return suite
 
 if __name__ == '__main__':
