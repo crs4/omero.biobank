@@ -12,6 +12,7 @@ import omero_SharedResources_ice
 
 import bl.vl.kb as kb
 from wrapper import ome_wrap
+from utils import ome_hash
 
 
 BATCH_SIZE = 5000
@@ -88,6 +89,23 @@ class ProxyCore(object):
                       'long'   : omero.grid.LongColumn,
                       'double' : omero.grid.DoubleColumn,
                       'bool'   : omero.grid.BoolColumn,}
+
+  _CACHE = {}
+
+  def store_to_cache(self, obj):
+    self.__class__._CACHE[ome_hash(obj.ome_obj)] = obj
+
+  def del_from_cache(self, ome_obj):
+    try:
+      del self.__class__._CACHE[ome_hash(ome_obj)]
+    except KeyError:
+      pass
+
+  def get_from_cache(self, ome_obj):
+    return self._CACHE.get(ome_hash(ome_obj))
+
+  def clear_cache(self):
+    self.__class__._CACHE.clear()
 
   def __init__(self, host, user, passwd, group=None, session_keep_tokens=1):
     self.user = user
@@ -204,14 +222,14 @@ class ProxyCore(object):
       self.logger.error(msg)
       self.logger.error('omero.ValidationException object: %s' % type(obj))
       raise kb.KBError(msg)
-    else:
-      obj.ome_obj = result
+    obj.ome_obj = result
+    self.store_to_cache(obj)
     return obj
 
   @debug_boundary
   def save_array(self, array):
     """
-    Save and return an array of kb object.
+    Save and return an array of kb objects.
     """
     try:
       result = self.ome_operation("getUpdateService", "saveAndReturnArray",
@@ -221,12 +239,13 @@ class ProxyCore(object):
       #                             obj.OME_TABLE, result.id._val)
     except omero.ValidationException, e:
       msg = 'omero.ValidationException: %s' % e.message
-      self.logger.error('omero.ValidationException: %s' % e.message)
+      self.logger.error(msg)
       raise kb.KBError(msg)
     if len(result) != len(array):
       raise kb.KBError('bad return array len')
     for o, v in it.izip(array, result):
       o.ome_obj = v
+      self.store_to_cache(o)
     return array
 
   @debug_boundary
@@ -236,11 +255,13 @@ class ProxyCore(object):
     """
     try:
       result = self.ome_operation("getUpdateService", "deleteObject",
-                                    kb_obj.ome_obj)
+                                  kb_obj.ome_obj)
     except omero.ApiUsageException, e:
       raise kb.KBError("trying to delete non-persistent object %s", e)
     except omero.ValidationException:
       raise kb.KBError("object does not exist")
+    else:
+      self.del_from_cache(kb_obj.ome_obj)
     return result
 
   #----------------------------------------------------------------------------

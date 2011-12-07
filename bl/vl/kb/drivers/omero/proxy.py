@@ -646,7 +646,6 @@ class Proxy(ProxyCore):
   def delete_ehr_tables(self):
     self.delete_table(self.eadpt.EAV_EHR_TABLE)
 
-
   def add_ehr_record(self, action, timestamp, archetype, rec):
     """
 

@@ -15,6 +15,8 @@ import bl.vl.utils as vlu
 import bl.vl.utils.ome_utils as vluo
 from bl.vl.kb import KBError
 
+from utils import ome_hash
+
 
 REQUIRED = 'required'
 OPTIONAL = 'optional'
@@ -43,10 +45,6 @@ WRAPPING = {TIMESTAMP : ort.rtime,
 def ome_wrap(v, wtype=None):
   return WRAPPING[wtype](v) if wtype else ort.wrap(v)
 
-
-def ome_hash(ome_obj):
-  return hash((ome_obj.__class__.__name__, ome_obj.id._val))
-  
 
 class CoreOmeroWrapper(object):
 
@@ -163,6 +161,7 @@ class CoreOmeroWrapper(object):
 
 
 class MetaWrapper(type):
+  
   __KNOWN_OME_KLASSES__ = {}
 
   @classmethod
@@ -250,8 +249,14 @@ class ObjectFactory(object):
     self.proxy = proxy
 
   def wrap(self, ome_obj):
-    klass = MetaWrapper.__KNOWN_OME_KLASSES__[type(ome_obj)]
-    return klass(ome_obj=ome_obj, proxy=self.proxy)
+    cached = self.proxy.get_from_cache(ome_obj)
+    if cached is not None:
+      return cached
+    else:
+      klass = MetaWrapper.__KNOWN_OME_KLASSES__[type(ome_obj)]
+      o = klass(ome_obj=ome_obj, proxy=self.proxy)
+      self.proxy.store_to_cache(o)
+      return o
 
   def create(self, klass, conf):
     o = klass(ome_obj=None, proxy=self.proxy)
