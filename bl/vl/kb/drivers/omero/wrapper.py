@@ -44,6 +44,10 @@ def ome_wrap(v, wtype=None):
   return WRAPPING[wtype](v) if wtype else ort.wrap(v)
 
 
+def ome_hash(ome_obj):
+  return hash((ome_obj.__class__.__name__, ome_obj.id._val))
+  
+
 class CoreOmeroWrapper(object):
 
   OME_TABLE = None
@@ -63,7 +67,7 @@ class CoreOmeroWrapper(object):
   def __hash__(self):
     if not self.is_mapped():
       raise TypeError("non-persistent objects are not hashable")
-    return hash((self.ome_obj.__class__.__name__, self.ome_obj.id._val))
+    return ome_hash(self.ome_obj)
 
   def __eq__(self, obj):
     if type(obj) != self.__class__:
@@ -241,6 +245,7 @@ class MetaWrapper(type):
 
 
 class ObjectFactory(object):
+  
   def __init__(self, proxy):
     self.proxy = proxy
 

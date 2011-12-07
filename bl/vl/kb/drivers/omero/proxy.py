@@ -3,17 +3,18 @@
 FIXME
 
 """
+import hashlib, time, pwd, json, os
+import itertools as it
+
 # This is actually used in the meta class magic
 import omero.model as om
+
 import bl.vl.utils as vlu
-
 from bl.vl.utils.snp import convert_to_top
-
 from bl.vl.kb.dependency import DependencyTree
 from bl.vl.kb import mimetypes
 
 from proxy_core import ProxyCore
-
 from wrapper import ObjectFactory, MetaWrapper
 
 import snp_markers_set
@@ -26,15 +27,13 @@ import individual
 import location
 import demographic
 
-import hashlib, time, pwd, json, os
-import itertools as it
-
 from genotyping import GenotypingAdapter
 from modeling   import ModelingAdapter
 from eav        import EAVAdapter
 from ehr        import EHR
 from genotyping import Marker
 from admin      import Admin
+
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 BATCH_SIZE = 5000
@@ -155,9 +154,9 @@ class Proxy(ProxyCore):
   def get_data_objects(self, sample):
     return self.madpt.get_data_objects(sample)
 
+
   # GENOTYPING related utility functions
   # ====================================
-
 
   def delete_snp_marker_defitions_table(self):
     self.delete_table(self.gadpt.SNP_MARKER_DEFINITIONS_TABLE)
@@ -297,6 +296,7 @@ class Proxy(ProxyCore):
   def get_gdo(self, set_vid, vid, indices=None):
     return self.gadpt.get_gdo(set_vid, vid, indices)
 
+
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
 
@@ -350,7 +350,6 @@ class Proxy(ProxyCore):
     action = self.factory.create(a_klass, conf).save()
     action.unload()
     return action
-
 
   def create_markers(self, source, context, release,
                      ref_rs_genome, dbsnp_build, stream, action):
@@ -549,7 +548,6 @@ class Proxy(ProxyCore):
     klass = getattr(self, data_sample_klass_name)
     return (d for d in self.dt.get_connected(individual, aklass=klass))
 
-
   def get_vessels_by_individual(self, individual, vessel_klass_name='Vessel'):
     """
     Syntactic sugar to simplify the looping in Vessels connected to an
@@ -570,7 +568,6 @@ class Proxy(ProxyCore):
     if not self.dt:
       self.update_dependency_tree()
     return (v for v in self.dt.get_connected(individual, aklass=klass))
-
 
   def add_gdo_data_object(self, action, sample, probs, confs):
     """
@@ -638,6 +635,7 @@ class Proxy(ProxyCore):
     query = 'from DataObject do where do.sample.id in (%s)' % ids
     dos = self.find_all_by_query(query, None)
     return get_gdo_iterator_on_list(dos)
+
 
   # EVA related utility functions
   # =============================

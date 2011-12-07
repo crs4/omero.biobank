@@ -1,18 +1,16 @@
+import time, logging
+logger = logging.getLogger("proxy_core")
+import itertools as it
+import numpy as np
+
 import omero
 import omero.rtypes as ort
 import omero_sys_ParametersI as osp
 import omero_ServerErrors_ice  # magically adds exceptions to the omero module
-
 import omero_Tables_ice
 import omero_SharedResources_ice
 
 import bl.vl.kb as kb
-
-import itertools as it
-import numpy as np
-import time as time
-import os
-
 from wrapper import ome_wrap
 
 
@@ -35,6 +33,7 @@ def convert_coordinates_to_np(d):
     npd[c.name] = c.values
   return npd
 
+
 def convert_to_numpy_record_type(d):
   def convert_type(o):
     if isinstance(o, omero.grid.LongColumn):
@@ -47,15 +46,13 @@ def convert_to_numpy_record_type(d):
       return '|S%d' % o.size
   return [(c.name, convert_type(c)) for c in d]
 
+
 def convert_from_numpy(x):
   if isinstance(x, np.int64):
     return int(x)
   else:
     return x
 
-import logging
-
-logger = logging.getLogger("proxy_core")
 
 counter = 0
 def debug_boundary(f):
@@ -71,11 +68,12 @@ def debug_boundary(f):
     return res
   return debug_boundary_wrapper
 
+
 class ProxyCore(object):
   """
   A knowledge base implemented as a driver for OMERO.
 
-  NOTE: keeping an open session leads to bad performances, because the
+  NOTE: keeping an open session leads to bad performance, because the
   Java garbage collector is called automatically and
   unpredictably. You cannot force garbage collection on an open
   session unless you are using Java. For this reason, we open a new
@@ -89,8 +87,7 @@ class ProxyCore(object):
   OME_TABLE_COLUMN = {'string' : omero.grid.StringColumn,
                       'long'   : omero.grid.LongColumn,
                       'double' : omero.grid.DoubleColumn,
-                      'bool'   : omero.grid.BoolColumn,
-                      }
+                      'bool'   : omero.grid.BoolColumn,}
 
   def __init__(self, host, user, passwd, group=None, session_keep_tokens=1):
     self.user = user
@@ -130,7 +127,6 @@ class ProxyCore(object):
       self.client.closeSession()
       self.current_session = None
       self.transaction_tokens = 0
-
 
   def ome_query_params(self, conf):
     params = osp.ParametersI()
@@ -175,7 +171,6 @@ class ProxyCore(object):
     o.ome_obj = res
     o.proxy = self
 
-
   def reload_object(self, o, fields=None):
     "FIXME this is an hack...."
     def load_ome_obj(ome_obj):
@@ -185,7 +180,6 @@ class ProxyCore(object):
       if not res:
         raise ValueError('cannot load ome_obj %s'  % ome_obj)
       return res
-
     res = load_ome_obj(o.ome_obj)
     if fields:
       for f in fields:
@@ -267,13 +261,11 @@ class ProxyCore(object):
       ofiles = self._list_table_copies(table_name)
     finally:
       self.disconnect()
-
     if len(ofiles) != 1:
        raise kb.KBError('the requested %s table is missing' % table_name)
     r = s.sharedResources()
     t = r.openTable(ofile)
     return t
-
     if len(ofiles) != 1:
       raise ValueError('get_table: cannot resolve %s' % table_name)
     return
@@ -325,7 +317,6 @@ class ProxyCore(object):
     r = s.sharedResources()
     t = r.openTable(ofile)
     return t
-
 
   @debug_boundary
   def get_table_rows_iterator(self, table_name, batch_size=100):
@@ -398,7 +389,6 @@ class ProxyCore(object):
       row_read += batch_size
     return np.concatenate(tuple(res)) if res else []
 
-
   @debug_boundary
   def __get_table_rows_bulk(self, table, col_numbers, batch_size=BATCH_SIZE):
     res, row_read, max_row = [], 0, table.getNumberOfRows()
@@ -435,8 +425,7 @@ class ProxyCore(object):
     finally:
       self.disconnect()
     return res
-
-  #--
+  
   @debug_boundary
   def get_table_headers(self, table_name):
     col_objs = None
@@ -513,7 +502,7 @@ class ProxyCore(object):
       idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
       self.logger.debug('\tselector %s results in %s' % (selector, idxs))
       if not len(idxs) == 1:
-        raise ValueError('selector %s does not result in a single row selection' % selector)
+        raise ValueError('selector %s does not yield a single row' % selector)
       self.logger.debug('\tselected idx: %s' % idxs)
       data = t.readCoordinates(idxs)
       self.logger.debug('\tdata read: %s' % data)
@@ -532,5 +521,3 @@ class ProxyCore(object):
     for o in data.columns:
       if row.has_key(o.name):
         o.values[0] = row[o.name]
-
-
