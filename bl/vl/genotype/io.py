@@ -244,8 +244,8 @@ class PedWriter(object):
                                 else xrange(len(self.mset))
       dump_markers(fo, s)
 
-  def write_family(self, family_label, family_members, data_sample_by_id,
-                   phenotype_by_id=None):
+  def write_family(self, family_label, family_members,
+                   data_sample_by_id=None, phenotype_by_id=None):
     """
     Write out ped file lines corresponding to individuals in a given
     list, together with genotypes and, optionally, phenotypes.
@@ -256,8 +256,8 @@ class PedWriter(object):
     :param family_members: relevant elements of the family
     :type family_members: iterator on Individual
 
-    :param data_sample_by_id: a dict like object that maps individual ids to
-                              GenotypeDataSample objects
+    :param data_sample_by_id: an optional dict-like object that maps
+                              individual ids to GenotypeDataSample objects
     :type data_sample_by_id: dict
 
     :param phenotype_by_id: an optional dict-like object that maps
@@ -265,7 +265,8 @@ class PedWriter(object):
                             column 6 (phenotype) of a ped file
     :type phenotype_by_id: dict
     """
-
+    if not phenotype_by_id:
+      phenotype_by_id = {None: 0}
     allele_patterns = { 0 : 'A A', 1 : 'B B', 2 : 'A B', 3 : '0 0'}
     def dump_genotype(fo, data_sample):
       if data_sample is None:
@@ -285,10 +286,11 @@ class PedWriter(object):
       fat_id = 0 if not i.father else i.father.id
       mot_id = 0 if not i.mother else i.mother.id
       gender = self.gender_map(i.gender)
-      pheno  = 0 if not phenotype_by_id else phenotype_by_id[i.id]
+      pheno = phenotype_by_id.get(i.id, 0)
       self.ped_file.write('%s\t%s\t%s\t%s\t%s\t%s\t' %
                           (family_label, i.id, fat_id, mot_id, gender, pheno))
-      dump_genotype(self.ped_file, data_sample_by_id.get(i.id))
+      if data_sample_by_id:
+        dump_genotype(self.ped_file, data_sample_by_id.get(i.id))
 
   def close(self):
     if self.ped_file:
