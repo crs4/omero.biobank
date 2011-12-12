@@ -278,6 +278,7 @@ class ProxyCore(object):
 
   @debug_boundary
   def get_table(self, table_name):
+    s = self.connect()
     try:
       ofiles = self._list_table_copies(table_name)
     finally:
