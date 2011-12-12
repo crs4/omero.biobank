@@ -1,3 +1,4 @@
+PYTHON = python
 
 
 .PHONY: all build install install_user clean distclean
@@ -5,13 +6,13 @@
 all: build
 
 build:
-	python setup.py build
+	$(PYTHON) setup.py build
 
 install: build
-	python setup.py install --skip-build
+	$(PYTHON) setup.py install --skip-build
 
 install_user: build
-	python setup.py install --skip-build --user
+	$(PYTHON) setup.py install --skip-build --user
 
 docs: install_user
 	make -C docs html
