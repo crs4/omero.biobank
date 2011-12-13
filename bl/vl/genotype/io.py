@@ -282,7 +282,6 @@ class PedWriter(object):
       self.ped_file = open(self.base_path + '.ped', 'w')
     for i in family_members:
       # Family ID, IndividualID, paternalID, maternalID, sex, phenotype
-      fam_id, ind_id = family_label, i.id
       fat_id = 0 if not i.father else i.father.id
       mot_id = 0 if not i.mother else i.mother.id
       gender = self.gender_map(i.gender)
@@ -291,6 +290,7 @@ class PedWriter(object):
                           (family_label, i.id, fat_id, mot_id, gender, pheno))
       if data_sample_by_id:
         dump_genotype(self.ped_file, data_sample_by_id.get(i.id))
+        # write \n !
 
   def close(self):
     if self.ped_file:

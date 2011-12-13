@@ -17,7 +17,7 @@ Tutorial
   True
   >>> ehr.matches('openEHR-EHR-EVALUATION.problem-diagnosis.v1', 'at0002.1')
   True
-  >>> ehr.matches('openEHR-EHR-EVALUATION.problem-diagnosis.v1', 'at0002.1', 'icd10-cm:E10)
+  >>> ehr.matches('openEHR-EHR-EVALUATION.problem-diagnosis.v1', 'at0002.1', 'icd10-cm:E10')
   True
   >>> ehr.matches('openEHR-EHR-EVALUATION.problem-diagnosis.v1', 'at0002.1', 'icd10-cm:G35')
   True
