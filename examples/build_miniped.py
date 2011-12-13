@@ -46,17 +46,19 @@ def make_parser():
   return parser
 
 def build_families(individuals, logger):
-  not_one_parent = [i for i in individuals if not
-                    (((i.mother is None) or (i.father is None)) and
-                     not (i.mother is None and i.father is None))]
+  # Individuals with only one parent will be considered like founders
+  for i in individuals:
+    if ((i.mother is None) or (i.father is None)):
+      i.ome_obj.mother = None
+      i.ome_obj.father = None
   logger.info("individuals: %d" % len(individuals))
-  logger.info("individuals: with 0 or 2 parents: %d" % len(not_one_parent))
+  #logger.info("individuals: with 0 or 2 parents: %d" % len(not_one_parent))
   logger.info("analyzing pedigree")
   founders, non_founders, dangling, couples, children = ped.analyze(
-    not_one_parent
+    individuals
     )
   logger.info("splitting into families")
-  return ped.split_disjoint(not_one_parent, children)
+  return ped.split_disjoint(individuals, children)
 
 
 def main(argv):
