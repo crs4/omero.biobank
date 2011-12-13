@@ -4,7 +4,7 @@ A rough example of basic pedigree info generation.
 
 # HARDWIRED TO IMMUNO DATA
 
-import logging, csv
+import logging, csv, argparse, sys
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb.drivers.omero.ehr import EHR
@@ -28,6 +28,23 @@ FIELDS = ["fam_label", "ind_label", "fat_label", "mot_label", "gender",
           "t1d_status", "ms_status"]
 
 
+def make_parser():
+  parser = argparse.ArgumentParser(description='build the first columns of a ped file from VL')
+  parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
+  parser.add_argument('--loglevel', type=str, choices = LOG_LEVELS,
+                      help='logging level', default='INFO')
+  parser.add_argument('-H', '--host', type=str, help='omero hostname',
+                      default='localhost')
+  parser.add_argument('-U', '--user', type=str, help='omero user',
+                      default='root')
+  parser.add_argument('-P', '--passwd', type=str, help='omero password',
+                      required=True)
+  parser.add_argument('-S', '--study', type=str, required=True,
+                      help='study used to retrieve individuals that will be written to ped file')
+  parser.add_argument('--out_file', type=str, help='output file path',
+                      required=True)
+  return parser
+
 def build_families(individuals, logger):
   not_one_parent = [i for i in individuals if not
                     (((i.mother is None) or (i.father is None)) and
@@ -42,19 +59,33 @@ def build_families(individuals, logger):
   return ped.split_disjoint(not_one_parent, children)
 
 
-def main():
-  log_level = logging.DEBUG
+def main(argv):
+  parser = make_parser()
+  args = parser.parse_args(argv)
+
+  log_level = getattr(logging, args.loglevel)
   kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
+  if args.logfile:
+    kwargs['filename'] = args.logfile
   logging.basicConfig(**kwargs)
   logger = logging.getLogger()
   
-  kb = KB(driver='omero')('biobank09.crs4.it', 'galaxy', 'galaxy')
+  kb = KB(driver='omero')(args.host, args.user, args.passwd)
+  logging.debug('Loading all individuals from omero')
   all_inds = kb.get_objects(kb.Individual)  # store all inds to cache
-  study = kb.get_study("IMMUNOCHIP")
+  logging.debug('%d individuals loaded' % len(all_inds))
+  study = kb.get_study(args.study)
+  if study is None:
+    logger.error('Study %s does not exist, stopping program' % args.study)
+    sys.exit(2)
+  logging.debug('Loading enrolled individuals for study %s' % study.label)
   enrolled = kb.get_enrolled(study)
+  logging.debug('%d individuals loaded' % len(enrolled))
   enrolled_map = dict((e.individual.id, (e.studyCode, e.individual))
                       for e in enrolled)
+  logging.debug('Loading EHR records')
   ehr_records = kb.get_ehr_records()
+  logging.debug('%s EHR records loaded' % len(ehr_records))
   ehr_records_map = {}
   for r in ehr_records:
     ehr_records_map.setdefault(r['i_id'], []).append(r)
@@ -88,7 +119,7 @@ def main():
   gender_map = lambda x: 2 if x == kb.Gender.FEMALE else 1
 
   logger.info("writing miniped")
-  with open("mini.ped", "w") as f:
+  with open(args.out_file, "w") as f:
     writer = csv.DictWriter(f, FIELDS, delimiter="\t", lineterminator="\n")
     for k, fam in enumerate(families):
       fam_label = "FAM_%d" % (k+1)
@@ -104,4 +135,4 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+  main(sys.argv[1:])
