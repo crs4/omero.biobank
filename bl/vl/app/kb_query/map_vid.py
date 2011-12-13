@@ -79,7 +79,6 @@ class MapVIDApp(Core):
     for e in known_enrollments:
       if e.studyCode in labels:
         i = e.individual
-        i.reload()
         mapping[e.studyCode] = i.id
     diff = set(labels) - set(mapping.keys())
     if len(diff) > 0:
