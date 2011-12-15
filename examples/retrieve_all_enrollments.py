@@ -23,7 +23,7 @@ def main(argv):
         out_file_path = args[0]
     except IndexError:
         print 'Mandatory field missing.'
-        print parser.usage()
+        parser.print_help()
         sys.exit(2)
 
     # Create the KnowledgeBase object
