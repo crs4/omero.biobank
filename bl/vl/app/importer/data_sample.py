@@ -1,50 +1,43 @@
 """
-Import of Data samples
+Import of data samples
 ======================
 
 Will read in a tsv file with the following columns::
 
-  study  label source device device_type scanner options             status
-  ASTUDY foo01 v03909 v9309  Chip        v99020  celID=0009099090    USABLE
-  ASTUDY foo02 v03909 v99022 Scanner     v99022  conf1=...,conf2=... UNKNOWN
-  ....
+  study  label source  device  device_type scanner options             status
+  ASTUDY foo01 V039090 V093090 Chip        v099020 celID=0009099090    USABLE
+  ASTUDY foo02 V039090 V099022 Scanner     v099022 conf1=...,conf2=... UNKNOWN
+  ...
 
-and instantiate specialized DataSample derived classes that correspond
-to the specific lines.
+and instantiate a specialized DataSample-derived class for each line.
 
-In this example, the first line corresponds to a dataset obtained by
-using chip v9309 on scanner v99020, while the second datasample has
-been obtained using a technology directly using a scanner, e.g., an
-Illumina HiSeq 2000. The '''scanner''' column is there as a
-convenience to support a more detailed description of a chip based
-acquisition.
+In the above example, the first data sample has been obtained by using
+chip V093090 on scanner V099020, while the second one has been
+obtained using a direct scanning technology, e.g., an Illumina HiSeq
+2000. The optional `scanner` column, the vid of the scanner device, is
+used in cases, such as Affymetrix genotyping, where it is relevant.
 
-The general strategy is to decide what data objects should be
-instantiated by looking at the chip column and to its corresponding
-maker,model,release.
-
-The optional column '''scanner''', the vid of the scanner device, is
-used in cases, such as affymetrix genotyping where it is relevant.
-
-The optional column '''data_sample_type''' over-rides all of the
-automatic decisions that could be taken by the importer.
+The general strategy is to decide what DataSample subclasses should be
+instantiated by retrieving the Device and look at its maker, model,
+release attributes. The optional `data_sample_type` column overrides
+all automatic decisions.
 
 It is also possible to import DataSample(s) that are the results of
-processing on other DataSample(s). This is an example::
+processing other DataSample(s). Here is an example::
 
-  study  label source device device_type     options
-  ASTUDY foo01 v03909 v99021 SoftwareProgram conf1=...,conf2=...
-  ASTUDY foo02 v03909 v99021 SoftwareProgram conf1=...,conf2=...
-  ....
+  study  label source  device  device_type     options             status
+  ASTUDY foo01 V039090 V099021 SoftwareProgram conf1=...,conf2=... USABLE
+  ASTUDY foo02 V039090 V099021 SoftwareProgram conf1=...,conf2=... USABLE
+  ...
 
-A special case are GenotypeDataSample where it is mandatory to assign
-a SNPMarkerSet using the column  'markers_set' with the vid of
-the relevant SNPMarkersSet. As an example::
+A special case is the GenotypeDataSample, where it is mandatory to
+assign a SNPMarkerSet by putting its vid in the `markers_set`
+column. As an example::
 
-  study  label source device device_type     data_sample_type   markers_set status
-  ASTUDY foo01 v03909 v99021 SoftwareProgram GenotypeDataSample V20202      USABLE
-  ASTUDY foo02 v03909 v99021 SoftwareProgram GenotypeDataSample V20202      USABLE
-  ....
+  study  label source device   device_type     data_sample_type   markers_set status
+  ASTUDY foo01 V039090 V099021 SoftwareProgram GenotypeDataSample V020202      USABLE
+  ASTUDY foo02 V039090 V099021 SoftwareProgram GenotypeDataSample V020202      USABLE
+  ...
 
 
 Usage
@@ -97,8 +90,7 @@ def conf_affymetrix_cel_6(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
           'status' : status_map[r['status']],
           'action' : a,
-          'arrayType' : kb.AffymetrixCelArrayType.GENOMEWIDESNP_6,
-          }
+          'arrayType' : kb.AffymetrixCelArrayType.GENOMEWIDESNP_6}
   if 'celID' in options:
     conf['celID'] = options['celID']
   return kb.factory.create(kb.AffymetrixCel, conf)
@@ -108,8 +100,7 @@ def conf_illumina_beadchip_1m_duo(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
           'status' : status_map[r['status']],
           'action' : a,
-          'assayType' : kb.IlluminaBeadChipAssayType.HUMAN1M_DUO
-          }
+          'assayType' : kb.IlluminaBeadChipAssayType.HUMAN1M_DUO}
   return kb.factory.create(kb.IlluminaBeadChipAssay, conf)
 
 
@@ -117,8 +108,7 @@ def conf_illumina_beadchip_immuno(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
           'status' : status_map[r['status']],
           'action' : a,
-          'assayType' : kb.IlluminaBeadChipAssayType.IMMUNOCHIP
-          }
+          'assayType' : kb.IlluminaBeadChipAssayType.IMMUNOCHIP}
   return kb.factory.create(kb.IlluminaBeadChip, conf)
 
 
@@ -127,8 +117,7 @@ def conf_crs4_genotyper_by_device(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
           'status' : status_map[r['status']],
           'action' : a,
-          'snpMarkersSet' : device.snpMarkersSet,
-          }
+          'snpMarkersSet' : device.snpMarkersSet}
   return kb.factory.create(kb.GenotypeDataSample, conf)
 
 
@@ -136,8 +125,7 @@ def conf_crs4_genotyper_by_markers_set(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
           'status' : status_map[r['status']],
           'action' : a,
-          'snpMarkersSet' : r['markers_set'],
-          }
+          'snpMarkersSet' : r['markers_set']}
   return kb.factory.create(kb.GenotypeDataSample, conf)
 
 

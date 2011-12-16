@@ -69,7 +69,7 @@ class Writer(Core):
     '--': (1/3., 1/3., 1/3.),
     }
   DS_HEADER = ["label", "source", "device", "device_type", "data_sample_type",
-               "markers_set"]
+               "markers_set", "status"]
   DO_HEADER = ["path", "data_sample_label", "mimetype", "size", "sha1"]
   
   def critical(self, msg):
@@ -145,7 +145,7 @@ class Writer(Core):
             sha1 = compute_sha1(fn)
             size = str(os.stat(fn).st_size)
             ds_w.writerow([label, sample_id, device.id, DEVICE_TYPE,
-                           DATA_SAMPLE_TYPE, self.markers_set_id])
+                           DATA_SAMPLE_TYPE, self.markers_set_id, "USABLE"])
             do_w.writerow([path, label, mimetypes.SSC_FILE, size, sha1])
             for outf in ds_f, do_f:
               outf.flush(); os.fsync(outf.fileno())
