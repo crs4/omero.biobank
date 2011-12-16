@@ -4,9 +4,9 @@ Import of Data samples
 
 Will read in a tsv file with the following columns::
 
-  study  label source device device_type scanner options
-  ASTUDY foo01 v03909 v9309  Chip        v99020  celID=0009099090
-  ASTUDY foo02 v03909 v99022 Scanner     v99022  conf1=...,conf2=...
+  study  label source device device_type scanner options             status
+  ASTUDY foo01 v03909 v9309  Chip        v99020  celID=0009099090    USABLE
+  ASTUDY foo02 v03909 v99022 Scanner     v99022  conf1=...,conf2=... UNKNOWN
   ....
 
 and instantiate specialized DataSample derived classes that correspond
@@ -41,9 +41,9 @@ A special case are GenotypeDataSample where it is mandatory to assign
 a SNPMarkerSet using the column  'markers_set' with the vid of
 the relevant SNPMarkersSet. As an example::
 
-  study  label source device device_type     data_sample_type   markers_set
-  ASTUDY foo01 v03909 v99021 SoftwareProgram GenotypeDataSample V20202
-  ASTUDY foo02 v03909 v99021 SoftwareProgram GenotypeDataSample V20202
+  study  label source device device_type     data_sample_type   markers_set status
+  ASTUDY foo01 v03909 v99021 SoftwareProgram GenotypeDataSample V20202      USABLE
+  ASTUDY foo02 v03909 v99021 SoftwareProgram GenotypeDataSample V20202      USABLE
   ....
 
 
@@ -86,18 +86,16 @@ Usage
   BSTUDY  foobar-03 AffymetrixCel V0052FD03AAB0C4B50BE79AE97486BEA9C
   BSTUDY  foobar-04 AffymetrixCel V0CE60F590239D4072B95D15201DDB40F2
   BSTUDY  foobar-05 AffymetrixCel V0A7EA20CF3A0D4DC392062BA4DE4AEAE4
-
 """
 
-from core import Core, BadRecord
+from core import Core
 import csv, json, time
 import itertools as it
 
-#-----------------------------------------------------------------------------
 
-def conf_affymetrix_cel_6(kb, r, a, device, options):
+def conf_affymetrix_cel_6(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
-          'status' : kb.DataSampleStatus.USABLE,
+          'status' : status_map[r['status']],
           'action' : a,
           'arrayType' : kb.AffymetrixCelArrayType.GENOMEWIDESNP_6,
           }
@@ -105,38 +103,49 @@ def conf_affymetrix_cel_6(kb, r, a, device, options):
     conf['celID'] = options['celID']
   return kb.factory.create(kb.AffymetrixCel, conf)
 
-def conf_illumina_beadchip_1m_duo(kb, r, a, device, options):
+
+def conf_illumina_beadchip_1m_duo(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
-          'status' : kb.DataSampleStatus.USABLE,
+          'status' : status_map[r['status']],
           'action' : a,
           'assayType' : kb.IlluminaBeadChipAssayType.HUMAN1M_DUO
           }
   return kb.factory.create(kb.IlluminaBeadChipAssay, conf)
 
-def conf_illumina_beadchip_immuno(kb, r, a, device, options):
+
+def conf_illumina_beadchip_immuno(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
-          'status' : kb.DataSampleStatus.USABLE,
+          'status' : status_map[r['status']],
           'action' : a,
           'assayType' : kb.IlluminaBeadChipAssayType.IMMUNOCHIP
           }
   return kb.factory.create(kb.IlluminaBeadChip, conf)
 
-def conf_crs4_genotyper_by_device(kb, r, a, device, options):
+
+def conf_crs4_genotyper_by_device(kb, r, a, device, options, status_map):
   device.reload()
   conf = {'label' : r['label'],
-          'status' : kb.DataSampleStatus.USABLE,
+          'status' : status_map[r['status']],
           'action' : a,
           'snpMarkersSet' : device.snpMarkersSet,
           }
   return kb.factory.create(kb.GenotypeDataSample, conf)
 
-def conf_crs4_genotyper_by_markers_set(kb, r, a, device, options):
+
+def conf_crs4_genotyper_by_markers_set(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
-          'status' : kb.DataSampleStatus.USABLE,
+          'status' : status_map[r['status']],
           'action' : a,
           'snpMarkersSet' : r['markers_set'],
           }
   return kb.factory.create(kb.GenotypeDataSample, conf)
+
+
+def get_status_map(kb):
+  return {'UNKNOWN'   : kb.DataSampleStatus.UNKNOWN,
+          'DESTROYED' : kb.DataSampleStatus.DESTROYED,
+          'CORRUPTED' : kb.DataSampleStatus.CORRUPTED,
+          'USABLE'    : kb.DataSampleStatus.USABLE}
 
 
 data_sample_configurator = {
@@ -147,12 +156,12 @@ data_sample_configurator = {
   ('CRS4', 'Genotyper', 'by_markers_set') : conf_crs4_genotyper_by_markers_set,
   }
 
+
 class Recorder(Core):
   def __init__(self, study_label=None,
                host=None, user=None, passwd=None, keep_tokens=1,
                batch_size=1000, operator='Alfred E. Neumann',
-               action_setup_conf=None,
-               logger=None):
+               action_setup_conf=None, logger=None):
     super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
                                    study_label=study_label, logger=logger)
     self.batch_size = batch_size
@@ -170,26 +179,21 @@ class Recorder(Core):
       while len(records[offset:]) > 0:
         yield records[offset:offset+batch_size]
         offset += batch_size
-
     if len(records) == 0:
       self.logger.warn('no records')
       return
-
     study = self.find_study(records)
     self.source_klass = self.find_source_klass(records)
     self.device_klass = self.find_device_klass(records)
-
     self.preload_scanners()
     self.preload_devices()
     self.preload_sources()
     self.preload_markers_sets()
     self.preload_data_samples()
-
     records = self.do_consistency_checks(records)
     if not records:
       self.logger.warn('no records')
       return
-
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(otsv, c, study)
@@ -222,47 +226,42 @@ class Recorder(Core):
       self.preloaded_data_samples[o.label] = o
     self.logger.info('done preloading data_samples')
 
-  #----------------------------------------------------------------
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
-    #--
     k_map = {}
     good_records = []
-    mandatory_fields = ['label', 'source', 'device']
+    mandatory_fields = ['label', 'source', 'device', 'status']
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
-
       if self.missing_fields(mandatory_fields, r):
         f = reject + 'missing mandatory field.'
         self.logger.error(f)
         continue
-
+      if r['status'] not in ['UNKNOWN', 'DESTROYED', 'CORRUPTED', 'USABLE']:
+        f = reject + 'unknown status value.'
+        self.logger.error(f)
+        continue
       if r['label'] in self.preloaded_data_samples:
         f = reject + 'there is a pre-existing DataSample with label %s.'
         self.logger.warn(f % r['label'])
         continue
-
       if r['label'] in k_map:
         f = (reject +
              'there is a pre-existing record with label %s.(in this batch).')
         self.logger.error(f % r['label'])
         continue
-
       if r['source'] not in self.preloaded_sources:
         f = reject + 'there is no known source for DataSample with label %s.'
         self.logger.error(f % r['label'])
         continue
-
       if r['device'] not in self.preloaded_devices:
         f = reject + 'there is no known device for DataSample with label %s.'
         self.logger.error(f % r['label'])
         continue
-
       if r['scanner'] and r['scanner'] not in self.preloaded_scanners:
         f = reject + 'there is no known scanner for DataSample with label %s.'
         self.logger.error(f % r['label'])
         continue
-
       if (r['data_sample_type']
           and r['data_sample_type'] == 'GenotypeDataSample'):
         device = self.preloaded_devices[r['device']]
@@ -287,8 +286,8 @@ class Recorder(Core):
       k_map[r['label']] = r
       good_records.append(r)
     self.logger.info('done consistency checks')
-    #--
     return good_records
+
 
   def process_chunk(self, otsv, chunk, study):
     def get_options(r):
@@ -299,12 +298,11 @@ class Recorder(Core):
           k, v = kv.split('=')
           options[k] = v
       return options
-    #--
+    data_samples_status_map = get_status_map(self.kb)
     actions = []
     for r in chunk:
       target = self.preloaded_sources[r['source']]
       device = self.preloaded_devices[r['device']]
-
       options = get_options(r)
       if isinstance(device, self.kb.Chip) and r['scanner']:
         options['scanner_label'] = self.preloaded_scanners[r['scanner']].label
@@ -319,11 +317,10 @@ class Recorder(Core):
       # put in a workaround.
 
       alabel = ('importer.data_sample.%s-%f' % (r['label'], time.time()))
-
       asetup = self.kb.factory.create(self.kb.ActionSetup,
                                       {'label' : alabel,
                                        'conf' : json.dumps(options)})
-      #--
+
       if issubclass(self.source_klass, self.kb.Vessel):
         a_klass = self.kb.ActionOnVessel
         acat = self.kb.ActionCategory.MEASUREMENT
@@ -338,17 +335,14 @@ class Recorder(Core):
         acat = self.kb.ActionCategory.PROCESSING
       else:
         assert False
-
       conf = {'setup' : asetup,
               'device': device,
               'actionCategory' : acat,
               'operator' : self.operator,
               'context'  : study,
-              'target' : target
-              }
+              'target' : target}
       actions.append(self.kb.factory.create(a_klass, conf))
     self.kb.save_array(actions)
-    #--
     data_samples = []
     for a, r in it.izip(actions, chunk):
       device = a.device
@@ -359,10 +353,10 @@ class Recorder(Core):
         k = ('CRS4', 'Genotyper', 'by_markers_set')
       else:
         k = (device.maker, device.model, device.release)
-      a.unload()# FIXME we need to do this, otherwise the next save will choke.
-      d = data_sample_configurator[k](self.kb, r, a, device, get_options(r))
+      a.unload()  # FIXME we need to do this, otherwise the next save will choke
+      d = data_sample_configurator[k](self.kb, r, a, device, get_options(r),
+                                      data_samples_status_map)
       data_samples.append(d)
-
     assert len(data_samples) == len(chunk)
     self.kb.save_array(data_samples)
     for d in data_samples:
@@ -371,14 +365,15 @@ class Recorder(Core):
                      'type'  : d.get_ome_table(),
                      'vid'   : d.id })
 
+
 def canonize_records(args, records):
   fields = ['study', 'scanner', 'source_type', 'device_type',
-            'data_sample_type', 'markers_set']
+            'data_sample_type', 'markers_set', 'status']
   for f in fields:
-    if hasattr(args, f) and getattr(args,f) is not None:
+    v = getattr(args, f, None)
+    if v is not None:
       for r in records:
-        r[f] = getattr(args, f)
-  # specific hacks
+        r[f] = v
   for r in records:
     if 'scanner' in r and 'device' not in r:
       r['device'] = r['scanner']
@@ -388,6 +383,7 @@ def canonize_records(args, records):
     for t in ['options', 'scanner']:
       if not (t in r and r[t].upper() != 'NONE'):
         r[t] = None
+
 
 def make_parser_data_sample(parser):
   parser.add_argument('--study', type=str,
@@ -431,23 +427,18 @@ def make_parser_data_sample(parser):
                       to be processed in parallel (if possible)""",
                       default=1000)
 
+
 def import_data_sample_implementation(logger, args):
-
   action_setup_conf = Recorder.find_action_setup_conf(args)
-
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf,
                       logger=logger)
-
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
-
   records = [r for r in f]
-
   canonize_records(args, records)
-
   if len(records) > 0:
     o = csv.DictWriter(args.ofile,
                        fieldnames=['study', 'label', 'type', 'vid'],
@@ -456,7 +447,6 @@ def import_data_sample_implementation(logger, args):
     recorder.record(records, o)
   else:
     logger.info('empty file')
-
   logger.info('done processing file %s' % args.ifile.name)
 
 
@@ -465,9 +455,8 @@ import new data sample definitions into an omero/vl system and attach
 them to previously registered samples.
 """
 
+
 def do_register(registration_list):
   registration_list.append(('data_sample', help_doc,
                             make_parser_data_sample,
                             import_data_sample_implementation))
-
-
