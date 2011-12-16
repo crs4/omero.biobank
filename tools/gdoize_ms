@@ -4,45 +4,37 @@
 Add missing GDOs for a given marker set
 =======================================
 
-FIXME
+Iterate over all genotype data samples corresponding to the given
+marker set; create a GDO table row for each genotpye data sample
+that does not already have one.
 """
 
-import os, sys
-import argparse
-import logging
+import sys, argparse, logging
 
-LOG_FILENAME='gdoize_ms.log'
-logging.basicConfig(
-  format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-  level=logging.INFO,
-  filename=LOG_FILENAME)
-
-logger = logging.getLogger()
-
-
-from bl.vl.kb import KnowledgeBase as KB
-from bl.vl.kb import KBError, mimetypes
+from bl.vl.kb import KBError, mimetypes, KnowledgeBase as KB
 from bl.vl.genotype.io import read_ssc
+
+
+LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
+LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
+LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
 def make_parser():
   desc="Add missing GDOs for a given marker set"
-  parser = argparse.ArgumentParser(
-    description=desc,
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-  parser.add_argument('-H', '--host', type=str,
-                      help='omero host system',
+  parser = argparse.ArgumentParser(description=desc)
+  parser.add_argument('-H', '--host', type=str, help='omero hostname',
                       default='localhost')
-  parser.add_argument('-U', '--user', type=str,
-                      help='omero user',
-                      default='test')
-  parser.add_argument('-P', '--passwd', type=str,
-                      help='omero user passwd',
+  parser.add_argument('-U', '--user', type=str, help='omero user',
+                      default='root')
+  parser.add_argument('-P', '--passwd', type=str, help='omero password',
                       required=True)
   parser.add_argument('-m', '--markers-set-label', required=True,
                       help='markers set label')
   parser.add_argument('-s', '--study-label', required=True, help='study label')
+  parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
+  parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
+                      help='logging level', default='INFO')
   return parser
 
 
@@ -51,19 +43,25 @@ def critical(logger, msg):
   raise KBError(msg)
 
 
-# we need to pass marker set to avoid reloading at each read_ssc
-def add_gdo(kb, action, gt_data_sample, ssc_data_object, mset):
-  assert mset == gt_data_sample.snpMarkersSet
-  probs, confs = read_ssc(ssc_data_object.path, mset)
-  kb.add_gdo_data_object(action, gt_data_sample, probs, confs)
+def add_gdo(kb, action, gt_data_sample, ssc_data_object):
+  mset = gt_data_sample.snpMarkersSet
 
 
-def main():
+def main(argv):
   parser = make_parser()
-  args = parser.parse_args()
-  host, user, passwd = args.host, args.user, args.passwd
-  logger.info('connecting to %s with user %s' % (host, user))
-  kb = KB(driver="omero")(host, user, passwd)
+  args = parser.parse_args(argv)
+
+  log_level = getattr(logging, args.loglevel)
+  kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
+  if args.logfile:
+    kwargs['filename'] = args.logfile
+  logging.basicConfig(**kwargs)
+  logger = logging.getLogger()  
+  
+  kb = KB(driver="omero")(args.host, args.user, args.passwd)
+  study = kb.get_study(label=args.study_label)
+  if study is None:
+    critical(logger, "no study in db with label %s" % args.study_label)
   ms = kb.get_snp_markers_set(label=args.markers_set_label)
   if ms is None:
     critical(logger, "no marker set in db with label %s"
@@ -71,17 +69,16 @@ def main():
   logger.info("loading markers for %s" % ms.label)
   ms.load_markers()
   logger.info("finished loading markers for %s" % ms.label)
-  study = kb.get_study(label=args.study_label)
-  if study is None:
-    critical(logger, "no study in db with label %s" % args.study_label)
   query = "from GenotypeDataSample g where g.snpMarkersSet.id = :id"
   params = {"id": ms.omero_id}
   gds = kb.find_all_by_query(query, params)
   logger.info("found %d genotype data samples related to %s"
               % (len(gds), args.markers_set_label))
   action = kb.create_an_action(study)  # FIXME: create a device for this script
+  
   n_created_gdos = 0
   for g in gds:
+    assert ms == g.snpMarkersSet
     logger.info("loading data objects for %s" % g.label)
     dos = kb.get_data_objects(g)
     ssc_do = None
@@ -94,16 +91,17 @@ def main():
     else:
       if ssc_do:
         logger.info("creating gdo for %s" % g.label)
-        add_gdo(kb, action, g, ssc_do, ms)
+        probs, confs = read_ssc(ssc_do.path, ms)
+        kb.add_gdo_data_object(action, g, probs, confs)
         logger.info("finished creating gdo for %s" % g.label)
         n_created_gdos += 1
-        
   if n_created_gdos == 0:
     kb.delete(action)
+  logger.info("created %d gdos" % n_created_gdos)
 
 
 if __name__ == "__main__":
-  main()
+  main(sys.argv[1:])
 
 
 # Local Variables: **
