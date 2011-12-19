@@ -1,7 +1,7 @@
 from itertools import izip
 import numpy as np
 
-from utils import assign_vid_and_timestamp, make_unique_key
+from utils import make_unique_key
 import wrapper as wp
 
 

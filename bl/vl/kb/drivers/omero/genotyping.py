@@ -54,6 +54,7 @@ record has the following additional fields:
 import numpy as np
 import bl.vl.utils as vlu
 import bl.vl.utils.snp as vlu_snp
+from utils import assign_vid
 
 
 BATCH_SIZE = 5000
@@ -173,7 +174,7 @@ class GenotypingAdapter(object):
     vid_correspondence = []
     def add_vid_filter_and_op_vid(stream, op_vid):
       for x in stream:
-        x['vid'] = vlu.make_vid()
+        assign_vid(x)
         x['op_vid'] = op_vid
         vid_correspondence.append((x['label'], x['vid']))
         yield x
@@ -338,8 +339,8 @@ class GenotypingAdapter(object):
     assert len(pstr) == 2*len(cstr)
     #--
     table_name = self._gdo_table_name(set_vid)
-    row = {'vid' : vlu.make_vid(), 'op_vid' : op_vid,
-           'probs' :  pstr, 'confidence' : cstr}
+    row = {'op_vid': op_vid, 'probs':  pstr, 'confidence': cstr}
+    assign_vid(row)
     self.kb.add_table_row(table_name, row)
     # return (vid, mimetype, path)
     return (table_name, row['vid'])
