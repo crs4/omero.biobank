@@ -57,6 +57,7 @@ import bl.vl.utils.snp as vlu_snp
 
 
 BATCH_SIZE = 5000
+VID_SIZE = vlu.DEFAULT_VID_LEN
 
 
 class Marker(object):
@@ -103,7 +104,7 @@ class GenotypingAdapter(object):
   SNP_MASK_SIZE        = 2 * SNP_FLANK_SIZE + len("[A/B]")
 
   SNP_MARKER_DEFINITIONS_COLS = \
-  [('string', 'vid',    'This marker VID', len(vlu.make_vid()), None),
+  [('string', 'vid',    'This marker VID', VID_SIZE, None),
    ('string', 'source', 'Origin of this marker definition.', 16, None),
    ('string', 'context', 'Context of definition.', 16, None),
    ('string', 'release', 'Release within the context.', 16, None),
@@ -115,10 +116,10 @@ class GenotypingAdapter(object):
     """SNP definition mask in the format <FLANK>[A/B]<FLANK>. It expected to be
     on the Illumina convention TOP strand.""", SNP_MASK_SIZE, None),
    ('string', 'op_vid', 'Last operation that modified this row',
-    len(vlu.make_vid()), None)]
+    VID_SIZE, None)]
 
   SNP_ALIGNMENT_COLS = \
-  [('string', 'marker_vid', 'VID of the aligned marker.', len(vlu.make_vid()), None),
+  [('string', 'marker_vid', 'VID of the aligned marker.', VID_SIZE, None),
    ('string', 'ref_genome', 'Reference alignment genome.', 16, None),
    ('long', 'chromosome',
     'Chromosome where this alignment was found. 1-22, 23(X) 24(Y) 25(XY) 26(MT)',
@@ -129,31 +130,31 @@ class GenotypingAdapter(object):
    # I know that this is in principle a bool, but what happens if we have more than two alleles?
    ('string', 'allele', 'Allele found at this position (A/B)', 1, None),
    ('long', 'copies', "Number of copies found for this marker within this alignment op.", None),
-   ('string', 'op_vid', 'Last operation that modified this row', len(vlu.make_vid()), None)]
+   ('string', 'op_vid', 'Last operation that modified this row', VID_SIZE, None)]
 
   SNP_SET_COLS = \
-  [('string', 'vid', 'Set VID', len(vlu.make_vid()), None),
-   ('string', 'marker_vid', 'Marker VID', len(vlu.make_vid()), None),
+  [('string', 'vid', 'Set VID', VID_SIZE, None),
+   ('string', 'marker_vid', 'Marker VID', VID_SIZE, None),
    ('long', 'marker_indx',
     "Ordered position of this marker within the set", None),
    ('bool', 'allele_flip',
     'Is this technology flipping our A/B allele convention?', None),
    ('string', 'op_vid',
-    'Last operation that modified this row', len(vlu.make_vid()), None)]
+    'Last operation that modified this row', VID_SIZE, None)]
 
   SNP_SET_DEF_COLS = \
-  [('string', 'vid', 'Set VID', len(vlu.make_vid()), None),
+  [('string', 'vid', 'Set VID', VID_SIZE, None),
    ('string', 'maker', 'Maker identifier.', 32, None),
    ('string', 'model', 'Model identifier.', 32, None),
    ('string', 'release', 'Release identifier.', 32, None),
    ('string', 'op_vid', 'Last operation that modified this row',
-    len(vlu.make_vid()), None)]
+    VID_SIZE, None)]
 
   @classmethod
   def SNP_GDO_REPO_COLS(klass, N):
-    cols = [('string', 'vid', 'gdo VID', len(vlu.make_vid()), None),
+    cols = [('string', 'vid', 'gdo VID', VID_SIZE, None),
             ('string', 'op_vid', 'Last operation that modified this row',
-             len(vlu.make_vid()), None),
+             VID_SIZE, None),
             ('string', 'probs', 'np.zeros((2,N), dtype=np.float32).tostring()',
              2*N*4, None),
             ('string', 'confidence', 'np.zeros((N,), dtype=np.float32).tostring()',

@@ -21,7 +21,7 @@ clean:
 	rm -rf build
 	make -C docs clean
 	cd tests/tools/snp_reannotator && bash test_snp_reannotator.sh --clean
-	rm -fv $(svn status tests/tools/importer | grep '^?' | awk '{print $2}')
+	rm -fv `svn status tests/tools/importer | grep '^?' | awk '{print $2}'`
 	find . -regex '.*\(\.pyc\|\.pyo\|~\|\.so\)' -exec rm -fv {} \;
 
 distclean: clean

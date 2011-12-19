@@ -1,7 +1,8 @@
-import time
 import bl.vl.utils as vlu
-import itertools as it
-import numpy     as np
+
+
+VID_SIZE = vlu.DEFAULT_VID_LEN
+
 
 class EAVAdapter(object):
   """
@@ -19,18 +20,18 @@ class EAVAdapter(object):
     of the action identified by a_vid. It is kept as a convenience,
     but it is a responsability of the user app to keep data consistent.
     """,
-    len(vlu.make_vid()), None),
+    VID_SIZE, None),
    ('string', 'a_vid',
     """a unique identifier that points to the Action that generates the
     record (a single Action can generate several records. We need the
     Action to know how data was collected, when it was collected and where)""",
-    len(vlu.make_vid()), None),
+    VID_SIZE, None),
    ('bool', 'valid',
     """nothing will be deleted, so we keep a flag to know if the record
     is a valid one and if we can use it""", None),
    ('string', 'g_vid',
     """a grouper used to group records together""",
-    len(vlu.make_vid()), None),
+    VID_SIZE, None),
    ('string', 'archetype',
     """the Archetype we used to represent the data we are collecting
     so that we can have a field that can group data together and the
