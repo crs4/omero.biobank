@@ -43,10 +43,6 @@ def critical(logger, msg):
   raise KBError(msg)
 
 
-def add_gdo(kb, action, gt_data_sample, ssc_data_object):
-  mset = gt_data_sample.snpMarkersSet
-
-
 def main(argv):
   parser = make_parser()
   args = parser.parse_args(argv)
