@@ -94,6 +94,14 @@ class Proxy(ProxyCore):
     """
     return super(Proxy, self).find_all_by_query(query, params, self.factory)
 
+  def get_by_vid(self, klass, vid):
+    query = "from %s o where o.vid = :vid" % klass.get_ome_table()
+    params = {"vid": vid}
+    res = self.find_all_by_query(query, params)
+    if len(res) != 1:
+      raise ValueError("%d kb objects map to %s" % (len(res), vid))
+    return res[0]
+
   def update_dependency_tree(self):
     self.dt = DependencyTree(self)
 

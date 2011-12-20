@@ -30,20 +30,25 @@ Usage:
                                 --prefix foobar -P romeo \
                                 --ifile data/file_list.lst --run-id foobar
 
-
 """
-import sys, argparse, logging
+import sys, os, argparse, logging, csv, urllib2
 from datetime import datetime
+
+from BeautifulSoup import BeautifulSoup
 
 from bl.core.io.abi import SDSReader
 from bl.core.io import MessageStreamWriter
+from bl.core.seq.utils import reverse_complement as rc
+import bl.core.gt.messages.SnpCall as SnpCall
 
 from bl.vl.kb import KnowledgeBase as KB
+from bl.vl.utils import compute_sha1
+from bl.vl.utils.snp import split_mask, approx_equal_masks, convert_to_top
 
-import sys, os
-import csv
-import urllib2
-from BeautifulSoup import BeautifulSoup
+
+ABI_SOURCE = 'ABI'
+ABI_CONTEXT = 'TaqMan-SNP_Genotyping_Assays'
+ABI_RELEASE = '12/12/2009' # arbitrary date
 
 logger = None
 
@@ -78,22 +83,6 @@ class ABISnpService(object):
         mark_def['mask'] = str(td.findNext('td').string)
     return mark_def
 
-#----------------------------------------------------------------------
-import hashlib
-
-ABI_SOURCE = 'ABI'
-ABI_CONTEXT = 'TaqMan-SNP_Genotyping_Assays'
-ABI_RELEASE = '12/12/2009' # arbitrary date
-
-def compute_sha1(fname):
-  BUFSIZE = 10000000
-  sha1 = hashlib.sha1()
-  with open(fname) as fi:
-    s = fi.read(BUFSIZE)
-    while s:
-      sha1.update(s)
-      s = fi.read(BUFSIZE)
-  return sha1.hexdigest()
 
 def get_markers_definition(found_markers, sds, abi_service):
   for m,v in sds.header['markers_info'].iteritems():
@@ -103,11 +92,6 @@ def get_markers_definition(found_markers, sds, abi_service):
       continue
     v['abi_definition'] = abi_service.get_marker_definition(abi_id=m)
     found_markers[m] = v
-
-from bl.vl.utils.snp import split_mask, approx_equal_masks, convert_to_top
-from bl.core.seq.utils import reverse_complement as rc
-
-import bl.core.gt.messages.SnpCall as SnpCall
 
 
 def canonize_call(mask, abi_call):
@@ -129,6 +113,7 @@ def canonize_call(mask, abi_call):
   else:
     raise ValueError('Cannot map %s (alleles: %s)' % (abi_call, alleles))
 
+
 def add_kb_marker_objects(kb, found_markers):
   missing_kb_markers = []
   by_label = dict(((m.label, m) for m in
@@ -144,6 +129,7 @@ def add_kb_marker_objects(kb, found_markers):
       else:
         v['kb_marker'] = by_label[label]
   return missing_kb_markers
+
 
 def write_import_markers_file(fname, found_markers, missing_kb_markers):
   "FIXME: The generated markers list is not sorted on the alignments"
@@ -162,6 +148,7 @@ def write_import_markers_file(fname, found_markers, missing_kb_markers):
       'mask' : marker['abi_definition']['mask'],
       }
     fo.writerow(r)
+
 
 def write_markers_set_def_file(fname, found_markers):
   fo = csv.DictWriter(open(fname, mode='w'),
@@ -193,6 +180,7 @@ def write_ssc_data_samples_import_file(fname, ssc_data_set):
                  'scanner': device_id,
                  })
 
+
 def write_ssc_data_objects_import_file(fname, ssc_data_set):
   fo = csv.DictWriter(open(fname, mode='w'),
                       fieldnames=['path', 'data_sample_label', 'mimetype',
@@ -209,6 +197,7 @@ def write_ssc_data_objects_import_file(fname, ssc_data_set):
       'size' : size,
       'sha1' : sha1,
       })
+
 
 def write_ssc_data_set_file(fname, found_markers,
                             device_id, sample_id,
@@ -233,6 +222,7 @@ def write_ssc_data_set_file(fname, found_markers,
       'w_AB' : 0.0,
       'w_BB' : d['Allele X Rn']})
   stream.close()
+
 
 def make_parser():
   parser = argparse.ArgumentParser(description="Define Taq Markers in Omero/VL")
@@ -262,7 +252,6 @@ def make_parser():
                       help='omero user passwd',
                       required=True)
   return parser
-
 
 
 def main(argv):
@@ -321,4 +310,6 @@ def main(argv):
   write_ssc_data_samples_import_file(fname, ssc_data_set.values())
   write_ssc_data_objects_import_file(fname, ssc_data_set.values())
 
-main(sys.argv[1:])
+
+if __name__ == "__main__":
+  main(sys.argv[1:])
