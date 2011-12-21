@@ -90,6 +90,7 @@ class CoreOmeroWrapper(object):
     else:
       raise AttributeError('object %s has no attribute %s' %
                            (self.__class__.__name__, name))
+
   def __setattr__(self, name, v):
     if hasattr(self, name):
       super(CoreOmeroWrapper, self).__setattr__(name, v)
@@ -208,6 +209,14 @@ class MetaWrapper(type):
     def getter(self, k):
       if k in fields:
         v = getattr(self.ome_obj, k)
+        if isinstance(fields[k][0], type):          
+          cached_v = self.proxy.get_from_cache(v)
+          if cached_v:
+            return cached_v
+          elif not v.loaded:
+            v = self.proxy.ome_operation('getQueryService', 'find',
+                                         v.__class__.__name__[:-1],
+                                         v.id.val)
         return self.from_omero(fields[k][0], v) if v else None
       else:
         return base.__getattr__(self, k)

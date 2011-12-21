@@ -1,3 +1,9 @@
+2011-12-21  Luca Lianas  <luca@tensa-zangetsu>
+
+	* bl/vl/kb/drivers/omero/wrapper.py: the __getattr__ of the kb
+	objects will now resolve encapsulated objects reading them
+	directly from the cache or from Omero.
+
 2011-11-22  Luca Lianas  <luca@tensa-zangetsu>
 
 	* bl/vl/kb/drivers/omero/proxy.py: added a method for retrieving
