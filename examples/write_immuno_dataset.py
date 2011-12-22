@@ -19,7 +19,6 @@ spaces represent tabs)::
 
 """
 import sys, os, argparse, csv, logging
-from contextlib import nested
 
 from bl.core.io.illumina import GenomeStudioFinalReportReader as DataReader
 from bl.core.io.illumina import IllSNPReader
@@ -160,7 +159,7 @@ def main(argv):
   kb = KB(driver="omero")(args.host, args.user, args.passwd)
   snp_name_to_label = get_snp_name_to_label(args.annot_file)
 
-  with nested(open(args.ds_fn, "w"), open(args.do_fn, "w")) as (ds_f, do_f):
+  with open(args.ds_fn, "w") as ds_f, open(args.do_fn, "w") as do_f:
     ds_w = DataSampleWriter(ds_f)
     do_w = DataObjectWriter(do_f)
     for w in ds_w, do_w:
