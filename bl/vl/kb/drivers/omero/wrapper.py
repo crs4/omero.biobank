@@ -70,10 +70,13 @@ class CoreOmeroWrapper(object):
   def __eq__(self, obj):
     if type(obj) != self.__class__:
       return False
-    try:
-      return hash(self) == hash(obj)
-    except TypeError:
+    if not self.is_mapped() or not obj.is_mapped():
       raise KBError("non-persistent objects are not comparable")
+    return ((self.ome_obj.__class__.__name__, self.ome_obj.id._val) ==
+            (obj.ome_obj.__class__.__name__, obj.ome_obj.id._val))
+
+  def __ne__(self, obj):
+    return not self.__eq__(obj)
 
   def __config__(self, ome_obj, conf):
     pass

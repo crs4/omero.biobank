@@ -152,7 +152,7 @@ def compute_bit_complexity(family, genotyped):
   %s
 
   """ % INDIVIDUAL_DEFINITION_DOC
-  founders, non_founders, couples, children = analyze(family)
+  founders, non_founders, dangling, couples, children = analyze(family)
   not_gt_couples = filter(lambda c : not (genotyped[c[0].id]
                                           or genotyped[c[1].id]),
                           couples)
@@ -271,7 +271,7 @@ def split_family(family, genotyped, max_complexity=MAX_COMPLEXITY):
   if compute_bit_complexity(family, genotyped) < max_complexity:
     return [family]
 
-  founders, non_founders, couples, children = analyze(family)
+  founders, non_founders, dangling, couples, children = analyze(family)
   non_founders_not_genotyped = filter(lambda i: not genotyped[i.id],
                                       non_founders)
 
