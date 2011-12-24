@@ -212,6 +212,8 @@ class MetaWrapper(type):
     def getter(self, k):
       if k in fields:
         v = getattr(self.ome_obj, k)
+        if v is None:
+          return None
         if isinstance(fields[k][0], type):          
           cached_v = self.proxy.get_from_cache(v)
           if cached_v:

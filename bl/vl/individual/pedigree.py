@@ -111,7 +111,7 @@ def analyze(family):
   founders     = []
   non_founders = []
   children = {}
-  couples = set([])
+  couples = set()
   for i in family:
     if i.father is None and i.mother is None:
       founders.append(i)
@@ -121,9 +121,8 @@ def analyze(family):
       children.setdefault(i.mother, set()).add(i)
       couples.add((i.father, i.mother))
   if len(children) > 0:
-    insiders = founders + non_founders
-    parents = children.keys()
-    dangling = filter(lambda x: x not in insiders, parents)
+    insiders = set(founders + non_founders)
+    dangling = filter(lambda p: p not in insiders, children)
   else:
     dangling = []
   return (founders, non_founders, dangling, list(couples), children)

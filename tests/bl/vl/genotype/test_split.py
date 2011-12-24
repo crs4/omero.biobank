@@ -4,6 +4,11 @@ import unittest, os
 import bl.vl.individual.pedigree as ped
 
 
+D = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(D, "data")
+MANIFEST = os.path.join(DATA_DIR, 'manifest.txt')
+
+
 class individual(object):
   
   def __init__(self, iid, sex, father=None, mother=None):
@@ -41,33 +46,30 @@ def read_ped_file(pedfile):
   return inds.values(), genotyped_map
 
 
-class split(unittest.TestCase):
+def manifest_reader(fn=MANIFEST):
+  with open(fn) as f:
+    for l in f:
+      if not l.isspace():
+        cb, fname = l.split()
+        cb = int(cb)
+        yield cb, fname
 
-  def compute_bit_complexity(self):
-    fin = open(os.path.join('data', 'manifest.txt'))
-    for l in fin:
-      l = l.strip()
-      if len(l) == 0:
-        continue
-      cb, fname = l.split()
-      cb = int(cb)
-      family, genotyped = read_ped_file(os.path.join('data', fname))
-      cbn = ped.compute_bit_complexity(family, genotyped)
-      self.assertEqual(cb, cbn)
+
+class split(unittest.TestCase):
 
   def assertEqualFamilies(self, fam_a, fam_b):
     self.assertEqual(len(fam_a), len(fam_b))
     self.assertEqual(set(fam_a), set(fam_b))
 
+  def compute_bit_complexity(self):
+    for cb, fname in manifest_reader():
+      family, genotyped = read_ped_file(os.path.join(DATA_DIR, fname))
+      cbn = ped.compute_bit_complexity(family, genotyped)
+      self.assertEqual(cb, cbn)
+
   def grow_family(self):
-    fin = open(os.path.join('data', 'manifest.txt'))
-    for l in fin:
-      l = l.strip()
-      if len(l) == 0:
-        continue
-      cb, fname = l.split()
-      cb = int(cb)
-      family, genotyped = read_ped_file(os.path.join('data', fname))
+    for cb, fname in manifest_reader():
+      family, genotyped = read_ped_file(os.path.join(DATA_DIR, fname))
       cbn = ped.compute_bit_complexity(family, genotyped)
       founders, non_founders, dangling, couples, children = ped.analyze(family)
       for i in family:
@@ -78,21 +80,15 @@ class split(unittest.TestCase):
         self.assertTrue(len(new_family) <= len(family))
 
   def propagate_family(self):
-    fin = open(os.path.join('data', 'manifest.txt'))
-    for l in fin:
-      l = l.strip()
-      if len(l) == 0:
-        continue
-      cb, fname = l.split()
-      cb = int(cb)
-      family, genotyped = read_ped_file(os.path.join('data', fname))
+    for cb, fname in manifest_reader():
+      family, genotyped = read_ped_file(os.path.join(DATA_DIR, fname))
       founders, non_founders, dangling, couples, children = ped.analyze(family)
       for i in family:
         new_family = ped.propagate_family([i], children)
         self.assertEqualFamilies(family, new_family)
 
   def split_disjoint(self):
-    family = read_ped_file(os.path.join('data', 'ped_soup.ped'))
+    family, genotyped = read_ped_file(os.path.join(DATA_DIR, 'ped_soup.ped'))
     self.assertEqual(len(family), 7711)
     founders, non_founders, dangling, couples, children = ped.analyze(family)
     splits = ped.split_disjoint(family, children)
@@ -100,7 +96,7 @@ class split(unittest.TestCase):
     self.assertEqual(set(family), set([]).union(*(map(set, splits))))
 
   def split_family(self):
-    family = read_ped_file(os.path.join('data', 'ped_soup.ped'))
+    family, genotyped = read_ped_file(os.path.join(DATA_DIR, 'ped_soup.ped'))
     self.assertEqual(len(family), 7711)
     founders, non_founders, dangling, couples, children = ped.analyze(family)
     splits = ped.split_disjoint(family, children)
