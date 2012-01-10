@@ -214,8 +214,11 @@ class MetaWrapper(type):
         v = getattr(self.ome_obj, k)
         if v is None:
           return None
-        if isinstance(fields[k][0], type):          
-          cached_v = self.proxy.get_from_cache(v)
+        if isinstance(fields[k][0], type):
+          try:
+            cached_v = self.proxy.get_from_cache(v)
+          except AttributeError:
+            cached_v = None
           if cached_v:
             return cached_v
           elif not v.loaded:
