@@ -24,7 +24,7 @@ from bl.core.io.illumina import GenomeStudioFinalReportReader as DataReader
 from bl.core.io.illumina import IllSNPReader
 from bl.core.io import MessageStreamWriter
 import bl.core.gt.messages.SnpCall as SnpCall
-from bl.vl.kb import KBError, mimetypes, KnowledgeBase as KB
+from bl.vl.kb import mimetypes
 from bl.vl.utils import compute_sha1
 
 
@@ -74,20 +74,9 @@ def get_snp_name_to_label(ill_annot_file):
 
 
 #--- this is a CRS4-specific hack to fix ambiguous immunochip labels -------
-#--- this script should be kb-agnostic and would be so but for this hack ---
 def adjust_immuno_sample_id(old_sample_id, plate_barcode, pad_size=PAD_SIZE):
   padded_id = old_sample_id.rjust(pad_size, '0')
   return "%s|%s" % (padded_id, plate_barcode)
-
-def get_plate_barcode(kb, fn):
-  plate_fields = os.path.splitext(os.path.basename(fn))[0].split("_")[1:-1]
-  plate_label = "_".join(plate_fields+["imm"])
-  plate = kb.get_container(plate_label)
-  if plate is None:
-    msg = "no container in kb is labeled as %s" % plate_label
-    logger.critical(msg)
-    raise KBError(msg)
-  return plate.barcode
 #---------------------------------------------------------------------------
 
 
@@ -128,12 +117,6 @@ def make_parser():
                       help='logging level', default='INFO')
   parser.add_argument('--out-dir', type=str, help='ssc output directory',
                       default="ssc")
-  parser.add_argument('-H', '--host', type=str, help='omero hostname',
-                      default='localhost')
-  parser.add_argument('-U', '--user', type=str, help='omero user',
-                      default='root')
-  parser.add_argument('-P', '--passwd', type=str, help='omero password',
-                      required=True)
   parser.add_argument('--device-label', type=str, help='device label',
                       required=True)
   parser.add_argument('--marker-set-label', type=str, help='marker set label',
@@ -156,7 +139,6 @@ def main(argv):
   logging.basicConfig(**kwargs)
   logger = logging.getLogger()
 
-  kb = KB(driver="omero")(args.host, args.user, args.passwd)
   snp_name_to_label = get_snp_name_to_label(args.annot_file)
 
   with open(args.ds_fn, "w") as ds_f, open(args.do_fn, "w") as do_f:
@@ -166,7 +148,7 @@ def main(argv):
       w.writeheader()
     for fn in args.ifiles:
       logger.info("processing %s" % fn)
-      plate_barcode = get_plate_barcode(kb, fn)
+      plate_barcode = os.path.splitext(os.path.basename(fn))[0].split("_")[1]
       with open(fn) as f:
         data_reader = DataReader(f)
         header = data_reader.header
