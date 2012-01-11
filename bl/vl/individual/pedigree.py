@@ -159,14 +159,14 @@ def compute_bit_complexity(family, genotyped):
 
 
 def down_propagate_front(family, children):
-  down_front = map(lambda x: children.get(x.id, set([])), family)
-  down_front = set([]).union(*down_front)
+  down_front = [children.get(ind, set()) for ind in family]
+  down_front = set().union(*down_front)
   return down_front
 
 
 def up_propagate_front(family):
-  up_front = map(lambda x: set([x.father, x.mother]), family)
-  up_front = set([]).union(*up_front) - set([None])
+  up_front = [set([ind.father, ind.mother]) for ind in family]
+  up_front = set().union(*up_front) - set([None])
   return up_front
 
 
@@ -191,7 +191,7 @@ def propagate_family(family, children):
 
 def split_disjoint(family, children):
   if len(family) == 0:
-    return []    
+    return []
   splits = []
   family = set(family)
   while len(family) > 0:
@@ -261,6 +261,7 @@ def split_family(family, genotyped, max_complexity=MAX_COMPLEXITY):
 
   :param max_complexity: the requested maximal complexity
   :type max_complexity: integer (default %d)
+  
   :rtype: list of families with bit complexity lower than max_complexity
 
   %s
@@ -269,7 +270,6 @@ def split_family(family, genotyped, max_complexity=MAX_COMPLEXITY):
 
   if compute_bit_complexity(family, genotyped) < max_complexity:
     return [family]
-
   founders, non_founders, dangling, couples, children = analyze(family)
   non_founders_not_genotyped = filter(lambda i: not genotyped[i.id],
                                       non_founders)
@@ -288,7 +288,7 @@ def split_family(family, genotyped, max_complexity=MAX_COMPLEXITY):
     non_founders_not_genotyped = sorted(non_founders_not_genotyped,
                                         key=number_of_children)
     i = non_founders_not_genotyped[0]
-    f = grow_family([i], children, max_complexity)
+    f = grow_family([i], children, genotyped, max_complexity)
     cbn1 = compute_bit_complexity(f, genotyped)
     non_founders_not_genotyped = list(set(non_founders_not_genotyped) -
                                       set(f))

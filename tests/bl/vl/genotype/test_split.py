@@ -1,4 +1,4 @@
-# FIXME: update and merge with tests/bl/vl/individual/test_pedigree.py
+# FIXME: merge with tests/bl/vl/individual/test_pedigree.py
 
 import unittest, os
 import bl.vl.individual.pedigree as ped
@@ -21,12 +21,7 @@ class individual(object):
     return hash(self.id)
   
   def __eq__(self, obj):
-    try:
-      return self.id == obj.id
-    except:
-      print 'self:',  self
-      print 'obj:', obj
-      raise
+    return self.id == obj.id
 
   def __ne__(self, obj):
     return not self.__eq__(obj)
@@ -70,13 +65,12 @@ class split(unittest.TestCase):
   def grow_family(self):
     for cb, fname in manifest_reader():
       family, genotyped = read_ped_file(os.path.join(DATA_DIR, fname))
-      cbn = ped.compute_bit_complexity(family, genotyped)
       founders, non_founders, dangling, couples, children = ped.analyze(family)
       for i in family:
-        new_family = ped.grow_family([i], children, cb)
+        new_family = ped.grow_family([i], children, genotyped, cb)
         self.assertEqualFamilies(family, new_family)
       for i in family:
-        new_family = ped.grow_family([i], children, max(0, cb-2))
+        new_family = ped.grow_family([i], children, genotyped, max(0, cb-2))
         self.assertTrue(len(new_family) <= len(family))
 
   def propagate_family(self):
@@ -93,7 +87,7 @@ class split(unittest.TestCase):
     founders, non_founders, dangling, couples, children = ped.analyze(family)
     splits = ped.split_disjoint(family, children)
     self.assertEqual(sum(map(len, splits)), len(family))
-    self.assertEqual(set(family), set([]).union(*(map(set, splits))))
+    self.assertEqual(set(family), set().union(*map(set, splits)))
 
   def split_family(self):
     family, genotyped = read_ped_file(os.path.join(DATA_DIR, 'ped_soup.ped'))
@@ -103,23 +97,25 @@ class split(unittest.TestCase):
     fams = []
     max_complexity = ped.MAX_COMPLEXITY
     for f in splits:
-      cbn = ped.compute_bit_complexity(f)
+      cbn = ped.compute_bit_complexity(f, genotyped)
       if cbn > max_complexity:
-        subfs = ped.split_family(f, max_complexity)
-        subfs_i = set([]).union(*(map(set, subfs)))
+        subfs = ped.split_family(f, genotyped, max_complexity)
+        subfs_i = set().union(*map(set, subfs))
         self.assertTrue(len(f) >= len(subfs_i))
         self.assertTrue(len(set(f) - subfs_i) >= 0)
         for s in subfs:
-          self.assertTrue(ped.compute_bit_complexity(s) <= max_complexity)
+          self.assertTrue(
+            ped.compute_bit_complexity(s, genotyped) <= max_complexity
+            )
 
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(split('compute_bit_complexity'))
-  ## suite.addTest(split('grow_family'))
-  ## suite.addTest(split('propagate_family'))
-  ## suite.addTest(split('split_disjoint'))
-  ## suite.addTest(split('split_family'))
+  suite.addTest(split('split_disjoint'))
+  suite.addTest(split('grow_family'))
+  suite.addTest(split('propagate_family'))
+  suite.addTest(split('split_family'))
   return suite
 
 

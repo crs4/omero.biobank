@@ -1,3 +1,9 @@
+2012-01-11    <simleo@neuron.crs4.it>
+
+	* bl/vl/individual/pedigree.py (down_propagate_front): fixed a bug
+	where the children dict was being looked up by individual id
+	instead of individual.
+
 2011-12-21  Luca Lianas  <luca@tensa-zangetsu>
 
 	* bl/vl/kb/drivers/omero/wrapper.py: the __getattr__ of the kb
