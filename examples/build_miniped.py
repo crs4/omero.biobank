@@ -19,13 +19,14 @@ DIAGNOSIS_ARCH = 'openEHR-EHR-EVALUATION.problem-diagnosis.v1'
 DIAGNOSIS_FIELD = 'at0002.1'
 T1D_ICD10 = 'icd10-cm:E10'
 MS_ICD10 = 'icd10-cm:G35'
+NEFRO_ICD10 = 'icd10-cm:E23.2'
 
 PLINK_MISSING = -9
 PLINK_UNAFFECTED = 0
 PLINK_AFFECTED = 1
 
 FIELDS = ["fam_label", "ind_label", "fat_label", "mot_label", "gender",
-          "t1d_status", "ms_status"]
+          "t1d_status", "ms_status", "nefro_status"]
 
 
 def make_parser():
@@ -93,16 +94,19 @@ def main(argv):
     ehr_records_map.setdefault(r['i_id'], []).append(r)
   affection_map = {}
   for ind_id, ehr_recs in ehr_records_map.iteritems():
-    affection_map[ind_id] = dict(t1d=PLINK_UNAFFECTED, ms=PLINK_UNAFFECTED)
+    affection_map[ind_id] = dict(t1d=PLINK_UNAFFECTED, ms=PLINK_UNAFFECTED,
+                                 nefro=PLINK_UNAFFECTED)
     ehr = EHR(ehr_recs)
     if ehr.matches(DIAGNOSIS_ARCH, DIAGNOSIS_FIELD, T1D_ICD10):
       affection_map[ind_id]['t1d'] = PLINK_AFFECTED
     if ehr.matches(DIAGNOSIS_ARCH, DIAGNOSIS_FIELD, MS_ICD10):
       affection_map[ind_id]['ms'] = PLINK_AFFECTED
+    if ehr.matches(DIAGNOSIS_ARCH, DIAGNOSIS_FIELD, NEFRO_ICD10):
+      affection_map[ind_id]['nefro'] = PLINK_AFFECTED
 
   immuno_inds = [i for (ind_id, (st_code, i)) in enrolled_map.iteritems()]
   families = build_families(immuno_inds, logger)
-  logger.info("found %d immunochip-related families" % len(families))
+  logger.info("found %d families" % len(families))
   
   def resolve_label(i):
     try:
@@ -114,8 +118,8 @@ def main(argv):
     try:
       immuno_affection = affection_map[i.id]
     except KeyError:
-      return PLINK_MISSING, PLINK_MISSING
-    return immuno_affection["t1d"], immuno_affection["ms"]
+      return PLINK_MISSING, PLINK_MISSING, PLINK_MISSING
+    return immuno_affection["t1d"], immuno_affection["ms"], immuno_affection["nefro"]
 
   kb.Gender.map_enums_values(kb)
   gender_map = lambda x: 2 if x == kb.Gender.FEMALE else 1
@@ -132,7 +136,7 @@ def main(argv):
         r["fat_label"] = 0 if i.father is None else resolve_label(i.father)
         r["mot_label"] = 0 if i.mother is None else resolve_label(i.mother)
         r["gender"] = gender_map(i.gender)
-        r["t1d_status"], r["ms_status"] = resolve_pheno(i)
+        r["t1d_status"], r["ms_status"], r["nefro_status"] = resolve_pheno(i)
         writer.writerow(r)
 
 
