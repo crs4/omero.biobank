@@ -108,6 +108,8 @@ class CoreOmeroWrapper(object):
 
   def to_omero(self, tcode, v):
     if isinstance(tcode, type):
+      if v is None:
+        return v
       if not isinstance(v, tcode):
         raise ValueError('type(%s) != %s' % (v, tcode))
       if tcode.is_enum():
