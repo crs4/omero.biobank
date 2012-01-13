@@ -22,8 +22,9 @@ STUDY = "IMMUNOCHIP"
 
 class VidMapper(object):
 
-  def __init__(self, host, user, passwd, logger):
+  def __init__(self, host, user, passwd, logger, study):
     self.logger = logger
+    self.study = study
     self.kb = KB(driver="omero")(host, user, passwd)
     plates = self.kb.get_objects(self.kb.TiterPlate)
     self.logger.info("fetched %d plates" % len(plates))
@@ -31,7 +32,7 @@ class VidMapper(object):
     self.enroll_map = {}
     for p in plates:
       self.plate_map[p.omero_id] = p.barcode
-    s = self.kb.get_study(STUDY)
+    s = self.kb.get_study(self.study)
     enrolls = self.kb.get_enrolled(s)
     self.logger.info("fetched %d enrollments" % len(enrolls))
     for e in enrolls:
@@ -45,7 +46,7 @@ class VidMapper(object):
     try:
       wells = self.enroll_map[en_code]
     except KeyError:
-      msg = "%s is not enrolled in %s" % (en_code, STUDY)
+      msg = "%s is not enrolled in %s" % (en_code, self.study)
       self.logger.error(msg)
       raise ValueError(msg)
     self.logger.info("found %d wells for %s" % (len(wells), en_code))
@@ -79,6 +80,8 @@ def make_parser():
                       default='root')
   parser.add_argument('-P', '--passwd', type=str, help='omero password',
                       required=True)
+  parser.add_argument('-s', '--study', metavar='STRING', default=STUDY,
+                      help='study label')
   return parser
 
 
@@ -96,7 +99,8 @@ def main(argv):
     writer = csv.DictWriter(fo, reader.fieldnames, delimiter="\t",
                             lineterminator=os.linesep)
     writer.writeheader()
-    vid_mapper = VidMapper(args.host, args.user, args.passwd, logger)
+    vid_mapper = VidMapper(args.host, args.user, args.passwd, logger,
+                           args.study)
     counter = Counter()
     for r in reader:
       counter["input_lines"] += 1
