@@ -42,3 +42,4 @@ clean:
 	find . -regex '.*\(\.pyc\|\.pyo\|~\|\.so\)' -exec rm -fv {} \;
 
 distclean: clean
+	rm -rf $(EXPORT_DIR) dist
