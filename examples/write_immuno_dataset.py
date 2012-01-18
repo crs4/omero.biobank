@@ -5,6 +5,12 @@ sample as an SSC (SampleSnpCall) file in the mimetypes.SSC_FILE
 format. Also, write tsv input files for DataSample and DataObject
 importers.
 
+Input Final Report files can be provided as separate arguments or,
+alternatively, listed in a file specified via the --input-list
+option. In the latter case, if additional (tab-separated) columns are
+present, their values will be considered as the only sample IDs to be
+processed.
+
 The program outputs the sample *label* in the 'source' column: the
 mapping to the corresponding PlateWell VID must be done by an external
 tool. The same holds for the 'device' and the 'markers_set'
@@ -19,6 +25,7 @@ spaces represent tabs)::
 
 """
 import sys, os, argparse, csv, logging
+from collections import OrderedDict
 
 from bl.core.io.illumina import GenomeStudioFinalReportReader as DataReader
 from bl.core.io.illumina import IllSNPReader
@@ -49,6 +56,15 @@ WEIGHTS = {
 PAD_SIZE = 12
 
 
+class Everything(set):
+  
+  def __init__(self):
+    super(Everything, self).__init__()
+  
+  def __contains__(self, item):
+    return True
+
+
 class Writer(csv.DictWriter):
   def __init__(self, f, fieldnames):
     csv.DictWriter.__init__(self, f, fieldnames, delimiter="\t",
@@ -67,6 +83,17 @@ class DataObjectWriter(Writer):
                               "sha1"])
 
 
+def get_input_map(fn):
+  input_map = OrderedDict()
+  with open(fn) as f:
+    reader = csv.reader(f, delimiter="\t")
+    for row in reader:
+      fr_path = row[0]
+      requested_sample_ids = set(row[1:]) or Everything()
+      input_map[fr_path] = requested_sample_ids
+  return input_map
+
+
 def get_snp_name_to_label(ill_annot_file):
   with open(ill_annot_file) as f:
     reader = IllSNPReader(f)
@@ -80,8 +107,11 @@ def adjust_immuno_sample_id(old_sample_id, plate_barcode, pad_size=PAD_SIZE):
 #---------------------------------------------------------------------------
 
 
-def write_block(data_block, plate_barcode, out_dir, snp_name_to_label, header):
+def write_block(data_block, plate_barcode, out_dir, snp_name_to_label, header,
+                requested_sample_ids):
   sample_id = adjust_immuno_sample_id(data_block.sample_id, plate_barcode)
+  if sample_id not in requested_sample_ids:
+    return sample_id, None
   out_fn = os.path.join(out_dir, '%s.ssc' % sample_id)
   header['sample_id'] = sample_id
   stream = MessageStreamWriter(out_fn, PAYLOAD_MSG_TYPE, header)
@@ -108,8 +138,10 @@ def write_block(data_block, plate_barcode, out_dir, snp_name_to_label, header):
 
 def make_parser():
   parser = argparse.ArgumentParser(description="write Immunochip data files")
-  parser.add_argument('ifiles', metavar='DATA_FILE', type=str, nargs='+',
+  parser.add_argument('ifiles', metavar='FILE', type=str, nargs='*',
                       help='input FinalReport text files')
+  parser.add_argument('--input-list', metavar='FILE',
+                      help='input FinalReport file list in tsv format')
   parser.add_argument('-a', '--annot-file', metavar='ANN_FILE', required=True,
                       help='Original Illumina SNP annotation file')
   parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
@@ -132,6 +164,12 @@ def main(argv):
   parser = make_parser()
   args = parser.parse_args(argv)
 
+  # can't use argparse's mutually exclusive group, one arg is not optional
+  if args.input_list and args.ifiles:
+    sys.exit("ERROR: no positional arg accepted if --input-list is specified")
+  if not args.input_list and not args.ifiles:
+    sys.exit("ERROR: no input source has been specified")
+
   log_level = getattr(logging, args.loglevel)
   kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
   if args.logfile:
@@ -139,15 +177,22 @@ def main(argv):
   logging.basicConfig(**kwargs)
   logger = logging.getLogger()
 
+  if args.input_list:
+    input_map = get_input_map(args.input_list)
+  else:
+    input_map = OrderedDict((fn, Everything()) for fn in args.ifiles)
+  logger.info("total input files: %d" % len(input_map))
+  
   snp_name_to_label = get_snp_name_to_label(args.annot_file)
+  logger.info("total SNPs: %d" % len(snp_name_to_label))
 
   with open(args.ds_fn, "w") as ds_f, open(args.do_fn, "w") as do_f:
     ds_w = DataSampleWriter(ds_f)
     do_w = DataObjectWriter(do_f)
     for w in ds_w, do_w:
       w.writeheader()
-    for fn in args.ifiles:
-      logger.info("processing %s" % fn)
+    for k, (fn, requested_sample_ids) in enumerate(input_map.iteritems()):
+      logger.info("processing %s (%d/%d)" % (fn, k+1, len(input_map)))
       plate_barcode = os.path.splitext(os.path.basename(fn))[0].split("_")[1]
       with open(fn) as f:
         data_reader = DataReader(f)
@@ -156,8 +201,13 @@ def main(argv):
         n_blocks = header.get('Num Samples', '?')
         for i, block in enumerate(data_reader.get_sample_iterator()):
           logger.info("processing block %d/%s " % (i+1, n_blocks))
-          sample_id, out_fn = write_block(block, plate_barcode, args.out_dir,
-                                          snp_name_to_label, header)
+          sample_id, out_fn = write_block(
+            block, plate_barcode, args.out_dir,
+            snp_name_to_label, header, requested_sample_ids
+            )
+          if out_fn is None:
+            logger.info("skipped sample %r (not requested)" % sample_id)
+            continue
           label = os.path.basename(out_fn)
           out_path = os.path.abspath(out_fn)
           ds_w.writerow({
