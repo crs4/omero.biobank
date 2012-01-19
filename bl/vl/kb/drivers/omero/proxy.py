@@ -266,8 +266,9 @@ class Proxy(ProxyCore):
 
   get_snp_markers.__doc__ = GenotypingAdapter.get_snp_markers.__doc__
 
-  def add_snp_alignments(self, stream, op_vid, batch_size=BATCH_SIZE):
-    return self.gadpt.add_snp_alignments(stream, op_vid, batch_size)
+  def add_snp_alignments(self, stream, op_vid, batch_size=BATCH_SIZE,
+                         ms_vid=None):
+    return self.gadpt.add_snp_alignments(stream, op_vid, batch_size, ms_vid)
 
   def snp_markers_set_exists(self, label=None,
                              maker=None, model=None, release=None):

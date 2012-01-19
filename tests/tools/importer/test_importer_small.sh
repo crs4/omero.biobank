@@ -144,34 +144,6 @@ ${IMPORTER} -i marker_definitions.tsv \
             --ref-genome hg19 \
             --dbsnp-build 132 || die "import marker definition failed"
 
-
-python <<EOF
-import csv, random
-
-i = csv.DictReader(open('marker_definition_mapping.tsv'), delimiter='\t')
-o = csv.DictWriter(open('marker_alignments.tsv', 'w'), 
-                   fieldnames=['marker_vid', 'chromosome', 'pos', 
-                               'allele', 'strand', 'copies'],
-                   delimiter='\t')
-o.writeheader()
-for r in i:
-  y = {'marker_vid' : r['vid'], 'chromosome' : random.randrange(1, 26),
-       'pos' : random.randrange(1, 200000000),
-       'allele'  : random.choice('AB'),
-       'strand'  : random.choice([True, False]),
-       'copies'  : 1}
-  o.writerow(y)
-
-EOF
-# ${KB_QUERY} -o marker_alignment_mapped.tsv \
-#             map_vid -i ${DATA_DIR}/marker_alignments.tsv\
-#             --source-type Marker --column label,marker_vid
-
-${IMPORTER} -i marker_alignments.tsv \
-            marker_alignment --study ${STUDY_LABEL} \
-            --ref-genome hgFake || die "import marker alignment failed"
-
-
 # ${KB_QUERY} -o markers_set_mapped.tsv \
 #             map_vid -i ${DATA_DIR}/markers_sets.tsv \
 #             --source-type Marker --column marker_label,marker_vid
@@ -234,6 +206,35 @@ ${IMPORTER} -i markers_sets_16.tsv \
             --release `date +"%F-%R"` || die "import marker set 1 failed"
 
 MSET_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('localhost', 'root', 'romeo'); print kb.get_snp_markers_set(label='${MSET1}').id")
+
+#--- marker alignments
+python <<EOF
+import csv, random
+
+i = csv.DictReader(open('marker_definition_mapping.tsv'), delimiter='\t')
+o = csv.DictWriter(open('marker_alignments.tsv', 'w'), 
+                   fieldnames=['marker_vid', 'chromosome', 'pos', 
+                               'allele', 'strand', 'copies'],
+                   delimiter='\t')
+o.writeheader()
+for r in i:
+  y = {'marker_vid' : r['vid'], 'chromosome' : random.randrange(1, 26),
+       'pos' : random.randrange(1, 200000000),
+       'allele'  : random.choice('AB'),
+       'strand'  : random.choice([True, False]),
+       'copies'  : 1}
+  o.writerow(y)
+
+EOF
+
+# ${KB_QUERY} -o marker_alignment_mapped.tsv \
+#             map_vid -i ${DATA_DIR}/marker_alignments.tsv\
+#             --source-type Marker --column label,marker_vid
+
+${IMPORTER} -i marker_alignments.tsv \
+    marker_alignment --study ${STUDY_LABEL} --ref-genome hgFake \
+    --markers-set ${MSET1} || die "import marker alignment failed"
+#---
 
 echo "* define a  GenotypingProgram device that generates datasets on ${MSET1}"
 DEVICE_FILE=foo_device.tsv

@@ -131,7 +131,8 @@ class GenotypingAdapter(object):
    # I know that this is in principle a bool, but what happens if we have more than two alleles?
    ('string', 'allele', 'Allele found at this position (A/B)', 1, None),
    ('long', 'copies', "Number of copies found for this marker within this alignment op.", None),
-   ('string', 'op_vid', 'Last operation that modified this row', VID_SIZE, None)]
+   ('string', 'op_vid', 'Last operation that modified this row', VID_SIZE, None),
+   ('string', 'ms_vid', 'Marker Set this alignment refers to', VID_SIZE, None)]
 
   SNP_SET_COLS = \
   [('string', 'vid', 'Set VID', VID_SIZE, None),
@@ -298,16 +299,19 @@ class GenotypingAdapter(object):
   def create_snp_alignment_table(self):
     self.kb.create_table(self.SNP_ALIGNMENT_TABLE, self.SNP_ALIGNMENT_COLS)
 
-  def add_snp_alignments(self, stream, op_vid, batch_size=BATCH_SIZE):
-    def add_op_vid(stream):
+  def add_snp_alignments(self, stream, op_vid, batch_size=BATCH_SIZE,
+                         ms_vid=None):
+    def add_vids(stream):
       for x in stream:
         x['op_vid'] = op_vid
+        x['ms_vid'] = ms_vid or 'None'
         yield x
-    i_s = add_op_vid(stream)
+    i_s = add_vids(stream)
     return self.kb.add_table_rows_from_stream(self.SNP_ALIGNMENT_TABLE,
                                               i_s, batch_size)
 
-  def get_snp_alignments(self, selector=None, col_names=None, batch_size=BATCH_SIZE):
+  def get_snp_alignments(self, selector=None, col_names=None,
+                         batch_size=BATCH_SIZE):
     return self.kb.get_table_rows(self.SNP_ALIGNMENT_TABLE, selector,
                                   col_names=col_names, batch_size=batch_size)
 

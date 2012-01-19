@@ -33,7 +33,7 @@ class Recorder(Core):
   
   def __init__(self, study_label, host=None, user=None, passwd=None,
                keep_tokens=1, action_setup_conf=None, logger=None,
-               operator='Alfred E. Neumann'):
+               operator='Alfred E. Neumann', ms_label=None):
     super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
                                    study_label=study_label, logger=logger)
     self.action_setup_conf = action_setup_conf
@@ -55,6 +55,16 @@ class Recorder(Core):
                                           })
     #-- FIXME what happens if we do not have alignments to save?
     self.action.save()
+    self.mset_vid = self.__get_mset_vid(ms_label)
+
+  def __get_mset_vid(self, ms_label):
+    if ms_label is None:
+      return None
+    mset = self.kb.get_snp_markers_set(ms_label)
+    if mset is None:
+      self.logger.warn('no marker set labeled %r, setting to None' % ms_label)
+      return None
+    return mset.id
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
@@ -86,7 +96,8 @@ class Recorder(Core):
 
   def record(self, records):
     records = self.do_consistency_checks(records)
-    self.kb.add_snp_alignments(records, op_vid=self.action.id)
+    self.kb.add_snp_alignments(records, op_vid=self.action.id,
+                               ms_vid=self.mset_vid)
 
 
 def canonize_records(args, records):
@@ -115,6 +126,8 @@ def make_parser_marker_alignment(parser):
                       help="""context study label""")
   parser.add_argument('--ref-genome', type=str,
                       help="""reference genome used""")
+  parser.add_argument('--markers-set', type=str,
+                      help="""related markers set, if any""")
 
 
 def import_marker_alignment_implementation(logger, args):
@@ -126,7 +139,8 @@ def import_marker_alignment_implementation(logger, args):
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
                       action_setup_conf=action_setup_conf,
-                      operator=args.operator, logger=logger, keep_tokens=1)
+                      operator=args.operator, logger=logger, keep_tokens=1,
+                      ms_label=args.markers_set)
   f = csv.DictReader(args.ifile, delimiter='\t')
   recorder.logger.info('start processing file %s' % args.ifile.name)
   records = []
