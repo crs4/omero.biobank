@@ -1,3 +1,13 @@
+2012-01-19    <simleo@neuron.crs4.it>
+
+	* bl/vl/kb/drivers/omero/wrapper.py (OmeroWrapper): added
+	__update_constraints__. This is called by kb object setters and
+	provides a hook for updating properties (in particular, unique
+	keys) depending on other attributes -- simleo & lianas
+
+	* bl/vl/kb/drivers/omero/demographic.py (Demographic): fixed UK
+	components -- simleo & lianas
+
 2012-01-11    <simleo@neuron.crs4.it>
 
 	* bl/vl/individual/pedigree.py (down_propagate_front): fixed a bug

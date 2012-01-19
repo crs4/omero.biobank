@@ -40,10 +40,15 @@ class Demographic(wp.OmeroWrapper):
     if not 'demogUK' in conf:
       conf['demogUK'] = make_unique_key(conf['name'], conf['surname'],
                                         conf['birthdate'],
-                                        conf['gender'].enum_label(),
-                                        conf['birthPlace'],
-                                        conf['vid'])
+                                        conf['gender'].omero_id,
+                                        conf['birthPlace'].id)
     return conf
+
+  def __update_constraints__(self):
+    uk = make_unique_key(self.name, self.surname, self.birthdate,
+                         self.gender.omero_id, self.birthPlace.id)
+    setattr(self.ome_obj, 'demogUK', uk)
+
 
 class InformedConsent(wp.OmeroWrapper):
   OME_TABLE = 'InformedConsent'
@@ -71,4 +76,3 @@ class Agreement(wp.OmeroWrapper):
 
   def __preprocess_conf__(self, conf):
     return assign_vid(conf)
-
