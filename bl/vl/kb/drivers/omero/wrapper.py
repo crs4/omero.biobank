@@ -207,7 +207,7 @@ class MetaWrapper(type):
         setattr(self.ome_obj, k, self.to_omero(fields[k][0], v))
       else:
         base.__setattr__(self, k, v)
-      self.__update_constraints__()
+      self.__update_constraints__(base)
     return setter
 
   @classmethod
@@ -305,7 +305,7 @@ class OmeroWrapper(CoreOmeroWrapper):
   def __preprocess_conf__(self, conf):
     return conf
 
-  def __update_constraints__(self):
+  def __update_constraints__(self, base):
     pass
 
   def configure(self, conf):

@@ -44,10 +44,10 @@ class Demographic(wp.OmeroWrapper):
                                         conf['birthPlace'].id)
     return conf
 
-  def __update_constraints__(self):
+  def __update_constraints__(self, base):
     uk = make_unique_key(self.name, self.surname, self.birthdate,
                          self.gender.omero_id, self.birthPlace.id)
-    setattr(self.ome_obj, 'demogUK', uk)
+    base.__setattr__(self, 'demogUK', uk)
 
 
 class InformedConsent(wp.OmeroWrapper):

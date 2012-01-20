@@ -98,6 +98,6 @@ class SNPMarkersSet(wp.OmeroWrapper):
     self.proxy.update_snp_positions(self.markers, ref_genome)
     self.bare_setattr('ref_genome', ref_genome)
 
-  def __update_constraints__(self):
+  def __update_constraints__(self, base):
     uk = make_unique_key(self.maker, self.model, self.release)
-    setattr(self.ome_obj, 'snpMarkersSetUK', uk)
+    base.__setattr__(self, 'snpMarkersSetUK', uk)
