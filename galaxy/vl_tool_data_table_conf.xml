@@ -1,0 +1,6 @@
+<tables>
+    <table name="dbsnp_indexes" comment_char="#">
+        <columns>value, dbkey, name, ref, masklen, path</columns>
+        <file path="tool-data/VL/tools/dbsnp_index.loc" />
+    </table>
+</tables>

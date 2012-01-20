@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import sys, os
+
+
+BUILDAPP_PATCHES = [
+  ("from galaxy.app import UniverseApplication",
+   "from galaxy.vl_app import UniverseApplication")
+  ]
+
+
+def cp(src, dst, patches=None):
+  if patches is None:
+    patches = []
+  with open(src) as f:
+    code = f.read()
+  for old, new in patches:
+    code = code.replace(old, new)
+  with open(dst, 'w') as outf:
+    outf.write(code)
+  print "%s --> %s" % (src, dst)
+
+
+def main(argv):
+  try:
+    galaxy_home = argv[1]
+  except IndexError:
+    sys.exit("Usage: %s GALAXY_HOME" % argv[0])
+  this_dir = os.path.dirname(sys.argv[0])
+  galaxy_pkg_dir = os.path.join(galaxy_home, "lib", "galaxy")
+  cp(os.path.join(this_dir, "vl_app.py"),
+     os.path.join(galaxy_pkg_dir, "vl_app.py"))
+  cp(os.path.join(galaxy_pkg_dir, "web", "buildapp.py"),
+     os.path.join(galaxy_pkg_dir, "web", "buildapp.py"),
+     BUILDAPP_PATCHES)
+
+
+if __name__ == "__main__":
+  main(sys.argv)
+
+
+# Local Variables: **
+# mode: python **
+# End: **

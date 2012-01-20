@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<toolbox>
+  <section name="VL Import" id="vlSection.import">
+    <tool file="VL/importer/study.xml"/>
+    <tool file="VL/importer/individual.xml"/>
+    <tool file="VL/importer/biosample.xml"/>
+    <tool file="VL/importer/titer_plate.xml"/>
+    <tool file="VL/importer/device.xml"/>
+    <tool file="VL/importer/data_sample.xml"/>
+    <tool file="VL/importer/data_object.xml"/>
+    <tool file="VL/importer/data_collection.xml"/>
+    <tool file="VL/importer/diagnosis.xml"/>
+  </section>
+  <section name="VL Tools" id="vlSection.tools">
+    <tool file="VL/tools/markers_to_fastq.xml"/>
+    <tool file="VL/tools/convert_sam.xml"/>
+    <tool file="VL/tools/lookup_index.xml"/>
+    <tool file="VL/tools/query.xml"/>
+    <tool file="VL/tools/select_sub_group.xml"/>
+    <tool file="VL/tools/global_stats.xml"/>
+    <tool file="VL/tools/map_vid.xml"/>	
+  </section>
+</toolbox>

@@ -1,0 +1,30 @@
+How to patch and configure Galaxy for use with biobank
+======================================================
+
+In the following, we will assume that you have exported a GALAXY_HOME
+environment variable pointing to your galaxy distribution root
+directory.
+
+* run ./vl_patch ${GALAXY_HOME}: this deploys vl_app.py to
+  ${GALAXY_HOME}/lib/galaxy/ and patches an import statement in
+  ${GALAXY_HOME}/lib/galaxy/web/buildapp.py
+
+* add the following to ${GALAXY_HOME}/universe_wsgi.ini under [app:main]::
+
+    omero_default_host = <YOUR_OMERO_HOSTNAME_HERE>
+    omero_default_user = <YOUR_OMERO_USER_HERE>
+    omero_default_passwd = <YOUR_OMERO_PASSWORD_HERE>
+    vl_loglevel = <DESIRED_LOG_LEVEL>
+    vl_import_enabled_users = <COMMA_SEPARATED_GALAXY_USER_LIST>
+
+* copy tools/VL into ${GALAXY_HOME}/tools/
+
+* merge vl_tool_conf.xml into ${GALAXY_HOME}/tool_conf.xml
+
+* copy tool-data/VL into ${GALAXY_HOME}/tool-data/
+
+* copy all *.loc.sample files under tool-data to corresponding *.loc
+  files and adjust them according to your site's configuration
+
+* merge vl_tool_data_table_conf.xml into
+  ${GALAXY_HOME}/tool_data_table_conf.xml

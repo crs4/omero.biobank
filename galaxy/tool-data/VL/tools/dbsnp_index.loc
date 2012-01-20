@@ -1,5 +1,0 @@
-# This file has the following format:
-#
-#<id>TAB<dbkey>TAB<display_name>TAB<mask_len>TAB<file_path>
-#
-20110712_hg18_251	20110712_hg18_251	dbSNP v. 20110712, hg18, len_k=251	hg18	251	/tmp/hg18/dbSNP/20110712/dbsnp_index_hg18_251.db
