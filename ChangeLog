@@ -1,3 +1,9 @@
+2012-01-23    <simleo@neuron.crs4.it>
+
+	* bl/vl/individual/pedigree.py (up_propagate_front): fixed problem
+	where it might add individuals not included in the selected ones
+	-- simleo & lianas.
+
 2012-01-19    <simleo@neuron.crs4.it>
 
 	* bl/vl/kb/drivers/omero/wrapper.py (OmeroWrapper): added

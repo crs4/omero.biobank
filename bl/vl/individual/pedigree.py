@@ -117,9 +117,11 @@ def analyze(family):
       founders.append(i)
     else:
       non_founders.append(i)
-      children.setdefault(i.father, set()).add(i)
-      children.setdefault(i.mother, set()).add(i)
       couples.add((i.father, i.mother))
+      if i.father is not None:
+        children.setdefault(i.father, set()).add(i)
+      if i.mother is not None:
+        children.setdefault(i.mother, set()).add(i)
   if len(children) > 0:
     insiders = set(founders + non_founders)
     dangling = filter(lambda p: p not in insiders, children)
@@ -164,9 +166,13 @@ def down_propagate_front(family, children):
   return down_front
 
 
-def up_propagate_front(family):
-  up_front = [set([ind.father, ind.mother]) for ind in family]
-  up_front = set().union(*up_front) - set([None])
+def up_propagate_front(family, children):
+  up_front = set()
+  for ind in family:
+    for attr in "father", "mother":
+      parent = getattr(ind, attr)
+      if parent in children:
+        up_front.add(parent)
   return up_front
 
 
@@ -175,7 +181,7 @@ def propagate_family_helper(family, children):
   pre_size = len(family)
   down_front = down_propagate_front(family, children)
   family = family.union(down_front)
-  up_front = up_propagate_front(family)
+  up_front = up_propagate_front(family, children)
   family = family.union(up_front)
   if len(family) > pre_size:
     return propagate_family_helper(family, children)
@@ -227,7 +233,7 @@ def grow_family(seeds, children, genotyped, max_complexity=MAX_COMPLEXITY):
   while delta_size > 0:
     down_front = down_propagate_front(family, children)
     new_fam = family.union(down_front)
-    up_front = up_propagate_front(new_fam)
+    up_front = up_propagate_front(new_fam, children)
     new_fam = new_fam.union(up_front)
     # FIXME: to compute bit_complexity at each cycle is rather stupid,
     # since it could be computed incrementally.
