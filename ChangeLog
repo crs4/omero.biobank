@@ -1,3 +1,9 @@
+2012-01-23    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/snp_markers_set.py
+	(SNPMarkersSet.load_alignments): Now we use the new, hopefully
+	faster, mset based convention for alignment storing/retrival.
+
 2012-01-23    <simleo@neuron.crs4.it>
 
 	* bl/vl/individual/pedigree.py (up_propagate_front): fixed problem

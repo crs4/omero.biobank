@@ -220,7 +220,7 @@ class GenotypingAdapter(object):
     .. todo::
 
        add documentation on col_names
-    
+
     """
     count = (labels is None) + (rs_labels is None) + (vids is None)
     if count == 3:
@@ -315,18 +315,33 @@ class GenotypingAdapter(object):
     return self.kb.get_table_rows(self.SNP_ALIGNMENT_TABLE, selector,
                                   col_names=col_names, batch_size=batch_size)
 
-  def get_snp_alignment_positions(self, ref_genome, marker_vids,
+  def get_snp_alignment_positions(self, ref_genome, marker_vids, ms_vid=None,
                                   batch_size=BATCH_SIZE):
-    selector = '(ref_genome == "%s")' % ref_genome
-    res = self.get_snp_alignments(selector, col_names=['marker_vid'],
-                                  batch_size=batch_size)
-    if len(res) == 0:
-      return []
-    by_vid = dict(((l[0], i) for i, l in enumerate(res)))
-    row_indices = [by_vid[x] for x in marker_vids]
-    return self.kb.get_table_slice(self.SNP_ALIGNMENT_TABLE,
-                                   row_indices, ['chromosome', 'pos'],
-                                   batch_size=batch_size)
+    """
+    FIXME
+    """
+    if ms_vid:
+      selector = '(ref_genome == "%s")&(ms_vid == "%s")' % (ref_genome, ms_vid)
+      res = self.get_snp_alignments(selector,
+                                    col_names=['marker_vid',
+                                               'chromosome', 'pos'],
+                                    batch_size=batch_size)
+      if len(res) == 0:
+        return []
+      # FIXME this should be done directly in numpy.
+      by_vid = dict(((l[0], (l[1], l[2])) for l in res))
+      return [by_vid[k] for k in marker_vids]
+    else:
+      selector = '(ref_genome == "%s")' % ref_genome
+      res = self.get_snp_alignments(selector, col_names=['marker_vid'],
+                                    batch_size=batch_size)
+      if len(res) == 0:
+        return []
+      by_vid = dict(((l[0], i) for i, l in enumerate(res)))
+      row_indices = [by_vid[x] for x in marker_vids]
+      return self.kb.get_table_slice(self.SNP_ALIGNMENT_TABLE,
+                                     row_indices, ['chromosome', 'pos'],
+                                     batch_size=batch_size)
 
   #-- gdo
   def _gdo_table_name(self, set_vid):

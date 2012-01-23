@@ -15,7 +15,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
                 ('snpMarkersSetUK', wp.STRING, wp.REQUIRED)]
 
   @staticmethod
-  def extract_range(mset, gc_range):
+  def define_range_selector(mset, gc_range):
     """
     Returns a numpy array with the indices of the markers of mset that
     are contained in the provided gc_range. A gc_range is a two
@@ -37,8 +37,8 @@ class SNPMarkersSet(wp.OmeroWrapper):
       gc_end  =(end_chrom, end_pos)
 
       mset0.load_alignments(ref_genome)
-      indices = kb.SNPMarkersSet.extract_range(mset0,
-                                               gc_range=(gc_begin, gc_end))
+      indices = kb.SNPMarkersSet.define_range_selector(mset0,
+                                                       gc_range=(gc_begin, gc_end))
       for i in indices:
         assert (beg_chr, beg_pos) <= mset.markers[i].position < (end_chr, end_pos)
     """
@@ -70,16 +70,19 @@ class SNPMarkersSet(wp.OmeroWrapper):
       raise ValueError('markers vector has not been reloaded.')
     return len(self.markers)
 
-  def __getitem__(self, x):
+  def __getitem__(self, i):
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded.')
-    return self.markers[x]
+    return self.markers[i]
 
   @property
   def id(self):
     return self.markersSetVID
 
   def load_markers(self, load_flip=False, batch_size=5000):
+    """
+    FIXME
+    """
     self.reload()
     mdefs, msetc = self.proxy.get_snp_markers_set_content(self, batch_size)
     if load_flip:
@@ -95,7 +98,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
     """
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded.')
-    self.proxy.update_snp_positions(self.markers, ref_genome)
+    self.proxy.update_snp_positions(self.markers, ref_genome, ms_vid=self.id)
     self.bare_setattr('ref_genome', ref_genome)
 
   def __update_constraints__(self, base):

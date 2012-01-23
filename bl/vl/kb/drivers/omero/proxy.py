@@ -411,7 +411,7 @@ class Proxy(ProxyCore):
                                                      action)
     return label_vid_list
 
-  def save_snp_markers_alignments(self, ref_genome, stream, action):
+  def save_snp_markers_alignments(self, ref_genome, stream, action, mset=None):
     """
     Given a stream of five values tuples, will save allignment
     information of markers against a reference genome. The tuple field
@@ -442,7 +442,13 @@ class Proxy(ProxyCore):
              'allele' : x[4],
              'copies' : x[5]}
         yield y
-    self.add_snp_alignments(generator(stream), action.id)
+    if len(ref_genome) > self.gadpt.SNP_ALIGNMENT_COLS[1][3]:
+      raise ValueError('len("%s") > %d' %
+                       (ref_genome,
+                        self.gadpt.SNP_ALIGNMENT_COLS[1][3]))
+
+    self.add_snp_alignments(generator(stream), action.id,
+                            ms_vid=(mset.id if mset else None))
 
   def create_snp_markers_set(self, label, maker, model, release,
                              stream, action):
@@ -498,9 +504,11 @@ class Proxy(ProxyCore):
     mset.save()
     return mset
 
-  def update_snp_positions(self, markers, ref_genome, batch_size=BATCH_SIZE):
+  def update_snp_positions(self, markers, ref_genome, ms_vid=None, batch_size=BATCH_SIZE):
     vids = [m.id for m in markers]
-    res = self.gadpt.get_snp_alignment_positions(ref_genome, vids, batch_size)
+    res = self.gadpt.get_snp_alignment_positions(ref_genome, vids,
+                                                 ms_vid=ms_vid,
+                                                 batch_size=batch_size)
     if len(res) == 0:
       raise ValueError('missing markers alignments')
     for m, r in it.izip(markers, res):
@@ -629,7 +637,7 @@ class Proxy(ProxyCore):
       for do in dos:
         if do.mimetype == mimetypes.GDO_TABLE:
           table, vid = do.path.split('=')
-          mset_vid = table.split(':')[1].rsplit(".")[0]          
+          mset_vid = table.split(':')[1].rsplit(".")[0]
           if mset_vid != mset.markersSetVID:
             raise ValueError(
               'DataObject %s map to data with a wrong SNPMarkersSet' % do.path

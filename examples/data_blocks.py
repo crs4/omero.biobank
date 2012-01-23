@@ -159,7 +159,19 @@ for k in gds0_by_individual:
     data_sample_1.append(gds1_by_individual[k])
 
 # FIXME: there is no intersect method yet
-indices_0, indices_1 = kb.SNPMarkersSet.intersect(mset0, mset1)
+
+""" ..
+
+Operations on markers_set(s) are tricky, since they are reference genome dependent.
+
+In principle, we could use, for a given reference genome, the alligned
+positions, so the basic operation cycle would be: load in memory
+alignments; do compare; generate selection maps. It follows that
+extracting from db an aligment map should be a resonably fast
+operation.
+
+"""
+indices_0, indices_1 = kb.SNPMarkersSet.intersect(mset0, mset1, ref_genome)
 
 """ ..
 
