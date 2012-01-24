@@ -1,3 +1,8 @@
+2012-01-24    <simleo@neuron.crs4.it>
+
+	* bl/vl/kb/drivers/omero/utils.py (ome_hash): changed to hash
+	objects by their oldest ancestor's class.
+
 2012-01-23    <zag@manzanillo>
 
 	* bl/vl/kb/drivers/omero/snp_markers_set.py

@@ -13,6 +13,7 @@ The mask column must contain illumina TOP masks, as found in the
 prints the number of strands designed as BOT for non-indel SNPs, which
 should be 0.
 """
+
 import sys, os, csv
 from bl.vl.utils.snp import split_mask, _identify_strand
 
