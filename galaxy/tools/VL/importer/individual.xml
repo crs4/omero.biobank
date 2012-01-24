@@ -69,9 +69,7 @@ following columns::
   id3   female None   None
   ....
 
-The individuals will be enrolled in the 
 It is not possible to import the same individual twice: the related
 file rows will be noisily ignored.
   </help>
-
 </tool>

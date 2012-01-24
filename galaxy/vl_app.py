@@ -1,6 +1,4 @@
 from galaxy.app import UniverseApplication as OrigUniverseApplication
-
-
 from bl.vl.kb import KnowledgeBase as KB
 
 

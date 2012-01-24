@@ -48,7 +48,6 @@
       </options>
     </param>
 
-
     <conditional name="genomeSource">
       <param name="refGenomeSource"
 	     type="select" 
@@ -84,8 +83,6 @@
         <param name="input2" type="data" format="fastqsanger" label="Reverse FASTQ file" help="Must have Sanger-scaled quality values with ASCII offset 33" />
       </when>
     </conditional>
-
-
 
     <param name="source" size="40" type="text" value="" 
 	   label="source"/>
@@ -127,14 +124,14 @@ Will read in a tsv file with the following columns::
   V0909092   hg18       1          82938938 True   B      2
   ...
 
-FIXME discuss the fact that pos is with respect to 5' and thus, if the
-marker had been alligned on the other strand, it is the responsability
-of the aligner app to report the actual distance from 5', while, at
-the same time, registering that the snp had actually been aligned on
-the other strand.
+Since pos is relative to 5', if the marker has been aligned on the
+other strand, it is the responsibility of the aligner app to report
+the actual distance from 5', while, at the same time, registering that
+the SNP has actually been aligned on the other strand.
 
-Chromosome is an integer field with values in the range(1, 25) with 23
-(X), 24 (Y) and 25(MT).
+The chromosome field is an integer field with values in the [1, 26]
+range, with 23-26 representing, respectively, the X chromosome, the Y
+chromosome, the pseudoautosomal regions (XY) and the mitochondrial DNA
+(MT).
  </help>
-
 </tool>

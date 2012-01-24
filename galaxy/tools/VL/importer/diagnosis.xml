@@ -71,7 +71,6 @@ Will read in a tsv file with the following columns::
    ASTUDY V899       1310057541608  icd10-cm:E10
    ASTUDY V899       1310057541608  icd10-cm:G35
    ASTYDY V1806      1310057541608  exclusion-problem_diagnosis
-I  ...
+   ...
   </help>
-
 </tool>

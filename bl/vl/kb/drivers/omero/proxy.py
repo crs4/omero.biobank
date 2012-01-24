@@ -413,16 +413,17 @@ class Proxy(ProxyCore):
 
   def save_snp_markers_alignments(self, ref_genome, stream, action, mset=None):
     """
-    Given a stream of five values tuples, will save allignment
-    information of markers against a reference genome. The tuple field
-    are, respectively, the marker vid, the chromosome number (with 23
-    for X, 24 for Y, 25 for XY and 26 MT), a boolean that indicates if
-    the marker alligns on the 5' strand (True), the allele seen on the
-    reference genome and the number of times the given marker has been
-    seen on the reference genome. If the latter is N larger than 1,
-    there should be N records pertaining to the same marker.
+    Given a stream of five-element tuples, save alignment information
+    of markers wrt a reference genome.
 
-    .. code-blocK:: python
+    Tuple elements are, respectively: the marker vid; the chromosome
+    number (23=X, 24=Y, 25=XY, 26=MT); a boolean that's True if the
+    marker aligns on the 5' strand; the allele seen on the reference
+    genome; the number of times the given marker has been seen on the
+    reference genome. If the latter is N larger than 1, there should
+    be N records pertaining to the same marker.
+
+    .. code-block:: python
 
         s = [('V8238983', 1, 200, True, 'A', 1),
              ('V8238983', 2, 300, True, 'B', 1),
@@ -430,7 +431,6 @@ class Proxy(ProxyCore):
              ('V8238983', 2, 400, True, 'A', 2)]
 
         kb.save_snp_markers_alignments('hg19', s, action)
-
     """
     # FIXME no checking....
     def generator(s):

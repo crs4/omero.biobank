@@ -105,16 +105,12 @@
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-FIXME
-
 Will read in a csv file with the following columns::
 
   study  label   barcode rows columns maker model
   ASTUDY p090    2399389 32   48      xxxx  yyy
 
 The maker and model columns are optional, as well as the barcode one.
-Default plate dimensions  can be provided with a flag
-
+Default plate dimensions can be provided via a flag.
   </help>
-
 </tool>

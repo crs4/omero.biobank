@@ -95,27 +95,22 @@ Will read in a tsv file with the following columns::
 
 Where label is supposed to be the unique label for this marker in the
 (source, context, release) context, rs_label is the dbSNP db label for
-this snp (it could be the string ``None`` if it not defined/not
+this snp (it could be the string ``None`` if not defined or not
 known). The column mask contains the SNP definition. The strand column
 could either be the actual 'illumina style' strand used to define the
-alleles in the alleles columns, or the string 'None' which means that
-the alleles in the allele column are defined against the mask in the
+alleles in the alleles columns, or the string 'None', which means that
+the alleles in the allele column are defined wrt the mask in the
 mask column.
 
-It will, for each row, convert mask to the TOP strand following
-Illumina conventions and then save a record for it in VL.
-
-The saved tuple is (source, context, release, label, rs_label,
-TOP_mask)
-
-There are no collision controls.
+It will, for each row, convert the mask to the TOP strand following
+Illumina conventions and then save a record for it in VL. The saved
+tuple is (source, context, release, label, rs_label, TOP_mask). There
+are no collision controls.
 
 It will output a a tsv file with the following columns::
 
    study    label     type    vid
    ASTUDY   SNP_A-xxx Marker  V000002222
    ...
-
  </help>
-
 </tool>

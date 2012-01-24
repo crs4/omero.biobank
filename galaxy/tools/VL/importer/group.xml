@@ -56,7 +56,6 @@
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-
 Will create a new group of individuals from a file with the following columns::
 
    study   label   individual
@@ -64,9 +63,9 @@ Will create a new group of individuals from a file with the following columns::
    foo     I0001   V0B718B77691B145BFA8901FCCF6B37998
    ...
 
-Where the column study is optional, it can be provided as the param
-group_label, label should be unique within the file and individual are
-VID of existing (within omero/vl) Individual objects.
+where the column study is optional (it can be provided via the
+group_label param). Labels should be unique within the file and the
+individual field should contain VIDs of existing (within omero/vl)
+Individual objects.
   </help>
-
 </tool>

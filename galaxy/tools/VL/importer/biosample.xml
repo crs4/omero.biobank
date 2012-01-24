@@ -150,9 +150,6 @@
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-FIXME
-
-
 A biosample record will have, at least, the following fields::
 
   label     source
@@ -165,8 +162,7 @@ Another example, this time dna samples::
   I001-dna V932814899 0.3         0.2
   I002-dna V932814900 0.22        0.2
 
-where '''used_volume''' and '''current_volume''' are measured in FIXME
-microliters.
+where '''used_volume''' and '''current_volume''' are measured in FIXME UNIT.
 
 A special case is when the records refer to biosamples contained in
 plate wells. Together with the minimal columns above, there should be
@@ -181,16 +177,14 @@ where the label column is now the label of the well position.
 
 If row and column (optional) are provided, it will use that
 location. If they are not, it will deduce them from label (e.g., J01
--> row=10, column=1). Missing labels will be generated as
+-> row=10, column=1). Missing labels will be generated as::
 
        '%s%03d' % (chr(row + ord('A') - 1), column)
 
-Badly formed label will bring the rejection of the record. The same
+Badly formed labels will result in the rejection of the record. The same
 will happen if label, row and column are inconsistent.  The well will
 be filled by current_volume material produced by removing used_volume
 material taken from the bio material contained in the vessel
 identified by source. Row and Column are base 1.
-
   </help>
-
 </tool>

@@ -83,9 +83,8 @@ Will read in a tsv file with the following columns::
    TEST01 file:/share/fs/v039303.cel V2902 x-vl/affymetrix-cel 39090 E909090
   ....
 
-Records that point to an unknown (data_sample) will be noisily
+Records that point to an unknown data sample will be noisily
 ignored. The same will happen to records that have the same path of a
 previously seen data_object
   </help>
-
 </tool>

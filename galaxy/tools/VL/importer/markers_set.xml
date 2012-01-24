@@ -86,9 +86,6 @@
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-
-**FIXME**
-
 Will read in a tsv file with the following columns::
 
   marker_vid   marker_indx allele_flip
@@ -96,7 +93,5 @@ Will read in a tsv file with the following columns::
   V902909091  1            False
   V902909092  2            True
   ...
-
  </help>
-
 </tool>

@@ -98,20 +98,18 @@ convenience to support a more detailed description of a chip based
 acquisition.
 
 The general strategy is to decide what data objects should be
-instantiated by looking at the chip column and to its corresponding
+instantiated by looking at the chip column and at its corresponding
 maker,model,release.
 
 The optional column '''scanner''', the vid of the scanner device, is
-used in cases, such as affymetrix genotyping where it is relevant.
+used in cases, such as Affymetrix genotyping, where it is relevant.
 
 It is also possible to import DataSample(s) that are the results of
-processing on other DataSample(s). This is an example::
+processing other DataSample(s). Here is an example::
 
   study  label source device device_type     options
   ASTUDY foo01 v03909 v99021 SoftwareProgram conf1=...,conf2=...
   ASTUDY foo02 v03909 v99021 SoftwareProgram conf1=...,conf2=...
   ....
-
   </help>
-
 </tool>

@@ -15,8 +15,10 @@ aligned on the other strand, it is the responsibility of the aligner
 app to report the actual distance from 5', while, at the same time,
 registering that the snp has actually been aligned on the other strand.
 
-The chromosome field is an integer with values in the range(1, 25)
-with 23 (X), 24 (Y), 25(XY) and 26(MT).
+The chromosome field is an integer field with values in the [1, 26]
+range, with 23-26 representing, respectively, the X chromosome, the Y
+chromosome, the pseudoautosomal regions (XY) and the mitochondrial DNA
+(MT).
 """
 import csv, json, time
 

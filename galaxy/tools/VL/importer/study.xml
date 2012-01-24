@@ -48,14 +48,12 @@
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-Will import a stream of new study definitions defined by the
-following tab separated columns. A typical file will look like the following::
+Will import a stream of new study definitions defined by the following
+tab-separated columns. A typical file will look like the following::
 
   label	 description
   BSTUDY A basically empty description of BSTUDY
   CSTUDY A basically empty description of CSTUDY
   ....
-
   </help>
-
 </tool>
