@@ -1,14 +1,11 @@
-import os, unittest, time
-import itertools as it
-from bl.vl.kb import KBError
-from bl.vl.kb import KnowledgeBase as KB
-import bl.vl.utils as vlu
-
+import unittest, time
 import logging
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger()
 
+
 class KBObjectCreator(unittest.TestCase):
+  
   def __init__(self, label):
     self.kb = 'THIS_IS_A_DUMMY'
     self.kill_list = 'THIS_IS_A_DUMMY'
@@ -61,22 +58,18 @@ class KBObjectCreator(unittest.TestCase):
   def create_action_setup(self, action_setup=None):
     conf = {'label' : 'asetup-%f' % time.time(),
             'conf' : '{"param1": "foo"}'}
-    action_setup = (action_setup if action_setup
-                    else self.kb.factory.create(self.kb.ActionSetup,
-                                                conf))
+    if action_setup is None:
+      action_setup = self.kb.factory.create(self.kb.ActionSetup, conf)
     conf['id'] = action_setup.id
     return conf, action_setup
 
   def create_action(self, action_klass=None, target=None):
     dev_conf, device = self.create_device()
     self.kill_list.append(device.save())
-    #--
     asu_conf, asetup = self.create_action_setup()
     self.kill_list.append(asetup.save())
-    #--
     stu_conf, study = self.create_study()
     self.kill_list.append(study.save())
-    #--
     conf = {'setup' : asetup,
             'device': device,
             'actionCategory' : self.kb.ActionCategory.IMPORT,
@@ -124,12 +117,10 @@ class KBObjectCreator(unittest.TestCase):
     return self.create_action(action_klass=self.kb.ActionOnAction,
                               target=action)
 
-  #----------------------------------------------------------------------
   def create_vessel_conf_helper(self, action=None):
     if not action:
       aconf, action = self.create_action()
       self.kill_list.append(action.save())
-    #--
     conf = {
       'currentVolume' : 0.2,
       'initialVolume' : 0.2,
@@ -150,12 +141,10 @@ class KBObjectCreator(unittest.TestCase):
     v = self.kb.factory.create(self.kb.Tube, conf)
     return conf, v
 
-  #----------------------------------------------------------------------
   def create_data_sample_conf_helper(self, action=None):
     if not action:
       aconf, action = self.create_action()
       self.kill_list.append(action.save())
-    #--
     conf = {
       'label'  : 'ds-label-%s' % time.time(),
       'status' : self.kb.DataSampleStatus.USABLE,
@@ -175,16 +164,17 @@ class KBObjectCreator(unittest.TestCase):
     return conf, ds
 
   def create_snp_markers_set(self):
-    conf = {'maker' : 'maker-%s' % time.time(),
+    conf = {'label' : 'label-%s' % time.time(),
+            'maker' : 'maker-%s' % time.time(),
             'model' : 'model-%s' % time.time(),
             'release' : 'release-%s' % time.time(),
-            'markersSetVID' : 'V-%s' % time.time()
-            }
+            'markersSetVID' : 'V-%s' % time.time()}
     sms = self.kb.factory.create(self.kb.SNPMarkersSet, conf)
     return conf, sms
 
   def create_genotype_data_sample(self, action=None):
     conf = self.create_data_sample_conf_helper(action)
+    conf['label'] = 'label-%s' % time.time()
     sconf, sms = self.create_snp_markers_set()
     self.kill_list.append(sms.save())
     conf['snpMarkersSet'] = sms
@@ -199,17 +189,14 @@ class KBObjectCreator(unittest.TestCase):
             'path'   : 'hdfs://a.path',
             'mimetype' : 'x-affy/cel',
             'sha1'     : '3u2398989',
-            'size'     : 19209092L,
-            }
+            'size'     : 19209092L}
     do = self.kb.factory.create(self.kb.DataObject, conf)
     return conf, do
 
-  #----------------------------------------------------------------------
   def create_collection_conf_helper(self, action=None):
     if not action:
       aconf, action = self.create_action()
       self.kill_list.append(action.save())
-    #--
     conf = {
       'label'  : 'col-%s' % time.time(),
       'action' : action
@@ -258,8 +245,8 @@ class KBObjectCreator(unittest.TestCase):
     dci = self.kb.factory.create(self.kb.DataCollectionItem, conf)
     return conf, dci
 
-  #----------------------------------------------------------------------
-  def create_individual(self, action=None, gender=None, father=None, mother=None):
+  def create_individual(self, action=None, gender=None, father=None,
+                        mother=None):
     if not action:
       aconf, action = self.create_action()
       self.kill_list.append(action.save())
@@ -287,4 +274,3 @@ class KBObjectCreator(unittest.TestCase):
             'studyCode'  : st_code}
     e = self.kb.factory.create(self.kb.Enrollment, conf)
     return conf, e
-

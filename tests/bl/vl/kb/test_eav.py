@@ -1,21 +1,18 @@
-import os, unittest, time
-import itertools as it
-from bl.vl.kb import KBError
-from bl.vl.kb import KnowledgeBase as KB
-
-import logging
+import os, unittest, time, logging
 logging.basicConfig(level=logging.INFO)
-
 logger = logging.getLogger()
 
+from bl.vl.kb import KnowledgeBase as KB
 from kb_object_creator import KBObjectCreator
+
 
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
-class TestKB(KBObjectCreator, unittest.TestCase):
-  " "
+
+class TestKB(KBObjectCreator):
+
   def __init__(self, name):
     super(TestKB, self).__init__(name)
     self.kill_list = []
@@ -34,13 +31,11 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     logger.info('done with tear-down')
 
   def create_archetype_record(self):
-    #--
     terminology = 'terminology://apps.who.int/classifications/apps/'
     term = terminology + 'gE10.htm#E10'
     archetype = 'openEHR-EHR-EVALUATION.problem-diagnosis.v1'
-    field     = 'at0002.1'
+    field = 'at0002.1'
     rec = {field : term}
-    #--
     selector = ('(archetype=="%s")&(field=="%s")&(svalue=="%s")'
                 % (archetype, field, term))
     return archetype, rec, selector
@@ -54,12 +49,9 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     # FIXME there should be a function for this...
     timestamp = int(time.time() * 1000)
     self.kb.add_ehr_record(action, timestamp, archetype, fields)
-    #--
     rs = self.kb.get_ehr_records(selector)
-    #--
     individual = action.target
     individual.reload()
-    #--
     self.assertTrue(len(rs) > 0)
     not_found = True
     for r in rs:
@@ -79,12 +71,13 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     else:
       self.assertTrue(not_found)
 
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_ehr_record'))
   return suite
 
+
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)
   runner.run((suite()))
-

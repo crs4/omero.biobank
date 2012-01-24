@@ -1,19 +1,17 @@
-import os, unittest, time
-import itertools as it
-from bl.vl.kb import KBError
-from bl.vl.kb import KnowledgeBase as KB
-
-import logging
+import os, unittest, logging
 logging.basicConfig(level=logging.ERROR)
 
+from bl.vl.kb import KnowledgeBase as KB
 from kb_object_creator import KBObjectCreator
+
 
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
-class TestKB(KBObjectCreator, unittest.TestCase):
-  " "
+
+class TestKB(KBObjectCreator):
+
   def __init__(self, name):
     super(TestKB, self).__init__(name)
     self.kill_list = []
@@ -51,14 +49,12 @@ class TestKB(KBObjectCreator, unittest.TestCase):
   def test_study_ops(self):
     conf, s = self.create_study()
     s.save()
-    #--
     xs = self.kb.get_study(conf['label'])
     self.assertTrue(not xs is None)
     self.assertEqual(xs.id, s.id)
     self.assertEqual(xs.label, s.label)
     self.kb.delete(s)
-    self.assertEqual(self.kb.get_study(conf['label']),
-                     None)
+    self.assertEqual(self.kb.get_study(conf['label']), None)
 
   def test_device(self):
     conf, d = self.create_device()
@@ -73,13 +69,11 @@ class TestKB(KBObjectCreator, unittest.TestCase):
   def test_device_ops(self):
     conf, d = self.create_device()
     d.save()
-    #--
     xs = self.kb.get_device(conf['label'])
     self.assertTrue(not xs is None)
     self.check_object(xs, conf, self.kb.Device)
     self.kb.delete(d)
-    self.assertEqual(self.kb.get_device(conf['label']),
-                     None)
+    self.assertEqual(self.kb.get_device(conf['label']), None)
 
   def test_action_setup(self):
     conf, a = self.create_action_setup()
@@ -106,6 +100,7 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     self.kill_list.append(action.save())
     self.check_object(action, conf, self.kb.ActionOnDataSample)
 
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_study'))
@@ -120,7 +115,7 @@ def suite():
   suite.addTest(TestKB('test_action_on_data_collection_item'))
   return suite
 
+
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)
   runner.run((suite()))
-

@@ -1,19 +1,17 @@
-import os, unittest, time
-import itertools as it
-from bl.vl.kb import KBError
-from bl.vl.kb import KnowledgeBase as KB
-
-import logging
+import os, unittest, time, logging
 logging.basicConfig(level=logging.ERROR)
 
+from bl.vl.kb import KnowledgeBase as KB
 from kb_object_creator import KBObjectCreator
+
 
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
-class TestKB(KBObjectCreator, unittest.TestCase):
-  " "
+
+class TestKB(KBObjectCreator):
+
   def __init__(self, name):
     super(TestKB, self).__init__(name)
     self.kill_list = []
@@ -46,7 +44,6 @@ class TestKB(KBObjectCreator, unittest.TestCase):
   def test_parallel_save(self):
     aconf, action = self.create_action()
     self.kill_list.append(action.save())
-
     N = 1000
     people = []
     for i in range(N):
@@ -58,12 +55,13 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     self.kb.save_array(people)
     print' \n\ttime needed to save %s object: %s' % (N, time.time() - start)
 
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_parallel_save'))
   return suite
 
+
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)
   runner.run((suite()))
-

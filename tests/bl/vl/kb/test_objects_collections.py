@@ -1,19 +1,17 @@
-import os, unittest, time
-import itertools as it
-from bl.vl.kb import KBError
-from bl.vl.kb import KnowledgeBase as KB
-
-import logging
+import os, unittest, logging
 logging.basicConfig(level=logging.ERROR)
 
+from bl.vl.kb import KnowledgeBase as KB
 from kb_object_creator import KBObjectCreator
+
 
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
-class TestKB(KBObjectCreator, unittest.TestCase):
-  " "
+
+class TestKB(KBObjectCreator):
+
   def __init__(self, name):
     super(TestKB, self).__init__(name)
     self.kill_list = []
@@ -68,6 +66,7 @@ class TestKB(KBObjectCreator, unittest.TestCase):
     self.kill_list.append(c.save())
     self.check_object(c, conf, self.kb.DataCollectionItem)
 
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_container'))
@@ -77,7 +76,7 @@ def suite():
   suite.addTest(TestKB('test_data_collection_item'))
   return suite
 
+
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)
   runner.run((suite()))
-

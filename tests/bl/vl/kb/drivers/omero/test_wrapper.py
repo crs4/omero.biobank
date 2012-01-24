@@ -2,25 +2,24 @@ import unittest
 from bl.vl.kb.drivers.omero.wrapper import OmeroWrapper
 
 
-class TestOmeroWrapper(unittest.TestCase):
-  def setUp(self):
-    pass
+class Foo(OmeroWrapper):
+  
+  OME_TABLE = 'Study'
+  __fields__ = []
 
-  def tearDown(self):
-    pass
+  def __init__(self, ome_obj, proxy):
+    super(Foo, self).__init__(ome_obj, proxy)
+
+  def get_bar(self):
+    return self.bare_getattr('bar')
+  
+  def set_bar(self, v):
+    self.bare_setattr('bar', v)
+
+
+class TestOmeroWrapper(unittest.TestCase):
 
   def test_bare_attrs(self):
-    class Foo(OmeroWrapper):
-      OME_TABLE = 'Study'
-      __fields__ = []
-
-      def __init__(self, ome_obj, proxy):
-        super(Foo, self).__init__(ome_obj, proxy)
-
-      def get_bar(self):
-        return self.bare_getattr('bar')
-      def set_bar(self, v):
-        self.bare_setattr('bar', v)
     f = Foo(None, None)
     self.assertFalse(hasattr(f, 'bar'))
     f.set_bar(22)
