@@ -1,21 +1,18 @@
-import wrapper as wp
-
-import numpy as np
-
-
 from bl.vl.kb import mimetypes
+import wrapper as wp
 from action import Action
 from snp_markers_set import SNPMarkersSet
-
-from utils import assign_vid_and_timestamp, make_unique_key
+from utils import assign_vid_and_timestamp
 
 
 class DataSampleStatus(wp.OmeroWrapper):
+  
   OME_TABLE = 'DataSampleStatus'
   __enums__ = ["UNKNOWN", "DESTROYED", "CORRUPTED", "USABLE"]
 
 
 class DataSample(wp.OmeroWrapper):
+  
   OME_TABLE = 'DataSample'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
@@ -28,9 +25,10 @@ class DataSample(wp.OmeroWrapper):
 
 
 class DataObject(wp.OmeroWrapper):
+  
   OME_TABLE = 'DataObject'
   __fields__ = [('sample', DataSample, wp.REQUIRED),
-                 # following fields come from OriginalFile
+                 # the following fields come from OriginalFile
                 ('name',   wp.STRING,  wp.REQUIRED),
                 ('path',   wp.STRING,  wp.REQUIRED),
                 ('mimetype', wp.STRING, wp.REQUIRED),
@@ -41,20 +39,28 @@ class DataObject(wp.OmeroWrapper):
     conf['name'] = conf['sample'].vid
     return conf
 
+
 class MicroArrayMeasure(DataSample):
+  
   OME_TABLE = 'MicroArrayMeasure'
   __fields__ = []
 
+
 class AffymetrixCelArrayType(wp.OmeroWrapper):
+  
   OME_TABLE="AffymetrixCelArrayType"
   __enums__ = ["UNKNOWN", "GENOMEWIDESNP_6"]
 
+
 class AffymetrixCel(MicroArrayMeasure):
+  
   OME_TABLE = 'AffymetrixCel'
   __fields__ = [('arrayType', AffymetrixCelArrayType, wp.REQUIRED),
                 ('celID',     wp.STRING,              wp.OPTIONAL)]
 
+
 class IlluminaBeadChipAssayType(wp.OmeroWrapper):
+  
   OME_TABLE="IlluminaBeadChipAssayType"
   __enums__ = ["UNKNOWN", "HUMAN1M_DUO",
                "HUMANOMNI5_QUAD",
@@ -62,12 +68,15 @@ class IlluminaBeadChipAssayType(wp.OmeroWrapper):
                "HUMANOMNI1_QUAD", "HUMANOMNIEXPRESS", "HUMANCYTOSNP_12",
                "METABOCHIP", "IMMUNOCHIP"]
 
+
 class IlluminaBeadChipAssay(MicroArrayMeasure):
+  
   OME_TABLE = 'IlluminaBeadChipAssay'
   __fields__ = [('assayType', IlluminaBeadChipAssayType, wp.REQUIRED)]
 
 
 class GenotypeDataSample(DataSample):
+  
   OME_TABLE = 'GenotypeDataSample'
   __fields__ = [('snpMarkersSet', SNPMarkersSet, wp.REQUIRED)]
 

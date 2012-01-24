@@ -5,20 +5,17 @@ VID_SIZE = vlu.DEFAULT_VID_LEN
 
 
 class EAVAdapter(object):
-  """
-  FIXME
-  """
 
   EAV_EHR_TABLE = 'eav_ehr_table.h5'
-
+  
   EAV_STORAGE_COLS = \
   [('long', 'timestamp', 'When this row was written', None),
    ('string', 'i_vid',
-    """an unique identifier that points to the kb object (typically an
+    """a unique identifier that points to the kb object (typically an
     individual) related to this record. This is actually redundant,
     since it should be possible to recover it by looking at the target
     of the action identified by a_vid. It is kept as a convenience,
-    but it is a responsability of the user app to keep data consistent.
+    but it is a responsibility of the user app to keep data consistent.
     """,
     VID_SIZE, None),
    ('string', 'a_vid',
@@ -56,14 +53,14 @@ class EAVAdapter(object):
    ('double', 'dvalue', "this record double value",        None),
    ]
 
-
   # FIXME this should go somewhere central...
-  FIELD_TYPE_ENCODING_TABLE = {'int'  : ('long',   'lvalue', 0),
-                               'long' : ('long',   'lvalue', 0),
-                               'float' : ('float', 'dvalue', 0.0),
-                               'str'  :  ('str',   'svalue', None),
-                               'bool'  : ('bool',   'bvalue', False)}
-  #----------------------------------------------------------------------
+  FIELD_TYPE_ENCODING_TABLE = {
+    'int': ('long', 'lvalue', 0),
+    'long': ('long', 'lvalue', 0),
+    'float': ('float', 'dvalue', 0.0),
+    'str': ('str', 'svalue', None),
+    'bool': ('bool', 'bvalue', False),
+    }
 
   @classmethod
   def encode_field_value(klass, row):
@@ -72,9 +69,8 @@ class EAVAdapter(object):
     value = row['value']
     conv = EAVAdapter.FIELD_TYPE_ENCODING_TABLE[type(value).__name__]
     row['type'] = conv[0]
-    # FIXME do we need to upgrade int to long?
+    # FIXME do we need to convert int to long?
     row[conv[1]] = value
-
 
   @classmethod
   def decode_field_value(klass, ftype, svalue, bvalue, lvalue, dvalue):

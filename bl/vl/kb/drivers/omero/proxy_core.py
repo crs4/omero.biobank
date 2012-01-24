@@ -18,16 +18,18 @@ from utils import ome_hash
 BATCH_SIZE = 5000
 
 
+def convert_type(o):
+  if isinstance(o, omero.grid.LongColumn):
+    return 'i8'
+  elif isinstance(o, omero.grid.DoubleColumn):
+    return 'f8'
+  elif isinstance(o, omero.grid.BoolColumn):
+    return 'b'
+  elif isinstance(o, omero.grid.StringColumn):
+    return '|S%d' % o.size
+
+
 def convert_coordinates_to_np(d):
-  def convert_type(o):
-    if isinstance(o, omero.grid.LongColumn):
-      return 'i8'
-    elif isinstance(o, omero.grid.DoubleColumn):
-      return 'f8'
-    elif isinstance(o, omero.grid.BoolColumn):
-      return 'b'
-    elif isinstance(o, omero.grid.StringColumn):
-      return '|S%d' % o.size
   record_type = [(c.name, convert_type(c)) for c in d.columns]
   npd = np.zeros(len(d.columns[0].values), dtype=record_type)
   for c in d.columns:
@@ -36,15 +38,6 @@ def convert_coordinates_to_np(d):
 
 
 def convert_to_numpy_record_type(d):
-  def convert_type(o):
-    if isinstance(o, omero.grid.LongColumn):
-      return 'i8'
-    elif isinstance(o, omero.grid.DoubleColumn):
-      return 'f8'
-    elif isinstance(o, omero.grid.BoolColumn):
-      return 'b'
-    elif isinstance(o, omero.grid.StringColumn):
-      return '|S%d' % o.size
   return [(c.name, convert_type(c)) for c in d]
 
 
@@ -53,21 +46,6 @@ def convert_from_numpy(x):
     return int(x)
   else:
     return x
-
-
-counter = 0
-def debug_boundary(f):
-  def debug_boundary_wrapper(*args, **kv):
-    global counter
-    now = time.time()
-    counter += 1
-    logger.debug('%s[%d] in' % (f.__name__, counter))
-    res = f(*args, **kv)
-    logger.debug('%s[%d] out (%f)' % (f.__name__, counter,
-                                      time.time() - now))
-    counter -= 1
-    return res
-  return debug_boundary_wrapper
 
 
 class ProxyCore(object):
@@ -152,7 +130,6 @@ class ProxyCore(object):
       params.add(k, conf[k])
     return params
 
-  @debug_boundary
   def ome_operation(self, operation, action, *action_args):
     session = self.connect()
     try:
@@ -169,7 +146,6 @@ class ProxyCore(object):
       self.disconnect()
     return result
 
-  @debug_boundary
   def find_all_by_query(self, query, params, factory):
     if params:
       xpars = {}
@@ -189,8 +165,8 @@ class ProxyCore(object):
     o.ome_obj = res
     o.proxy = self
 
+  # FIXME this is a hack
   def reload_object(self, o, fields=None):
-    "FIXME this is an hack...."
     def load_ome_obj(ome_obj):
       tbl = ome_obj.__class__.__name__[:-1]
       res = self.ome_operation("getQueryService", "get",
@@ -206,7 +182,6 @@ class ProxyCore(object):
     o.ome_obj = res
     o.proxy = self
 
-  @debug_boundary
   def save(self, obj):
     """
     Save and return a kb object.
@@ -214,9 +189,6 @@ class ProxyCore(object):
     try:
       result = self.ome_operation("getUpdateService", "saveAndReturnObject",
                                   obj.ome_obj)
-      # # FIXME: this is baroque, does it really help?
-      # result = self.ome_operation("getQueryService", "get",
-      #                             obj.OME_TABLE, result.id._val)
     except omero.ValidationException, e:
       msg = 'omero.ValidationException: %s' % e.message
       self.logger.error(msg)
@@ -226,7 +198,6 @@ class ProxyCore(object):
     self.store_to_cache(obj)
     return obj
 
-  @debug_boundary
   def save_array(self, array):
     """
     Save and return an array of kb objects.
@@ -234,9 +205,6 @@ class ProxyCore(object):
     try:
       result = self.ome_operation("getUpdateService", "saveAndReturnArray",
                                   [obj.ome_obj for obj in array])
-      # # FIXME: this is baroque, does it really help?
-      # result = self.ome_operation("getQueryService", "get",
-      #                             obj.OME_TABLE, result.id._val)
     except omero.ValidationException, e:
       msg = 'omero.ValidationException: %s' % e.message
       self.logger.error(msg)
@@ -248,7 +216,6 @@ class ProxyCore(object):
       self.store_to_cache(o)
     return array
 
-  @debug_boundary
   def delete(self, kb_obj):
     """
     Delete a kb object.
@@ -270,13 +237,11 @@ class ProxyCore(object):
   #----------------------------------------------------------------------------
   #----------------------------------------------------------------------------
 
-  @debug_boundary
   def _list_table_copies(self, table_name):
     return self.ome_operation('getQueryService',
                               'findAllByString', 'OriginalFile',
                               'name', table_name, True, None)
 
-  @debug_boundary
   def get_table(self, table_name):
     s = self.connect()
     try:
@@ -292,7 +257,6 @@ class ProxyCore(object):
       raise ValueError('get_table: cannot resolve %s' % table_name)
     return
 
-  @debug_boundary
   def delete_table(self, table_name):
     """
     This method only removes OriginalFile table entry from database.
@@ -307,7 +271,6 @@ class ProxyCore(object):
     finally:
       self.disconnect()
 
-  @debug_boundary
   def table_exists(self, table_name):
     try:
       ofiles = self._list_table_copies(table_name)
@@ -315,7 +278,6 @@ class ProxyCore(object):
       self.disconnect()
     return len(ofiles) > 0
 
-  @debug_boundary
   def create_table(self, table_name, fields):
     ofields = [self.OME_TABLE_COLUMN[f[0]](*f[1:]) for f in fields]
     s = self.connect()
@@ -329,7 +291,6 @@ class ProxyCore(object):
       self.disconnect()
     return t
 
-  @debug_boundary
   def _get_table(self, session, table_name):
     s = session
     qs = s.getQueryService()
@@ -340,10 +301,8 @@ class ProxyCore(object):
     t = r.openTable(ofile)
     return t
 
-  @debug_boundary
   def get_table_rows_iterator(self, table_name, batch_size=100):
-    """FIXME error control..."""
-    #-
+    # TODO add error checking
     def iter_on_rows(t, n_cols):
       i, N = 0, t.getNumberOfRows()
       while i < N:
@@ -353,9 +312,7 @@ class ProxyCore(object):
         for k in range(j - i):
           yield Z[k]
         i = j
-      # this closes the connect() below
-      self.disconnect()
-    #-
+      self.disconnect()  # this closes the connect() below
     s = self.connect()
     t = self._get_table(s, table_name)
     col_objs = t.getHeaders()
@@ -375,12 +332,10 @@ class ProxyCore(object):
       col_numbers = range(len(col_objs))
     return col_numbers
 
-  @debug_boundary
   def get_table_rows(self, table_name, selector, col_names=None,
                      batch_size=BATCH_SIZE):
     """
-    FIXME
-    selector can now be either a selection or a list of selections. In
+    selector can be either a selection or a list of selections. In
     the latter case, it is interpreted as an 'or' condition between
     the list elements.
     """
@@ -397,7 +352,6 @@ class ProxyCore(object):
       self.disconnect()
     return res
 
-  @debug_boundary
   def __get_table_rows_selected(self, table, selector, col_numbers, batch_size):
     res, row_read, max_row = [], 0, table.getNumberOfRows()
     if isinstance(selector, str):
@@ -411,7 +365,6 @@ class ProxyCore(object):
       row_read += batch_size
     return np.concatenate(tuple(res)) if res else []
 
-  @debug_boundary
   def __get_table_rows_bulk(self, table, col_numbers, batch_size=BATCH_SIZE):
     res, row_read, max_row = [], 0, table.getNumberOfRows()
     while row_read < max_row:
@@ -421,10 +374,8 @@ class ProxyCore(object):
       row_read += batch_size
     return np.concatenate(tuple(res)) if res else []
 
-  @debug_boundary
   def __get_table_rows_slice(self, table, row_numbers, col_numbers, batch_size):
     res, n_rows, row_read = [], len(row_numbers), 0
-
     while row_read < n_rows:
       ids = row_numbers[row_read : (row_read + batch_size)]
       if ids:
@@ -433,12 +384,8 @@ class ProxyCore(object):
       row_read += batch_size
     return np.concatenate(tuple(res)) if res else []
 
-  @debug_boundary
   def get_table_slice(self, table_name, row_numbers, col_names=None,
                       batch_size=BATCH_SIZE):
-    """
-    FIXME
-    """
     s = self.connect()
     try:
       t = self._get_table(s, table_name)
@@ -448,7 +395,6 @@ class ProxyCore(object):
       self.disconnect()
     return res
   
-  @debug_boundary
   def get_table_headers(self, table_name):
     col_objs = None
     s = self.connect()
@@ -460,10 +406,8 @@ class ProxyCore(object):
     if col_objs:
       return convert_to_numpy_record_type(col_objs)
 
-  @debug_boundary
   def add_table_row(self, table_name, row):
     if hasattr(row, 'dtype'):
-      # handle rows provided as numpy objects
       dtype = row.dtype
       row = dict([(k, convert_from_numpy(row[k])) for k in dtype.names])
     def stream(row):
@@ -471,7 +415,6 @@ class ProxyCore(object):
         yield row
     return self.add_table_rows_from_stream(table_name, stream(row), 10)
 
-  @debug_boundary
   def add_table_rows(self, table_name, rows, batch_size=BATCH_SIZE):
     dtype = rows.dtype
     def stream(rows):
@@ -480,13 +423,11 @@ class ProxyCore(object):
     return self.add_table_rows_from_stream(table_name, stream(rows),
                                            batch_size=batch_size)
 
-  @debug_boundary
   def add_table_rows_from_stream(self, table_name, stream,
                                  batch_size=BATCH_SIZE):
     return self.__extend_table(table_name, self.__load_batch, stream,
                                batch_size=batch_size)
 
-  @debug_boundary
   def __extend_table(self, table_name, batch_loader, records_stream,
                      batch_size=BATCH_SIZE):
     s = self.connect()
@@ -501,11 +442,7 @@ class ProxyCore(object):
     finally:
       self.disconnect()
 
-  @debug_boundary
   def __load_batch(self, records_stream, col_objs, chunk_size):
-    """
-    FIXME: Validation checks? We don't need no stinking validation checks.
-    """
     v = {}
     for r in it.islice(records_stream, chunk_size):
       for k in r.keys():
@@ -516,7 +453,6 @@ class ProxyCore(object):
       o.values = v[o.name]
     return col_objs
 
-  @debug_boundary
   def update_table_row(self, table_name, selector, row):
     s = self.connect()
     try:
@@ -534,7 +470,6 @@ class ProxyCore(object):
     finally:
       self.disconnect()
 
-  @debug_boundary
   def __update_data_contents(self, data, row):
     assert len(data.rowNumbers) == 1
     if hasattr(row, 'dtype'):

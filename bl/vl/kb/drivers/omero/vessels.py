@@ -1,25 +1,27 @@
 import omero.model as om
 import omero.rtypes as ort
 
-
 import wrapper as wp
-
 from action import Action
 from utils import assign_vid_and_timestamp, make_unique_key
-
 from objects_collections import TiterPlate
 
+
 class VesselContent(wp.OmeroWrapper):
+  
   OME_TABLE = 'VesselContent'
   __enums__ = ["EMPTY", "BLOOD", "SERUM", "DNA"]
 
 
 class VesselStatus(wp.OmeroWrapper):
+  
   OME_TABLE = 'VesselStatus'
   __enums__ = ["UNUSED", "UNKNOWN", "UNUSABLE", "DISCARDED",
                "CONTENTUSABLE", "CONTENTCORRUPTED"]
 
+
 class Vessel(wp.OmeroWrapper):
+  
   OME_TABLE = 'Vessel'
   __fields__ = [('vid',   wp.VID, wp.REQUIRED),
                 ('activationDate', wp.TIMESTAMP, wp.REQUIRED),
@@ -36,11 +38,14 @@ class Vessel(wp.OmeroWrapper):
 
 
 class Tube(Vessel):
+  
   OME_TABLE = 'Tube'
   __fields__ = [('label', wp.STRING, wp.REQUIRED),
                 ('barcode', wp.STRING, wp.OPTIONAL)]
 
+
 class PlateWell(Vessel):
+  
   OME_TABLE = 'PlateWell'
   __fields__ = [('label', wp.STRING, wp.REQUIRED),
                 ('slot', wp.INT, wp.REQUIRED),

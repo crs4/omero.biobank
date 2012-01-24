@@ -1,13 +1,3 @@
-"""
-
-Omero Objects Wrapping
-======================
-
-.. todo::
-
-   write docs.
-
-"""
 import omero.model as om
 import omero.rtypes as ort
 
@@ -20,26 +10,25 @@ from utils import ome_hash
 
 REQUIRED = 'required'
 OPTIONAL = 'optional'
-VID      = 'vid'
-STRING   = 'string'
-BOOLEAN  = 'boolean'
-INT      = 'int'
-LONG     = 'long'
-FLOAT    = 'float'
-TEXT     = 'text'
+VID = 'vid'
+STRING = 'string'
+BOOLEAN = 'boolean'
+INT = 'int'
+LONG = 'long'
+FLOAT = 'float'
+TEXT = 'text'
 TIMESTAMP = 'timestamp'
-#
 SELF_TYPE = 'self-type'
-
-
-WRAPPING = {TIMESTAMP : ort.rtime,
-            VID       : ort.rstring,
-            STRING    : ort.rstring,
-            TEXT      : ort.rstring,
-            FLOAT     : ort.rfloat,
-            INT       : ort.rint,
-            LONG      : ort.rlong,
-            BOOLEAN   : ort.rbool}
+WRAPPING = {
+  TIMESTAMP: ort.rtime,
+  VID: ort.rstring,
+  STRING: ort.rstring,
+  TEXT: ort.rstring,
+  FLOAT: ort.rfloat,
+  INT: ort.rint,
+  LONG: ort.rlong,
+  BOOLEAN: ort.rbool,
+  }
 
 
 def ome_wrap(v, wtype=None):
@@ -118,7 +107,6 @@ class CoreOmeroWrapper(object):
     elif tcode in WRAPPING:
       return WRAPPING[tcode](v)
     else:
-      # We cannot be here.....
       raise ValueError('illegal tcode value: %s' % tcode)
 
   def from_omero(self, tcode, v):
@@ -133,7 +121,6 @@ class CoreOmeroWrapper(object):
     elif tcode in WRAPPING:
       return ort.unwrap(v)
     else:
-      # We cannot be here.....
       raise ValueError('illegal tcode value: %s' % tcode)
 
   def is_mapped(self):
@@ -191,8 +178,7 @@ class MetaWrapper(type):
       base.__config__(self, ome_obj, conf)
       conf = self.__preprocess_conf__(conf)
       for k, t in fields.iteritems():
-        if k is 'vid': #
-          # FIXME are we not setting this in conf?
+        if k is 'vid':
           setattr(ome_obj, k, self.to_omero(STRING, vlu.make_vid()))
         elif k in conf:
           setattr(ome_obj, k, self.to_omero(t[0], conf[k]))
@@ -244,7 +230,6 @@ class MetaWrapper(type):
     klass = type.__new__(meta, name, bases, attrs)
     if klass.OME_TABLE:
       meta.__KNOWN_OME_KLASSES__[klass.get_ome_type()] = klass
-      #-- FIXME SELF_TYPE patch
       fields = attrs['__fields__']
       for k in fields:
         if fields[k][0] == SELF_TYPE:

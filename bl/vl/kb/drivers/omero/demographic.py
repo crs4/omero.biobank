@@ -1,19 +1,16 @@
 import omero.model as om
 import omero.rtypes as ort
 
-import bl.vl.utils as vu
-import bl.vl.utils.ome_utils as vou
 import wrapper as wp
-
 from individual import Gender, Individual, Enrollment
-from action     import Study, Action
+from action import Study, Action
 from actions_on_target import ActionOnAction
-from location   import Location
-
+from location import Location
 from utils import assign_vid, make_unique_key
 
 
 class Demographic(wp.OmeroWrapper):
+  
   OME_TABLE = 'Demographic'
   __fields__ = [('vid',   wp.VID, wp.REQUIRED),
                 ('name',  wp.STRING, wp.REQUIRED),
@@ -29,7 +26,7 @@ class Demographic(wp.OmeroWrapper):
                 ('phone1', wp.STRING, wp.OPTIONAL),
                 ('email', wp.STRING, wp.OPTIONAL),
                 ('individual', Individual, wp.REQUIRED),
-                # Multi field unique key
+                # Multi-field unique key
                 # demogUK = NAME_SURNAME_BIRTHDATE_GENDER-ID_BIRTHPLACE-VID
                 ('demogUK', wp.STRING, wp.REQUIRED),
                 ('action', Action, wp.REQUIRED),
@@ -51,6 +48,7 @@ class Demographic(wp.OmeroWrapper):
 
 
 class InformedConsent(wp.OmeroWrapper):
+  
   OME_TABLE = 'InformedConsent'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
@@ -66,7 +64,9 @@ class InformedConsent(wp.OmeroWrapper):
   def __preprocess_conf__(self, conf):
     return assign_vid(conf)
 
+
 class Agreement(wp.OmeroWrapper):
+  
   OME_TABLE = 'Agreement'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('refConsent', InformedConsent, wp.REQUIRED),

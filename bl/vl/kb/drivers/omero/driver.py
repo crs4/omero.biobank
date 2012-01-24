@@ -1,5 +1,4 @@
-from proxy import proxy
-from actions import Action
+from proxy import Proxy
 from object_factory import ObjectFactory
 
 

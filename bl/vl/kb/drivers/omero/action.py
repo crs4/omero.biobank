@@ -1,16 +1,13 @@
 import omero.model as om
 import omero.rtypes as ort
 
-import time
-
 from utils import assign_vid_and_timestamp
-
 import wrapper as wp
-
 from snp_markers_set import SNPMarkersSet
 
 
 class Study(wp.OmeroWrapper):
+  
   OME_TABLE = 'Study'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
@@ -22,8 +19,8 @@ class Study(wp.OmeroWrapper):
     return assign_vid_and_timestamp(conf, time_stamp_field='startDate')
 
 
-
 class Device(wp.OmeroWrapper):
+  
   OME_TABLE = 'Device'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
@@ -31,36 +28,47 @@ class Device(wp.OmeroWrapper):
                 ('model', wp.STRING, wp.REQUIRED),
                 ('release', wp.STRING, wp.REQUIRED)]
 
+
 class SoftwareProgram(Device):
+  
   OME_TABLE = 'SoftwareProgram'
   __fields__ = []
 
 
 class GenotypingProgram(SoftwareProgram):
+  
   OME_TABLE = 'GenotypingProgram'
   __fields__ = [('snpMarkersSet', SNPMarkersSet, wp.REQUIRED)]
 
+
 class HardwareDevice(Device):
+  
   OME_TABLE = 'HardwareDevice'
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
                 ('physicalLocation', wp.STRING, wp.OPTIONAL)]
 
 
 class Scanner(HardwareDevice):
+  
   OME_TABLE = 'Scanner'
   __fields__ = []
 
+
 class Chip(Device):
+  
   OME_TABLE = 'Chip'
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL)]
 
 
 class ActionCategory(wp.OmeroWrapper):
+  
   OME_TABLE = 'ActionCategory'
   __enums__ = ['IMPORT', 'CREATION', 'EXTRACTION', 'UPDATE',
                'ALIQUOTING', 'MEASUREMENT', 'PROCESSING']
 
+
 class ActionSetup(wp.OmeroWrapper):
+  
   OME_TABLE = 'ActionSetup'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
@@ -68,6 +76,7 @@ class ActionSetup(wp.OmeroWrapper):
 
 
 class Action(wp.OmeroWrapper):
+  
   OME_TABLE = 'Action'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('beginTime', wp.TIMESTAMP, wp.REQUIRED),

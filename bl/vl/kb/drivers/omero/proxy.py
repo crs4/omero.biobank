@@ -1,12 +1,7 @@
-"""
-
-FIXME
-
-"""
 import hashlib, time, pwd, json, os
 import itertools as it
 
-# This is actually used in the meta class magic
+# This is actually used in the metaclass magic
 import omero.model as om
 
 import bl.vl.utils as vlu
@@ -16,7 +11,6 @@ from bl.vl.kb import mimetypes
 
 from proxy_core import ProxyCore
 from wrapper import ObjectFactory, MetaWrapper
-
 import snp_markers_set
 import action
 import vessels
@@ -26,13 +20,12 @@ import actions_on_target
 import individual
 import location
 import demographic
-
 from genotyping import GenotypingAdapter
-from modeling   import ModelingAdapter
-from eav        import EAVAdapter
-from ehr        import EHR
+from modeling import ModelingAdapter
+from eav import EAVAdapter
+from ehr import EHR
 from genotyping import Marker
-from admin      import Admin
+from admin import Admin
 
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
@@ -41,9 +34,8 @@ BATCH_SIZE = 5000
 
 class Proxy(ProxyCore):
   """
-  An omero driver for KB.
+  An OMERO driver for the knowledge base.
   """
-
   def __init__(self, host, user, passwd, group=None, session_keep_tokens=1):
     super(Proxy, self).__init__(host, user, passwd, group, session_keep_tokens)
     self.factory = ObjectFactory(proxy=self)
@@ -67,9 +59,6 @@ class Proxy(ProxyCore):
       raise ValueError(msg)
 
   def __resolve_action_id(self, action):
-    """
-    Utility function
-    """
     if isinstance(action, self.Action):
       if not action.is_loaded():
         action.reload()
@@ -77,7 +66,6 @@ class Proxy(ProxyCore):
     else:
       avid = action
     return avid
-
 
   # High level ops
   # ==============
@@ -90,7 +78,6 @@ class Proxy(ProxyCore):
         dos = self.find_all_by_query(query, None)
         for do in dos:
           print do.path
-
     """
     return super(Proxy, self).find_all_by_query(query, params, self.factory)
 
@@ -105,8 +92,7 @@ class Proxy(ProxyCore):
   def update_dependency_tree(self):
     self.dt = DependencyTree(self)
 
-
-  # MODELING related utility functions
+  # Modeling-related utility functions
   # ==================================
 
   def get_device(self, label):
@@ -116,16 +102,9 @@ class Proxy(ProxyCore):
     return self.madpt.get_action_setup(label)
 
   def get_study(self, label):
-    """
-    Return the study object labeled 'label' or None if nothing matches 'label'.
-    """
     return self.madpt.get_study(label)
 
   def get_data_collection(self, label):
-    """
-    Return the DataCollection object labeled 'label'
-    or None if nothing matches 'label'.
-    """
     return self.madpt.get_data_collection(label)
 
   def get_data_collection_items(self, dc):
@@ -153,17 +132,12 @@ class Proxy(ProxyCore):
     return self.madpt.get_containers(klass)
 
   def get_container(self, label):
-    """
-    Return the container object labeled 'label' or None if nothing
-    matches 'label'.
-    """
     return self.madpt.get_container(label)
 
   def get_data_objects(self, sample):
     return self.madpt.get_data_objects(sample)
 
-
-  # GENOTYPING related utility functions
+  # Genotyping-related utility functions
   # ====================================
 
   def delete_snp_marker_defitions_table(self):
@@ -192,7 +166,7 @@ class Proxy(ProxyCore):
 
   def add_snp_marker_definitions(self, stream, action, batch_size=BATCH_SIZE):
     """
-    Save a stream of markers definitions.  For efficiency reasons,
+    Save a stream of marker definitions. For efficiency reasons,
     markers are written in batches, whose size is controlled by
     batch_size.
 
@@ -234,20 +208,17 @@ class Proxy(ProxyCore):
   def get_snp_marker_definitions(self, selector=None, col_names=None,
                                  batch_size=BATCH_SIZE):
     """
-    Returns an array with the marker definitions that satisfy
-    selector. If selector is None, returns all markers definitions. It
-    is possible to request only specific columns of the markers
-    definition by assigning to col_names a list with the names of
-    the selected columns.
+    Return an array with the marker definitions that satisfy
+    selector. If selector is None, return all marker definitions. It
+    is possible to request only specific marker definition columns by
+    assigning to col_names a list with the names of the selected
+    columns.
 
     .. code-block:: python
 
        selector = "(source == 'affymetrix') & (context == 'GW6.0')"
-
        col_names = ['vid', 'label']
-
        mrks = kb.get_snp_marker_definitions(selector, col_names)
-
     """
     return self.gadpt.get_snp_marker_definitions(selector, col_names,
                                                  batch_size)
@@ -259,8 +230,7 @@ class Proxy(ProxyCore):
                                                 col_names=col_names)
 
   def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
-                      col_names=None,
-                      batch_size=BATCH_SIZE):
+                      col_names=None, batch_size=BATCH_SIZE):
     return self.gadpt.get_snp_markers(labels, rs_labels, vids,
                                       col_names, batch_size)
 
@@ -276,7 +246,6 @@ class Proxy(ProxyCore):
 
   def get_snp_markers_set(self, label=None,
                           maker=None, model=None, release=None):
-    "returns a SNPMarkersSet object"
     return self.madpt.get_snp_markers_set(label, maker, model, release)
 
   def get_snp_markers_set_content(self, snp_markers_set, batch_size=BATCH_SIZE):
@@ -305,13 +274,11 @@ class Proxy(ProxyCore):
   def get_gdo(self, set_vid, vid, indices=None):
     return self.gadpt.get_gdo(set_vid, vid, indices)
 
-
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
 
-  def create_an_action(self, study, target=None, doc='',
-                       operator=None, device=None,
-                       acat=None, options=None):
+  def create_an_action(self, study, target=None, doc='', operator=None,
+                       device=None, acat=None, options=None):
     """
     Syntactic sugar to simplify action creation.
 
@@ -324,10 +291,10 @@ class Proxy(ProxyCore):
     """
     default_device_label = 'DEVICE-CREATE-AN-ACTION'
     alabel = ('auto-created-action%f' % (time.time()))
-    asetup = self.factory.create(self.ActionSetup,
-                                 {'label' : alabel,
-                                  'conf' : json.dumps(options)})
-
+    asetup = self.factory.create(
+      self.ActionSetup,
+      {'label': alabel, 'conf': json.dumps(options)}
+      )
     acat = acat if acat else self.ActionCategory.IMPORT
     if not target:
       a_klass = self.Action
@@ -340,7 +307,6 @@ class Proxy(ProxyCore):
     else:
       assert False
     operator = operator if operator else pwd.getpwuid(os.geteuid())[0]
-
     device = self.get_device(default_device_label)
     if not device:
       conf = {'label' : default_device_label,
@@ -348,14 +314,12 @@ class Proxy(ProxyCore):
               'model' : 'fake-device',
               'release' : 'create_an_action'}
       device = self.factory.create(self.Device, conf).save()
-
     conf = {'setup' : asetup,
             'device': device,
             'actionCategory' : acat,
             'operator' : operator,
             'context'  : study,
-            'target' : target
-            }
+            'target' : target}
     action = self.factory.create(a_klass, conf).save()
     action.unload()
     return action
@@ -364,7 +328,7 @@ class Proxy(ProxyCore):
                      ref_rs_genome, dbsnp_build, stream, action):
     """
     Given a stream of tuples (label, rs_label, mask), will create and
-    save the associated markers objets and return the label, vid
+    save the associated markers objects and return the (label, vid)
     association as a list of tuples.
 
     .. code-block:: python
@@ -372,28 +336,20 @@ class Proxy(ProxyCore):
       taq_man_markers = [
         ('A0001', 'xrs122652',  'TCACTTCTTCAAAGCT[A/G]AGCTACAAGCATTATT'),
         ('A0002', 'xrs741592',  'GGAAGGAAGAAATAAA[C/G]CAGCACTATGTCTGGC')]
-
       source, context, release = 'foobar', 'fooctx', 'foorel'
       ref_rs_genome, dbsnp_build = 'fake-hg-18', 132
-
       lvs = kb.create_markers(source, context, release,
                               ref_rs_genome, dbsnp_build,
                               taq_man_markers, action)
       for tmm, t in zip(taq_man_markers, lvs):
         assert (tmm[0] == t[0])
         print 'label:%s -> vid: %s' % (t[0], t[1])
-
-    .. todo::
-
-        add param docs.
-
     """
-    # FIXME this is extremely inefficient,
+    # FIXME this is extremely inefficient
     marker_defs = [t for t in stream]
     marker_labels = [t[0] for t in marker_defs]
     if len(marker_labels) > len(set(marker_labels)):
       raise ValueError('duplicate marker definitions in stream')
-
     old_markers = self.get_snp_markers(labels=marker_labels)
     if old_markers:
       raise ValueError('there are duplicate markers')
@@ -432,7 +388,7 @@ class Proxy(ProxyCore):
 
         kb.save_snp_markers_alignments('hg19', s, action)
     """
-    # FIXME no checking....
+    # TODO add error checking
     def generator(s):
       for x in s:
         y = {'marker_vid' : x[0], 'ref_genome' : ref_genome,
@@ -461,18 +417,8 @@ class Proxy(ProxyCore):
         taq_man_set = [ (t[1], i, False) for i, t in enumerate(lvs)]
         label, maker   = 'FakeTaqSet01', 'CRS4'
         model, release = 'TaqManSet', '23/09/2011'
-
         mset = kb.create_snp_markers_set(label, maker, model, release,
                                          taq_man_set, action)
-
-
-    **NOTE:** with the current implementation, this is not an atomic
-      op. FIXME so?
-
-    .. todo::
-
-        add param docs.
-
     """
     set_vid = 'V99999' # temp value
     conf = {'label': label,
@@ -480,7 +426,7 @@ class Proxy(ProxyCore):
             'markersSetVID' : set_vid,
             'action' : action}
     mset = self.factory.create(self.SNPMarkersSet, conf).save()
-    # FIXME: the following is a brutal attempt to exception
+    # FIXME: the following is a rough attempt at exception
     # containment, it should be refined.
     mlist = [t for t in stream]
     markers = self.get_snp_markers(vids=[t[0] for t in mlist])
@@ -488,7 +434,6 @@ class Proxy(ProxyCore):
       raise ValueError('there are unknown markers in stream')
     if len(set((t[1] for t in mlist))) != len(mlist):
       raise ValueError('not unique marker_indx')
-
     def generator(stream):
       for t in stream:
         yield {'marker_vid' : t[0], 'marker_indx' : t[1],
@@ -504,7 +449,8 @@ class Proxy(ProxyCore):
     mset.save()
     return mset
 
-  def update_snp_positions(self, markers, ref_genome, ms_vid=None, batch_size=BATCH_SIZE):
+  def update_snp_positions(self, markers, ref_genome, ms_vid=None,
+                           batch_size=BATCH_SIZE):
     vids = [m.id for m in markers]
     res = self.gadpt.get_snp_alignment_positions(ref_genome, vids,
                                                  ms_vid=ms_vid,
@@ -516,8 +462,9 @@ class Proxy(ProxyCore):
 
   def get_individuals(self, group):
     """
-    Syntactic sugar to simplify the looping on individuals contained in a group.
-    The idea is that it should be possible to do the following:
+    Syntactic sugar to simplify the looping on individuals contained
+    in a group. The idea is that it should be possible to do the
+    following:
 
     .. code-block:: python
 
@@ -525,20 +472,18 @@ class Proxy(ProxyCore):
         for d in kb.get_data_samples(i, dsample_klass_name):
           gds = filter(lambda x: x.snpMarkersSet == mset)
 
-
     :param group: a study object, we will be looping on all the
-                  Individual enrolled in it.
+                  Individual(s) enrolled in it.
     :type group: Study
 
     :type return: generator
-
     """
     return (e.individual for e in self.get_enrolled(group))
 
   def get_data_samples(self, individual, data_sample_klass_name='DataSample'):
     """
-    Syntactic sugar to simplify the looping on DataSample connected to
-    an individual. The idea is that it should be possible to do the
+    Syntactic sugar to simplify the looping on DataSample(s) connected
+    to an individual. The idea is that it should be possible to do the
     following:
 
     .. code-block:: python
@@ -547,7 +492,7 @@ class Proxy(ProxyCore):
         for d in kb.get_data_samples(i, 'GenotypeDataSample'):
           gds = filter(lambda x: x.snpMarkersSet == mset)
 
-    :param individual: the root individual object.
+    :param individual: the root individual object
     :type group: Individual
 
     :param data_sample_klass_name: the name of the selected data_sample
@@ -557,8 +502,8 @@ class Proxy(ProxyCore):
 
     :type return: generator of a sequence of DataSample objects
 
-    **Note:** in the current implementation, it has to do an expensive,
-    both in memory and cpu time initialization the first time it is called.
+    **Note:** the current implementation does an expensive initialization,
+    both in memory and cpu time, when it's called for the first time.
     """
     if not self.dt:
       self.update_dependency_tree()
@@ -590,48 +535,34 @@ class Proxy(ProxyCore):
     """
     Syntactic sugar to simplify adding genotype data objects.
 
-    FIXME
-
-
-    :param probs: a 2x<nmarkers> array with the AA and the BB
-                  homozygote probs.
+    :param probs: a 2x<nmarkers> array with the AA and the BB homozygous probs.
     :type probs: numpy.darray
 
     :param confs: a <nmarkers> array with the confidence on probs above.
     :type probs: numpy.darray
-
     """
     avid = self.__resolve_action_id(action)
     if not isinstance(sample, self.GenotypeDataSample):
       raise ValueError('sample should be an instance of GenotypeDataSample')
-    # FIXME we delegate to gadpt checking that probs and confs have the
-    #       right numpy dtype.
+    # checking that probs and confs have the right dtype is delegated to gadpt
     mset = sample.snpMarkersSet
     mset.reload()
     tname, vid = self.gadpt.add_gdo(mset.markersSetVID, probs, confs, avid)
-
     size = 0
     sha1 = hashlib.sha1()
-    s = probs.tostring();  size += len(s) ; sha1.update(s)
-    s = confs.tostring();  size += len(s) ; sha1.update(s)
-
-    conf = {'sample' : sample,
-            'path'   : 'table:%s/vid=%s' % (tname, vid),
-            'mimetype' : mimetypes.GDO_TABLE,
-            'sha1'   : sha1.hexdigest(),
-            'size'   : size,
-            }
+    s = probs.tostring(); size += len(s); sha1.update(s)
+    s = confs.tostring(); size += len(s); sha1.update(s)
+    conf = {'sample': sample,
+            'path': 'table:%s/vid=%s' % (tname, vid),
+            'mimetype': mimetypes.GDO_TABLE,
+            'sha1': sha1.hexdigest(),
+            'size': size}
     gds = self.factory.create(self.DataObject, conf).save()
     return gds
 
-  def get_gdo_iterator(self, mset,
-                       data_samples=None,
-                       indices = None,
-                       batch_size=100):
-    """
-    FIXME this is the basic object, we should have some support for
-    selection.
-    """
+  def get_gdo_iterator(self, mset, data_samples=None,
+                       indices = None, batch_size=100):
+    # TODO add support for selections
     def get_gdo_iterator_on_list(dos):
       seen_data_samples = set([])
       for do in dos:
@@ -653,8 +584,7 @@ class Proxy(ProxyCore):
     dos = self.find_all_by_query(query, None)
     return get_gdo_iterator_on_list(dos)
 
-
-  # EVA related utility functions
+  # EVA-related utility functions
   # =============================
 
   def create_ehr_tables(self):
@@ -665,8 +595,7 @@ class Proxy(ProxyCore):
 
   def add_ehr_record(self, action, timestamp, archetype, rec):
     """
-
-    FIXME multi fields rec will be exploded in a group of records all
+    multi-field records will be expanded to groups of records all
     with the same (assumed to be unique within a KB) group id.
 
     :param action: action that generated this record
@@ -683,12 +612,10 @@ class Proxy(ProxyCore):
     :param rec: key (at field code) and values for this specific archetype
                 instance, e.g.::
 
-                  {'at0002.1' :
-                  'terminology://apps.who.int/classifications/apps/gE10.htm#E10'
-                  }
+      {'at0002.1':
+      'terminology://apps.who.int/classifications/apps/gE10.htm#E10'}
 
     :type rec: dict
-
     """
     self.__check_type('action', self.ActionOnIndividual, action)
     self.__check_type('rec', dict, rec)
@@ -697,17 +624,17 @@ class Proxy(ProxyCore):
     target = action.target
     target.reload()
     i_id = target.id
-    # FIXME NO CHECKS for archetypes consistency
+    # TODO add archetype consistency checks
     g_id = vlu.make_vid()
     for k in rec:
-      row = {'timestamp' : timestamp,
-             'i_vid' : i_id,
-             'a_vid' : a_id,
-             'valid' : True,
-             'g_vid' : g_id,
-             'archetype' : archetype,
-             'field'     : k,
-             'value'     : rec[k]}
+      row = {'timestamp': timestamp,
+             'i_vid': i_id,
+             'a_vid': a_id,
+             'valid': True,
+             'g_vid': g_id,
+             'archetype': archetype,
+             'field': k,
+             'value': rec[k]}
       self.eadpt.add_eav_record_row(row)
 
   def get_ehr_records(self, selector=None):
@@ -715,7 +642,6 @@ class Proxy(ProxyCore):
     if len(rows) == 0:
       return rows
     rows.sort(order='g_vid')
-    # FIXME this is getting baroque
     recs = []
     g_vid = None
     x = {}
@@ -728,22 +654,21 @@ class Proxy(ProxyCore):
           x['fields'] = fields
           recs.append(x)
         g_vid = r[4]
-        x = {'timestamp'  : r[0],
-             'i_id'      : r[1],
-             'a_id'      : r[2],
-             'archetype' : r[5]}
+        x = {'timestamp': r[0],
+             'i_id': r[1],
+             'a_id': r[2],
+             'archetype': r[5]}
         fields = {}
-      fields[r[6]] = self.eadpt.decode_field_value(r[7],
-                                                   r[8], r[9], r[10], r[11])
+      fields[r[6]] = self.eadpt.decode_field_value(
+        r[7], r[8], r[9], r[10], r[11]
+        )
     else:
       if g_vid:
         x['fields'] = fields
         recs.append(x)
-
     return recs
 
   def get_ehr_iterator(self, selector=None):
-    "Get an iterator on all the ehr selected by selector."
     # FIXME this is a quick and dirty implementation.
     recs = self.get_ehr_records(selector)
     by_individual = {}
@@ -753,6 +678,5 @@ class Proxy(ProxyCore):
       yield (k, EHR(v))
 
   def get_ehr(self, individual):
-    "Get the available ehr for an individual"
     recs = self.get_ehr_records(selector='(i_vid=="%s")' % individual.id)
     return EHR(recs)
