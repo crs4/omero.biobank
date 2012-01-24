@@ -2,12 +2,11 @@
 
 <!--
 
-Vessel Derived Objects
+Vessel-Derived Objects
 ======================
 
-There are object that model liquid containers.
-They keep track of what fliud they contain and its usability status, 
-as well the actual amount of fluid available.
+These are objects that model liquid containers. They keep track of
+the amount and type of fluid they contain and of its usability.
 
 -->
 
@@ -34,8 +33,7 @@ as well the actual amount of fluid available.
       <required name="vid" type="string" unique="true"/>
       <required name="activationDate" type="timestamp"/>
       <optional name="destructionDate" type="timestamp"/>
-      <!-- It is ml here and everywhere. We should be assigning
-           measuring units explicitely.  -->
+      <!-- FIXME We should assign units explicitly. -->
       <required name="currentVolume" type="float"/>
       <required name="initialVolume" type="float"/>
       <required name="content" type="ome.model.vl.VesselContent"/>
@@ -48,19 +46,19 @@ as well the actual amount of fluid available.
   <type id="ome.model.vl.Tube" superclass="ome.model.vl.Vessel">
     <properties>
       <required name="label" type="string" unique="true"/>
-      <!-- there could be a tube with NO BARCODE -->
+      <!-- there can be a tube with NO BARCODE -->
       <optional name="barcode" type="string" unique="true"/>
     </properties>
   </type>
 
   <type id="ome.model.vl.PlateWell" superclass="ome.model.vl.Vessel">
     <properties>
-      <!-- note that label is expected to be unique within a plate.
-           E.g., A05. The actual constraint is imposed by
+      <!-- note that label is expected to be unique within a plate,
+           e.g., A05. The actual constraint is imposed by
            containerSlotLabelUK. -->
       <required name="label" type="string"/>
-      <!-- FIXME we are not using row, column probably only because of
-           historical reasons.-->
+      <!-- FIXME we are not using row, column probably only for
+           historical reasons. -->
       <required name="slot" type="int"/>
       <required name="container" type="ome.model.vl.TiterPlate"/>
       <!-- container.label, label -->

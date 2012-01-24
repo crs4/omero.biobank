@@ -1,14 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!--
-
-Action Definition
-=================
-
-FIXME
-
--->
-
 <types>
 
   <type id="ome.model.vl.Study">
@@ -71,14 +62,14 @@ FIXME
   </type>
 
   <enum id="ome.model.vl.ActionCategory">
-    <entry name="IMPORT"/> <!-- e.g., db loading -->
-    <entry name="CREATION"/> <!-- e.g., creating a new data collection -->
-    <entry name="EXTRACTION"/> <!-- e.g., extract dna from a biosample -->
-    <entry name="UPDATE"/>     <!-- e.g., updating a field value -->
-    <entry name="ALIQUOTING"/> <!-- e.g., aliquoting from one vessel 
-                                          to another -->
-    <entry name="MEASUREMENT"/>    <!-- e.g., genotype measure -->
-    <entry name="PROCESSING"/> <!-- e.g., genotype call -->
+    <entry name="IMPORT"/>      <!-- e.g., db loading -->
+    <entry name="CREATION"/>    <!-- e.g., creating a new data collection -->
+    <entry name="EXTRACTION"/>  <!-- e.g., extract dna from a biosample -->
+    <entry name="UPDATE"/>      <!-- e.g., updating a field value -->
+    <entry name="ALIQUOTING"/>  <!-- e.g., aliquoting from one vessel 
+                                     to another -->
+    <entry name="MEASUREMENT"/> <!-- e.g., genotype measure -->
+    <entry name="PROCESSING"/>  <!-- e.g., genotype call -->
   </enum>
 
   <type id="ome.model.vl.Action">
@@ -90,7 +81,7 @@ FIXME
       <optional name="device" type="ome.model.vl.Device"/>
       <required name="actionCategory" type="ome.model.vl.ActionCategory"/>
       <!--TODO create an operator schema or use the user schema
-           provided by omero -->
+	  provided by omero -->
       <required name="operator" type="string"/>
       <!-- context field refers to a Study and it is used to know in
            which context the action was performed -->

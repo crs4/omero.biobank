@@ -71,15 +71,15 @@
     <!--
 	this is merely a link to the actual snp_markers_set definition
 	sitting in an omero table.  The label is actually a
-	convenience. Strictly speaking is not needed.
+	convenience. Strictly speaking, it is not needed.
     -->
     <properties>
       <required name="label"    type="string" unique="true"/>
       <required name="maker"    type="string"/>
       <required name="model"    type="string"/>
       <required name="release"  type="string"/>
-      <!-- FIXME It could actually be better to explicitely point to a
-           DataObject that refers to the set... -->
+      <!-- FIXME It could be better to explicitly point to a
+           DataObject that refers to the set -->
       <required name="markersSetVID"  type="string" unique="true"/>
       <!-- maker model release -->
       <required name="snpMarkersSetUK" type="string" unique="true"/>

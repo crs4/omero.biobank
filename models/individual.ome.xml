@@ -27,7 +27,7 @@
       <optional name="phone2" type="string"/>
       <optional name="email" type="string"/>
       <required name="individual" type="ome.model.vl.Individual" unique="true"/>
-      <!-- Multi field unique key -->
+      <!-- Multi-field unique key -->
       <!-- demogUK = NAME_SURNAME_BIRTHDATE_GENDER-ID_BIRTHPLACE-VID -->
       <required name="demogUK" type="string" unique="true"/>
       <!-- action is the first action that produced the object -->
@@ -57,7 +57,7 @@
       <required name="vid" type="string" unique="true"/>
       <required name="individual" type="ome.model.vl.Individual"/>
       <required name="study" type="ome.model.vl.Study"/>
-      <!-- StudyCode is the code assignet to an Individual inside each specific study -->
+      <!-- StudyCode is the code assigned to an Individual inside each specific study -->
       <required name="studyCode" type="string"/>
       <!-- Multi-field unique keys -->
       <!-- stCodeUK = STUDY-VID_STUDYCODE -->
@@ -80,10 +80,10 @@
 	   answers for this consent -->
       <optional name="answersData" type="ome.model.core.OriginalFile" unique="true"/>
       <required name="refStudy" type="ome.model.vl.Study"/>
-      <!--Comma separated names of the authors -->
+      <!--Comma-separated names of the authors -->
       <optional name="authors" type="string"/>
-      <!--Approving commission, if more than one name is needed, 
-	  use a comma separated list of names -->
+      <!--Approving commission. If more than one name is needed,
+          use a comma-separated list of names -->
       <optional name="approvingCommission" type="string"/>
       <optional name="approvalDate" type="timestamp"/>
     </properties>
