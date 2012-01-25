@@ -146,49 +146,15 @@ class Proxy(ProxyCore):
   def create_snp_marker_definitions_table(self):
     self.gadpt.create_snp_marker_definitions_table()
 
-  def delete_snp_alignments_table(self):
-    self.delete_table(self.gadpt.SNP_ALIGNMENT_TABLE)
-
-  def create_snp_alignment_table(self):
-    self.gadpt.create_snp_alignment_table()
-
-  def delete_snp_markers_set_table(self):
-    self.delete_table(self.gadpt.SNP_SET_DEF_TABLE)
-
-  def create_snp_markers_set_table(self):
-    self.gadpt.create_snp_markers_set_table()
-
-  def delete_snp_set_table(self):
-    self.delete_table(self.gadpt.SNP_SET_TABLE)
-
-  def create_snp_set_table(self):
-    self.gadpt.create_snp_set_table()
-
   def add_snp_marker_definitions(self, stream, action, batch_size=BATCH_SIZE):
     """
     Save a stream of marker definitions. For efficiency reasons,
     markers are written in batches, whose size is controlled by
     batch_size.
 
-    .. code-block:: python
+    .. todo::
 
-      taq_man_markers = [
-        ('A0001', 'xrs122652',  'TCACTTCTTCAAAGCT[A/G]AGCTACAAGCATTATT'),
-        ('A0002', 'xrs741592',  'GGAAGGAAGAAATAAA[C/G]CAGCACTATGTCTGGC'),
-        ('A0003', 'xrs807079',  'CCGACCTAGTAGGCAA[A/G]TAGACACTGAGGCTGA'),
-        ('A0004', 'xrs567736',  'AGGTCTATGTTAATAC[A/G]GAATCAGTTTCTCACC'),
-        ('A0005', 'xrs4693427', 'AGATTACCATGCAGGA[A/T]CTGTTCTGAGATTAGC'),
-        ('A0006', 'xrs4757019', 'TCTACCTCTGTGACTA[C/G]AAGTGTTCTTTTATTT'),
-        ('A0007', 'xrs7958813', 'AAGGCAATACTGTTCA[C/T]ATTGTATGGAAAGAAG')
-        ]
-      def generator():
-        for t in mark_defs:
-          yield {'source' : source, 'context' :context, 'release' : release,
-                 'label' : t[0], 'rs_label' : t[1],
-                 'mask' : convert_to_top(t[2])
-      vmap = kb.add_snp_marker_definitions(generator(), action)
-      for x in vmap:
-        print 'label: %s -> id: %s' % (x[0], x[1])
+       Add an example code snippet
 
     :param stream: a stream of dict objects
     :type stream: generator
@@ -222,57 +188,192 @@ class Proxy(ProxyCore):
     """
     return self.gadpt.get_snp_marker_definitions(selector, col_names,
                                                  batch_size)
+  #-----------------------------------------------
+  # snp_markers_set
+  def create_snp_markers_set(self, label, maker, model, release,
+                             N, stream, action):
+    """
+    Given a stream of tuples (marker_vid, marker_indx, allele_flip),
+    will build and save a new marker set.
 
-  def get_snp_markers_by_source(self, source, context=None, release=None,
-                                col_names=None):
-    return self.gadpt.get_snp_markers_by_source(source, context=None,
-                                                release=None,
-                                                col_names=col_names)
+    .. code-block:: python
 
-  def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
-                      col_names=None, batch_size=BATCH_SIZE):
-    return self.gadpt.get_snp_markers(labels, rs_labels, vids,
-                                      col_names, batch_size)
+        taq_man_set = [ (t[1], i, False) for i, t in enumerate(lvs)]
+        label, maker   = 'FakeTaqSet01', 'CRS4'
+        model, release = 'TaqManSet', '23/09/2011'
+        N = len(lvs)
+        mset = kb.create_snp_markers_set(label, maker, model, release,
+                                         N, taq_man_set, action)
 
-  get_snp_markers.__doc__ = GenotypingAdapter.get_snp_markers.__doc__
 
-  def add_snp_alignments(self, stream, op_vid, batch_size=BATCH_SIZE,
-                         ms_vid=None):
-    return self.gadpt.add_snp_alignments(stream, op_vid, batch_size, ms_vid)
+    .. todo::
 
-  def snp_markers_set_exists(self, label=None,
-                             maker=None, model=None, release=None):
-    return self.madpt.snp_markers_set_exists(label, maker, model, release)
+        add param docs.
+
+    """
+    assert(type(N) == int and N > 0)
+
+    set_vid = vlu.make_vid()
+    conf = {'label': label,
+            'maker' : maker, 'model' : model, 'release' : release,
+            'markersSetVID' : set_vid,
+            'action' : action}
+    mset = self.factory.create(self.SNPMarkersSet, conf)
+    mset.save()
+
+    def gen(stream):
+      for t in stream:
+        yield {'marker_vid' : t[0], 'marker_indx' : t[1],
+               'allele_flip' : t[2]}
+    # FIXME: the following is a brutal attempt to exception
+    # containment, it should be refined.
+    try:
+      self.gadpt.create_snp_markers_set_tables(mset.id, N)
+      counted = self.gadpt.define_snp_markers_set(set_vid, gen(stream),
+                                                  action.id)
+      if counted != N:
+        raise ValueError('there are %d records in stream (expected %d)' %
+                         (counted, N))
+    except Exception as e:
+      self.gadpt.delete_snp_markers_set_tables(mset.id)
+      self.delete(mset)
+      raise e
+    return mset
+
+  def align_snp_markers_set(self, mset, ref_genome, stream, action):
+    """
+    Given a stream of five-element tuples, save alignment information
+    of markers wrt a reference genome.
+
+    Tuple elements are, respectively: the marker vid; the chromosome
+    number (23=X, 24=Y, 25=XY, 26=MT); a boolean that's True if the
+    marker aligns on the 5' strand; the allele seen on the reference
+    genome; the number of times the given marker has been seen on the
+    reference genome. If the latter is larger than 1, there should
+    be N records pertaining to the same marker.
+
+    .. code-block:: python
+
+        s = [('V8238981', 1, 200, True, 'A', 1),
+             ('V8238982', 2, 300, True, 'B', 1),
+             ('V8238983', 4, 400, True, 'A', 1),
+             ('V8238984', 2, 400, True, 'A', 2)
+             ('V8238984', 2, 800, True, 'B', 2)
+             ]
+
+        kb.align_snp_markers_set(mset, 'hg19', s, action)
+    """
+    # FIXME no checking....
+    def gen(s):
+      for x in s:
+        y = {'marker_vid' : x[0],
+             'ref_genome' : ref_genome,
+             'chromosome' : x[1], 'pos' : x[2],
+             'global_pos' : (x[1]*10**10 + x[2]),
+             'strand' : x[3],
+             'allele' : x[4],
+             'copies' : x[5]}
+        yield y
+    max_len = self.gadpt.SNP_ALIGNMENT_COLS[1][3]
+    if len(ref_genome) > max_len:
+      raise ValueError('len("%s") > %d' % (ref_genome, max_len))
+    self.gadpt.add_snp_markers_set_alignments(mset.id, gen(stream), action.id)
+
+  @classmethod
+  def make_gdo_path(klass, mset, vid):
+    table_name = self.gadpt.snp_markers_set_table_name('gdo', mset.id)
+    return 'table:%s/vid=%s' % (table_name, vid)
+
+  @classmethod
+  def parse_gdo_path(klass, path):
+    head, vid = do.path.split('/vid=')
+    tag, set_vid = self.gadpt.snp_markers_set_table_name_parse(head)
+    return set_vid, vid
+
+  def add_gdo_data_object(self, action, sample, probs, confs):
+    """
+    Syntactic sugar to simplify adding genotype data objects.
+
+    FIXME
+
+
+    :param probs: a 2x<nmarkers> array with the AA and the BB
+                  homozygote probs.
+    :type probs: numpy.darray
+
+    :param confs: a <nmarkers> array with the confidence on probs above.
+    :type probs: numpy.darray
+
+    """
+    avid = self.__resolve_action_id(action)
+    if not isinstance(sample, self.GenotypeDataSample):
+      raise ValueError('sample should be an instance of GenotypeDataSample')
+    mset = sample.snpMarkersset
+
+    # FIXME there is no check that probs and confs have the
+    #       right numpy dtype and size.
+    gdo_vid = self.gadpt.add_gdo(mset.id, probs, confs, avid)
+
+    size = 0
+    sha1 = hashlib.sha1()
+    s = probs.tostring();  size += len(s) ; sha1.update(s)
+    s = confs.tostring();  size += len(s) ; sha1.update(s)
+
+    conf = {'sample' : sample,
+            'path'   : self.make_gdo_path(mset, gdo_vid),
+            'mimetype' : mimetypes.GDO_TABLE,
+            'sha1'   : sha1.hexdigest(),
+            'size'   : size,
+            }
+    gds = self.factory.create(self.DataObject, conf).save()
+    return gds
+
+  def get_gdo(self, mset, vid, indices=None):
+    return self.gadpt.get_gdo(mset.id, vid, indices)
+
+  def get_gdo_iterator(self, mset,
+                       data_samples=None,
+                       indices = None,
+                       batch_size=100):
+    """
+    FIXME this is the basic object, we should have some support for
+    selection.
+    """
+    def get_gdo_iterator_on_list(dos):
+      seen_data_samples = set([])
+      for do in dos:
+        #FIXME we could, in principle, handle other mimetypes too...
+        if do.mimetype == mimetypes.GDO_TABLE:
+          mset_vid, vid = self.gadpt.parse_gdo_path(do.path)
+          if mset_vid != mset.id:
+            raise ValueError(
+              'DataObject %s map to data with a wrong SNPMarkersSet' % do.path
+              )
+          yield self.get_gdo(mset, vid, indices)
+        else:
+          raise ValueError("cannot handle mimetype %r" % (do.mimetype,))
+    if data_samples is None:
+      return self.gadpt.get_gdo_iterator(mset.id, indices, batch_size)
+    for d in data_samples:
+      if d.snpMarkersSet != mset:
+        raise ValueError('data_sample %s snpMarkersSet != mset' %
+                         d.id)
+    ids = ','.join('%s' % ds.omero_id for ds in data_samples)
+    query = 'from DataObject do where do.sample.id in (%s)' % ids
+    dos = self.find_all_by_query(query, None)
+    return get_gdo_iterator_on_list(dos)
+
 
   def get_snp_markers_set(self, label=None,
                           maker=None, model=None, release=None):
+    "returns a SNPMarkersSet object"
     return self.madpt.get_snp_markers_set(label, maker, model, release)
 
-  def get_snp_markers_set_content(self, snp_markers_set, batch_size=BATCH_SIZE):
-    selector = '(vid=="%s")' % snp_markers_set.markersSetVID
-    msetc = self.gadpt.get_snp_markers_set(selector, batch_size=batch_size)
-    mdefs = self.get_snp_markers(vids=[mv for mv in msetc['marker_vid']],
-                                 col_names=['vid', 'label'])
-    return mdefs, msetc
+  def snp_markers_set_exists(self, label, maker, model, release):
+    "DEPRECATED"
+    return not self.get_snp_markers_set(label, maker, model, release) is None
 
-  def add_snp_markers_set(self, maker, model, release, action):
-    avid = self.__resolve_action_id(action)
-    return self.gadpt.add_snp_markers_set(maker, model, release, avid)
 
-  def fill_snp_markers_set(self, set_vid, stream, action,
-                           batch_size=BATCH_SIZE):
-    avid = self.__resolve_action_id(action)
-    return self.gadpt.fill_snp_markers_set(set_vid, stream, avid, batch_size)
-
-  def get_snp_alignments(self, selector=None, col_names=None,
-                         batch_size=BATCH_SIZE):
-    return self.gadpt.get_snp_alignments(selector, col_names, batch_size)
-
-  def create_gdo_repository(self, set_vid, N):
-    return self.gadpt.create_gdo_repository(set_vid, N)
-
-  def get_gdo(self, set_vid, vid, indices=None):
-    return self.gadpt.get_gdo(set_vid, vid, indices)
 
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
@@ -344,15 +445,18 @@ class Proxy(ProxyCore):
       for tmm, t in zip(taq_man_markers, lvs):
         assert (tmm[0] == t[0])
         print 'label:%s -> vid: %s' % (t[0], t[1])
+
+    .. todo::
+
+        add param docs.
+
     """
     # FIXME this is extremely inefficient
     marker_defs = [t for t in stream]
     marker_labels = [t[0] for t in marker_defs]
     if len(marker_labels) > len(set(marker_labels)):
       raise ValueError('duplicate marker definitions in stream')
-    old_markers = self.get_snp_markers(labels=marker_labels)
-    if old_markers:
-      raise ValueError('there are duplicate markers')
+
     def generator(mdefs):
       for t in mdefs:
         yield {'source' : source,
@@ -366,99 +470,6 @@ class Proxy(ProxyCore):
     label_vid_list = self.add_snp_marker_definitions(generator(marker_defs),
                                                      action)
     return label_vid_list
-
-  def save_snp_markers_alignments(self, ref_genome, stream, action, mset=None):
-    """
-    Given a stream of five-element tuples, save alignment information
-    of markers wrt a reference genome.
-
-    Tuple elements are, respectively: the marker vid; the chromosome
-    number (23=X, 24=Y, 25=XY, 26=MT); a boolean that's True if the
-    marker aligns on the 5' strand; the allele seen on the reference
-    genome; the number of times the given marker has been seen on the
-    reference genome. If the latter is N larger than 1, there should
-    be N records pertaining to the same marker.
-
-    .. code-block:: python
-
-        s = [('V8238983', 1, 200, True, 'A', 1),
-             ('V8238983', 2, 300, True, 'B', 1),
-             ('V8238983', 4, 400, True, 'A', 1),
-             ('V8238983', 2, 400, True, 'A', 2)]
-
-        kb.save_snp_markers_alignments('hg19', s, action)
-    """
-    # TODO add error checking
-    def generator(s):
-      for x in s:
-        y = {'marker_vid' : x[0], 'ref_genome' : ref_genome,
-             'chromosome' : x[1], 'pos' : x[2],
-             'global_pos' : (x[1]*10**10 + x[2]),
-             'strand' : x[3],
-             'allele' : x[4],
-             'copies' : x[5]}
-        yield y
-    if len(ref_genome) > self.gadpt.SNP_ALIGNMENT_COLS[1][3]:
-      raise ValueError('len("%s") > %d' %
-                       (ref_genome,
-                        self.gadpt.SNP_ALIGNMENT_COLS[1][3]))
-
-    self.add_snp_alignments(generator(stream), action.id,
-                            ms_vid=(mset.id if mset else None))
-
-  def create_snp_markers_set(self, label, maker, model, release,
-                             stream, action):
-    """
-    Given a stream of tuples (marker_vid, marker_indx, allele_flip),
-    will build and save a new marker set.
-
-    .. code-block:: python
-
-        taq_man_set = [ (t[1], i, False) for i, t in enumerate(lvs)]
-        label, maker   = 'FakeTaqSet01', 'CRS4'
-        model, release = 'TaqManSet', '23/09/2011'
-        mset = kb.create_snp_markers_set(label, maker, model, release,
-                                         taq_man_set, action)
-    """
-    set_vid = 'V99999' # temp value
-    conf = {'label': label,
-            'maker' : maker, 'model' : model, 'release' : release,
-            'markersSetVID' : set_vid,
-            'action' : action}
-    mset = self.factory.create(self.SNPMarkersSet, conf).save()
-    # FIXME: the following is a rough attempt at exception
-    # containment, it should be refined.
-    mlist = [t for t in stream]
-    markers = self.get_snp_markers(vids=[t[0] for t in mlist])
-    if len(markers) != len(mlist):
-      raise ValueError('there are unknown markers in stream')
-    if len(set((t[1] for t in mlist))) != len(mlist):
-      raise ValueError('not unique marker_indx')
-    def generator(stream):
-      for t in stream:
-        yield {'marker_vid' : t[0], 'marker_indx' : t[1],
-               'allele_flip' : t[2]}
-    try:
-      set_vid = self.add_snp_markers_set(maker, model, release, action)
-      N = self.fill_snp_markers_set(set_vid, generator(mlist), action)
-      self.create_gdo_repository(set_vid, N)
-    except Exception as e:
-      self.delete(mset)
-      raise e
-    mset.markersSetVID = set_vid
-    mset.save()
-    return mset
-
-  def update_snp_positions(self, markers, ref_genome, ms_vid=None,
-                           batch_size=BATCH_SIZE):
-    vids = [m.id for m in markers]
-    res = self.gadpt.get_snp_alignment_positions(ref_genome, vids,
-                                                 ms_vid=ms_vid,
-                                                 batch_size=batch_size)
-    if len(res) == 0:
-      raise ValueError('missing markers alignments')
-    for m, r in it.izip(markers, res):
-      m.position = tuple(r)
 
   def get_individuals(self, group):
     """
@@ -531,58 +542,7 @@ class Proxy(ProxyCore):
       self.update_dependency_tree()
     return (v for v in self.dt.get_connected(individual, aklass=klass))
 
-  def add_gdo_data_object(self, action, sample, probs, confs):
-    """
-    Syntactic sugar to simplify adding genotype data objects.
 
-    :param probs: a 2x<nmarkers> array with the AA and the BB homozygous probs.
-    :type probs: numpy.darray
-
-    :param confs: a <nmarkers> array with the confidence on probs above.
-    :type probs: numpy.darray
-    """
-    avid = self.__resolve_action_id(action)
-    if not isinstance(sample, self.GenotypeDataSample):
-      raise ValueError('sample should be an instance of GenotypeDataSample')
-    # checking that probs and confs have the right dtype is delegated to gadpt
-    mset = sample.snpMarkersSet
-    mset.reload()
-    tname, vid = self.gadpt.add_gdo(mset.markersSetVID, probs, confs, avid)
-    size = 0
-    sha1 = hashlib.sha1()
-    s = probs.tostring(); size += len(s); sha1.update(s)
-    s = confs.tostring(); size += len(s); sha1.update(s)
-    conf = {'sample': sample,
-            'path': 'table:%s/vid=%s' % (tname, vid),
-            'mimetype': mimetypes.GDO_TABLE,
-            'sha1': sha1.hexdigest(),
-            'size': size}
-    gds = self.factory.create(self.DataObject, conf).save()
-    return gds
-
-  def get_gdo_iterator(self, mset, data_samples=None,
-                       indices = None, batch_size=100):
-    # TODO add support for selections
-    def get_gdo_iterator_on_list(dos):
-      seen_data_samples = set([])
-      for do in dos:
-        if do.mimetype == mimetypes.GDO_TABLE:
-          table, vid = do.path.split('=')
-          mset_vid = table.split(':')[1].rsplit(".")[0]
-          if mset_vid != mset.markersSetVID:
-            raise ValueError(
-              'DataObject %s map to data with a wrong SNPMarkersSet' % do.path
-              )
-          yield self.get_gdo(mset.markersSetVID, vid, indices)
-        else:
-          raise ValueError("cannot handle mimetype %r" % (do.mimetype,))
-    if not data_samples:
-      return self.gadpt.get_gdo_iterator(mset.markersSetVID, indices,
-                                         batch_size)
-    ids = ','.join('%s' % ds.omero_id for ds in data_samples)
-    query = 'from DataObject do where do.sample.id in (%s)' % ids
-    dos = self.find_all_by_query(query, None)
-    return get_gdo_iterator_on_list(dos)
 
   # EVA-related utility functions
   # =============================

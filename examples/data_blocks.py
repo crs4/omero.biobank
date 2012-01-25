@@ -128,7 +128,8 @@ gc_begin=(begin_chrom, begin_pos)
 gc_end  =(end_chrom, end_pos)
 
 mset0.load_alignments(ref_genome)
-indices = kb.SNPMarkersSet.extract_range(mset0, gc_range=(gc_begin, gc_end))
+indices = kb.SNPMarkersSet.define_range_selector(mset0,
+                                                 gc_range=(gc_begin, gc_end))
 
 """ ..
 

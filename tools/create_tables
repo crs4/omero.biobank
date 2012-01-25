@@ -78,33 +78,6 @@ def main():
   p.create_snp_marker_definitions_table()
   logger.info('created snp marker definition table')
 
-  #----- SNP ALIGNEMENT TABLE
-  logger.info('deleting current snp alignment table')
-  p.delete_snp_alignments_table()
-  logger.info('deleted current snp alignment table')
-  #--
-  logger.info('creating snp alignment table')
-  p.create_snp_alignment_table()
-  logger.info('created snp alignment table')
-
-  #----- SNP SET DEF TABLE
-  logger.info('deleting current snp set def table')
-  p.delete_snp_markers_set_table()
-  logger.info('deleted current snp set def table')
-  #--
-  logger.info('creating snp set table')
-  p.create_snp_markers_set_table()
-  logger.info('created snp set table')
-
-  #----- SNP SET TABLE
-  logger.info('deleting current snp set table')
-  p.delete_snp_set_table()
-  logger.info('deleted current snp set table')
-  #--
-  logger.info('creating snp set table')
-  p.create_snp_set_table()
-  logger.info('created snp set table')
-
   #----- EHR TABLE
   logger.info('deleting current ehr tables')
   p.delete_ehr_tables()

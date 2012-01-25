@@ -72,18 +72,9 @@ class Marker(object):
 
   """
 
-  def __init__(self, vid, label=None, rs_label=None,
-               source=None, context=None, release=None,
-               dbSNP_build=None, ref_rs_genome=None,
-               mask=None, position=(0,0), flip=None):
+  def __init__(self, vid, index, position=(0,0), flip=None):
     self.id = vid
-    self.label = label
-    self.rs_label = rs_label
-    self.source = source
-    self.context = context
-    self.dbSNP_build = int(dbSNP_build) if dbSNP_build else None
-    self.ref_rs_genome = ref_rs_genome
-    self.mask = mask
+    self.index = index
     self.position = position
     self.flip = flip
 
@@ -97,10 +88,8 @@ class GenotypingAdapter(object):
   """
   FIXME
   """
+
   SNP_MARKER_DEFINITIONS_TABLE = 'snp_marker_definitions.h5'
-  SNP_ALIGNMENT_TABLE  = 'snp_alignment.h5'
-  SNP_SET_DEF_TABLE    = 'snp_set_def.h5'
-  SNP_SET_TABLE        = 'snp_set.h5'
   SNP_FLANK_SIZE       = vlu_snp.SNP_FLANK_SIZE
   SNP_MASK_SIZE        = 2 * SNP_FLANK_SIZE + len("[A/B]")
 
@@ -119,53 +108,10 @@ class GenotypingAdapter(object):
    ('string', 'op_vid', 'Last operation that modified this row',
     VID_SIZE, None)]
 
-  SNP_ALIGNMENT_COLS = \
-  [('string', 'marker_vid', 'VID of the aligned marker.', VID_SIZE, None),
-   ('string', 'ref_genome', 'Reference alignment genome.', 16, None),
-   ('long', 'chromosome',
-    'Chromosome where this alignment was found. 1-22, 23(X) 24(Y) 25(XY) 26(MT)',
-    None),
-   ('long', 'pos', "Position on the chromosome. Starting from 5'", None),
-   ('long', 'global_pos', "Global position in the genome. (chr*10**10 + pos)", None),
-   ('bool', 'strand', 'Aligned on reference strand', None),
-   # I know that this is in principle a bool, but what happens if we have more than two alleles?
-   ('string', 'allele', 'Allele found at this position (A/B)', 1, None),
-   ('long', 'copies', "Number of copies found for this marker within this alignment op.", None),
-   ('string', 'op_vid', 'Last operation that modified this row', VID_SIZE, None),
-   ('string', 'ms_vid', 'Marker Set this alignment refers to', VID_SIZE, None)]
-
-  SNP_SET_COLS = \
-  [('string', 'vid', 'Set VID', VID_SIZE, None),
-   ('string', 'marker_vid', 'Marker VID', VID_SIZE, None),
-   ('long', 'marker_indx',
-    "Ordered position of this marker within the set", None),
-   ('bool', 'allele_flip',
-    'Is this technology flipping our A/B allele convention?', None),
-   ('string', 'op_vid',
-    'Last operation that modified this row', VID_SIZE, None)]
-
-  SNP_SET_DEF_COLS = \
-  [('string', 'vid', 'Set VID', VID_SIZE, None),
-   ('string', 'maker', 'Maker identifier.', 32, None),
-   ('string', 'model', 'Model identifier.', 32, None),
-   ('string', 'release', 'Release identifier.', 32, None),
-   ('string', 'op_vid', 'Last operation that modified this row',
-    VID_SIZE, None)]
-
-  @classmethod
-  def SNP_GDO_REPO_COLS(klass, N):
-    cols = [('string', 'vid', 'gdo VID', VID_SIZE, None),
-            ('string', 'op_vid', 'Last operation that modified this row',
-             VID_SIZE, None),
-            ('string', 'probs', 'np.zeros((2,N), dtype=np.float32).tostring()',
-             2*N*4, None),
-            ('string', 'confidence', 'np.zeros((N,), dtype=np.float32).tostring()',
-             N*4, None)]
-    return cols
-
   def __init__(self, kb):
     self.kb = kb
 
+  #-------------------------------------------------------------------------
   #-- markers definitions
   def create_snp_marker_definitions_table(self):
     self.kb.create_table(self.SNP_MARKER_DEFINITIONS_TABLE,
@@ -208,7 +154,6 @@ class GenotypingAdapter(object):
     recs = self.get_snp_marker_definitions(selector=selector)
     return [self.marker_maker(r, col_names) for r in recs]
 
-
   def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
                       col_names=None,
                       batch_size=BATCH_SIZE):
@@ -250,149 +195,181 @@ class GenotypingAdapter(object):
                                   row_indices, col_names, batch_size)
     return [self.marker_maker(r, col_names) for r in res]
 
-  #-- marker sets
-  def create_snp_markers_set_table(self):
-    self.kb.create_table(self.SNP_SET_DEF_TABLE, self.SNP_SET_DEF_COLS)
+  #-------------------------------------------------------------------------
+  #-- SNPMarkersSet
 
-  def create_snp_set_table(self):
-    self.kb.create_table(self.SNP_SET_TABLE, self.SNP_SET_COLS)
+  @classmethod
+  def snp_markers_set_table_name(klass, table_name_root, set_vid):
+    ""
+    assert(table_name_root in ['align', 'gdo', 'mset'])
+    return '%s-%s.h5' % (table_name_root, set_vid)
 
-  def snp_markers_set_exists(self, maker, model, release='1.0'):
-    selector = ("(maker=='%s') & (model=='%s') & (release=='%s')" %
-                (maker, model, release))
-    if len(self.get_snp_markers_sets(selector)) > 0 :
-      return True
-    return False
+  @classmethod
+  def snp_markers_set_table_name_parse(klass, table_name):
+    ""
+    tag, set_vid = table_name.rsplit('.')[0].split('-', 1)
+    assert(tag in ['align', 'gdo', 'mset'])
+    return tag, set_vid
 
-  def add_snp_markers_set(self, maker, model, release, op_vid):
-    if self.snp_markers_set_exists(maker, model, release):
-      raise ValueError('SNP_MARKERS_SET(%s, %s, %s) is already in kb.' %
-                       (maker, model, release))
-    set_vid = vlu.make_vid()
-    row = {'vid':set_vid, 'maker': maker, 'model' : model, 'release' : release,
-           'op_vid':op_vid}
-    self.kb.add_table_row(self.SNP_SET_DEF_TABLE, row)
+  def _create_snp_markers_set_table(self, table_name_root, cols_def, set_vid):
+    table_name = self.snp_markers_set_table_name(table_name_root, set_vid)
+    self.kb.create_table(table_name, cols_def)
     return set_vid
 
-  def get_snp_markers_sets(self, selector=None, batch_size=BATCH_SIZE):
-    return self.kb.get_table_rows(self.SNP_SET_DEF_TABLE, selector,
-                                  batch_size=batch_size)
+  def _delete_snp_markers_set_table(self, table_name_root, set_vid):
+    table_name = self.snp_markers_set_table_name(table_name_root, set_vid)
+    self.kb.delete_table(table_name)
 
-  def fill_snp_markers_set(self, set_vid, stream, op_vid,
-                           batch_size=BATCH_SIZE):
+  def _fill_snp_markers_set_table(self, table_name_root, set_vid, i_s,
+                                  batch_size):
+    table_name = self.snp_markers_set_table_name(table_name_root, set_vid)
+    return self.kb.add_table_rows_from_stream(table_name, i_s, batch_size)
+
+  def _read_snp_markers_set_table(self, table_name_root, set_vid, selector,
+                                  batch_size):
+    table_name = self.snp_markers_set_table_name(table_name_root, set_vid)
+    return self.kb.get_table_rows(table_name, selector, batch_size=batch_size)
+
+  SNP_SET_COLS = \
+  [('string', 'marker_vid', 'Marker VID', VID_SIZE, None),
+   ('long', 'marker_indx',
+    "Ordered position of this marker within the set", None),
+   ('bool', 'allele_flip',
+    'Is this technology flipping our A/B allele convention?', None),
+   ('string', 'op_vid',
+    'Last operation that modified this row', VID_SIZE, None)]
+
+  SNP_ALIGNMENT_COLS = \
+  [('string', 'marker_vid', 'VID of the aligned marker.', VID_SIZE, None),
+   ('string', 'ref_genome', 'Reference alignment genome.', 16, None),
+   ('long', 'chromosome',
+    'Chromosome where alignment was found. 1-22, 23(X) 24(Y) 25(XY) 26(MT)',
+    None),
+   ('long', 'pos', "Position on the chromosome. Starting from 5'", None),
+   ('long', 'global_pos', "Global position in the genome. (chr*10**10 + pos)",
+    None),
+   ('bool', 'strand', 'Aligned on reference strand', None),
+   # I know that this is in principle a bool,
+   # but what happens if we have more than two alleles?
+   ('string', 'allele', 'Allele found at this position (A/B)', 1, None),
+   ('long', 'copies',
+    "Number of copies found for this marker within this alignment op.", None),
+   ('string', 'op_vid', 'Last operation that modified this row', VID_SIZE, None)
+   ]
+
+  @classmethod
+  def SNP_GDO_REPO_COLS(klass, N):
+    cols = [('string', 'vid', 'gdo VID', VID_SIZE, None),
+            ('string', 'op_vid', 'Last operation that modified this row',
+             VID_SIZE, None),
+            ('string', 'probs', 'np.zeros((2,N), dtype=np.float32).tostring()',
+             2*N*4, None),
+            ('string', 'confidence', 'np.zeros((N,), dtype=np.float32).tostring()',
+             N*4, None)]
+    return cols
+
+  def create_snp_markers_set_tables(self, set_vid, N):
+    "Create all tables needed by a SNPMarkersSet"
+    snp_gdo_repo_cols = self.SNP_GDO_REPO_COLS(N)
+    self._create_snp_markers_set_table('mset', self.SNP_SET_COLS, set_vid)
+    self._create_snp_markers_set_table('align', self.SNP_ALIGNMENT_COLS,
+                                       set_vid)
+    self._create_snp_markers_set_table('gdo', snp_gdo_repo_cols, set_vid)
+
+  def delete_snp_markers_set_tables(self, set_vid):
+    "Delete all tables related to a SNPMarkersSet"
+    self._delete_snp_markers_set_table('mset', set_vid)
+    self._delete_snp_markers_set_table('align', set_vid)
+    self._delete_snp_markers_set_table('gdo', set_vid)
+
+  def define_snp_markers_set(self, set_vid, stream, op_vid,
+                             batch_size=BATCH_SIZE):
+    "Fill in a SNPMarkersSet definition table"
     def add_op_vid(stream, N):
       for x in stream:
-        x['vid'], x['op_vid'] = set_vid, op_vid
+        x['op_vid'] = op_vid
         N[0] += 1
         yield x
     N = [0]
     i_s = add_op_vid(stream, N)
-    self.kb.add_table_rows_from_stream(self.SNP_SET_TABLE, i_s,
-                                       batch_size=batch_size)
+    self._fill_snp_markers_set_table('mset', set_vid, i_s,
+                                     batch_size=batch_size)
     return N[0]
 
-  def get_snp_markers_set(self, selector=None, batch_size=BATCH_SIZE):
-    return self.kb.get_table_rows(self.SNP_SET_TABLE, selector,
-                                  batch_size=batch_size)
+  def read_snp_markers_set(self, set_vid, selector=None,
+                           batch_size=BATCH_SIZE):
+    return self._read_snp_markers_set_table('mset', set_vid,
+                                            selector, batch_size=batch_size)
 
-  #-- alignment
-  def create_snp_alignment_table(self):
-    self.kb.create_table(self.SNP_ALIGNMENT_TABLE, self.SNP_ALIGNMENT_COLS)
-
-  def add_snp_alignments(self, stream, op_vid, batch_size=BATCH_SIZE,
-                         ms_vid=None):
+  def add_snp_markers_set_alignments(self, set_vid, stream, op_vid,
+                                     batch_size=BATCH_SIZE):
+    "FIXME: explain how we manage multiple hits alignments"
     def add_vids(stream):
+      multiple_hits = {}
       for x in stream:
         x['op_vid'] = op_vid
-        x['ms_vid'] = ms_vid or 'None'
+        if x['copies'] > 1:
+          k = x['marker_vid']
+          if k in multiple_hits:
+            multiple_hits[k].append(x)
+            continue
+          else:
+            multiple_hits[k] = []
         yield x
+      if multiple_hits:
+        for k in multiple_hits:
+          for x in multiple_hits[k]:
+            yield x
     i_s = add_vids(stream)
-    return self.kb.add_table_rows_from_stream(self.SNP_ALIGNMENT_TABLE,
-                                              i_s, batch_size)
+    return self._fill_snp_markers_set_table('align', set_vid, i_s,
+                                            batch_size=batch_size)
 
-  def get_snp_alignments(self, selector=None, col_names=None,
-                         batch_size=BATCH_SIZE):
-    return self.kb.get_table_rows(self.SNP_ALIGNMENT_TABLE, selector,
-                                  col_names=col_names, batch_size=batch_size)
-
-  def get_snp_alignment_positions(self, ref_genome, marker_vids, ms_vid=None,
-                                  batch_size=BATCH_SIZE):
-    """
-    FIXME
-    """
-    if ms_vid:
-      selector = '(ref_genome == "%s")&(ms_vid == "%s")' % (ref_genome, ms_vid)
-      res = self.get_snp_alignments(selector,
-                                    col_names=['marker_vid',
-                                               'chromosome', 'pos'],
-                                    batch_size=batch_size)
-      if len(res) == 0:
-        return []
-      # FIXME this should be done directly in numpy.
-      by_vid = dict(((l[0], (l[1], l[2])) for l in res))
-      return [by_vid[k] for k in marker_vids]
-    else:
-      selector = '(ref_genome == "%s")' % ref_genome
-      res = self.get_snp_alignments(selector, col_names=['marker_vid'],
-                                    batch_size=batch_size)
-      if len(res) == 0:
-        return []
-      by_vid = dict(((l[0], i) for i, l in enumerate(res)))
-      row_indices = [by_vid[x] for x in marker_vids]
-      return self.kb.get_table_slice(self.SNP_ALIGNMENT_TABLE,
-                                     row_indices, ['chromosome', 'pos'],
-                                     batch_size=batch_size)
-
-  #-- gdo
-  def _gdo_table_name(self, set_vid):
-    return '%s.h5' % set_vid
-
-  def create_gdo_repository(self, set_vid, N):
-    table_name = self._gdo_table_name(set_vid)
-    self.kb.create_table(table_name, self.SNP_GDO_REPO_COLS(N))
-    return set_vid
+  def read_snp_markers_set_alignments(self, set_vid, selector=None,
+                                      batch_size=BATCH_SIZE):
+    return self._read_snp_markers_set_table('align', set_vid,
+                                            selector, batch_size=batch_size)
 
   def add_gdo(self, set_vid, probs, confidence, op_vid):
     pstr = probs.tostring()
     cstr = confidence.tostring()
     assert len(pstr) == 2*len(cstr)
     #--
-    table_name = self._gdo_table_name(set_vid)
+    table_name = self.snp_markers_set_table_name('gdo', set_vid)
     row = {'op_vid': op_vid, 'probs':  pstr, 'confidence': cstr}
     assign_vid(row)
     self.kb.add_table_row(table_name, row)
-    # return (vid, mimetype, path)
-    return (table_name, row['vid'])
+    return row['vid']
 
-  def __normalize_size(self, string, size):
-    return string + chr(0) * (size - len(string))
-
-  def __unwrap_gdo(self, set_id, row, indices=None):
-    r = {'vid' :  row['vid'], 'op_vid' : row['op_vid'], 'set_id' : set_id}
+  @classmethod
+  def _unwrap_gdo(klass, row, indices):
+    def unpack(r, field):
+      def normalize_size(string, size):
+        return string + chr(0) * (size - len(string))
+      p = np.fromstring(normalize_size(r[field], r.dtype[field].itemsize),
+                        dtype=np.float32)
+      return p
+    r = {'vid' : row['vid'], 'op_vid' : row['op_vid']}
     #--
-    p = np.fromstring(self.__normalize_size(row['probs'],
-                                            row.dtype['probs'].itemsize),
-                      dtype=np.float32)
+    p = unpack(row, 'probs')
     p.shape = (2, p.shape[0]/2)
     r['probs'] = p[:, indices] if indices is not None else p
     #--
-    c = np.fromstring(self.__normalize_size(row['confidence'],
-                                            row.dtype['confidence'].itemsize),
-                      dtype=np.float32)
+    c = upack(row, 'confidence')
     r['confidence'] = c[indices] if indices is not None else c
     #--
     return r
 
   def get_gdo(self, set_vid, vid, indices=None):
-    table_name = self._gdo_table_name(set_vid)
+    table_name = self.snp_markers_set_table_name('gdo', set_vid)
     rows = self.kb.get_table_rows(table_name, selector='(vid == "%s")' % vid)
     assert len(rows) == 1
-    return self.__unwrap_gdo(set_vid, rows[0], indices)
+    return self._uwrap_gdo(rows[0], indices)
 
   def get_gdo_iterator(self, set_vid, indices=None, batch_size=100):
     def iterator(stream):
       for d in stream:
-        yield self.__unwrap_gdo(set_vid, d, indices)
-    table_name = self._gdo_table_name(set_vid)
+        yield self._unwrap_gdo(d, indices)
+    table_name = self.snp_markers_set_table_name('gdo', set_vid)
     return iterator(self.kb.get_table_rows_iterator(table_name,
                                                     batch_size=batch_size))
+
