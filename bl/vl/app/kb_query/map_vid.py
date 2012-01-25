@@ -59,7 +59,8 @@ class MapVIDApp(Core):
     xx   fooplate:A01
   """
   SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
-                            'Chip', 'DataSample', 'Marker', 'Scanner']
+                            'Chip', 'DataSample', 'Marker', 'Scanner',
+                            'SoftwareProgram', 'SNPMarkersSet']
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None,

@@ -69,6 +69,8 @@
       <when value="Chip"/>
       <when value="Scanner"/>
       <when value="DataSample"/>
+      <when value="SoftwareProgram"/>
+      <when value="SPNMarkersSet"/>
       <when value="Individual">
 	<param name="study" type="select" label="Study of enrollment" 
 	       help="Resolve enrollment in a known study. See below.">    

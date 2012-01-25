@@ -36,6 +36,7 @@ class VidMapper(object):
     enrolls = self.kb.get_enrolled(s)
     self.logger.info("fetched %d enrollments" % len(enrolls))
     for e in enrolls:
+      self.logger.debug('Retrieving wells for %s' % e.studyCode)
       wells = [w for w in self.kb.get_vessels_by_individual(e.individual,
                                                             "PlateWell")]
       self.enroll_map[e.studyCode] = wells
