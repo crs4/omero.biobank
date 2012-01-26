@@ -81,9 +81,26 @@ Usage
   BSTUDY  foobar-05 AffymetrixCel V0A7EA20CF3A0D4DC392062BA4DE4AEAE4
 """
 
-from core import Core
-import csv, json, time
+import os, csv, json, time
 import itertools as it
+
+import core
+
+
+SUPPORTED_SOURCES = [
+  'Tube',
+  'PlateWell',
+  'DataSample',
+  'Individual',
+  'DataCollectionItem',
+  ]
+SUPPORTED_DEVICES = [
+  'Device',
+  'Chip',
+  'Scanner',
+  'SoftwareProgram',
+  'GenotypingProgram',
+  ]
 
 
 def conf_affymetrix_cel_6(kb, r, a, device, options, status_map):
@@ -145,7 +162,7 @@ data_sample_configurator = {
   }
 
 
-class Recorder(Core):
+class Recorder(core.Core):
   def __init__(self, study_label=None,
                host=None, user=None, passwd=None, keep_tokens=1,
                batch_size=1000, operator='Alfred E. Neumann',
@@ -221,8 +238,9 @@ class Recorder(Core):
     mandatory_fields = ['label', 'source', 'device', 'status']
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
-      if self.missing_fields(mandatory_fields, r):
-        f = reject + 'missing mandatory field.'
+      mf = self.missing_fields(mandatory_fields, r)
+      if mf:
+        f = reject + 'missing mandatory field %s' % mf
         self.logger.error(f)
         continue
       if r['status'] not in ['UNKNOWN', 'DESTROYED', 'CORRUPTED', 'USABLE']:
@@ -276,7 +294,6 @@ class Recorder(Core):
     self.logger.info('done consistency checks')
     return good_records
 
-
   def process_chunk(self, otsv, chunk, study):
     def get_options(r):
       options = {}
@@ -295,12 +312,12 @@ class Recorder(Core):
       if isinstance(device, self.kb.Chip) and r['scanner']:
         options['scanner_label'] = self.preloaded_scanners[r['scanner']].label
 
-      # FIXME: the following is an hack. In principle, it should not
-      # be possible to reload the same data_sample twice, so if are
+      # FIXME: the following is a hack. In principle, it should not
+      # be possible to reload the same data_sample twice, therefore
       # trying to get an ActionSetup with a label that already exists
-      # it means that the previous attemps aborted before that the
+      # means that the previous attemps aborted before the
       # data_sample could be saved. The data_sample import should
-      # clean after itself and remove the debries of failed
+      # clean after itself and remove the garbage from failed
       # imports. However, it currently does not do it, so we had to
       # put in a workaround.
 
@@ -308,7 +325,6 @@ class Recorder(Core):
       asetup = self.kb.factory.create(self.kb.ActionSetup,
                                       {'label' : alabel,
                                        'conf' : json.dumps(options)})
-
       if issubclass(self.source_klass, self.kb.Vessel):
         a_klass = self.kb.ActionOnVessel
         acat = self.kb.ActionCategory.MEASUREMENT
@@ -341,7 +357,7 @@ class Recorder(Core):
         k = ('CRS4', 'Genotyper', 'by_markers_set')
       else:
         k = (device.maker, device.model, device.release)
-      a.unload()  # FIXME we need to do this, otherwise the next save will choke
+      a.unload()  # FIXME we need to do this, or the next save will choke
       d = data_sample_configurator[k](self.kb, r, a, device, get_options(r),
                                       data_samples_status_map)
       data_samples.append(d)
@@ -354,69 +370,54 @@ class Recorder(Core):
                      'vid'   : d.id })
 
 
-def canonize_records(args, records):
-  fields = ['study', 'scanner', 'source_type', 'device_type',
-            'data_sample_type', 'markers_set', 'status']
-  for f in fields:
-    v = getattr(args, f, None)
-    if v is not None:
-      for r in records:
-        r[f] = v
-  for r in records:
+class RecordCanonizer(core.RecordCanonizer):
+
+  def canonize(self, r):
+    super(RecordCanonizer, self).canonize(r)
     if 'scanner' in r and 'device' not in r:
       r['device'] = r['scanner']
       r['device_type'] = 'Scanner'
-    if 'data_sample_type' not in r:
-      r['data_sample_type'] = None
-    for t in ['options', 'scanner']:
-      if not (t in r and r[t].upper() != 'NONE'):
-        r[t] = None
+    r.setdefault('data_sample_type')
+    for f in 'options', 'scanner':
+      if r.get(f, 'NONE').upper() == 'NONE':
+        r[f] = None
+  
+
+def make_parser(parser):
+  parser.add_argument('--study', metavar="STRING",
+                      help="overrides the study column value")
+  parser.add_argument('--source-type', metavar="STRING",
+                      choices=SUPPORTED_SOURCES,
+                      help="overrides the source_type column value")
+  # FIXME the following is a temporary solution. It should be
+  # something that checks that the required type is derived from
+  # DataSample. Use this flag only if GenotypeDataSample is needed.
+  parser.add_argument('--data-sample-type', metavar="STRING",
+                      choices=['GenotypeDataSample'],
+                      help="overrides the data_sample_type column value")
+  parser.add_argument('--device-type', metavar="STRING",
+                      choices=SUPPORTED_DEVICES,
+                      help="overrides the device_type column value")
+  parser.add_argument('--scanner', metavar="STRING",
+                      help="""overrides the scanner column value.
+                      It is also used to set the device if a record does
+                      not provide one""")
+  parser.add_argument('--markers-set', metavar="STRING",
+                      help="overrides the markers_set column value")
+  parser.add_argument('--batch-size', type=int, metavar="INT", default=1000,
+                      help="n. of objects to be processed at a time")
 
 
-def make_parser_data_sample(parser):
-  parser.add_argument('--study', type=str,
-                      help="""default study assumed as context for the
-                      import action.  It will
-                      over-ride the study column value, if any.""")
-  parser.add_argument('--source-type', type=str,
-                      choices=['Tube', 'PlateWell', 'DataSample', 'Individual',
-                               'DataCollectionItem'],
-                      help="""default source type.  It will
-                      over-ride the source_type column value, if any.
-                      """)
-  parser.add_argument('--data-sample-type', type=str,
-                      choices=['GenotypeDataSample',
-                               # FIXME this is a temporary
-                               # solution. It should be something that
-                               # checks that the required type is
-                               # derived from DataSample. Use this
-                               # flag only if GenotypeDataSample is
-                               # needed.
-                               ],
-                      help="""default data sample type.  It will
-                      over-ride the data_sample_type column value, if any.
-                      """)
-  parser.add_argument('--device-type', type=str,
-                      choices=['Device', 'Chip', 'Scanner', 'SoftwareProgram',
-                               'GenotypingProgram'],
-                      help="""default device type.  It will
-                      over-ride the device_type column value, if any""")
-  parser.add_argument('--scanner', type=str,
-                      help="""default scanner.
-                      It will over-ride the scanner column value, if
-                      any. If a record does not provide a device, it will be
-                      set to be a Scanner with this vid. """)
-  parser.add_argument('--markers-set', type=str,
-                      help="""default markers set vid for GenotypeDataSample.
-                      It will over-ride the
-                      markers_set column value, if any.""")
-  parser.add_argument('--batch-size', type=int,
-                      help="""Size of the batch of objects
-                      to be processed in parallel (if possible)""",
-                      default=1000)
-
-
-def import_data_sample_implementation(logger, args):
+def implementation(logger, args):
+  fields_to_canonize = [
+    'study',
+    'scanner',
+    'source_type',
+    'device_type',
+    'data_sample_type',
+    'markers_set',
+    'status',
+    ]
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
@@ -426,25 +427,27 @@ def import_data_sample_implementation(logger, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  canonize_records(args, records)
+  args.ifile.close()
+  canonizer = RecordCanonizer(fields_to_canonize, args)
+  canonizer.canonize_list(records)
   if len(records) > 0:
     o = csv.DictWriter(args.ofile,
                        fieldnames=['study', 'label', 'type', 'vid'],
-                       delimiter='\t')
+                       delimiter='\t', lineterminator=os.linesep)
     o.writeheader()
     recorder.record(records, o)
   else:
     logger.info('empty file')
+  args.ofile.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 
 help_doc = """
-import new data sample definitions into an omero/vl system and attach
+import new data sample definitions into the knowledge base and link
 them to previously registered samples.
 """
 
 
 def do_register(registration_list):
-  registration_list.append(('data_sample', help_doc,
-                            make_parser_data_sample,
-                            import_data_sample_implementation))
+  registration_list.append(('data_sample', help_doc, make_parser,
+                            implementation))

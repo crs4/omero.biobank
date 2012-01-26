@@ -1,25 +1,10 @@
-from bl.vl.kb     import KBError
-from bl.vl.kb     import KnowledgeBase as KB
+import json, logging
 
-import json
-import logging
+from bl.vl.kb import KnowledgeBase as KB
 
-#-----------------------------------------------------------------------------
-#FIXME this should be factored out....
-
-#-----------------------------------------------------------------------------
-
-class BadRecord(Exception):
-  def __init__(self, msg):
-    self.msg = msg
-
-  def __str__(self):
-    return repr(self.msg)
 
 class Core(object):
-  """
-  The common set of methods used by the importer's modules.
-  """
+
   def __init__(self, host=None, user=None, passwd=None, group=None,
                keep_tokens=1, study_label=None, logger=None):
     self.kb = KB(driver='omero')(host, user, passwd, group, keep_tokens)
@@ -40,46 +25,44 @@ class Core(object):
     for x in dir(args):
       if not (x.startswith('_') or x.startswith('func')):
         action_setup_conf[x] = getattr(args, x)
-    #FIXME HACKS
+    # HACKS
     action_setup_conf['ifile'] = action_setup_conf['ifile'].name
     action_setup_conf['ofile'] = action_setup_conf['ofile'].name
     return action_setup_conf
-
 
   def get_device(self, label, maker, model, release):
     device = self.kb.get_device(label)
     if not device:
       self.logger.debug('creating a device')
-      device = self.kb.factory.create(self.kb.Device,
-                                      {'maker' : maker,
-                                       'model' : model,
-                                       'release' : release,
-                                       'label' : label}).save()
+      conf = {
+        'maker': maker,
+        'model': model,
+        'release': release,
+        'label': label,
+        }
+      device = self.kb.factory.create(self.kb.Device, conf).save()
     return device
 
   def get_action_setup(self, label, conf):
     """
-    :param label:
-    :type  label: str
-    :param conf:
-    :type conf:  a python dict amenable to be json-ized
-    :rtype: a kb.ActionSetup proxy to a saved ActionSetup object in VL
+    Return the ActionSetup corresponding to label if there is one,
+    else create a new one using conf.
     """
     asetup = self.kb.get_action_setup(label)
     if not asetup:
-      asetup = self.kb.factory.create(self.kb.ActionSetup,
-                                      {'label' : label,
-                                       'conf'  : json.dumps(conf)}).save()
+      kb_conf = {
+        'label': label,
+        'conf': json.dumps(conf),
+        }
+      asetup = self.kb.factory.create(self.kb.ActionSetup, kb_conf).save()
     return asetup
 
   def get_study(self, label):
     if self.default_study:
       return self.default_study
     study = self.kb.get_study(label)
-    print 'study: ', study
     if not study:
-      study = self.kb.factory.create(self.kb.Study,
-                                     {'label' : label}).save()
+      study = self.kb.factory.create(self.kb.Study, {'label': label}).save()
     return study
 
   def find_study(self, records):
@@ -100,7 +83,6 @@ class Core(object):
         raise ValueError(m)
     return getattr(self.kb, o_type)
 
-
   def preload_by_type(self, name, klass, preloaded):
     self.logger.info('start preloading %s' % name)
     objs = self.kb.get_objects(klass)
@@ -110,9 +92,25 @@ class Core(object):
     self.logger.info('done preloading %s' % name)
 
   def missing_fields(self, fields, r):
-    for k in fields:
-      try:
-        r[k]
-      except KeyError, e:
-        return True
+    for f in fields:
+      if f not in r:
+        return f
     return False
+
+
+class RecordCanonizer(object):
+
+  def __init__(self, fields, args):
+    overrides = {}
+    for f in fields:
+      v = getattr(args, f, None)
+      if v is not None:
+        overrides[f] = v
+    self.overrides = overrides
+  
+  def canonize(self, r):
+    r.update(self.overrides)
+
+  def canonize_list(self, l):
+    for r in l:
+      self.canonize(r)

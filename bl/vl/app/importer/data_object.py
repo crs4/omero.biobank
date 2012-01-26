@@ -34,13 +34,13 @@ previously seen data object.
   bash> ${IMPORTER} -i data_object_mapped.tsv -o data_object_mapping.tsv \
                data_object
 """
-import csv
+import os, csv
 
 from bl.vl.kb.mimetypes import DATA_OBJECT_FILES as SUPPORTED_MIME_TYPES
-from core import Core
+import core
 
 
-class Recorder(Core):
+class Recorder(core.Core):
   def __init__(self, study_label=None,
                host=None, user=None, passwd=None, keep_tokens=1,
                action_setup_conf=None,
@@ -54,7 +54,7 @@ class Recorder(Core):
     self.preloaded_data_objects = {}
     self.preloaded_data_samples = {}
 
-  def record(self, records):
+  def record(self, records, otsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -69,7 +69,7 @@ class Recorder(Core):
     records = self.do_consistency_checks(records)
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
-      self.process_chunk(c)
+      self.process_chunk(otsv, c, study)
       self.logger.info('done processing chunk %d' % i)
 
   def preload_data_samples(self):
@@ -112,43 +112,39 @@ class Recorder(Core):
     self.logger.info('done consistency checks')
     return good_records
 
-  def process_chunk(self, chunk):
+  def process_chunk(self, otsv, chunk, study):
     data_objects = []
     for r in chunk:
       sample = self.preloaded_data_samples[r['data_sample']]
-      conf = {'path' : r['path'],
-              'mimetype' : r['mimetype'],
-              'size' : int(r['size']),
-              'sample' : sample,
-              'sha1' : r['sha1']}
+      conf = {
+        'path': r['path'],
+        'mimetype': r['mimetype'],
+        'size': int(r['size']),
+        'sample': sample,
+        'sha1': r['sha1'],
+        }
       data_objects.append(self.kb.factory.create(self.kb.DataObject, conf))
     self.kb.save_array(data_objects)
     for do in data_objects:
+      otsv.writerow({
+        'study': study.label,
+        'path': do.path,
+        'type': do.get_ome_table(),
+        #'vid': do.id,
+        })
       self.logger.info('saved %s[%s,%s] as attached to %s' %
                        (do.path, do.mimetype, do.size, do.sample.id))
 
 
-def canonize_records(args, records):
-  fields = ['study', 'mimetype']
-  for f in fields:
-    v = getattr(args, f, None)
-    if v is not None:
-      for r in records:
-        r[f] = v
-
-
-def make_parser_data_object(parser):
-  parser.add_argument('--study', type=str,
-                      help="""default study used as context
-                      for the import action.  It will
-                      override the study column value, if any""")
-  parser.add_argument('--mimetype', type=str,
+def make_parser(parser):
+  parser.add_argument('--study', metavar="STRING",
+                      help="overrides the study column value")
+  parser.add_argument('--mimetype', metavar="STRING",
                       choices=SUPPORTED_MIME_TYPES,
-                      help="""default mimetype.  It will
-                      override the mimetype column value, if any""")
+                      help="overrides the mimetype column value")
 
 
-def import_data_object_implementation(logger, args):
+def implementation(logger, args):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
@@ -158,18 +154,25 @@ def import_data_object_implementation(logger, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  canonize_records(args, records)
-  recorder.record(records)
+  args.ifile.close()
+  canonizer = core.RecordCanonizer(['study', 'mimetype'], args)
+  canonizer.canonize_list(records)
+  o = csv.DictWriter(args.ofile,
+                     #fieldnames=['study', 'path', 'type', 'vid'],
+                     fieldnames=['study', 'path', 'type'],
+                     delimiter='\t', lineterminator=os.linesep)
+  o.writeheader()
+  recorder.record(records, o)
+  args.ofile.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 
 help_doc = """
-import new data object definitions into OMERO.biobank and attach
+import new data object definitions into the KB and link
 them to previously registered data samples.
 """
 
 
 def do_register(registration_list):
-  registration_list.append(('data_object', help_doc,
-                            make_parser_data_object,
-                            import_data_object_implementation))
+  registration_list.append(('data_object', help_doc, make_parser,
+                            implementation))

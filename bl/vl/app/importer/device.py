@@ -1,6 +1,6 @@
 """
-Import of devices
-=================
+Import device
+=============
 
 Will read in a tsv file with the following columns (multiple spaces
 represent tabs)::
@@ -14,10 +14,10 @@ optional fields are 'barcode' and 'location'.
 """
 
 import csv, os
-from core import Core
+import core
 
 
-class Recorder(Core):
+class Recorder(core.Core):
   
   def __init__(self, study_label,
                host=None, user=None, passwd=None, keep_tokens=1,
@@ -41,7 +41,7 @@ class Recorder(Core):
     if not records:
       self.logger.warn('no records')
       return
-    study  = self.find_study(records)
+    study = self.find_study(records)
     self.preload_devices()
     self.preload_markers_sets()
     records = self.do_consistency_checks(records)
@@ -133,29 +133,25 @@ class Recorder(Core):
         'study': study.label,
         'label': d.label,
         'type': d.get_ome_table(),
-        'vid': d.id
+        'vid': d.id,
         })
 
 
-def canonize_records(args, records):
-  fields = ['study', 'maker', 'model', 'release', 'device_type']
-  for f in fields:
-    v = getattr(args, f, None)
-    if v is not None:
-      for r in records:
-        r[f] = v
-  for k in ['location', 'barcode', 'markers_set']:
-    for r in records:
-      if not (k in r and (r[k] and r[k].upper() != 'NONE')):
-        r[k] = None
+class RecordCanonizer(core.RecordCanonizer):
+  
+  def canonize(self, r):
+    super(RecordCanonizer, self).canonize(r)
+    for f in ['location', 'barcode', 'markers_set']:
+      if r.get(f, 'NONE').upper() == 'NONE':
+        r[f] = None
 
 
 help_doc = """
-import new Device definitions into the biobank.
+import new Device definitions into the KB.
 """
 
 
-def make_parser_device(parser):
+def make_parser(parser):
   parser.add_argument(
     '--study', type=str, metavar="STR",
     help="Study label. Overrides the study column value, if any"
@@ -179,7 +175,8 @@ def make_parser_device(parser):
     )
 
 
-def import_device_implementation(logger, args):
+def implementation(logger, args):
+  fields_to_canonize = ['study', 'maker', 'model', 'release', 'device_type']
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
@@ -189,16 +186,17 @@ def import_device_implementation(logger, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  canonize_records(args, records)
+  args.ifile.close()
+  canonizer = RecordCanonizer(fields_to_canonize, args)
+  canonizer.canonize_list(records)
   o = csv.DictWriter(args.ofile, delimiter='\t',
                      fieldnames=['study', 'label', 'type', 'vid'],
                      lineterminator=os.linesep)
   o.writeheader()
   recorder.record(records, o)
+  args.ofile.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 
 def do_register(registration_list):
-  registration_list.append(('device', help_doc,
-                            make_parser_device,
-                            import_device_implementation))
+  registration_list.append(('device', help_doc, make_parser, implementation))

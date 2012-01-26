@@ -23,7 +23,7 @@ have the same label or barcode of a previously seen blood sample.
 Study defines the context in which the import occurred.
 
 """
-from core import Core, BadRecord
+from core import Core
 
 import csv, json
 

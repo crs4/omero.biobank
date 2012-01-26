@@ -1,8 +1,8 @@
 import unittest, os, csv
 
 import bl.vl.individual.pedigree as ped
+from bl.vl.individual import IndividualStub as Individual
 from bl.vl.app.importer.individual import Ind, make_ind_by_label
-
 
 D = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(D, "data")
@@ -18,24 +18,6 @@ class Recorder(object):
     return True
   def dump_out(self):
     print 'dumping out'
-
-
-class Individual(object):
-  
-  def __init__(self, iid, sex, father=None, mother=None):
-    self.id = iid
-    self.sex = sex
-    self.father = father
-    self.mother = mother
-
-  def __hash__(self):
-    return hash(self.id)
-  
-  def __eq__(self, obj):
-    return self.id == obj.id
-
-  def __ne__(self, obj):
-    return not self.__eq__(obj)
 
 
 def read_ped_file(pedfile):

@@ -24,7 +24,7 @@ previously known collection.
   but do not have it.
 """
 
-from core import Core, BadRecord
+from core import Core
 
 from version import version
 

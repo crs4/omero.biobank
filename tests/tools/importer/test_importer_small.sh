@@ -12,12 +12,12 @@ DATA_DIR='./small'
 
 echo 'Running tests on dataset:' ${DATA_DIR}
 
-STUDY_LABEL=TEST01
+STUDY_LABEL=$(date +"%F-%R")
 
 
-${IMPORTER} -i ${DATA_DIR}/study.tsv -o study_mapping.tsv study || die "import study failed"
+${IMPORTER} -i ${DATA_DIR}/study.tsv -o study_mapping.tsv study --label ${STUDY_LABEL} || die "import study failed"
 
-${IMPORTER} -i ${DATA_DIR}/individuals.tsv -o individual_mapping.tsv individual || die "import individual failed"
+${IMPORTER} -i ${DATA_DIR}/individuals.tsv -o individual_mapping.tsv individual --study ${STUDY_LABEL} || die "import individual failed"
 
 ${KB_QUERY} -o blood_sample_mapped.tsv \
              map_vid -i ${DATA_DIR}/blood_samples.tsv \
@@ -67,7 +67,6 @@ ${IMPORTER} -i plate_well_mapped_2.tsv -o plate_well_mapping.tsv \
              --vessel-status CONTENTUSABLE \
              --vessel-type PlateWell || die "import well failed"
 
-
 ${IMPORTER} -i ${DATA_DIR}/devices.tsv -o devices_mapping.tsv device \
     --study ${STUDY_LABEL} || die "import device failed"
 
@@ -102,19 +101,15 @@ ${IMPORTER} -i data_object_mapped.tsv -o data_object_mapping.tsv \
              --study ${STUDY_LABEL} \
              --mimetype=x-vl/affymetrix-cel || die "import data object failed"
 
-
 ${KB_QUERY} -o data_collection_mapped.tsv \
              map_vid -i ${DATA_DIR}/data_collections.tsv \
                  --column data_sample_label,data_sample \
                  --source-type DataSample \
                  --study ${STUDY_LABEL} || die "map data collection vid failed"
 
-
 ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
              data_collection \
              --study ${STUDY_LABEL} || die "import data collection failed"
-
-
 
 #-----------------
 # use the following command to scratch and recreate the markers tables
@@ -134,7 +129,9 @@ ${IMPORTER} -i diagnosis_mapped.tsv \
              diagnosis \
              --study ${STUDY_LABEL} || die "import diagnosis failed"
 
-# this will generate the marker_defintions file.
+exit 0
+
+# this will generate the marker_definitions file.
 python ./make_marker_defs.py 100
 
 ${IMPORTER} -i marker_definitions.tsv \

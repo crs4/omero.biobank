@@ -2,33 +2,32 @@
 Import Markers Set Definitions
 ==============================
 
-A **SNPMarkersSet** is, essentially, an ordered list of markers where
-the order is, in principle, arbitrary, but it usually comes from the
-alignment of the SNP markers against a reference genome.  Within
-OMERO.biobank, different genotyping technologies are mapped to
-different SNPMarkersSet instances.
+A SNPMarkersSet represents an ordered list of markers where the order
+usually comes from aligning the SNP markers against a reference
+genome. Within OMERO.biobank, different genotyping technologies are
+mapped to different SNPMarkersSet instances.
 
 In more detail, a marker set is defined by:
 
  * identification information:
 
-   * **maker:** the name of the organization that has defined the
+   * maker: the name of the organization that has defined the
      SNPMarkersSet, e.g., 'CRS4'
 
-   * **model** the specific 'model' of the SNPMarkersSet, e.g.,
+   * model: the specific 'model' of the SNPMarkersSet, e.g.,
      'AffymetrixGenome6.0'
 
-   * **release** a string that identifies this specific instance, e.g.,
+   * release: a string that identifies this specific instance, e.g.,
      'aligned_on_human_g1k_v37'
 
- * markers reference list: for each marker that should go in the list,
+ * reference list: for each marker that should go in the list,
    the following information is provided:
 
-   * **marker_vid** the vid identifier of the marker
+   * marker_vid: the vid identifier of the marker
 
-   * **marker_indx** the position of the marker within the marker list
+   * marker_indx: the position of the marker within the marker list
 
-   * **allele_flip** False if the alleles are in the same order as
+   * allele_flip: False if the alleles are in the same order as
      recorded in the marker definition, True if they are swapped.
 
 For instance::
@@ -41,11 +40,11 @@ For instance::
 """
 import sys, os, time, csv, json
 
-from core import Core
+import core
 from version import version
 
 
-class Recorder(Core):
+class Recorder(core.Core):
   
   def __init__(self, study_label, host=None, user=None, passwd=None,
                keep_tokens=1, operator='Alfred E. Neumann',
@@ -68,7 +67,7 @@ class Recorder(Core):
     if not records:
       self.logger.warn('no records')
       return
-    study  = self.find_study(records)
+    study = self.find_study(records)
     action = self.find_action(study)
     label, maker, model, release = self.find_markers_set_label(records)
     self.logger.info('start creating markers set')
@@ -82,16 +81,22 @@ class Recorder(Core):
     self.kb.create_gdo_repository(set_vid, N)
     self.logger.info('done creating gdo repository')
     self.logger.info('start creating SNPMarkersSet')
-    conf = {'label': label,
-            'maker' : maker, 'model' : model, 'release' : release,
-            'markersSetVID' : set_vid,
-            'action' : action}
+    conf = {
+      'label': label,
+      'maker': maker,
+      'model': model,
+      'release': release,
+      'markersSetVID': set_vid,
+      'action': action,
+      }
     mset = self.kb.factory.create(self.kb.SNPMarkersSet, conf).save()
     self.logger.info('done creating SNPMarkersSet')
-    otsv.writerow({'study' : study.label,
-                   'label' : mset.label,
-                   'type'  : mset.get_ome_table(),
-                   'vid'   : mset.id })
+    otsv.writerow({
+      'study': study.label,
+      'label': mset.label,
+      'type': mset.get_ome_table(),
+      'vid': mset.id,
+      })
 
   def find_markers_set_label(self, records):
     r = records[0]
@@ -104,13 +109,14 @@ class Recorder(Core):
     asetup = self.get_action_setup('importer.markers_set-%f' % time.time(),
                                    json.dumps(self.action_setup_conf))
     acat = self.kb.ActionCategory.IMPORT
-    action = self.kb.factory.create(self.kb.Action,
-                                    {'setup' : asetup,
-                                     'device' : device,
-                                     'actionCategory' : acat,
-                                     'operator' : self.operator,
-                                     'context' : study,
-                                     })
+    conf = {
+      'setup': asetup,
+      'device': device,
+      'actionCategory': acat,
+      'operator': self.operator,
+      'context': study,
+      }
+    action = self.kb.factory.create(self.kb.Action, conf)
     return action.save()
 
   def preload_markers_sets(self):
@@ -166,47 +172,45 @@ class Recorder(Core):
     return good_records
 
 
-def canonize_records(args, records):
-  fields = ['study', 'label', 'maker', 'model', 'release']
-  for f in fields:
-    v = getattr(args, f, None)
-    if v is not None:
-      for r in records:
-        r[f] = v
-  for r in records:
+class RecordCanonizer(core.RecordCanonizer):
+
+  def canonize(self, r):
+    super(RecordCanonizer, self).canonize(r)
     r['marker_indx'] = int(r['marker_indx'])
-    r['allele_flip'] = {'TRUE': True, 'FALSE': False}[r['allele_flip'].upper()]
+    r['allele_flip'] = r['allele_flip'].upper() == 'TRUE'
 
 
 help_doc = """
-import new markers set definition into VL.
+import new markers set definitions into the KB.
 """
 
 
-def make_parser_markers_set(parser):
-  parser.add_argument('--study', type=str, required=True,
-                      help="""context study label""")
-  parser.add_argument('--label', type=str,
-                      help="""markers_set unique label""")
-  parser.add_argument('--maker', type=str, required=True,
-                      help="""markers_set maker""")
-  parser.add_argument('--model', type=str, required=True,
-                      help="""markers_set model""")
-  parser.add_argument('--release', type=str, required=True,
-                      help="""markers set release""")
+def make_parser(parser):
+  parser.add_argument('--study', metavar="STRING", required=True,
+                      help="study label")
+  parser.add_argument('--label', metavar="STRING",
+                      help="markers_set unique label")
+  parser.add_argument('--maker', metavar="STRING", required=True,
+                      help="markers_set maker")
+  parser.add_argument('--model', metavar="STRING", required=True,
+                      help="markers_set model")
+  parser.add_argument('--release', metavar="STRING", required=True,
+                      help="markers_set release")
 
 
-def import_markers_set_implementation(logger, args):
+def implementation(logger, args):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
                       operator=args.operator,
-                      action_setup_conf=action_setup_conf,
-                      logger=logger)
+                      action_setup_conf=action_setup_conf, logger=logger)
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  canonize_records(args, records)
+  args.ifile.close()
+  fields_to_canonize = ['study', 'label', 'maker', 'model', 'release']
+  canonizer = RecordCanonizer(fields_to_canonize, args)
+  canonizer.canonize_list(records)
   if len(records) > 0:
     o = csv.DictWriter(args.ofile,
                        fieldnames=['study', 'label', 'type', 'vid'],
@@ -215,10 +219,10 @@ def import_markers_set_implementation(logger, args):
     recorder.record(records, o)
   else:
     logger.info('empty file')
+  args.ofile.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 
 def do_register(registration_list):
-  registration_list.append(('markers_set', help_doc,
-                            make_parser_markers_set,
-                            import_markers_set_implementation))
+  registration_list.append(('markers_set', help_doc, make_parser,
+                            implementation))

@@ -1,6 +1,6 @@
 """
-Import of individuals collections
-=================================
+Import individuals
+==================
 
 An individual is characterized by the following fields::
 
@@ -8,96 +8,35 @@ An individual is characterized by the following fields::
   xxx   id2   male     None   None
   xxx   id2   male     id4    id5
 
-where gender could be either male or female, father and mother could
-either be the string '''None''' or a label (within the same study)
-individual.  Individuals are the only "bio" objects in Omero/VL that
-can be loaded independently from what is
-already in the DB.  Of course, if they do not have assigned
-parents. The study label should, however, correspond to a study that
-it has already been defined in the database.
+where gender can be either male or female; father and mother can be
+either the string 'None' or the label of an individual in the same
+study.
 
-The individual sub-operation will create and enroll the individuals
-listed in the given study, it will output the vid ids of the created
-individual objects. It is not possible to import the same individual
-twice: the related file rows will be noisily ignored.
+Individuals are the only 'bio' objects that can be loaded
+independently from the KB's current content (if their parents are
+'None'). The study label should, however, correspond to a previously
+loaded study.
 
-.. code-block:: bash
-
-   bash> cat individual.tsv
-   study  label gender  father  mother
-   BSTUDY I001  male  None  None
-   BSTUDY I002  female  None  None
-   BSTUDY I003  male  I001  I002
-   BSTUDY I004  female  I001  I002
-   BSTUDY I005  male  I003  I004
-   BSTUDY I006  male  I003  I004
-   bash> ${IMPORTER} -i individual.tsv -o individual_mapping.tsv individual
-   bash> cat individual_mapping.tsv
-   study  label type  vid
-   BSTUDY I001  Individual  V044DE795E7F9F42FEB9855288CF577A77
-   BSTUDY I002  Individual  V0B718B77691B145BFA8901FCCF6B37998
-   BSTUDY I003  Individual  V06C59B915C0FD47DABE6AE02C731780AF
-   BSTUDY I004  Individual  V080331A3E763348F4879A71FEAA11C699
-   BSTUDY I005  Individual  V00FE62DB1758648CFB91F354A7EF9AAE2
-   BSTUDY I006  Individual  V01654DCFC5BB640C0BB7EE088194E629D
-
-**NOTE:** The current incarnation of the import application does not support
-cross studies parenthood definitions.
-
+**NOTE:** The current implementation does not support cross-study
+kinship.
 """
 
-
+import os, time, json, csv
 import itertools as it
-import time
-import json
 
+from bl.vl.individual.pedigree import import_pedigree
+from bl.vl.individual import IndividualStub as Ind
 
-# FIXME: move this class somewhere else
-class Ind(object):
-  """
-  An utility class that quacks as expected by import_pedigree
-  """
-  def __init__(self, label, gender, father, mother):
-    self.id = label
-    self.gender = gender
-    self.father = father
-    self.mother = mother
-
-  def is_male(self):
-    return self.gender.upper() == 'MALE'
-
-  def is_female(self):
-    return self.gender.upper() == 'FEMALE'
-
-  def __str__(self):
-    return '%s (%s) [%s, %s]' % (self.id, self.gender,
-                                 self.father.id if self.father else None,
-                                 self.mother.id if self.mother else None)
-  def __hash__(self):
-    return hash(self.id)
-
-  def __eq__(self, obj):
-    return hash(self) == hash(obj)
-
-
-
-from bl.vl.individual.pedigree  import import_pedigree
-import csv
-
-from core import Core
-
+import core
 from version import version
-class Recorder(Core):
-  """
-  An utility class that handles the actual recording into VL
-  """
+
+
+class Recorder(core.Core):
+
   def __init__(self, out_stream=None, study_label=None,
                host=None, user=None, passwd=None,
-               keep_tokens=1, batch_size=1000,
-               operator='Alfred E. Neumann',
-               action_setup_conf=None,
-               logger=None
-               ):
+               keep_tokens=1, batch_size=1000, operator='Alfred E. Neumann',
+               action_setup_conf=None, logger=None):
     super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
                                    study_label=study_label, logger=logger)
     self.operator = operator
@@ -105,7 +44,6 @@ class Recorder(Core):
     self.out_stream = out_stream
     if self.out_stream:
       self.out_stream.writeheader()
-
     self.individuals_to_be_saved = []
     self.enrollments_to_be_saved = []
     self.chunk_size = batch_size
@@ -114,22 +52,19 @@ class Recorder(Core):
                              'CRS4', 'IMPORT', version)
     asetup = self.get_action_setup('import-prog-%f' % time.time(),
                                    json.dumps(self.action_setup_conf))
-    acat  = self.kb.ActionCategory.IMPORT
+    acat = self.kb.ActionCategory.IMPORT
     operator = 'Alfred E. Neumann'
-
-    self.action = self.kb.factory.create(self.kb.Action,
-                                         {'setup' : asetup,
-                                          'device' : device,
-                                          'actionCategory' : acat,
-                                          'operator' : operator,
-                                          'context' : self.default_study,
-                                          })
-
-    #-- FIXME what happens if we do not have individuals to save?
+    conf = {
+      'setup' : asetup,
+      'device' : device,
+      'actionCategory' : acat,
+      'operator' : operator,
+      'context' : self.default_study,
+      }
+    self.action = self.kb.factory.create(self.kb.Action, conf)
+    #FIXME what happens if we do not have individuals to save?
     self.action.save()
-    #
     self.counter = 0
-    #--
     self.known_enrollments = {}
     if self.default_study:
       self.logger.info('start pre-loading known enrolled individuals')
@@ -137,10 +72,8 @@ class Recorder(Core):
       for e in known_enrollments:
         self.known_enrollments[e.studyCode] = e
       self.logger.info('done pre-loading known enrolled individuals')
-      self.logger.info('there are %d enrolled individuals in study %s'
-                       % (len(self.known_enrollments),
-                          self.default_study.label))
-    #--
+      self.logger.info('there are %d enrolled individuals in study %s' %
+                       (len(self.known_enrollments), self.default_study.label))
 
   def dump_out(self):
     self.logger.debug('\tthere are %s records to save' %
@@ -150,16 +83,17 @@ class Recorder(Core):
                         self.enrollments_to_be_saved):
       e.individual = i
     self.kb.save_array(self.enrollments_to_be_saved)
-
-    for i, e in it.izip(self.individuals_to_be_saved, self.enrollments_to_be_saved):
-      self.out_stream.writerow({'study' : e.study.label,
-                                'label' : e.studyCode,
-                                'type' : 'Individual',  'vid' : i.id})
-
+    for i, e in it.izip(self.individuals_to_be_saved,
+                        self.enrollments_to_be_saved):
+      self.out_stream.writerow({
+        'study': e.study.label,
+        'label': e.studyCode,
+        'type': 'Individual',
+        'vid': i.id,
+        })
     self.individuals_to_be_saved = []
     self.enrollments_to_be_saved = []
     self.logger.debug('\tdone')
-
 
   def clean_up(self):
     self.dump_out()
@@ -167,58 +101,44 @@ class Recorder(Core):
   def retrieve_enrollment(self, identifier):
     study_label, label = identifier
     self.logger.info('importing (%s, %s)' % (study_label, label))
-
     assert study_label == self.default_study.label
-
-    if self.default_study and label in self.known_enrollments:
-      study = self.default_study
-      e = self.known_enrollments[label]
-      self.logger.info('using previously loaded enrollment (%s, %s)' %
-                       (study_label, label))
-    else:
-      study = self.default_study if self.default_study \
-              else self.known_studies.setdefault(study_label,
-                                                 self.get_study(study_label))
-      e = self.kb.get_enrollment(study, ind_label=label)
+    study = self.default_study or self.known_studies.setdefault(
+      study_label, self.get_study(study_label)
+      )
+    e = self.known_enrollments.get(
+      label, self.kb.get_enrollment(study, ind_label=label)
+      )
     return study, e
-
 
   def retrieve(self, identifier):
     study, e = self.retrieve_enrollment(identifier)
     return e.individual if e else None
 
   def record(self, identifier, gender, father, mother):
-    gender_map = {'MALE' : self.kb.Gender.MALE,
-                  'FEMALE' : self.kb.Gender.FEMALE}
-
-    # FIXME quick hack to support reloading...
+    gender_map = {
+      'MALE': self.kb.Gender.MALE,
+      'FEMALE': self.kb.Gender.FEMALE
+      }
+    # FIXME quick hack to support reloading
     if father:
       father.reload()
     if mother:
       mother.reload()
-    self.logger.info('importing %s %s %s %s' % (identifier, gender,
-                                                father.id if father else None,
-                                                mother.id if mother else None))
-    study, e = self.retrieve_enrollment(identifier)
-    if e:
-      self.logger.warn('ignoring %s because it has already been enrolled'
-                       % (identifier))
-
-    self.logger.info('creating %s %s %s %s' % (identifier, gender,
-                                               father.id if father else None,
-                                               mother.id if mother else None))
-    conf = {'gender' : gender_map[gender.upper()],
-            'action' : self.action}
+    i_conf = {
+      'gender': gender_map[gender.upper()],
+      'action': self.action,
+      }
     if father:
-      conf['father'] = father
+      i_conf['father'] = father
     if mother:
-      conf['mother'] = mother
-    i = self.kb.factory.create(self.kb.Individual, conf)
-    e = self.kb.factory.create(self.kb.Enrollment,
-                               {'study' : self.default_study,
-                                'individual' : i,
-                                'studyCode': identifier[1]})
-    #--
+      i_conf['mother'] = mother
+    i = self.kb.factory.create(self.kb.Individual, i_conf)
+    e_conf = {
+      'study': self.default_study,
+      'individual': i,
+      'studyCode': identifier[1],
+      }
+    e = self.kb.factory.create(self.kb.Enrollment, e_conf)
     self.individuals_to_be_saved.append(i)
     self.enrollments_to_be_saved.append(e)
     if len(self.individuals_to_be_saved) >= self.chunk_size:
@@ -231,12 +151,10 @@ class Recorder(Core):
     mandatory_fields = ['study', 'gender', 'father', 'mother']
     for i, r in enumerate(records):
       reject = 'Rejecting record %d:' % i
-
       if self.missing_fields(mandatory_fields, r):
         msg = 'missing mandatory field. aborting'
         self.logger.critical(reject + msg)
         raise ValueError(msg)
-
       if r['study'] != study_label:
         msg = 'non uniform study label. aborting'
         self.logger.critical(reject + msg)
@@ -246,13 +164,12 @@ class Recorder(Core):
         self.logger.critical(reject + msg)
         raise ValueError(msg)
       seen[r['label']] = r
-
     for i, r in enumerate(records):
       reject = 'Rejecting record %d:' % i
       for parent in ['father', 'mother']:
-        if not (r[parent].upper() == 'NONE'
-                or r[parent] in seen
-                or r[parent] in self.known_enrollments):
+        if not (r[parent].upper() == 'NONE' or
+                r[parent] in seen or
+                r[parent] in self.known_enrollments):
           msg = 'undefined %s label.' % parent
           self.logger.critical(reject + msg)
           raise ValueError(msg)
@@ -272,55 +189,41 @@ def make_ind_by_label(records):
 
 
 help_doc = """
-import new individual definitions into a virgil system and register
-them to a study.
+import new individual definitions into the KB and enroll them in a study.
 """
-def make_parser_individual(parser):
-  parser.add_argument('--study', type=str,
-                      help="""Default study to enroll into.
-                      It will over-ride the study column value""")
-  parser.add_argument('-N', '--batch-size', type=int,
-                      help="""Size of the batch of individuals
-                      to be processed in parallel (if possible)""",
-                      default=1000)
 
 
-def canonize_records(args, records):
-  fields = ['study']
-  for f in fields:
-    v = getattr(args, f, None)
-    if v is not None:
-      for r in records:
-        r[f] = v
+def make_parser(parser):
+  parser.add_argument('--study', metavar="STRING",
+                      help="overrides the study column value")
+  parser.add_argument('-N', '--batch-size', type=int, metavar="INT",
+                      default=1000,
+                      help="n. of objects to be processed at a time")
 
 
-def import_individual_implementation(logger, args):
-
+def implementation(logger, args):
   action_setup_conf = Recorder.find_action_setup_conf(args)
-
   f = csv.DictReader(args.ifile, delimiter='\t')
   records = [r for r in f]
+  args.ifile.close()
   if len(records) == 0:
     return
-
-  canonize_records(args, records)
+  canonizer = core.RecordCanonizer(['study'], args)
+  canonizer.canonize_list(records)
   study_label = records[0]['study']
-
   o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
-                     delimiter='\t')
+                     delimiter='\t', lineterminator=os.linesep)
   recorder = Recorder(o, study_label, args.host, args.user, args.passwd,
                       args.keep_tokens, args.batch_size,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf, logger=logger)
-
   recorder.do_consistency_checks(records)
   by_label = make_ind_by_label(records)
   import_pedigree(recorder, by_label.itervalues())
   recorder.clean_up()
+  args.ofile.close()
 
 
 def do_register(registration_list):
-  registration_list.append(('individual', help_doc,
-                            make_parser_individual,
-                            import_individual_implementation))
-
+  registration_list.append(('individual', help_doc, make_parser,
+                            implementation))
