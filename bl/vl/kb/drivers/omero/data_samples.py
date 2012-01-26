@@ -6,13 +6,13 @@ from utils import assign_vid_and_timestamp
 
 
 class DataSampleStatus(wp.OmeroWrapper):
-  
+
   OME_TABLE = 'DataSampleStatus'
   __enums__ = ["UNKNOWN", "DESTROYED", "CORRUPTED", "USABLE"]
 
 
 class DataSample(wp.OmeroWrapper):
-  
+
   OME_TABLE = 'DataSample'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
@@ -25,7 +25,7 @@ class DataSample(wp.OmeroWrapper):
 
 
 class DataObject(wp.OmeroWrapper):
-  
+
   OME_TABLE = 'DataObject'
   __fields__ = [('sample', DataSample, wp.REQUIRED),
                  # the following fields come from OriginalFile
@@ -41,26 +41,26 @@ class DataObject(wp.OmeroWrapper):
 
 
 class MicroArrayMeasure(DataSample):
-  
+
   OME_TABLE = 'MicroArrayMeasure'
   __fields__ = []
 
 
 class AffymetrixCelArrayType(wp.OmeroWrapper):
-  
+
   OME_TABLE="AffymetrixCelArrayType"
   __enums__ = ["UNKNOWN", "GENOMEWIDESNP_6"]
 
 
 class AffymetrixCel(MicroArrayMeasure):
-  
+
   OME_TABLE = 'AffymetrixCel'
   __fields__ = [('arrayType', AffymetrixCelArrayType, wp.REQUIRED),
                 ('celID',     wp.STRING,              wp.OPTIONAL)]
 
 
 class IlluminaBeadChipAssayType(wp.OmeroWrapper):
-  
+
   OME_TABLE="IlluminaBeadChipAssayType"
   __enums__ = ["UNKNOWN", "HUMAN1M_DUO",
                "HUMANOMNI5_QUAD",
@@ -70,13 +70,13 @@ class IlluminaBeadChipAssayType(wp.OmeroWrapper):
 
 
 class IlluminaBeadChipAssay(MicroArrayMeasure):
-  
+
   OME_TABLE = 'IlluminaBeadChipAssay'
   __fields__ = [('assayType', IlluminaBeadChipAssayType, wp.REQUIRED)]
 
 
 class GenotypeDataSample(DataSample):
-  
+
   OME_TABLE = 'GenotypeDataSample'
   __fields__ = [('snpMarkersSet', SNPMarkersSet, wp.REQUIRED)]
 
@@ -90,7 +90,7 @@ class GenotypeDataSample(DataSample):
         jnk, vid = do.path.split('=')
         mset = self.snpMarkersSet
         mset.reload()
-        res = self.proxy.get_gdo(mset.id, vid)
+        res = self.proxy.get_gdo(mset, vid)
         return res['probs'], res['confidence']
     else:
       raise ValueError('DataObject is not a %s' % mimetypes.GDO_TABLE)

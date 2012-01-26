@@ -208,7 +208,9 @@ class GenotypingAdapter(object):
   def snp_markers_set_table_name_parse(klass, table_name):
     ""
     tag, set_vid = table_name.rsplit('.')[0].split('-', 1)
-    assert(tag in ['align', 'gdo', 'mset'])
+    #assert(tag in ['align', 'gdo', 'mset'])
+    if tag not in  ['align', 'gdo', 'mset']:
+      raise ValueError('tag %s from %s is illegal' % (tag, table_name))
     return tag, set_vid
 
   def _create_snp_markers_set_table(self, table_name_root, cols_def, set_vid):
@@ -340,8 +342,7 @@ class GenotypingAdapter(object):
     self.kb.add_table_row(table_name, row)
     return row['vid']
 
-  @classmethod
-  def _unwrap_gdo(klass, row, indices):
+  def _unwrap_gdo(self, row, indices):
     def unpack(r, field):
       def normalize_size(string, size):
         return string + chr(0) * (size - len(string))
@@ -354,7 +355,7 @@ class GenotypingAdapter(object):
     p.shape = (2, p.shape[0]/2)
     r['probs'] = p[:, indices] if indices is not None else p
     #--
-    c = upack(row, 'confidence')
+    c = unpack(row, 'confidence')
     r['confidence'] = c[indices] if indices is not None else c
     #--
     return r
@@ -363,7 +364,7 @@ class GenotypingAdapter(object):
     table_name = self.snp_markers_set_table_name('gdo', set_vid)
     rows = self.kb.get_table_rows(table_name, selector='(vid == "%s")' % vid)
     assert len(rows) == 1
-    return self._uwrap_gdo(rows[0], indices)
+    return self._unwrap_gdo(rows[0], indices)
 
   def get_gdo_iterator(self, set_vid, indices=None, batch_size=100):
     def iterator(stream):

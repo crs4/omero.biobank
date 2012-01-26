@@ -81,6 +81,9 @@ class SNPMarkersSet(wp.OmeroWrapper):
       raise ValueError('markers vector has not been reloaded.')
     return len(self.markers)
 
+  def __nonzero__(self):
+    return True
+
   def __getitem__(self, i):
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded.')

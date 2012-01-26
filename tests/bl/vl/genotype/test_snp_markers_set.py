@@ -63,16 +63,45 @@ class markers_set(unittest.TestCase):
     self.kill_list.append(mset)
     return mset
 
-  def create_alignments(self, mset, ref_genome):
+  def create_alignments(self, mset, ref_genome, n_duplicates):
     mset.load_markers()
     self.assertTrue(len(mset) > 0)
-    aligns = [(m[0],
-               random.randint(1,26), 1 + i*1000, True,
-               'A' if (i%2)== 0 else 'B', 1)
-              for i, m in enumerate(mset.markers)]
+    n_aligns = len(mset.markers) + n_duplicates
 
+    pos = []
+    def insert_duplicates(markers):
+      count = 0
+      for i, m in enumerate(markers):
+        n_copies = 1
+        if count < n_duplicates:
+          count += 1
+          n_copies = 2
+          r = (m[0], random.randint(1,26), 22 + i*1000, True,
+               'A' if (i%2)== 0 else 'B', n_copies)
+          yield r
+        r = (m[0], random.randint(1,26), 1 + i*1000, True,
+             'A' if (i%2)== 0 else 'B', n_copies)
+        pos.append((0,0) if n_copies > 1 else (r[1], r[2]))
+        yield r
+    aligns = [x for x in insert_duplicates(mset.markers)]
     self.kb.align_snp_markers_set(mset, ref_genome, aligns, self.action)
-    return [(a[1], a[2]) for a in aligns]
+    return pos
+
+  def create_data_sample(self, mset, label):
+    conf = {'label' : label,
+            'status' : self.kb.DataSampleStatus.USABLE,
+            'action' : self.action,
+            'snpMarkersSet' : mset}
+    data_sample = self.kb.factory.create(self.kb.GenotypeDataSample,
+                                         conf).save()
+    self.kill_list.append(data_sample)
+    return data_sample
+
+  def create_data_object(self, data_sample):
+    probs, confs = make_fake_data(data_sample.snpMarkersSet)
+    do = self.kb.add_gdo_data_object(self.action, data_sample, probs, confs)
+    self.kill_list.append(do)
+    return probs, confs
 
   def test_creation_destruction(self):
     N = 32
@@ -87,55 +116,49 @@ class markers_set(unittest.TestCase):
 
   def test_align(self):
     N = 16
+    N_dups = 4
     lvs = self.create_markers(N)
     mset = self.create_snp_markers_set(lvs)
     ref_genome = 'g' + ('%f' % time.time())[-14:]
-    aligns = self.create_alignments(mset, ref_genome)
+    pos = self.create_alignments(mset, ref_genome, N_dups)
     mset.load_alignments(ref_genome)
-    for a, m in it.izip(aligns, mset.get_markers_iterator()):
-      self.assertEqual(a, m.position)
+    for p, m in it.izip(pos, mset.get_markers_iterator()):
+      self.assertEqual(p, m.position)
+    # FIXME this should really happen automatically...
+    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_gdo(self):
-    return
-    # FIXME
-    study = kb.get_study('TEST01')
-    action = kb.create_an_action(study)
-    mset = self.kb.get_snp_markers_set(label='FakeTaqSet01')
+    N = 16
+    lvs = self.create_markers(N)
+    mset = self.create_snp_markers_set(lvs)
     mset.load_markers()
-
-    conf = {'label' : 'taq-%03d' % i,
-            'status' : kb.DataSampleStatus.USABLE,
-            'action' : action,
-            'snpMarkersSet' : mset}
-    data_sample = kb.factory.create(kb.GenotypeDataSample, conf).save()
-    probs, conf = make_fake_data(mset)
-    do = kb.add_gdo_data_object(action, data_sample, probs, conf)
-
-    probs1, conf1 = data_sample.resolve_to_data()
-    #self.assertAlmostEqual((probs1-probs)xxx)
-    #self.assertAlmostEqual((conf1-conf)xxx)
-    s = kb.get_gdo_iterator(mset, data_samples=[data_sample])
+    data_sample = self.create_data_sample(mset, 'foo-data')
+    probs, confs = self.create_data_object(data_sample)
+    probs1, confs1 = data_sample.resolve_to_data()
+    self.assertTrue((probs == probs1).all())
+    self.assertTrue((confs == confs1).all())
+    s = self.kb.get_gdo_iterator(mset, data_samples=[data_sample])
     for i, x in enumerate(s):
-      print x
-    self.assertEqual(i, 1)
-    s = kb.get_gdo_iterator(mset, data_samples=[data_sample],
-                            indices=slice(0, len(mset)))
-    for i, x in enumerate(s):
-      print x
-    self.assertEqual(i, 1)
-    s = kb.get_gdo_iterator(mset, data_samples=[data_sample],
-                            indices=slice(0, len(mset)))
-    for i, x in enumerate(s):
-      print x
-    self.assertEqual(i, 1)
+      self.assertTrue((probs == x['probs']).all())
+      self.assertTrue((confs == x['confidence']).all())
+    self.assertEqual(i, 0)
 
-
+    indices = slice(N/4, N/2)
+    s = self.kb.get_gdo_iterator(mset, data_samples=[data_sample],
+                                 indices=indices)
+    for i, x in enumerate(s):
+      self.assertTrue((probs[:,indices] == x['probs']).all())
+      self.assertTrue((confs[indices] == x['confidence']).all())
+    self.assertEqual(i, 0)
+    # FIXME this should really happen automatically...
+    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(markers_set('test_creation_destruction'))
   suite.addTest(markers_set('test_align'))
+  suite.addTest(markers_set('test_gdo'))
   return suite
 
 

@@ -279,14 +279,13 @@ class Proxy(ProxyCore):
       raise ValueError('len("%s") > %d' % (ref_genome, max_len))
     self.gadpt.add_snp_markers_set_alignments(mset.id, gen(stream), action.id)
 
-  @classmethod
-  def make_gdo_path(klass, mset, vid):
+  def make_gdo_path(self, mset, vid):
     table_name = self.gadpt.snp_markers_set_table_name('gdo', mset.id)
     return 'table:%s/vid=%s' % (table_name, vid)
 
-  @classmethod
-  def parse_gdo_path(klass, path):
-    head, vid = do.path.split('/vid=')
+  def parse_gdo_path(self, path):
+    head, vid = path.split('/vid=')
+    head = head[len('table:'):]
     tag, set_vid = self.gadpt.snp_markers_set_table_name_parse(head)
     return set_vid, vid
 
@@ -308,7 +307,7 @@ class Proxy(ProxyCore):
     avid = self.__resolve_action_id(action)
     if not isinstance(sample, self.GenotypeDataSample):
       raise ValueError('sample should be an instance of GenotypeDataSample')
-    mset = sample.snpMarkersset
+    mset = sample.snpMarkersSet
 
     # FIXME there is no check that probs and confs have the
     #       right numpy dtype and size.
@@ -344,7 +343,7 @@ class Proxy(ProxyCore):
       for do in dos:
         #FIXME we could, in principle, handle other mimetypes too...
         if do.mimetype == mimetypes.GDO_TABLE:
-          mset_vid, vid = self.gadpt.parse_gdo_path(do.path)
+          mset_vid, vid = self.parse_gdo_path(do.path)
           if mset_vid != mset.id:
             raise ValueError(
               'DataObject %s map to data with a wrong SNPMarkersSet' % do.path
