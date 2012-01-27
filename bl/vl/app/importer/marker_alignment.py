@@ -10,28 +10,34 @@ Will read in a tsv file with the following columns::
   V0909092   hg18       1          82938938 True   B      2
   ...
 
-The pos fields is with respect to 5' and thus, if the marker has been
-aligned on the other strand, it is the responsibility of the aligner
-app to report the actual distance from 5', while, at the same time,
-registering that the snp has actually been aligned on the other strand.
-
-The chromosome field is an integer field with values in the [1, 26]
-range, with 23-26 representing, respectively, the X chromosome, the Y
-chromosome, the pseudoautosomal regions (XY) and the mitochondrial DNA
-(MT).
+The pos fields is relative to 5': if the marker has been aligned on
+the other strand, it is the responsibility of the aligner app to
+report the actual distance from 5', while, at the same time,
+registering that the SNP has actually been aligned on the other
+strand. The chromosome field is an integer field with values in the
+[1, 26] range, with 23-26 representing, respectively, the X
+chromosome, the Y chromosome, the pseudoautosomal regions (XY) and the
+mitochondrial DNA (MT).
 """
-import csv, json, time
+import csv, json, time, os
 
-from core import Core
+import core
 from version import version
 
 
-MANDATORY_FIELDS = ['marker_vid', 'ref_genome', 'chromosome', 'pos', 'strand',
-                    'allele', 'copies']
+MANDATORY_FIELDS = [
+  'marker_vid',
+  'ref_genome',
+  'chromosome',
+  'pos',
+  'strand',
+  'allele',
+  'copies',
+  ]
 STRAND_ENCODINGS = frozenset(['TRUE', '+'])
 
 
-class Recorder(Core):
+class Recorder(core.Core):
   
   def __init__(self, study_label, host=None, user=None, passwd=None,
                keep_tokens=1, action_setup_conf=None, logger=None,
@@ -48,13 +54,14 @@ class Recorder(Core):
       json.dumps(self.action_setup_conf)
       )
     acat = self.kb.ActionCategory.IMPORT
-    self.action = self.kb.factory.create(self.kb.Action,
-                                         {'setup' : asetup,
-                                          'device' : device,
-                                          'actionCategory' : acat,
-                                          'operator' : operator,
-                                          'context' : self.default_study,
-                                          })
+    conf = {
+      'setup': asetup,
+      'device': device,
+      'actionCategory': acat,
+      'operator': operator,
+      'context': self.default_study,
+      }
+    self.action = self.kb.factory.create(self.kb.Action, conf)
     #-- FIXME what happens if we do not have alignments to save?
     self.action.save()
     self.mset_vid = self.__get_mset_vid(ms_label)
@@ -102,41 +109,33 @@ class Recorder(Core):
                                ms_vid=self.mset_vid)
 
 
-def canonize_records(args, records):
-  fields = ['study', 'ref_genome']
-  for f in fields:
-    v = getattr(args, f, None)
-    if v is not None:
-      for r in records:
-        r[f] = v
-  for r in records:
+class RecordCanonizer(core.RecordCanonizer):
+
+  def canonize(self, r):
+    super(RecordCanonizer, self).canonize(r)
     r['chromosome'] = int(r['chromosome'])
     r['pos'] = int(r['pos'])
     r['global_pos'] = 10**10 * r['chromosome'] + r['pos']
     r['strand'] = r['strand'].upper() in STRAND_ENCODINGS
     r['copies'] = int(r['copies'])
-  return records
 
 
 help_doc = """
-import new marker alignments into VL.
+import new marker alignments into the KB.
 """
 
 
-def make_parser_marker_alignment(parser):
-  parser.add_argument('-S', '--study', type=str,
-                      help="""context study label""")
-  parser.add_argument('--ref-genome', type=str,
-                      help="""reference genome used""")
-  parser.add_argument('--markers-set', type=str,
-                      help="""related markers set, if any""")
+def make_parser(parser):
+  parser.add_argument('-S', '--study', metavar="STRING", required=True,
+                      help="study label")
+  parser.add_argument('--markers-set', metavar="STRING", required=True,
+                      help="related markers set")
+  parser.add_argument('--ref-genome', metavar="STRING",
+                      help="reference genome, e.g., hg19")
 
 
-def import_marker_alignment_implementation(logger, args):
-  if not (args.study):
-    msg = 'missing context study label'
-    logger.critical(msg)
-    raise ValueError(msg)
+def implementation(logger, args):
+  fields_to_canonize = ['study', 'ref_genome']
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
                       host=args.host, user=args.user, passwd=args.passwd,
@@ -151,12 +150,13 @@ def import_marker_alignment_implementation(logger, args):
       logger.warn('%s: chr is None, skipping' % r['marker_vid'])
     else:
       records.append(r)
-  canonize_records(args, records)
+  args.ifile.close()
+  canonizer = RecordCanonizer(fields_to_canonize, args)
+  canonizer.canonize_list(records)
   recorder.record(records)
   recorder.logger.info('done processing file %s' % args.ifile.name)
 
 
 def do_register(registration_list):
-  registration_list.append(('marker_alignment', help_doc,
-                            make_parser_marker_alignment,
-                            import_marker_alignment_implementation))
+  registration_list.append(('marker_alignment', help_doc, make_parser,
+                            implementation))

@@ -3,6 +3,16 @@ die() {
     exit 1
 }
 
+cleanup () {
+    rm -fv *mapping* *mapped* marker_definitions.tsv markers_sets.tsv
+}
+
+
+if [ "$1" == "--clean" ]; then
+    cleanup
+    exit 0
+fi
+
 
 IMPORTER='../../../tools/importer -U root -P romeo --operator aen'
 KB_QUERY='../../../tools/kb_query -U root -P romeo --operator aen'
@@ -129,8 +139,6 @@ ${IMPORTER} -i diagnosis_mapped.tsv \
              diagnosis \
              --study ${STUDY_LABEL} || die "import diagnosis failed"
 
-exit 0
-
 # this will generate the marker_definitions file.
 python ./make_marker_defs.py 100
 
@@ -141,59 +149,26 @@ ${IMPORTER} -i marker_definitions.tsv \
             --ref-genome hg19 \
             --dbsnp-build 132 || die "import marker definition failed"
 
+exit 0  # WORKS UP TO THIS POINT
+
 # ${KB_QUERY} -o markers_set_mapped.tsv \
 #             map_vid -i ${DATA_DIR}/markers_sets.tsv \
 #             --source-type Marker --column marker_label,marker_vid
 
 echo "* define a marker set that uses all known markers"
-python <<EOF
-import csv, random
-
-i = csv.DictReader(open('marker_definition_mapping.tsv'), delimiter='\t')
-o = csv.DictWriter(open('markers_sets.tsv', 'w'), 
-                   fieldnames=['marker_vid', 'marker_indx',
-                               'allele_flip'],
-                   delimiter='\t')
-o.writeheader()
-for k,r in enumerate(i):
-  y = {'marker_vid' : r['vid'], 
-       'allele_flip' : random.choice([True, False]),
-       'marker_indx'  : k}
-  o.writerow(y)
-
-EOF
-
+python make_marker_set.py marker_definition_mapping.tsv markers_sets.tsv
+MSET0=MSET0-`date +"%F-%R"`
 ${IMPORTER} -i markers_sets.tsv \
             -o markers_set_mapping.tsv \
             markers_set \
             --study ${STUDY_LABEL} \
-            --label MSET0-`date +"%F-%R"` \
+            --label ${MSET0} \
             --maker CRS4 --model MSET0 \
             --release `date +"%F-%R"` || die "import marker set 0 failed"
 
-
+echo "* define a marker set that uses 16 known markers"
+python make_marker_set.py marker_definition_mapping.tsv markers_sets_16.tsv 16
 MSET1=MSET1-`date +"%F-%R"`
-
-echo "* define ${MSET1} a marker set that uses 16 known markers"
-python <<EOF
-import csv, random
-
-i = csv.DictReader(open('marker_definition_mapping.tsv'), delimiter='\t')
-o = csv.DictWriter(open('markers_sets_16.tsv', 'w'), 
-                   fieldnames=['marker_vid', 'marker_indx',
-                               'allele_flip'],
-                   delimiter='\t')
-o.writeheader()
-
-recs = [ r for r in i]
-for k,r in enumerate(random.sample(recs, 16)):
-  y = {'marker_vid' : r['vid'], 
-       'allele_flip' : random.choice([True, False]),
-       'marker_indx'  : k}
-  o.writerow(y)
-
-EOF
-
 ${IMPORTER} -i markers_sets_16.tsv \
             -o markers_sets_16_mapping.tsv \
             markers_set \
@@ -204,25 +179,7 @@ ${IMPORTER} -i markers_sets_16.tsv \
 
 MSET_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('localhost', 'root', 'romeo'); print kb.get_snp_markers_set(label='${MSET1}').id")
 
-#--- marker alignments
-python <<EOF
-import csv, random
-
-i = csv.DictReader(open('marker_definition_mapping.tsv'), delimiter='\t')
-o = csv.DictWriter(open('marker_alignments.tsv', 'w'), 
-                   fieldnames=['marker_vid', 'chromosome', 'pos', 
-                               'allele', 'strand', 'copies'],
-                   delimiter='\t')
-o.writeheader()
-for r in i:
-  y = {'marker_vid' : r['vid'], 'chromosome' : random.randrange(1, 26),
-       'pos' : random.randrange(1, 200000000),
-       'allele'  : random.choice('AB'),
-       'strand'  : random.choice([True, False]),
-       'copies'  : 1}
-  o.writerow(y)
-
-EOF
+python make_marker_align.py marker_definition_mapping.tsv marker_alignments.tsv
 
 # ${KB_QUERY} -o marker_alignment_mapped.tsv \
 #             map_vid -i ${DATA_DIR}/marker_alignments.tsv\
@@ -231,7 +188,6 @@ EOF
 ${IMPORTER} -i marker_alignments.tsv \
     marker_alignment --study ${STUDY_LABEL} --ref-genome hgFake \
     --markers-set ${MSET1} || die "import marker alignment failed"
-#---
 
 echo "* define a  GenotypingProgram device that generates datasets on ${MSET1}"
 DEVICE_FILE=foo_device.tsv
