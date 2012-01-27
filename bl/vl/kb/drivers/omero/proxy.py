@@ -193,8 +193,8 @@ class Proxy(ProxyCore):
   def create_snp_markers_set(self, label, maker, model, release,
                              N, stream, action):
     """
-    Given a stream of tuples (marker_vid, marker_indx, allele_flip),
-    will build and save a new marker set.
+    Given a stream of (marker_vid, marker_indx, allele_flip) tuples,
+    build and save a new marker set.
 
     .. code-block:: python
 
@@ -204,29 +204,23 @@ class Proxy(ProxyCore):
         N = len(lvs)
         mset = kb.create_snp_markers_set(label, maker, model, release,
                                          N, taq_man_set, action)
-
-
-    .. todo::
-
-        add param docs.
-
     """
-    assert(type(N) == int and N > 0)
-
+    assert type(N) == int and N > 0
     set_vid = vlu.make_vid()
-    conf = {'label': label,
-            'maker' : maker, 'model' : model, 'release' : release,
-            'markersSetVID' : set_vid,
-            'action' : action}
+    conf = {
+      'label': label,
+      'maker': maker,
+      'model': model,
+      'release': release,
+      'markersSetVID': set_vid,
+      'action': action
+      }
     mset = self.factory.create(self.SNPMarkersSet, conf)
     mset.save()
-
     def gen(stream):
       for t in stream:
-        yield {'marker_vid' : t[0], 'marker_indx' : t[1],
-               'allele_flip' : t[2]}
-    # FIXME: the following is a brutal attempt to exception
-    # containment, it should be refined.
+        yield {'marker_vid': t[0], 'marker_indx': t[1], 'allele_flip': t[2]}
+    # TODO: add better exception handling to the following code
     try:
       self.gadpt.create_snp_markers_set_tables(mset.id, N)
       counted = self.gadpt.define_snp_markers_set(set_vid, gen(stream),
@@ -234,10 +228,10 @@ class Proxy(ProxyCore):
       if counted != N:
         raise ValueError('there are %d records in stream (expected %d)' %
                          (counted, N))
-    except Exception as e:
+    except:
       self.gadpt.delete_snp_markers_set_tables(mset.id)
       self.delete(mset)
-      raise e
+      raise
     return mset
 
   def align_snp_markers_set(self, mset, ref_genome, stream, action):
@@ -427,9 +421,9 @@ class Proxy(ProxyCore):
   def create_markers(self, source, context, release,
                      ref_rs_genome, dbsnp_build, stream, action):
     """
-    Given a stream of tuples (label, rs_label, mask), will create and
-    save the associated markers objects and return the (label, vid)
-    association as a list of tuples.
+    Given a stream of (label, rs_label, mask) tuples, create and save
+    Marker objects and return the (label, vid) associations as a list
+    of tuples.
 
     .. code-block:: python
 
@@ -444,28 +438,24 @@ class Proxy(ProxyCore):
       for tmm, t in zip(taq_man_markers, lvs):
         assert (tmm[0] == t[0])
         print 'label:%s -> vid: %s' % (t[0], t[1])
-
-    .. todo::
-
-        add param docs.
-
     """
     # FIXME this is extremely inefficient
     marker_defs = [t for t in stream]
     marker_labels = [t[0] for t in marker_defs]
     if len(marker_labels) > len(set(marker_labels)):
       raise ValueError('duplicate marker definitions in stream')
-
     def generator(mdefs):
       for t in mdefs:
-        yield {'source' : source,
-               'context' :context,
-               'release' : release,
-               'ref_rs_genome' : ref_rs_genome,
-               'dbSNP_build' : dbsnp_build,
-               'label' : t[0],
-               'rs_label' : t[1],
-               'mask' : convert_to_top(t[2])}
+        yield {
+          'source': source,
+          'context' :context,
+          'release': release,
+          'ref_rs_genome': ref_rs_genome,
+          'dbSNP_build': dbsnp_build,
+          'label': t[0],
+          'rs_label': t[1],
+          'mask': convert_to_top(t[2]),
+          }
     label_vid_list = self.add_snp_marker_definitions(generator(marker_defs),
                                                      action)
     return label_vid_list

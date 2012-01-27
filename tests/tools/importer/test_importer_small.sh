@@ -149,8 +149,6 @@ ${IMPORTER} -i marker_definitions.tsv \
             --ref-genome hg19 \
             --dbsnp-build 132 || die "import marker definition failed"
 
-exit 0  # WORKS UP TO THIS POINT
-
 # ${KB_QUERY} -o markers_set_mapped.tsv \
 #             map_vid -i ${DATA_DIR}/markers_sets.tsv \
 #             --source-type Marker --column marker_label,marker_vid
@@ -176,6 +174,10 @@ ${IMPORTER} -i markers_sets_16.tsv \
             --label ${MSET1} \
             --maker CRS4 --model MSET1 \
             --release `date +"%F-%R"` || die "import marker set 1 failed"
+
+
+exit 0  # WORKS UP TO THIS POINT
+
 
 MSET_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('localhost', 'root', 'romeo'); print kb.get_snp_markers_set(label='${MSET1}').id")
 

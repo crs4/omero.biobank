@@ -38,7 +38,7 @@ For instance::
   V902909092  2            True
   ...
 """
-import sys, os, time, csv, json
+import os, time, csv, json
 
 import core
 from version import version
@@ -53,44 +53,26 @@ class Recorder(core.Core):
                                    study_label=study_label, logger=logger)
     self.action_setup_conf = action_setup_conf
     self.operator = operator
-    self.preloaded_markers = {}
-    self.preloaded_markers_sets = {}
 
   def record(self, records, otsv):
     if len(records) == 0:
       self.logger.warn('no records')
-    self.preload_markers_sets()
-    # FIXME this is not very efficient, we could directly check here
-    # if we actually need to preload the markers
-    self.preload_markers(records)
-    records = self.do_consistency_checks(records)
-    if not records:
-      self.logger.warn('no records')
       return
+    self.logger.info('start preloading marker vids')
+    self.preloaded_marker_vids = set(
+      m[0] for m in self.kb.get_snp_marker_definitions(col_names=["vid"])
+      )
+    self.logger.info('done preloading marker vids')
+    records = self.do_consistency_checks(records)
     study = self.find_study(records)
     action = self.find_action(study)
     label, maker, model, release = self.find_markers_set_label(records)
-    self.logger.info('start creating markers set')
-    set_vid = self.kb.add_snp_markers_set(maker, model, release, action.id)
-    self.logger.info('done creating markers set')
-    self.logger.info('start loading markers in marker set')
-    N = self.kb.fill_snp_markers_set(set_vid, records, action.id)
-    assert N == len(records)
-    self.logger.info('done loading markers in marker set')
-    self.logger.info('start creating gdo repository')
-    self.kb.create_gdo_repository(set_vid, N)
-    self.logger.info('done creating gdo repository')
-    self.logger.info('start creating SNPMarkersSet')
-    conf = {
-      'label': label,
-      'maker': maker,
-      'model': model,
-      'release': release,
-      'markersSetVID': set_vid,
-      'action': action,
-      }
-    mset = self.kb.factory.create(self.kb.SNPMarkersSet, conf).save()
-    self.logger.info('done creating SNPMarkersSet')
+    N = len(records)
+    def stream():
+      for r in records:
+        yield r['marker_vid'], r['marker_indx'], r['allele_flip']
+    mset = self.kb.create_snp_markers_set(label, maker, model, release,
+                                          N, stream(), action)
     otsv.writerow({
       'study': study.label,
       'label': mset.label,
@@ -119,33 +101,17 @@ class Recorder(core.Core):
     action = self.kb.factory.create(self.kb.Action, conf)
     return action.save()
 
-  def preload_markers_sets(self):
-    self.logger.info('start preloading SNPMarkersSet')
-    msets = self.kb.get_objects(self.kb.SNPMarkersSet)
-    self.preloaded_markers_sets = dict((m.label, m) for m in msets)
-    self.logger.info('done preloading SNPMarkersSet')
-
-  def preload_markers(self, records):
-    self.logger.info('start preloading related markers')
-    markers = self.kb.get_snp_markers(vids=[r['marker_vid'] for r in records])
-    self.preloaded_markers = dict((m.id, m) for m in markers)
-    self.logger.info('done preloading related markers')
-
   def do_consistency_checks(self, records):
     good_records = []
-    label = records[0]['label']
     maker = records[0]['maker']
     model = records[0]['model']
     release = records[0]['release']
     study = records[0]['study']
-    if label in self.preloaded_markers_sets:
-      msg = 'a marker set labeled %s is already present in the kb' % label
-      self.logger.critical(msg)
-      sys.exit(1)
+    preloaded_marker_vids = self.preloaded_marker_vids  # speed hack
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
-      if r['marker_vid'] not in self.preloaded_markers:
-        f = reject + 'marker_vid not in VL'
+      if r['marker_vid'] not in preloaded_marker_vids:
+        f = reject + 'marker_vid %s not found in the KB' % r['marker_vid']
         self.logger.error(f)
         continue
       if r['maker'] != maker:
@@ -168,7 +134,7 @@ class Recorder(core.Core):
     if len(good_records) != len(records):
       msg = 'cannot process an incomplete markers_set definition'
       self.logger.critical(msg)
-      sys.exit(1)
+      raise ValueError(msg)
     return good_records
 
 
@@ -204,6 +170,11 @@ def implementation(logger, args):
                       host=args.host, user=args.user, passwd=args.passwd,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf, logger=logger)
+  for m in recorder.kb.get_objects(recorder.kb.SNPMarkersSet):
+    if m.label == args.label:
+      msg = 'a marker set labeled %s is already present in the kb' % args.label
+      logger.critical(msg)
+      raise ValueError(msg)
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
