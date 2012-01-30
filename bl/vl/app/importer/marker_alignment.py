@@ -4,10 +4,10 @@ Import Marker Alignments
 
 Will read in a tsv file with the following columns::
 
-  marker_vid ref_genome chromosome pos      strand allele copies
-  V0909090   hg18       10         82938938 True   A      1
-  V0909091   hg18       1          82938999 True   A      2
-  V0909092   hg18       1          82938938 True   B      2
+  marker_vid chromosome pos      strand allele copies
+  V0909090   10         82938938 True   A      1
+  V0909091   1          82938999 True   A      2
+  V0909092   1          82938938 True   B      2
   ...
 
 The pos fields is relative to 5': if the marker has been aligned on
@@ -64,28 +64,24 @@ class Recorder(core.Core):
     self.action = self.kb.factory.create(self.kb.Action, conf)
     #-- FIXME what happens if we do not have alignments to save?
     self.action.save()
-    self.mset_vid = self.__get_mset_vid(ms_label)
+    self.mset = self.__get_mset(ms_label)
 
-  def __get_mset_vid(self, ms_label):
-    if ms_label is None:
-      return None
+  def __get_mset(self, ms_label):
     mset = self.kb.get_snp_markers_set(ms_label)
     if mset is None:
-      self.logger.warn('no marker set labeled %r, setting to None' % ms_label)
-      return None
-    return mset.id
+      msg = 'marker set %r not found in the KB' % ms_label
+      self.logger.critical(msg)
+      raise ValueError(msg)
+    return mset
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
-    vids = [r['marker_vid'] for r in records]
-    markers = dict((m.id, m) for m in self.kb.get_snp_markers(
-      vids=vids, col_names=['vid']
-      ))
     accepted = []
+    preloaded_marker_vids = self.preloaded_marker_vids  # speed hack
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i
-      if not r['marker_vid'] in markers:
-        f = reject + 'unkown marker_vid value.'
+      if r['marker_vid'] not in preloaded_marker_vids:
+        f = reject + 'marker_vid %s not found in the KB' % r['marker_vid']
         self.logger.error(f)
         continue
       if self.missing_fields(MANDATORY_FIELDS, r):
@@ -104,9 +100,18 @@ class Recorder(core.Core):
     return accepted
 
   def record(self, records):
+    self.logger.info('start preloading marker vids')
+    ref_genome = records[0]["ref_genome"]
+    self.preloaded_marker_vids = set(
+      m[0] for m in self.kb.get_snp_marker_definitions(col_names=["vid"])
+      )
+    self.logger.info('done preloading marker vids')
     records = self.do_consistency_checks(records)
-    self.kb.add_snp_alignments(records, op_vid=self.action.id,
-                               ms_vid=self.mset_vid)
+    def stream():
+      for r in records:
+        yield (r['marker_vid'], r['chromosome'], r['pos'],
+               r['strand'], r['allele'], r['copies'])
+    self.kb.align_snp_markers_set(self.mset, ref_genome, stream(), self.action)
 
 
 class RecordCanonizer(core.RecordCanonizer):
@@ -130,7 +135,7 @@ def make_parser(parser):
                       help="study label")
   parser.add_argument('--markers-set', metavar="STRING", required=True,
                       help="related markers set")
-  parser.add_argument('--ref-genome', metavar="STRING",
+  parser.add_argument('--ref-genome', metavar="STRING", required=True,
                       help="reference genome, e.g., hg19")
 
 

@@ -175,10 +175,6 @@ ${IMPORTER} -i markers_sets_16.tsv \
             --maker CRS4 --model MSET1 \
             --release `date +"%F-%R"` || die "import marker set 1 failed"
 
-
-exit 0  # WORKS UP TO THIS POINT
-
-
 MSET_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('localhost', 'root', 'romeo'); print kb.get_snp_markers_set(label='${MSET1}').id")
 
 python make_marker_align.py marker_definition_mapping.tsv marker_alignments.tsv
@@ -190,6 +186,10 @@ python make_marker_align.py marker_definition_mapping.tsv marker_alignments.tsv
 ${IMPORTER} -i marker_alignments.tsv \
     marker_alignment --study ${STUDY_LABEL} --ref-genome hgFake \
     --markers-set ${MSET1} || die "import marker alignment failed"
+
+
+exit 0  # WORKS UP TO THIS POINT
+
 
 echo "* define a  GenotypingProgram device that generates datasets on ${MSET1}"
 DEVICE_FILE=foo_device.tsv

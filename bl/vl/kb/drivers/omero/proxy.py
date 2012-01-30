@@ -262,7 +262,8 @@ class Proxy(ProxyCore):
       for x in s:
         y = {'marker_vid' : x[0],
              'ref_genome' : ref_genome,
-             'chromosome' : x[1], 'pos' : x[2],
+             'chromosome' : x[1],
+             'pos' : x[2],
              'global_pos' : (x[1]*10**10 + x[2]),
              'strand' : x[3],
              'allele' : x[4],

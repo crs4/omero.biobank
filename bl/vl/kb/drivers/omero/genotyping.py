@@ -191,9 +191,8 @@ class GenotypingAdapter(object):
         row_indices.append(by_field[x])
       except KeyError:
         return []
-    res = self.kb.get_table_slice(self.SNP_MARKER_DEFINITIONS_TABLE,
-                                  row_indices, col_names, batch_size)
-    return [self.marker_maker(r, col_names) for r in res]
+    return self.kb.get_table_slice(self.SNP_MARKER_DEFINITIONS_TABLE,
+                                   row_indices, col_names, batch_size)
 
   #-------------------------------------------------------------------------
   #-- SNPMarkersSet

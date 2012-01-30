@@ -32,7 +32,7 @@ In more detail, a marker set is defined by:
 
 For instance::
 
-  marker_vid   marker_indx allele_flip
+  marker_vid  marker_indx  allele_flip
   V902909090  0            False
   V902909091  1            False
   V902909092  2            True
