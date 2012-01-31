@@ -196,9 +196,10 @@ class Proxy(ProxyCore):
       )
 
   def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
-                      batch_size=BATCH_SIZE):
-    return self.gadpt.get_snp_markers(labels, rs_labels, vids, batch_size)
-
+                      batch_size=BATCH_SIZE, col_names=None):
+    return self.gadpt.get_snp_markers(
+      labels, rs_labels, vids, batch_size, col_names
+      )
 
   #--- snp_markers_set ---
   def create_snp_markers_set(self, label, maker, model, release,

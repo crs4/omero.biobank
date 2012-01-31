@@ -48,11 +48,13 @@ class Marker(object):
   Wraps the contents of a marker definition and associate information.
   """
 
-  def __init__(self, vid, index=None, position=(0,0), flip=None):
+  def __init__(self, vid, index=None, position=(0,0), flip=None, **kwargs):
     self.id = vid
     self.index = index
     self.position = position
     self.flip = flip
+    for k, v in kwargs.iteritems():
+      setattr(self, k, v)
 
   # this is here to make app.importer.map_vid happy
   @classmethod
@@ -121,12 +123,20 @@ class GenotypingAdapter(object):
     return [Marker(r['vid']) for r in recs]
 
   def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
-                      batch_size=BATCH_SIZE):
+                      batch_size=BATCH_SIZE, col_names=None):
     """
-    Return a list of marker objects corresponding to the given list
+    Return a list of Marker objects corresponding to the given list
     (labels, rs_labels or vids). Return an empty list if at least one
     of the items in the list does not correspond to any marker.
+
+    The optional col_names param is a list of marker definition
+    headers that will set corresponding attributes in the returned
+    Marker objects.
     """
+    if col_names is None:
+      col_names = ['vid']
+    elif 'vid' not in col_names:
+      col_names.append('vid')
     if (labels is None) + (rs_labels is None) + (vids is None) != 2:
       raise ValueError('assign exactly one of labels, rs_labels or vids')
     if labels:
@@ -138,7 +148,7 @@ class GenotypingAdapter(object):
     recs = self.get_snp_marker_definitions(
       col_names=[field_name], batch_size=max(batch_size, len(requested))
       )
-    by_field = dict(((r[0], i) for i, r in enumerate(recs)))
+    by_field = dict((r[0], i) for i, r in enumerate(recs))
     del recs
     row_indices = []
     for x in requested:
@@ -146,9 +156,14 @@ class GenotypingAdapter(object):
         row_indices.append(by_field[x])
       except KeyError:
         return []
-    return [Marker(r['vid']) for r in self.kb.get_table_slice(
-      self.SNP_MARKER_DEFINITIONS_TABLE, row_indices, ['vid'], batch_size
-      )]
+    recs = self.kb.get_table_slice(
+      self.SNP_MARKER_DEFINITIONS_TABLE, row_indices, col_names, batch_size
+      )
+    mlist = []
+    for r in recs:
+      kwargs = dict((n, r[n]) for n in col_names if n != 'vid')
+      mlist.append(Marker(r['vid'], **kwargs))
+    return mlist
 
   #--- SNPMarkersSet ---
   @classmethod
