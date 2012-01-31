@@ -12,6 +12,9 @@ class TestIndexIntersect(unittest.TestCase):
     i1, i2 = np_ext.index_intersect(a1, a2)
     self.assertEqual(i1.tolist(), [0, 3])
     self.assertEqual(i2.tolist(), [2, 3])
+    i3, i4 = np_ext.index_intersect(a2, a1)
+    self.assertTrue(np.array_equal(i4, i1))
+    self.assertTrue(np.array_equal(i3, i2))
 
   def test_record_array(self):
     a1 = np.array([('V002', 0), ('V068', 1), ('V129', 0)],

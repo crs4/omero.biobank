@@ -188,8 +188,19 @@ class Proxy(ProxyCore):
     """
     return self.gadpt.get_snp_marker_definitions(selector, col_names,
                                                  batch_size)
-  #-----------------------------------------------
-  # snp_markers_set
+
+  def get_snp_markers_by_source(self, source, context=None, release=None,
+                                batch_size=BATCH_SIZE):
+    return self.gadpt.get_snp_markers_by_source(
+      source, context, release, batch_size
+      )
+
+  def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
+                      batch_size=BATCH_SIZE):
+    return self.gadpt.get_snp_markers(labels, rs_labels, vids, batch_size)
+
+
+  #--- snp_markers_set ---
   def create_snp_markers_set(self, label, maker, model, release,
                              N, stream, action):
     """
@@ -213,7 +224,7 @@ class Proxy(ProxyCore):
       'model': model,
       'release': release,
       'markersSetVID': set_vid,
-      'action': action
+      'action': action,
       }
     mset = self.factory.create(self.SNPMarkersSet, conf)
     mset.save()
@@ -260,14 +271,16 @@ class Proxy(ProxyCore):
     # FIXME no checking....
     def gen(s):
       for x in s:
-        y = {'marker_vid' : x[0],
-             'ref_genome' : ref_genome,
-             'chromosome' : x[1],
-             'pos' : x[2],
-             'global_pos' : (x[1]*10**10 + x[2]),
-             'strand' : x[3],
-             'allele' : x[4],
-             'copies' : x[5]}
+        y = {
+          'marker_vid': x[0],
+          'ref_genome': ref_genome,
+          'chromosome': x[1],
+          'pos': x[2],
+          'global_pos': (x[1]*10**10 + x[2]),
+          'strand': x[3],
+          'allele': x[4],
+          'copies': x[5],
+          }
         yield y
     max_len = self.gadpt.SNP_ALIGNMENT_COLS[1][3]
     if len(ref_genome) > max_len:
@@ -287,9 +300,6 @@ class Proxy(ProxyCore):
   def add_gdo_data_object(self, action, sample, probs, confs):
     """
     Syntactic sugar to simplify adding genotype data objects.
-
-    FIXME
-
 
     :param probs: a 2x<nmarkers> array with the AA and the BB
                   homozygote probs.
@@ -313,12 +323,13 @@ class Proxy(ProxyCore):
     s = probs.tostring();  size += len(s) ; sha1.update(s)
     s = confs.tostring();  size += len(s) ; sha1.update(s)
 
-    conf = {'sample' : sample,
-            'path'   : self.make_gdo_path(mset, gdo_vid),
-            'mimetype' : mimetypes.GDO_TABLE,
-            'sha1'   : sha1.hexdigest(),
-            'size'   : size,
-            }
+    conf = {
+      'sample': sample,
+      'path': self.make_gdo_path(mset, gdo_vid),
+      'mimetype': mimetypes.GDO_TABLE,
+      'sha1': sha1.hexdigest(),
+      'size': size,
+      }
     gds = self.factory.create(self.DataObject, conf).save()
     return gds
 
@@ -368,7 +379,6 @@ class Proxy(ProxyCore):
     return not self.get_snp_markers_set(label, maker, model, release) is None
 
 
-
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
 
@@ -387,8 +397,7 @@ class Proxy(ProxyCore):
     default_device_label = 'DEVICE-CREATE-AN-ACTION'
     alabel = ('auto-created-action%f' % (time.time()))
     asetup = self.factory.create(
-      self.ActionSetup,
-      {'label': alabel, 'conf': json.dumps(options)}
+      self.ActionSetup, {'label': alabel, 'conf': json.dumps(options)}
       )
     acat = acat if acat else self.ActionCategory.IMPORT
     if not target:
@@ -404,17 +413,21 @@ class Proxy(ProxyCore):
     operator = operator if operator else pwd.getpwuid(os.geteuid())[0]
     device = self.get_device(default_device_label)
     if not device:
-      conf = {'label' : default_device_label,
-              'maker' : 'CRS4',
-              'model' : 'fake-device',
-              'release' : 'create_an_action'}
+      conf = {
+        'label': default_device_label,
+        'maker': 'CRS4',
+        'model': 'fake-device',
+        'release': 'create_an_action',
+        }
       device = self.factory.create(self.Device, conf).save()
-    conf = {'setup' : asetup,
-            'device': device,
-            'actionCategory' : acat,
-            'operator' : operator,
-            'context'  : study,
-            'target' : target}
+    conf = {
+      'setup': asetup,
+      'device': device,
+      'actionCategory': acat,
+      'operator': operator,
+      'context': study,
+      'target': target,
+      }
     action = self.factory.create(a_klass, conf).save()
     action.unload()
     return action
@@ -533,7 +546,6 @@ class Proxy(ProxyCore):
     return (v for v in self.dt.get_connected(individual, aklass=klass))
 
 
-
   # EVA-related utility functions
   # =============================
 
@@ -577,14 +589,16 @@ class Proxy(ProxyCore):
     # TODO add archetype consistency checks
     g_id = vlu.make_vid()
     for k in rec:
-      row = {'timestamp': timestamp,
-             'i_vid': i_id,
-             'a_vid': a_id,
-             'valid': True,
-             'g_vid': g_id,
-             'archetype': archetype,
-             'field': k,
-             'value': rec[k]}
+      row = {
+        'timestamp': timestamp,
+        'i_vid': i_id,
+        'a_vid': a_id,
+        'valid': True,
+        'g_vid': g_id,
+        'archetype': archetype,
+        'field': k,
+        'value': rec[k],
+        }
       self.eadpt.add_eav_record_row(row)
 
   def get_ehr_records(self, selector=None):
@@ -604,10 +618,12 @@ class Proxy(ProxyCore):
           x['fields'] = fields
           recs.append(x)
         g_vid = r[4]
-        x = {'timestamp': r[0],
-             'i_id': r[1],
-             'a_id': r[2],
-             'archetype': r[5]}
+        x = {
+          'timestamp': r[0],
+          'i_id': r[1],
+          'a_id': r[2],
+          'archetype': r[5],
+          }
         fields = {}
       fields[r[6]] = self.eadpt.decode_field_value(
         r[7], r[8], r[9], r[10], r[11]
