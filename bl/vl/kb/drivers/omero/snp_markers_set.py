@@ -126,7 +126,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
                                                    batch_size=batch_size)
       i1, i2 = np_ext.index_intersect(data['marker_vid'], recs['vid'])
       recs = recs[i2]
-      recs = recs[data.argsort(order='marker_vid')]  # FIXME not what we want
+      # FIXME sort rows according to data's vid column
       self.__set_add_marker_info(recs)
 
   def load_alignments(self, ref_genome, batch_size=1000):

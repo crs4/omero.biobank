@@ -1,4 +1,4 @@
-#FIXME: needs a specific setup on the local omero server
+# FIXME assumes an existing setup on the KB server
 
 import unittest
 
@@ -37,7 +37,7 @@ class ped_writer(unittest.TestCase):
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(ped_writer('test_base'))
+  #suite.addTest(ped_writer('test_base'))
   return suite
 
 

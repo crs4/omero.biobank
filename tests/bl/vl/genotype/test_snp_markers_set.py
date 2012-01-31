@@ -1,15 +1,13 @@
-import unittest
-import time, os
-
-import random
+import unittest, time, os, random
+import itertools as it
 
 import numpy as np
-import itertools as it
 
 from bl.vl.kb import KnowledgeBase as KB
 
-OME_HOST   = os.getenv('OME_HOST', 'localhost')
-OME_USER   = os.getenv('OME_USER', 'root')
+
+OME_HOST = os.getenv('OME_HOST', 'localhost')
+OME_USER = os.getenv('OME_USER', 'root')
 OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
 
 
@@ -28,8 +26,10 @@ class markers_set(unittest.TestCase):
 
   def setUp(self):
     self.kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
-    conf = {'label' : 'TEST-%f' % time.time(),
-            'description' : 'unit test garbage'}
+    conf = {
+      'label': 'TEST-%f' % time.time(),
+      'description': 'unit test garbage',
+      }
     self.study = self.kb.factory.create(self.kb.Study, conf).save()
     self.kill_list.append(self.study)
     self.action = self.kb.create_an_action(self.study)
@@ -88,10 +88,12 @@ class markers_set(unittest.TestCase):
     return pos
 
   def create_data_sample(self, mset, label):
-    conf = {'label' : label,
-            'status' : self.kb.DataSampleStatus.USABLE,
-            'action' : self.action,
-            'snpMarkersSet' : mset}
+    conf = {
+      'label': label,
+      'status': self.kb.DataSampleStatus.USABLE,
+      'action': self.action,
+      'snpMarkersSet': mset,
+      }
     data_sample = self.kb.factory.create(self.kb.GenotypeDataSample,
                                          conf).save()
     self.kill_list.append(data_sample)
@@ -111,7 +113,7 @@ class markers_set(unittest.TestCase):
     self.assertEqual(len(mset), N)
     for lv, m in it.izip(lvs, mset.markers):
       self.assertEqual(lv[1], m[0])
-    # FIXME this should really happen automatically...
+    # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_align(self):
@@ -124,7 +126,7 @@ class markers_set(unittest.TestCase):
     mset.load_alignments(ref_genome)
     for p, m in it.izip(pos, mset.get_markers_iterator()):
       self.assertEqual(p, m.position)
-    # FIXME this should really happen automatically...
+    # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_gdo(self):
@@ -142,7 +144,6 @@ class markers_set(unittest.TestCase):
       self.assertTrue((probs == x['probs']).all())
       self.assertTrue((confs == x['confidence']).all())
     self.assertEqual(i, 0)
-
     indices = slice(N/4, N/2)
     s = self.kb.get_gdo_iterator(mset, data_samples=[data_sample],
                                  indices=indices)
@@ -150,7 +151,7 @@ class markers_set(unittest.TestCase):
       self.assertTrue((probs[:,indices] == x['probs']).all())
       self.assertTrue((confs[indices] == x['confidence']).all())
     self.assertEqual(i, 0)
-    # FIXME this should really happen automatically...
+    # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
 
@@ -165,4 +166,3 @@ def suite():
 if __name__ == '__main__':
   runner = unittest.TextTestRunner(verbosity=2)
   runner.run((suite()))
-
