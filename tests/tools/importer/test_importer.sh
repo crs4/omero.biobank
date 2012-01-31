@@ -1,14 +1,12 @@
+# FIXME currently not maintained, might be out of sync
+
 IMPORTER='../../../tools/importer -P test --operator aen'
 KB_QUERY='../../../tools/kb_query -P test --operator aen'
-CREATE_FAKE_GDO='python create_fake_gdo.py --P test'
-
 DATA_DIR='./large'
+STUDY_LABEL=TEST01
 
 
 echo 'Running tests on dataset:' ${DATA_DIR}
-
-STUDY_LABEL=TEST01
-
 
 ${IMPORTER} -i ${DATA_DIR}/study.tsv -o study_mapping.tsv study
 ${IMPORTER} -i ${DATA_DIR}/individuals.tsv -o individual_mapping.tsv individual
@@ -23,7 +21,6 @@ ${IMPORTER} -i blood_sample_mapped.tsv -o blood_sample_mapping.tsv \
              --study ${STUDY_LABEL} --source-type Individual \
              --vessel-content BLOOD --vessel-status CONTENTUSABLE \
              --vessel-type Tube
-
 
 ${KB_QUERY} -o dna_sample_mapped.tsv \
              map_vid -i ${DATA_DIR}/dna_samples.tsv \
@@ -55,9 +52,9 @@ ${KB_QUERY} -o plate_well_mapped_2.tsv \
 
 ${IMPORTER} -i plate_well_mapped_2.tsv -o plate_well_mapping.tsv \
              biosample \
-             --study ${STUDY_LABEL} --source-type Tube --action-category ALIQUOTING \
+             --study ${STUDY_LABEL} --source-type Tube \
+             --action-category ALIQUOTING \
              --vessel-status CONTENTUSABLE --vessel-type PlateWell
-
 
 ${IMPORTER} -i ${DATA_DIR}/devices.tsv -o devices_mapping.tsv device --study ${STUDY_LABEL}
 
@@ -85,13 +82,9 @@ ${KB_QUERY} -o data_object_mapped.tsv \
                  --source-type DataSample \
                  --study ${STUDY_LABEL}
 
-
 ${IMPORTER} -i data_object_mapped.tsv -o data_object_mapping.tsv \
              data_object \
              --study ${STUDY_LABEL} --mimetype=x-vl/affymetrix-cel
-
-
-
 
 ${KB_QUERY} -o data_collection_mapped.tsv \
              map_vid -i ${DATA_DIR}/data_collections.tsv \
@@ -99,11 +92,9 @@ ${KB_QUERY} -o data_collection_mapped.tsv \
                  --source-type DataSample \
                  --study ${STUDY_LABEL}
 
-
 ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
              data_collection \
              --study ${STUDY_LABEL} 
-
 
 
 #-----------------
@@ -112,7 +103,6 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
 # If you are not sure, DO NOT DO IT!
 #../../../tools/create_tables  -P test --do-it
 #-----------------
-
 
 ${KB_QUERY} -o diagnosis_mapped.tsv \
              map_vid -i ${DATA_DIR}/diagnosis.tsv \
@@ -124,9 +114,6 @@ ${IMPORTER} -i diagnosis_mapped.tsv \
              diagnosis \
              --study ${STUDY_LABEL} 
 
-
-
-# this will generate the marker_defintions file.
 python ./make_marker_defs.py 1000000
 
 ${IMPORTER} -i marker_definitions.tsv \
@@ -134,7 +121,6 @@ ${IMPORTER} -i marker_definitions.tsv \
             marker_definition --study ${STUDY_LABEL} --source CRS4 \
             --context TEST --release `date +"%F-%R"` \
             --ref-genome hg19 --dbsnp-build 132
-
 
 python <<EOF
 import csv, random
@@ -154,18 +140,10 @@ for r in i:
   o.writerow(y)
 
 EOF
-# ${KB_QUERY} -o marker_alignment_mapped.tsv \
-#             map_vid -i ${DATA_DIR}/marker_alignments.tsv\
-#             --source-type Marker --column label,marker_vid
 
 ${IMPORTER} -i marker_alignments.tsv \
             marker_alignment --study ${STUDY_LABEL} --ref-genome hgFake  \
             --message 'alignment done using libbwa'
-
-
-# ${KB_QUERY} -o markers_set_mapped.tsv \
-#             map_vid -i ${DATA_DIR}/markers_sets.tsv \
-#             --source-type Marker --column marker_label,marker_vid
 
 echo "* define a marker set that uses all known markers"
 python <<EOF
@@ -191,7 +169,6 @@ ${IMPORTER} -i markers_sets.tsv \
             --study ${STUDY_LABEL} \
             --label MSET0-`date +"%F-%R"` \
             --maker CRS4 --model TEST0 --release `date +"%F-%R"`
-
 
 MSET1=MSET1-`date +"%F-%R"`
 
@@ -270,12 +247,3 @@ ${IMPORTER} -i data_samples_mset1.tsv -o data_samples_mset1_mapping.tsv \
              --device-type GenotypingProgram \
              --data-sample-type GenotypeDataSample \
              --study ${STUDY_LABEL} --source-type Individual
-
-
-
-echo "* attaching fake DataObject(s) to data samples."
-#${CREATE_FAKE_GDO} --data-samples data_samples_mset1.tsv -o ssc_file_list.tsv
-
-
-
-

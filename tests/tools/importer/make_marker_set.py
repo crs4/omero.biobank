@@ -27,6 +27,6 @@ with open(in_fn) as fi, open(out_fn, 'w') as fo:
     y = {
       'marker_vid': r['vid'], 
       'allele_flip': random.choice([True, False]),
-      'marker_indx': k
+      'marker_indx': k,
       }
     o.writerow(y)
