@@ -1,16 +1,13 @@
 """
-Import Utility
-==============
+The purpose of this tool is to import externally generated data into
+the KB. Import operations can almost always be described as:
 
-The purpose of this utility is to import externally generated data into the KB.
-
-Import operations can almost always be described as:
-
-  * reading a tsv input file with one column named **label**, a
-    unique id for the specific object defined and other fields. When
-    the specific object is linked to another, e.g., a blood sample to
-    an individual, there will be one column named **source** with the
-    VID of an object to which this object should be linked to;
+  * reading a tsv input file with one column named **label**, a unique
+    id for the specific object defined and other fields. When the
+    specific object is linked to another, e.g., a blood sample to an
+    individual, there will be one column named **source** with the VID
+    (the unique id assigned by the KB to the object) of an object to
+    which this object should be linked to;
 
   * saving data read from the tsv file to the KB, plus other data
     provided as parameters. For each input record, the program
@@ -18,8 +15,7 @@ Import operations can almost always be described as:
     that links it to its source;
 
   * outputting an object mapping tsv file with four columns: study,
-    label, object_type and VID, where VID is the unique id assigned
-    by the KB to the object, and object_type is the KB object type.
+    label, object_type and VID, where object_type is the KB object type.
 
 The user is responsible for mapping labels to VIDs: in most cases you
 should be able to use ``kb_query map_vid`` for this.

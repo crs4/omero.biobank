@@ -1,6 +1,6 @@
 """
-Import Marker Definitions
-=========================
+Import marker_definition
+========================
 
 Will read in a tsv file with the following columns::
 
@@ -9,17 +9,13 @@ Will read in a tsv file with the following columns::
   ...
 
 where label is the unique label for this marker in the (source,
-context, release) context, rs_label is its dbSNP label ('None' if not
-defined or not known). The mask column contains the SNP definition.
+context, release) context, rs_label is its `dbSNP
+<http://www.ncbi.nlm.nih.gov/projects/SNP>`_ label ('None' if not
+defined or not known) and the mask column contains the SNP definition.
 
-It will, for each row, convert mask to the TOP strand following
-Illumina conventions and then save a record for it in the KB.
-
-.. todo::
-
-   add a reference to the data structure documentation.
-
-It will output a a tsv file with the following columns::
+It will, for each row, convert the mask to the TOP strand following
+Illumina conventions and then save a record for it in the KB. It will
+output a a tsv file with the following columns::
 
    study    label     type    vid
    ASTUDY   SNP_A-xxx Marker  V000002222

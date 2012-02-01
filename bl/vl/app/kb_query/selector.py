@@ -3,7 +3,7 @@ Select a group of individuals
 =============================
 
 Select a group of individuals from a specific group (from all avalable
-individuals, if no group is selected). The selection is controlled by
+individuals, if no group is selected). Selections are controlled by
 the following parameters:
 
   * total number of individuals selected
@@ -26,8 +26,11 @@ The output file has the following format::
     ...
 
 where 'study' is the name of the new study. The file can be used to
-generate a new study (FIXME 'group' and 'study' should be independent
-concepts).
+generate a new study.
+
+.. todo::
+
+  clarify the differences between 'group' and 'study'.
 """
 
 import os, random, csv

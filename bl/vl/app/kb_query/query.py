@@ -2,14 +2,14 @@
 Generic query support
 =====================
 
-The goal of this module is to provide a simplified environment to
-perform complex queries in the KB.
+The goal of this module is to provide a simplified environment for
+performing complex queries in the KB.
 
 The idea is that one invokes:
 
 .. code-block:: bash
 
-   ${KB_QUERY} --ofile foo_junk.tsv -P romeo --operator aen \
+   ${KB_QUERY} --ofile foo_junk.tsv -P romeo --operator aen \\
      query --code-file foo.py --group BSTUDY
 
 where the contents of the code file are like the following:
@@ -24,11 +24,11 @@ where the contents of the code file are like the following:
             writerow(group.id, enum_label(i.gender), d.id,
                      o.path, o.mimetype, o.size, o.sha1)
 
-Where ``group`` (actually a study) corresponds to the group whose
-label is assigned by the --group flag.
+and ``group`` (actually a study) corresponds to the group whose
+label is assigned by the ``--group`` flag.
 
-**Note:** this tool executes arbitrary Python code: use it only if you
-  know what you're doing.
+**Note: this tool executes arbitrary Python code: use it only if you
+know what you're doing.**
 """
 
 import csv, argparse

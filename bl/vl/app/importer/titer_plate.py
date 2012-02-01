@@ -1,5 +1,5 @@
 """
-Import TiterPlate
+Import titerplate
 =================
 
 A full TiterPlate record will have the following columns::

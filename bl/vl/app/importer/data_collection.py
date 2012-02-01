@@ -1,6 +1,6 @@
 """
-Import Data Collections
-=======================
+Import data_collection
+======================
 
 Will read in a tsv file with the following columns::
 
@@ -15,9 +15,9 @@ This will create new DataCollection(s), whose label is defined by the
 label column, and link to it, using DataCollectionItem objects,
 the DataSample object identified by data_sample (a VID).
 
-Record that point to an unknown (data_sample) will abort the
-data collection loading. Previously seen collections will be noisily
-ignored too. No, it is not legal to use the importer to add items to a
+Records that point to an unknown DataSample will abort the data
+collection loading. Previously seen collections will be noisily
+ignored. It is not legal to use the importer to add items to a
 previously known collection.
 """
 

@@ -1,6 +1,6 @@
 """
-Extract global stats from KB
-============================
+Extract global stats from the KB
+================================
 
 Outputs a tsv files with the following columns::
 

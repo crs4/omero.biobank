@@ -1,6 +1,6 @@
 """
-Import of data objects
-======================
+Import data_object
+==================
 
 Will read in a tsv file with at least the following columns::
 
@@ -14,26 +14,8 @@ physical instance of a given DataSample.
 Records that point to an unknown data sample vid will be noisily
 ignored. The same will happen to records that have the same path of a
 previously seen data object.
-
-.. code-block:: bash
-
-  bash> cat data_object.tsv
-  study path  data_sample_label mimetype  size  sha1
-  BSTUDY  /share/fs/v000.cel foobar-00 x-vl/affymetrix-cel 8989  SHA1SHA1
-  BSTUDY  /share/fs/v001.cel foobar-01 x-vl/affymetrix-cel 8989  SHA1SHA1
-  BSTUDY  /share/fs/v002.cel foobar-02 x-vl/affymetrix-cel 8989  SHA1SHA1
-  BSTUDY  /share/fs/v003.cel foobar-03 x-vl/affymetrix-cel 8989  SHA1SHA1
-  BSTUDY  /share/fs/v004.cel foobar-04 x-vl/affymetrix-cel 8989  SHA1SHA1
-  BSTUDY  /share/fs/v005.cel foobar-05 x-vl/affymetrix-cel 8989  SHA1SHA1
-  BSTUDY  /share/fs/v051.cel foobar-05 x-vl/affymetrix-cel 8989  SHA1SHA1
-  bash> ${KB_QUERY} -o data_object_mapped.tsv \
-               map_vid -i data_object.tsv \
-                   --column data_sample_label,data_sample \
-                   --source-type DataSample \
-                   --study BSTUDY
-  bash> ${IMPORTER} -i data_object_mapped.tsv -o data_object_mapping.tsv \
-               data_object
 """
+
 import os, csv
 
 from bl.vl.kb.mimetypes import DATA_OBJECT_FILES as SUPPORTED_MIME_TYPES

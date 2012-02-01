@@ -1,11 +1,11 @@
 """
-Import Markers Set Definitions
-==============================
+Import markers_set
+==================
 
 A SNPMarkersSet represents an ordered list of markers where the order
 usually comes from aligning the SNP markers against a reference
-genome. Within OMERO.biobank, different genotyping technologies are
-mapped to different SNPMarkersSet instances.
+genome. Within Biobank, different genotyping technologies are mapped
+to different SNPMarkersSet instances.
 
 In more detail, a marker set is defined by:
 

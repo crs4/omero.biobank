@@ -1,6 +1,6 @@
 """
-Import Study definitions
-========================
+Import study
+============
 
 A study represents a general context. It is characterized by the
 following fields::

@@ -10,7 +10,7 @@ Biobank's infrastucture, API and applications provide models for all
 relevant objects, from laboratory samples to EHR archetypes, together
 with data structures and patterns for describing and tracking the
 actions that link one to the other. Biobank's main command line tools
-have a Galaxy front-end.
+have a `Galaxy <http://usegalaxy.org>`_ front-end.
 
 
 Biobank's data model

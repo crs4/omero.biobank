@@ -1,6 +1,6 @@
 """
-Import individuals
-==================
+Import individual
+=================
 
 An individual is characterized by the following fields::
 

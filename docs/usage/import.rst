@@ -1,8 +1,5 @@
-VL import tool
-==============
-
-Command line
-------------
+The import tool
+===============
 
 .. automodule:: bl.vl.app.importer.main
 
@@ -29,9 +26,3 @@ Command line
 .. automodule:: bl.vl.app.importer.marker_alignment
 
 .. automodule:: bl.vl.app.importer.markers_set
-
-
-Galaxy UI
----------
-
-FIXME write some sphinx plugin to handle galaxy xml modules.

@@ -1,9 +1,6 @@
 """
-KB Query Utility
-================
-
 ``kb_query`` is the basic command line tool for extracting information
-from the Knowledge Base.
+from the Knowledge Base (KB).
 """
 
 import sys, argparse, logging

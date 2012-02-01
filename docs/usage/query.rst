@@ -1,8 +1,5 @@
-VL query tool
-=============
-
-Command line
-------------
+The query tool
+==============
 
 .. automodule:: bl.vl.app.kb_query.main
 
@@ -13,9 +10,3 @@ Command line
 .. automodule:: bl.vl.app.kb_query.global_stats
 
 .. automodule:: bl.vl.app.kb_query.selector
-
-
-Galaxy UI
----------
-
-FIXME write some sphinx plugin to handle galaxy xml modules.
