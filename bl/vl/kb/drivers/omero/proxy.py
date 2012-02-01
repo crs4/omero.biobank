@@ -565,18 +565,18 @@ class Proxy(ProxyCore):
     :type action: ActionOnIndividual
 
     :param timestamp: when this record was collected, in millisecond
-                      since the Epoch
+      since the Epoch
     :type timestamp: long
 
     :param archetype: a legal archetype id, e.g.,
-                      ``openEHR-EHR-EVALUATION.problem-diagnosis.v1``
+      ``openEHR-EHR-EVALUATION.problem-diagnosis.v1``
     :type archetype:  str
 
     :param rec: key (at field code) and values for this specific archetype
-                instance, e.g.::
+      instance, e.g.::
 
-      {'at0002.1':
-      'terminology://apps.who.int/classifications/apps/gE10.htm#E10'}
+        {'at0002.1':
+        'terminology://apps.who.int/classifications/apps/gE10.htm#E10'}
 
     :type rec: dict
     """

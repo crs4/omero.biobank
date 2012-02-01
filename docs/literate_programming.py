@@ -1,14 +1,12 @@
-from docutils.parsers.rst.directives.misc import Include as BaseInclude
 import os, tempfile
+from docutils.parsers.rst.directives.misc import Include as BaseInclude
+
 
 class LiterateProgrammingInclude(BaseInclude):
-    """
-    FIXME
-    """
 
     def run(self):
-        if self.arguments[0].startswith('/') or \
-               self.arguments[0].startswith(os.sep):
+        if (self.arguments[0].startswith('/') or
+            self.arguments[0].startswith(os.sep)):
             env = self.state.document.settings.env
             self.arguments[0] = os.path.join(env.srcdir, self.arguments[0][1:])
         fo = tempfile.NamedTemporaryFile(delete=False)
@@ -29,7 +27,6 @@ class LiterateProgrammingInclude(BaseInclude):
         fo.write('\n.. code-block:: python\n\n')
         fo.write(code_block)
         fo.write('\n')
-
       in_litblock_block = False
       code_block_lines = []
       for l in fi:

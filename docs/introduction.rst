@@ -1,100 +1,75 @@
 Introduction
 ============
 
-BIOBANK is a framework built upon OMERO that is expected to provide
+Biobank is a framework built upon `OMERO
+<http://www.openmicroscopy.org/site/products/omero>`_ that provides
 compact and efficient ways to handle the computational aspects of
-large scale biomedical studies. 
+large scale biomedical studies.
 
-BIOBANK infrastucture, sdk and command line apps provide:
-
- * models for all relevant objects, from laboratory samples to ehr,
-   together with data structures and patters to describe and track the
-   actions that link one to the other;
-
- * uniform computational access to all data;
-
- * well defined ways (??) to extend the set of known models;
+Biobank's infrastucture, API and applications provide models for all
+relevant objects, from laboratory samples to EHR archetypes, together
+with data structures and patterns for describing and tracking the
+actions that link one to the other. Biobank's main command line tools
+have a Galaxy front-end.
 
 
-All main BIOBANK commandline tools have galaxy front-end. 
-
-In the following, we will first describe the BIOBANK data model, then
-the general approach for basic computation of genotype data.
+Biobank's data model
+--------------------
 
 .. todo::
 
-  what general approach?
+  write this section.
 
 
-BIOBANK data model
-------------------
+Basic computation on genotype data
+----------------------------------
 
-.. todo::
+The goal is to provide a computationally efficient and reasonably clean
+way to handle genotype data, i.e.:
 
-  fill the BIOBANK data model section
+* the results of high-resolution scanning with devices such as
+  Affymetrix 6.0 and an Illumina Infinium;
 
+* the results of interpolations and extrapolations of genotyping
+  data to obtain even higher densities data sets.
 
-Basic computations on genotype data
------------------------------------
+A Genotype Data Object (GDO) consists of:
 
-The goal is to have a computationally efficient and reasonably clean
-way to handle genotype data. By "genotype data", I mean:
+* a list of N Single Nucleotide Polymorphism (SNP) ids;
 
-  (a) the result of a high resolution device acquisition, e.g., what
-      you get from an Affy 6.0 and an Illumina Infinium;
+* a ``type(np.zeros((2, N), dtype=np.float32))`` array with the
+  probabilities of the AA and BB configurations;
 
-  (b) the result of interpolation and extrapolation of genotyping data
-      to obtain even higher densities datasets.
+* a ``type(np.zeros((N,), dtype=np.float32))`` array with the call confidence.
 
-A genotype data object GDO is composed by:
-
-  (i)   a list of N marker ids that indentifies each SNP in the datasets;
-
-  (ii)  a ``type(np.zeros((2, N), dtype=np.float32))`` array with the
-        probabilities of the AA and BB configurations;
-
-  (iii) a ``type(np.zeros((N,), dtype=np.float32))`` array with the
-        call confidence.
-
-We are using a floating point representation, rather than the usual
-'two-bits' per SNP representation because we are trying to mantain a
-uniform description for both the 'experimental' and the 'computed' SNP values.
-
-All GDOs coming from the same acquisition technology (both real and
-synthetic) share the same marker list.
+The above floating point representation is used in lieu of the usual
+two-bits-per-SNP representation to provide a uniform description for
+both the 'experimental' and the 'computed' calls. All GDOs coming from
+the same acquisition technology (either physical or synthetic) share
+the same marker list.
 
 For the purposes of this discussion, what the markers are is
-irrelevant. However, their details are currently handled as records of
-a pytable table (omero.grid.table) with many millions of rows.
+irrelevant. However, their details are currently handled by records in
+an OMERO table whose order of magnitude is in the millions of rows.
 
-The typical operations that we expect to perform on the data can be
-divided in, at least, three flavours:
+The typical operations that have to be performed on the data are:
 
- *columnar, per SNP, statistics*: that is, use call values for the
-  same marker across all the GDOs in a given GDO set to compute a SNP
-  specific value, e.g., minimum allele frequency (MAF) and Hardy
-  Weinberg equilibrium tests (HWE).
+* column-wise, per-SNP, statistics: use call values for the same SNP
+  across all the GDOs in a given GDO set to compute a SNP-specific
+  value, e.g., Minimum Allele Frequency (MAF) or Hardy-Weinberg
+  Equilibrium (HWE).
 
- *row, per GDO, statistics*: that is, use call values for all the SNPs
-  within a GDO, for instance to count the number of
-  (homo/hetero)zygotes SNPs.
+* row-wise, per-GDO, statistics: use call values for all the SNPs
+  within a GDO, e.g., to count the number of heterozygous SNPs.
 
- *group of GDO statistics*: that is, use a set of GDOs to compute
-  quantities that require to look at the same time in both the row and
-  col directions, e.g., computing the Hamming distance (on SNPs)
-  between pairs of GDOs, and using imputation techniques (e.g., with
-  Merlin) to convert inter-individual relations (pedigree)
-  to deduce missing SNP values.
+* GDO group statistics: use a set of GDOs to compute quantities that
+  require looking at the same time in both the row and column
+  directions, e.g., to compute the Hamming distance (on SNPs) between
+  pairs of GDOs; perform SNP imputation, e.g., with Merlin.
 
-Ideally, one would like to have server-side scripts that compute
-'per-column' and 'per-row' quantities, and maybe, extract blocks of
-GDOs and convert them to the format needed by external tools.  For
-instance, saving in an HDFS directory a file with, for each SNP, a record
-containing the relative genotype for all the individuals in the
-selected set.
-
-Things like saving a new GDO will be left to the client, as well
-as recovering a GDO.
-
-
-
+Ideally, server-side scripts should compute 'per-column' and 'per-row'
+quantities, extract blocks of GDOs and convert them to the format
+needed by external tools. For instance, saving in an HDFS directory a
+file with, for each SNP, a record containing the genotype for all the
+individuals in the selected set. Things like saving a new GDO are left
+to the client.

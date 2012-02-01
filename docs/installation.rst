@@ -2,6 +2,25 @@ Installation instructions
 =========================
 
 
+Prerequisites
+-------------
+
+* `python 2.7 <http://www.python.org>`_
+
+* `python-graph <http://code.google.com/p/python-graph>`_
+
+* `NumPy 1.6.1 or higher <http://numpy.scipy.org>`_
+
+* `OMERO 4.2 or higher <http://www.openmicroscopy.org/site/products/omero>`_
+
+* `Biodoop Core 0.2.0 <http://biodoop.sourceforge.net/core>`_
+
+ * **NOTE:** although `Pydoop <http://pydoop.sourceforge.net>`_ is
+   listed as one of Biodoop Core's prerequisites, it's only a run-time
+   dependency for MapReduce applications. Thus, Pydoop is currently
+   **NOT** a requirement for this package.
+
+
 Omero Setup
 -----------
 
@@ -56,12 +75,3 @@ Add test group and user.
   1  | guest   | Guest     | Account  |       | 2         |           
   2  | test    | Alfred    | Neumann  |       | 3,1       |           
   (3 rows)
-
-
-Installation checks
--------------------
-
-Run::
-
- bash tests/tools/importer/test_importer.sh
-
