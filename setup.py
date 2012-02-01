@@ -126,7 +126,6 @@ setup(
     'bl.vl.genotype',
     'bl.vl.app',
     'bl.vl.app.importer',
-    'bl.vl.app.exporter',
     'bl.vl.app.kb_query',
     'bl.vl.app.snp_reannotator',
     ],
