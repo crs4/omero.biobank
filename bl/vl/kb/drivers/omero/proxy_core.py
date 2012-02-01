@@ -58,16 +58,14 @@ class ProxyCore(object):
   session unless you are using Java. For this reason, we open a new
   session for each new operation on the database and close it when we
   are done, forcing the server to release the allocated memory.
-
-  FIXME: in the future, low-level omero access should be provided by a
-  common set of core libraries.
   """
 
-  OME_TABLE_COLUMN = {'string' : omero.grid.StringColumn,
-                      'long'   : omero.grid.LongColumn,
-                      'double' : omero.grid.DoubleColumn,
-                      'bool'   : omero.grid.BoolColumn,}
-
+  OME_TABLE_COLUMN = {
+    'string': omero.grid.StringColumn,
+    'long': omero.grid.LongColumn,
+    'double': omero.grid.DoubleColumn,
+    'bool': omero.grid.BoolColumn,
+    }
   _CACHE = {}
 
   def store_to_cache(self, obj):
@@ -184,7 +182,7 @@ class ProxyCore(object):
 
   def save(self, obj):
     """
-    Save and return a kb object.
+    Save and return a KB object.
     """
     try:
       result = self.ome_operation("getUpdateService", "saveAndReturnObject",
@@ -200,7 +198,7 @@ class ProxyCore(object):
 
   def save_array(self, array):
     """
-    Save and return an array of kb objects.
+    Save and return an array of KB objects.
     """
     try:
       result = self.ome_operation("getUpdateService", "saveAndReturnArray",
@@ -218,7 +216,7 @@ class ProxyCore(object):
 
   def delete(self, kb_obj):
     """
-    Delete a kb object.
+    Delete a KB object.
     """
     try:
       result = self.ome_operation("getUpdateService", "deleteObject",
@@ -238,9 +236,8 @@ class ProxyCore(object):
   #----------------------------------------------------------------------------
 
   def _list_table_copies(self, table_name):
-    return self.ome_operation('getQueryService',
-                              'findAllByString', 'OriginalFile',
-                              'name', table_name, True, None)
+    return self.ome_operation('getQueryService', 'findAllByString',
+                              'OriginalFile', 'name', table_name, True, None)
 
   def get_table(self, table_name):
     s = self.connect()
@@ -259,9 +256,13 @@ class ProxyCore(object):
 
   def delete_table(self, table_name):
     """
-    This method only removes OriginalFile table entry from database.
-    For actual file removal run on the server:
-    $OMERO_HOME/bin/omero admin cleanse $OMERO_DATA_DIR
+    This method only removes the OriginalFile table entry from database.
+    
+    For actual file removal run, on the server:
+
+    .. code-block:: bash
+
+      ${OMERO_HOME}/bin/omero admin cleanse ${OMERO_DATA_DIR}
     """
     try:
       self.connect()
@@ -377,7 +378,7 @@ class ProxyCore(object):
   def __get_table_rows_slice(self, table, row_numbers, col_numbers, batch_size):
     res, n_rows, row_read = [], len(row_numbers), 0
     while row_read < n_rows:
-      ids = row_numbers[row_read : (row_read + batch_size)]
+      ids = row_numbers[row_read:(row_read+batch_size)]
       if ids:
         d = table.slice(col_numbers, ids)
         res.append(convert_coordinates_to_np(d))

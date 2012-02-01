@@ -2,7 +2,7 @@
 Generic Utilities
 =================
 
-This package contains generic utilities used by other modules.
+Generic utilities used by other modules.
 """
 
 import uuid, hashlib

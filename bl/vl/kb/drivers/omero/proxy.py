@@ -70,15 +70,6 @@ class Proxy(ProxyCore):
   # High level ops
   # ==============
   def find_all_by_query(self, query, params):
-    """
-    .. code-block:: python
-
-        ids = ','.join('%s' % ds.omero_id for ds in data_samples)
-        query = 'from DataObject do where do.sample.id in (%s)' % ids
-        dos = self.find_all_by_query(query, None)
-        for do in dos:
-          print do.path
-    """
     return super(Proxy, self).find_all_by_query(query, params, self.factory)
 
   def get_by_vid(self, klass, vid):
@@ -152,21 +143,17 @@ class Proxy(ProxyCore):
     markers are written in batches, whose size is controlled by
     batch_size.
 
-    .. todo::
-
-       Add an example code snippet
-
     :param stream: a stream of dict objects
     :type stream: generator
 
-    :param action: a valid action, for backward compatibility reasons, it could
-                   also be a VID string.
+    :param action: a valid action. For backward compatibility reasons, it can
+      also be a VID.
     :type action: Action
 
-    :param batch_size: size of the batch written
+    :param batch_size: size of the batch to write
     :type batch_size: positive int
 
-    :return list: of (<label>, <vid>) tuples
+    :return: list of (<label>, <vid>) tuples
     """
     op_vid = self.__resolve_action_id(action)
     return self.gadpt.add_snp_marker_definitions(stream, op_vid, batch_size)
@@ -179,12 +166,6 @@ class Proxy(ProxyCore):
     is possible to request only specific marker definition columns by
     assigning to col_names a list with the names of the selected
     columns.
-
-    .. code-block:: python
-
-       selector = "(source == 'affymetrix') & (context == 'GW6.0')"
-       col_names = ['vid', 'label']
-       mrks = kb.get_snp_marker_definitions(selector, col_names)
     """
     return self.gadpt.get_snp_marker_definitions(selector, col_names,
                                                  batch_size)
@@ -207,15 +188,6 @@ class Proxy(ProxyCore):
     """
     Given a stream of (marker_vid, marker_indx, allele_flip) tuples,
     build and save a new marker set.
-
-    .. code-block:: python
-
-        taq_man_set = [ (t[1], i, False) for i, t in enumerate(lvs)]
-        label, maker   = 'FakeTaqSet01', 'CRS4'
-        model, release = 'TaqManSet', '23/09/2011'
-        N = len(lvs)
-        mset = kb.create_snp_markers_set(label, maker, model, release,
-                                         N, taq_man_set, action)
     """
     assert type(N) == int and N > 0
     set_vid = vlu.make_vid()
@@ -257,19 +229,8 @@ class Proxy(ProxyCore):
     genome; the number of times the given marker has been seen on the
     reference genome. If the latter is larger than 1, there should
     be N records pertaining to the same marker.
-
-    .. code-block:: python
-
-        s = [('V8238981', 1, 200, True, 'A', 1),
-             ('V8238982', 2, 300, True, 'B', 1),
-             ('V8238983', 4, 400, True, 'A', 1),
-             ('V8238984', 2, 400, True, 'A', 2)
-             ('V8238984', 2, 800, True, 'B', 2)
-             ]
-
-        kb.align_snp_markers_set(mset, 'hg19', s, action)
     """
-    # FIXME no checking....
+    # FIXME no checking
     def gen(s):
       for x in s:
         y = {
@@ -303,10 +264,11 @@ class Proxy(ProxyCore):
     Syntactic sugar to simplify adding genotype data objects.
 
     :param probs: a 2x<nmarkers> array with the AA and the BB
-                  homozygote probs.
+      homozygous probabilities.
     :type probs: numpy.darray
 
-    :param confs: a <nmarkers> array with the confidence on probs above.
+    :param confs: a <nmarkers> array with the confidence on the above
+      probabilities.
     :type probs: numpy.darray
 
     """
@@ -314,16 +276,12 @@ class Proxy(ProxyCore):
     if not isinstance(sample, self.GenotypeDataSample):
       raise ValueError('sample should be an instance of GenotypeDataSample')
     mset = sample.snpMarkersSet
-
-    # FIXME there is no check that probs and confs have the
-    #       right numpy dtype and size.
+    # FIXME doesn't check that probs and confs have the right dtype and size
     gdo_vid = self.gadpt.add_gdo(mset.id, probs, confs, avid)
-
     size = 0
     sha1 = hashlib.sha1()
     s = probs.tostring();  size += len(s) ; sha1.update(s)
     s = confs.tostring();  size += len(s) ; sha1.update(s)
-
     conf = {
       'sample': sample,
       'path': self.make_gdo_path(mset, gdo_vid),
@@ -337,18 +295,14 @@ class Proxy(ProxyCore):
   def get_gdo(self, mset, vid, indices=None):
     return self.gadpt.get_gdo(mset.id, vid, indices)
 
-  def get_gdo_iterator(self, mset,
-                       data_samples=None,
-                       indices = None,
+
+  #FIXME this is the basic object, we should have some support for selections
+  def get_gdo_iterator(self, mset, data_samples=None, indices = None,
                        batch_size=100):
-    """
-    FIXME this is the basic object, we should have some support for
-    selection.
-    """
     def get_gdo_iterator_on_list(dos):
       seen_data_samples = set([])
       for do in dos:
-        #FIXME we could, in principle, handle other mimetypes too...
+        # FIXME we could, in principle, handle other mimetypes too
         if do.mimetype == mimetypes.GDO_TABLE:
           mset_vid, vid = self.parse_gdo_path(do.path)
           if mset_vid != mset.id:
@@ -362,21 +316,20 @@ class Proxy(ProxyCore):
       return self.gadpt.get_gdo_iterator(mset.id, indices, batch_size)
     for d in data_samples:
       if d.snpMarkersSet != mset:
-        raise ValueError('data_sample %s snpMarkersSet != mset' %
-                         d.id)
+        raise ValueError('data_sample %s snpMarkersSet != mset' % d.id)
     ids = ','.join('%s' % ds.omero_id for ds in data_samples)
     query = 'from DataObject do where do.sample.id in (%s)' % ids
     dos = self.find_all_by_query(query, None)
     return get_gdo_iterator_on_list(dos)
 
-
   def get_snp_markers_set(self, label=None,
                           maker=None, model=None, release=None):
-    "returns a SNPMarkersSet object"
     return self.madpt.get_snp_markers_set(label, maker, model, release)
 
   def snp_markers_set_exists(self, label, maker, model, release):
-    "DEPRECATED"
+    """
+    DEPRECATED
+    """
     return not self.get_snp_markers_set(label, maker, model, release) is None
 
 
@@ -392,8 +345,8 @@ class Proxy(ProxyCore):
     one identified by the label 'DEVICE-CREATE-AN-ACTION'.
 
     **Note:** this method is NOT supposed to be used in production
-      code striving to be efficient. It is merely a convenience to
-      simplify action creation in small scripts.
+    code. It is merely a convenience to simplify action creation in
+    small scripts.
     """
     default_device_label = 'DEVICE-CREATE-AN-ACTION'
     alabel = ('auto-created-action%f' % (time.time()))
@@ -439,20 +392,6 @@ class Proxy(ProxyCore):
     Given a stream of (label, rs_label, mask) tuples, create and save
     Marker objects and return the (label, vid) associations as a list
     of tuples.
-
-    .. code-block:: python
-
-      taq_man_markers = [
-        ('A0001', 'xrs122652',  'TCACTTCTTCAAAGCT[A/G]AGCTACAAGCATTATT'),
-        ('A0002', 'xrs741592',  'GGAAGGAAGAAATAAA[C/G]CAGCACTATGTCTGGC')]
-      source, context, release = 'foobar', 'fooctx', 'foorel'
-      ref_rs_genome, dbsnp_build = 'fake-hg-18', 132
-      lvs = kb.create_markers(source, context, release,
-                              ref_rs_genome, dbsnp_build,
-                              taq_man_markers, action)
-      for tmm, t in zip(taq_man_markers, lvs):
-        assert (tmm[0] == t[0])
-        print 'label:%s -> vid: %s' % (t[0], t[1])
     """
     # FIXME this is extremely inefficient
     marker_defs = [t for t in stream]
@@ -478,14 +417,7 @@ class Proxy(ProxyCore):
   def get_individuals(self, group):
     """
     Syntactic sugar to simplify the looping on individuals contained
-    in a group. The idea is that it should be possible to do the
-    following:
-
-    .. code-block:: python
-
-      for i in kb.get_individuals(study):
-        for d in kb.get_data_samples(i, dsample_klass_name):
-          gds = filter(lambda x: x.snpMarkersSet == mset)
+    in a group.
 
     :param group: a study object, we will be looping on all the
                   Individual(s) enrolled in it.
@@ -498,21 +430,13 @@ class Proxy(ProxyCore):
   def get_data_samples(self, individual, data_sample_klass_name='DataSample'):
     """
     Syntactic sugar to simplify the looping on DataSample(s) connected
-    to an individual. The idea is that it should be possible to do the
-    following:
-
-    .. code-block:: python
-
-      for i in kb.get_individuals(study):
-        for d in kb.get_data_samples(i, 'GenotypeDataSample'):
-          gds = filter(lambda x: x.snpMarkersSet == mset)
+    to an individual.
 
     :param individual: the root individual object
     :type group: Individual
 
     :param data_sample_klass_name: the name of the selected data_sample
-                                   class, e.g. 'AffymetrixCel' or
-                                   'GenotypeDataSample'
+      class, e.g. 'AffymetrixCel' or 'GenotypeDataSample'
     :type data_sample_klass_name: str
 
     :type return: generator of a sequence of DataSample objects
@@ -534,7 +458,7 @@ class Proxy(ProxyCore):
     :type group: Individual
 
     :param vessel_klass_name: the name of the selected vessel class,
-                              e.g. 'Vial' or 'PlateWell'
+      e.g. 'Vial' or 'PlateWell'
     :type vessel_klass_name: str
 
     :type return: generator of a sequence of Vessel objects
@@ -572,11 +496,9 @@ class Proxy(ProxyCore):
       ``openEHR-EHR-EVALUATION.problem-diagnosis.v1``
     :type archetype:  str
 
-    :param rec: key (at field code) and values for this specific archetype
-      instance, e.g.::
-
-        {'at0002.1':
-        'terminology://apps.who.int/classifications/apps/gE10.htm#E10'}
+    :param rec: keys and values for this specific archetype instance,
+      e.g., ``{'at0002.1':
+      'terminology://apps.who.int/classifications/apps/gE10.htm#E10'}``
 
     :type rec: dict
     """

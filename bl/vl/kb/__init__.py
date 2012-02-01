@@ -1,7 +1,7 @@
 """
-This module provides the KnowledgeBase entry point, interfaces for the
-application-side view of the object model that should be implemented
-by the kb drivers, and some syntact sugar to simplify common operations.
+The Knowledge Base (KB) package provides interfaces for the
+application-side view of the backend object model, plus some syntact
+sugar to simplify common operations.
 """
 
 import sys

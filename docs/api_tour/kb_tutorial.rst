@@ -1,40 +1,33 @@
-Knowledge Base Tutorial
+Knowledge Base tutorial
 =======================
 
-The Knowledge Base (KB for short) provides a uniform access to all
-available meta-information stored in the BIOBANK backend (e.g., Omero).
+The Knowledge Base (KB) provides uniform access to all available
+meta-information stored in the Biobank backend (only OMERO is
+supported at this time).
 
 .. code-block:: python
 
-  from bl.vl.kb import KnowledgeBase as KB
-  kb = KB(driver='omero')(host='localhost', user='test', passwd='xxx')
-
-For instance, in the code snippet above, we have established a
-connection to an Omero metadata bank.
+  >>> from bl.vl.kb import KnowledgeBase as KB
+  >>> kb = KB(driver='omero')('localhost', 'test', 'test')
 
 
 Objects that the KB can handle
 ------------------------------
 
-Currently, the KB handles the following object types:
+Currently, the main object types handled by the KB are:
 
  * Study
  * Individual
  * Demographic information about individuals
  * Vessel (e.g., Tube, PlateWell, ...) -- a generic object that contains fluid
- * Collection of objects (e.g., TiterPlate is a collection of PlateWell(s))
+ * Collection of objects (e.g., TiterPlate, a collection of PlateWell(s))
  * DataSample
  * DataObject
  * Marker
- * ... FIXME
-
-.. todo::
-
-   divide objects type in groups
 
 
-Basic Object operations
------------------------
+Basic operations
+----------------
 
 The simplest possible object is a Study object.
 
@@ -46,17 +39,18 @@ The simplest possible object is a Study object.
   False
 
 We first created a configuration dictionary, then used the KB's
-factory to create a study object.  As shown in the above snippet, this
-object is not "mapped" to an actual object in the database (i.e., it's
-not stored yet).  Here is how you save it:
+factory to create a Study object. As shown in the above snippet, this
+object is not yet **mapped** to an actual object in the
+backend. Mapping is a result of actively saving an object:
 
 .. code-block:: python
 
   >>> s.save()
+  <bl.vl.kb.drivers.omero.action.Study object at 0xb73836cc>
   >>> s.is_mapped()
   True
 
-And here is how you get a previously saved study:
+The following snippet shows how to retrieve a previously saved study:
 
 .. code-block:: python
 
@@ -67,22 +61,22 @@ And here is how you get a previously saved study:
   >>> y is None
   True
 
-What has been done above is a general pattern for object creation:
+The one shown above is a general pattern for object creation:
 
- #. Create a dictionary with values for, at least, the required fields;
+ #. Create a configuration dictionary with values for, at least, the
+    required fields;
 
- #. Use the create method of the kb.factory object providing as
+ #. Use the ``create`` method of the kb.factory object providing as
     arguments the object type and the configuration dictionary;
 
- #. Use the save method of the object to register it with the database.
+ #. Use the ``save`` method of the object to save it to the backend.
 
 
-What happens if you try to register the same object twice:
+In the case of an OMERO backend, trying to save the same object twice
+results in an error:
 
 .. code-block:: python
 
-  >>> conf = {'label': 'foo'}
-  >>> s = kb.factory.create(kb.Study, conf)
   >>> s.save()
   ERROR:proxy_core:omero.ValidationException: could not insert:
   [ome.model.vl.Study]; SQL [insert into study (description,
@@ -93,19 +87,16 @@ What happens if you try to register the same object twice:
   org.hibernate.exception.ConstraintViolationException: could not
   insert: [ome.model.vl.Study] ...
 
-How to get the available classes:
-
-The clean way is to look up the model definitions. A quick trick to
-get them by introspection is:
+The clean way to get the available classes is to look up the model
+definitions. A quick trick to get them by introspection is:
 
 .. code-block:: python
 
-  >>> [x for x in dir(kb) if hasattr(getattr(kb, x), "is_mapped")]
+  >>> [c for c in dir(kb) if hasattr(getattr(kb, c), "is_mapped")]
+  ['Action', 'ActionCategory', 'ActionOnAction', ...]
 
-How to get the available fields for each class:
-
-Again, the clean way would be to look up the model definitions. As a
-quick trick, you can do:
+To get the available fields for each class without looking at the
+model definitions, you can do the following:
 
 .. code-block:: python
 
@@ -116,22 +107,25 @@ quick trick, you can do:
    'startDate': ('timestamp', 'required'),
    'vid': ('vid', 'required')}
 
-NOTE: this should be used as a reminder, since this is a low-level
-view of the available fields, and they are not all supposed to be
-user-settable (e.g., startDate and vid are automatically generated).
+NOTE: this is a low-level view of the available fields: not all of
+them are user-settable (e.g., ``startDate`` and ``vid`` are
+automatically generated).
 
-How to delete an object:
+To delete an object, do the following:
 
 .. code-block:: python
 
-  >>> kb.delete(s)
-  >>> s = kb.get_study('foo')
-  >>> s is None
+  >>> kb.delete(x)
+
+To check that it's actually been deleted:
+
+  >>> x = kb.get_study('foo')
+  >>> x is None
   True
 
 
-Using the KB
-------------
+Usage examples
+--------------
 
 Import an Individual:
 
@@ -148,8 +142,8 @@ Import an Individual:
   >>> i.save()
   <bl.vl.kb.drivers.omero.individual.Individual object at 0x90fef2c>
 
-Note that an Individual (in general, any object that has a counterpart
-in the real world) needs an action to be created.
+Note that an Individual (in general, any object that has a physical
+counterpart) needs an ``action`` to be created.
 
 Enroll an individual into a study:
 
@@ -158,8 +152,9 @@ Enroll an individual into a study:
   >>> conf = {'study': s, 'individual': i, 'studyCode': 'I001'}
   >>> e = kb.factory.create(kb.Enrollment, conf)
   >>> e.save()
-
-To check which individuals are enrolled in a specific study:
+  <bl.vl.kb.drivers.omero.individual.Enrollment object at 0x91df30c>
+  
+Check which individuals are enrolled in a specific study:
 
 .. code-block:: python
 
@@ -170,9 +165,9 @@ To check which individuals are enrolled in a specific study:
   True
   >>> v[0].study == s
   True
-  >>> v[0].studyCode 
+  >>> v[0].studyCode
   'I001'
 
 .. todo::
 
-   missing everything beyond Individual
+  Add more examples.

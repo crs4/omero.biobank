@@ -7,7 +7,7 @@ Contents:
    :maxdepth: 2
 
    omero
-   openehr
-   galaxy
-   examples
    api_ref
+.. openehr
+.. galaxy
+.. examples

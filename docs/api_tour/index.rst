@@ -1,13 +1,5 @@
-A tour of BIOBANK python API
-============================
-
-This section of the documentation is organized as follows.
-
-  * A tutorial on KnowledgeBase, the interface to data and metadata
-    stored in BIOBANK.
-  * An example of genotyping data import.
-  * An example of computation on stored data.
-
+A tour of Biobank's API
+=======================
 
 Contents:
 
@@ -15,8 +7,4 @@ Contents:
    :maxdepth: 2
 
    kb_tutorial
-   examples
-
-   
-   
-
+.. examples

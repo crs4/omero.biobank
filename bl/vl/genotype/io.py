@@ -1,5 +1,11 @@
+"""
+Genotyping-related I/O
+======================
+"""
+
 import array, struct
 import numpy as np
+
 from bl.core.io import MessageStreamReader
 from bl.vl.genotype.algo import project_to_discrete_genotype
 
@@ -145,76 +151,48 @@ class PedLineParser(object):
 
 class PedWriter(object):
   """
-  A ped file writer.
+  Writes a `PLINK <http://pngu.mgh.harvard.edu/~purcell/plink>`_
+  (ped, map) pair for a given marker set and collection of families.
 
-  It will output a plink formatted ped and map pair for a collection
-  of families and related genotype and phenotype information.
+  Use a subset of the markers if ``selected_markers`` is set. It is
+  possible to request that the map file contain marker positions wrt
+  a reference genome: if the latter is not provided, the map file
+  will contain default values, i.e., (0, 0). If the user does
+  provide a reference genome and there is no alignment information
+  for the markers in mset wrt to that genome, an error is generated.
 
-  Expected usage:
+  :param mset: a reference markers set that will be used to generate
+    the map file
+  :type mset: SNPMarkersSet
 
-  .. code-block:: python
+  :param base_path: optional base_path that will be used to create the
+    .ped and .map files
+  :type base_path: str
 
-    from bl.vl.genotype.io import PedWriter
+  :param ref_genome: optional reference genome against which the
+    markers are aligned in the map file
+  :type ref_genome: str
 
-    mset = kb.get_snp_markers_set(label='FakeTaqMan01')
-    pw = PedWriter(mset, base_path="./foo")
-    pw.write_map()
-    pw.write_family(family_label1, family1, data_sample_by_id)
-    pw.write_family(family_label2, family2, data_sample_by_id)
-    pw.close()
-
-  will generate in the working directory two files, './foo.ped' and
-  './foo.map', in the format described in `ped link`_.
-
-  .. _ped link: http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped
-  """
+  :param selected_markers: an array with the indices of the selected
+    markers.
+  :type selected_markers: numpy.ndarray of numpy.int32
+  """  
   def __init__(self, mset, base_path="bl_vl_ped",
                ref_genome=None, selected_markers=None):
-    """
-    Instantiate a PedWriter object for SNPMarkersSet mset. Will use a
-    subset of the markers if selected_markers is set.  It is possible
-    to request that the map file contains genomic markers positions
-    against a reference genome. If the latter is not provided, the map
-    file will contain default values, i. e., (0, 0). It will raise a
-    ValueError if there is no alignment information for the markers
-    in mset on ref_genome.
-
-    :param mset: a reference markers set that will be used to generate
-                 the map file
-    :type mset: SNPMarkersSet
-
-    :param base_path: optional base_path that will be used to create the
-                      .ped and .map files. Defaults to 'bl_vl_ped'
-    :type base_path: str
-
-    :param ref_genome: optional reference genome against which the
-                       markers are aligned in the map file.
-    :type ref_genome: str
-
-    :param selected_markers: an array with the indices of the selected
-                             markers.
-    :type selected_markers: numpy.array of numpy.int32
-    """
-
     self.mset = mset
     self.base_path = base_path
     self.selected_markers = selected_markers
     self.ref_genome = ref_genome
     self.ped_file = None
-
     try:
       N = len(self.mset)
     except ValueError as e:
       self.mset.load_markers()
       N = len(self.mset)
-
     self.null_probs = np.empty((2, N), dtype=np.float32)
     self.null_probs.fill(1/3.)
-
     if self.ref_genome:
       self.mset.load_alignments(self.ref_genome)
-
-    # FIXME this starts to be nasty...
     kb = self.mset.proxy
     kb.Gender.map_enums_values(kb)
     self.gender_map = lambda x: 2 if x == kb.Gender.FEMALE else 1
@@ -234,14 +212,11 @@ class PedWriter(object):
       for i in marker_indx:
         m = self.mset.markers[i]
         chrom, pos = m.position
-        # FIXME: we currently do not have a way to estimate the
-        # genetic distance, so we force it to 0
         fo.write('%s\t%s\t%s\t%s\n' % (chrom, m.label, 0, pos))
     with open(self.base_path + '.map', 'w') as fo:
       fo.write('# map based on mset %s aligned on %s\n' %
                (self.mset.id, self.ref_genome))
-      s = self.selected_markers if self.selected_markers \
-                                else xrange(len(self.mset))
+      s = self.selected_markers or xrange(len(self.mset))
       dump_markers(fo, s)
 
   def write_family(self, family_label, family_members,
@@ -257,17 +232,17 @@ class PedWriter(object):
     :type family_members: iterator on Individual
 
     :param data_sample_by_id: an optional dict-like object that maps
-                              individual ids to GenotypeDataSample objects
+      individual ids to GenotypeDataSample objects
     :type data_sample_by_id: dict
 
     :param phenotype_by_id: an optional dict-like object that maps
-                            individual ids to values that can be put in
-                            column 6 (phenotype) of a ped file
+      individual ids to values that can be put in column 6 (phenotype)
+      of a PLINK ped file
     :type phenotype_by_id: dict
     """
     if not phenotype_by_id:
       phenotype_by_id = {None: 0}
-    allele_patterns = { 0 : 'A A', 1 : 'B B', 2 : 'A B', 3 : '0 0'}
+    allele_patterns = {0: 'A A', 1: 'B B', 2: 'A B', 3: '0 0'}
     def dump_genotype(fo, data_sample):
       if data_sample is None:
         probs = self.null_probs
@@ -279,7 +254,7 @@ class PedWriter(object):
                           for x in project_to_discrete_genotype(probs)]))
       fo.write('\n')
     if self.ped_file is None:
-      self.ped_file = open(self.base_path + '.ped', 'w')
+      self.ped_file = open(self.base_path+'.ped', 'w')
     for i in family_members:
       # Family ID, IndividualID, paternalID, maternalID, sex, phenotype
       fat_id = 0 if not i.father else i.father.id
@@ -290,7 +265,6 @@ class PedWriter(object):
                           (family_label, i.id, fat_id, mot_id, gender, pheno))
       if data_sample_by_id:
         dump_genotype(self.ped_file, data_sample_by_id.get(i.id))
-        # write \n !
 
   def close(self):
     if self.ped_file:

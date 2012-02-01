@@ -5,9 +5,9 @@ Genotyping support
 Here, a SNP is defined by:
 
  * a SNP definition mask in the <FLANK>[A/B]<FLANK> format. Allele
-    order is defined by the order within the square brackets. The mask
-    is expected to be on the Illumina convention TOP strand, if the
-    Illumina strand detection algorithm yields a result.
+   order is defined by the order within the square brackets. The mask
+   is expected to be on the Illumina convention TOP strand, if the
+   Illumina strand detection algorithm yields a result.
 
  * a 'source' string, e. g., 'Affymetrix', 'Illumina', 'ABI'
 
@@ -273,9 +273,8 @@ class GenotypingAdapter(object):
                                      batch_size=BATCH_SIZE):
     """
     Add alignment info to a SNPMarkersSet table.
-    
-    TODO explain how multiple hits are managed.
     """
+    # TODO explain how multiple hits are managed
     def add_vids(stream):
       multiple_hits = {}
       for x in stream:

@@ -1,17 +1,17 @@
-VL API reference manual
-=======================
+API reference
+=============
 
 
-KnowledgeBase API
------------------
+Knowledge Base
+--------------
 
 .. automodule:: bl.vl.kb
    :members:
    :undoc-members:
 
 
-KnowledgeBase Omero Driver API
-------------------------------
+Omero driver
+,,,,,,,,,,,,
 
 .. automodule:: bl.vl.kb.drivers.omero.proxy
    :members:
@@ -85,6 +85,7 @@ Genotype module
    :members:
    :undoc-members:
 
+
 Individual module
 -----------------
 
@@ -95,6 +96,7 @@ Individual module
 .. automodule:: bl.vl.individual.pedigree
    :members:
    :undoc-members:
+
 
 Utils module
 ------------
@@ -111,5 +113,3 @@ Utils module
 .. automodule:: bl.vl.utils.snp
    :members:
    :undoc-members:
-
-

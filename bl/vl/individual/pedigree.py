@@ -1,5 +1,6 @@
 """
-A quick and dirty collection of pedigree manipulation functions.
+Pedigree manipulation functions
+===============================
 """
 
 INDIVIDUAL_DEFINITION_DOC = """
