@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 
 This example script shows how one could interrogate KB to gather EHR info.

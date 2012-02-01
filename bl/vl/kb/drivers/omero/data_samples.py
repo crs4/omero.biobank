@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 from bl.vl.kb import mimetypes
 import wrapper as wp
 from action import Action

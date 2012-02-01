@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 Read a marker definitions file and a Galaxy genome segment extractor
 output in interval format; perform a lookup in the dbSNP index

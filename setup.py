@@ -1,3 +1,5 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
 
 """
 Biobank: large scale biomedical computation on OMERO.

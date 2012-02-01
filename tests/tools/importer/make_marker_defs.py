@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import sys, time, csv, random
 from bl.vl.utils.snp import convert_to_top
 

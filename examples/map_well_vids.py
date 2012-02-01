@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """ ...
 
 Replaces the individual label with the platewell VID in the 'source'

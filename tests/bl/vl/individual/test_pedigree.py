@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import unittest, os, csv
 
 import bl.vl.individual.pedigree as ped

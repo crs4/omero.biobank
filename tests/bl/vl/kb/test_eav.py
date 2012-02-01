@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import os, unittest, time, logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()

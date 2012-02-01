@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 class IndividualStub(object):
   """
   A class that quacks as expected by import_pedigree.

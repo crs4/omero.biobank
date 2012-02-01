@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """ ..
 
 The goal of this examples is to show how one can define individuals

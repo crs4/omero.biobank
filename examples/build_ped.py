@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 A rough example of ped/map generation.  Several things are hardwired.
 """

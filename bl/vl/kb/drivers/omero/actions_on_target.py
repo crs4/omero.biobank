@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 from action import Action
 from vessels import Vessel
 from data_samples import DataSample

@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import csv, os, sys, optparse
 
 from bl.vl.kb import KnowledgeBase as KB

@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 # FIXME assumes an existing setup on the KB server
 
 import unittest

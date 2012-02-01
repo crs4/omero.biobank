@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 Convert SAM alignment data to VL marker alignment or Galaxy extract
 genomic DNA input.

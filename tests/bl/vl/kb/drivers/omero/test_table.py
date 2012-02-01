@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import os, unittest, time
 import itertools as it
 import numpy as np

@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import numpy as np
 
 import bl.vl.utils.np_ext as np_ext

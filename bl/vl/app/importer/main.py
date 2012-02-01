@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 The purpose of this tool is to import externally generated data into
 the KB. Import operations can almost always be described as:

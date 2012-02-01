@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 GDO_TABLE = 'x-bl/gdo-table'
 SSC_FILE = 'x-ssc-messages'
 CEL_FILE = 'x-vl/affymetrix-cel'

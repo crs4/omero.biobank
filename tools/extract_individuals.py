@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 
 Extracts records for individuals from a 'Ilena format' tsv file.

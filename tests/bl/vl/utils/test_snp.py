@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import unittest
 
 import bl.vl.utils.snp as usnp

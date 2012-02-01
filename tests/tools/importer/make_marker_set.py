@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import sys, csv, random
 
 USAGE = "Usage: python %s INPUT_F OUTPUT_F [SIZE]" % sys.argv[0]

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
+
 """
 Add missing GDOs for a given marker set
 =======================================

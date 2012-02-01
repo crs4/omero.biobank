@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 ``kb_query`` is the basic command line tool for extracting information
 from the Knowledge Base (KB).

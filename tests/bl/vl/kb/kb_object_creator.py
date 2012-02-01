@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import unittest, time
 import logging
 logging.basicConfig(level=logging.WARN)

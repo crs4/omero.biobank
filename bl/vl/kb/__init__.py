@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 The Knowledge Base (KB) package provides interfaces for the
 application-side view of the backend object model, plus some syntact

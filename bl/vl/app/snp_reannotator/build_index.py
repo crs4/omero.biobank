@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 Build dbSNP index database from Galaxy genome segment extractor output
 in interval format.

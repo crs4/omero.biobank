@@ -1,1 +1,4 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 version = "0.3"

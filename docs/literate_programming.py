@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import os, tempfile
 from docutils.parsers.rst.directives.misc import Include as BaseInclude
 

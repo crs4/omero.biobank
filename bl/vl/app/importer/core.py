@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import json, logging
 
 from bl.vl.kb import KnowledgeBase as KB

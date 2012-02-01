@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 class EHR(object):
 
   def __init__(self, recs):

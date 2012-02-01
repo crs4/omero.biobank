@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import unittest
 from bl.vl.kb.drivers.omero.wrapper import OmeroWrapper
 

@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 
 Extracts sample records from a 'Ilena format' tsv file.

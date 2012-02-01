@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 class Admin(object):
 
   def __init__(self, kb):

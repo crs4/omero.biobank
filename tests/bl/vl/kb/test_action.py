@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import os, unittest, logging
 logging.basicConfig(level=logging.ERROR)
 

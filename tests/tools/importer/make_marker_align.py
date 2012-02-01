@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import sys, csv, random
 
 FIELDS = ['marker_vid', 'chromosome', 'pos', 'allele', 'strand', 'copies']

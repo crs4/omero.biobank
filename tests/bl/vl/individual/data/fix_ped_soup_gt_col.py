@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import sys, os
 
 BASE = "/home/simleo/svn/bl/vl/genotype/trunk/tests/bl/lib/genotype/data"

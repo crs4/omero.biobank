@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import omero.model as om
 import omero.rtypes as ort
 

@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 # -*- coding: utf-8 -*-
 #
 # Biobank documentation build configuration file, created by

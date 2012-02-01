@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import sys, csv
 
 USAGE = "Usage: python %s INPUT_F OUTPUT_F MSET DEVICE_VID" % sys.argv[0]

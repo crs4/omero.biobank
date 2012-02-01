@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 from bl.core.seq.utils import reverse_complement as rc
 from bl.vl.utils.snp import split_mask
 

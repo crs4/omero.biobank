@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import time, logging
 logger = logging.getLogger("proxy_core")
 import itertools as it

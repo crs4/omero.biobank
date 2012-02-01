@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """ ...
 
 Read Illumina 'Final Report' text files and write snp calls for each

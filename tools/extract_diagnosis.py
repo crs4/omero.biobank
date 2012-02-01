@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 
 Extracts diagnosis records from a 'Ilena pheno format' tsv file.

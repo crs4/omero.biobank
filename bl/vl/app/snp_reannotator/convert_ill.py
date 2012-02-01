@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 """
 Convert Illumina SNP annotation files to the VL marker definition format.
 """

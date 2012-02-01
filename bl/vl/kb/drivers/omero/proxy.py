@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import hashlib, time, pwd, json, os
 import itertools as it
 

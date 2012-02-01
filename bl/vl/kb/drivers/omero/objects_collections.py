@@ -1,3 +1,6 @@
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 import wrapper as wp
 from action import Action
 from utils import assign_vid_and_timestamp
