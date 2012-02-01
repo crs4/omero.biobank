@@ -1,77 +1,28 @@
 """
-Map user visible labels to vid
-==============================
+Map user-visible labels to VIDs
+===============================
 
-A tool to resolve labels to VID ids.
-The basic command is the following::
-
-  usage: kb_query map_vid [-h] -i IFILE --source-type
-                          {Tube,Individual,TiterPlate,PlateWell,Chip,DataSample,Marker,Scanner}
-                          --column COLUMN [--study STUDY]
-
-  optional arguments:
-    -h, --help            show this help message and exit
-    -i IFILE, --ifile IFILE
-                          the input tsv file
-    --source-type {Tube,Individual,TiterPlate,PlateWell,Chip,DataSample,Marker,Scanner}
-                          assigned source type, it is taken as the type of the
-                          first name in the column flag.
-    --column COLUMN       comma separated list (no spaces) of the object labels
-                          column name and the name of the replacement column.
-                          The latter defaults to 'source'
-    --study STUDY         study label
-
-
-
-**FIXME**
-
-usage example::
-
-   kb_query -H biobank05  -o bs_mapped.tsv map \
-                          -i blood_sample.tsv \
-                          --column 'individual_label' --study BSTUDY \
-                          --source-type Individual
-
-special case::
-
-    foo  well_label
-    xx   fooplate:A01
+Reads an input tsv file, replaces labels with VIDs for the specified
+columns and outputs a new tsv files with the VIDs.
 """
+
 import csv, argparse
 import itertools as it
 
 from bl.vl.app.importer.core import Core
-
-# FIXME this is a hack that's specific to the omero driver...
 from bl.vl.kb.drivers.omero.utils import make_unique_key
 
 
 class MapVIDApp(Core):
-  """
-  An utility class that handles the dumping of map
-  specification data from the KB.
 
-  FIXME
-
-  special case::
-
-    foo  well_label
-    xx   fooplate:A01
-  """
   SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
                             'Chip', 'DataSample', 'Marker', 'Scanner',
                             'SoftwareProgram', 'SNPMarkersSet']
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
-               study_label=None,
-               operator='Alfred E. Neumann', logger=None):
-    """
-    FIXME
-    """
-    super(MapVIDApp, self).__init__(host, user, passwd,
-                                    keep_tokens=keep_tokens,
-                                    study_label=study_label,
-                                    logger=logger)
+               study_label=None, operator='Alfred E. Neumann', logger=None):
+    super(MapVIDApp, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
+                                    study_label=study_label, logger=logger)
 
   def resolve_mapping_individual(self, labels):
     mapping = {}
@@ -81,7 +32,7 @@ class MapVIDApp(Core):
       if e.studyCode in labels:
         i = e.individual
         mapping[e.studyCode] = i.id
-    diff = set(labels) - set(mapping.keys())
+    diff = set(labels).difference(mapping)
     if len(diff) > 0:
       for x in diff:
         self.logger.error('cannot map %s as an individual in study %s' %
@@ -93,10 +44,9 @@ class MapVIDApp(Core):
   def resolve_mapping_plate_well(self, source_type, labels):
     slot_labels = [make_unique_key(*l.split(':')) for l in labels]
     back_to_label = dict(it.izip(slot_labels, labels))
-
     mapping = {}
     self.logger.info('start selecting %s' % source_type.get_ome_table())
-    # FIXME this is not going to scale...
+    # FIXME this is not going to scale
     objs = self.kb.get_objects(source_type)
     for o in objs:
       if o.containerSlotLabelUK in slot_labels:
@@ -107,7 +57,7 @@ class MapVIDApp(Core):
   def resolve_mapping_object(self, source_type, labels):
     mapping = {}
     self.logger.info('start selecting %s' % source_type.get_ome_table())
-    # FIXME this is not going to scale...
+    # FIXME this is not going to scale
     self.logger.debug('\tlabels: %s' % labels)
     objs = self.kb.get_objects(source_type)
     for o in objs:
@@ -164,20 +114,13 @@ class MapVIDApp(Core):
         o.writerow(r)
     self.logger.info('done writing %s' % ofile.name)
 
-#-------------------------------------------------------------------------
 
 help_doc = """
-Map user defined objects label to vid.
-
-usage example:
-
-   kb_query -H biobank05  -o bs_mapped.tsv map \
-                          -i blood_sample.tsv \
-                          --column 'individual_label' --study BSTUDY \
-                          --source-type Individual
+Map user-visible labels to KB VIDs
 """
 
-def make_parser_map(parser):
+
+def make_parser(parser):
   def pair_of_names(s):
     parts = s.split(',')
     if len(parts) == 1:
@@ -186,33 +129,29 @@ def make_parser_map(parser):
       return tuple(parts)
     else:
       raise ValueError()
-  parser.add_argument('-i', '--ifile', type=argparse.FileType('r'),
-                      help='the input tsv file',
-                      required=True)
-  parser.add_argument('--source-type', type=str,
-                      choices=MapVIDApp.SUPPORTED_SOURCE_TYPES,
-                      help="""assigned source type, it is taken as
-                      the type of the first name in the column flag.""",
-                      required=True)
-  parser.add_argument('--column', type=pair_of_names,
-                      help="""comma separated list (no spaces) of the
-                      object labels column name and the name of the
-                      replacement column. The latter defaults to 'source'""",
-                      required=True)
-  parser.add_argument('--study', type=str,
-                      help="study label")
+  parser.add_argument(
+    '-i', '--ifile', type=argparse.FileType('r'),
+    help='input tsv file', required=True
+    )
+  parser.add_argument(
+    '--source-type', metavar="STRING", required=True,
+    choices=MapVIDApp.SUPPORTED_SOURCE_TYPES, help="source type, e.g., Tube"
+    )
+  parser.add_argument(
+    '--column', type=pair_of_names, metavar="N1,N2", required=True,
+    help="""comma-separated pair of column names: the first one identifies
+    the set of input labels to map, while the second one, which
+    defaults to 'source', will be used for mapped output values""")
+  parser.add_argument('--study', metavar="STRING", help="study label")
 
 
-def import_map_implementation(logger, args):
+def implementation(logger, args):
   app = MapVIDApp(host=args.host, user=args.user, passwd=args.passwd,
-               keep_tokens=args.keep_tokens,
-               study_label=args.study, logger=logger)
-
+                  keep_tokens=args.keep_tokens,
+                  study_label=args.study, logger=logger)
   app.dump(args.ifile, args.source_type,
            args.column[0], args.column[1], args.ofile)
 
 
 def do_register(registration_list):
-  registration_list.append(('map_vid', help_doc,
-                            make_parser_map,
-                            import_map_implementation))
+  registration_list.append(('map_vid', help_doc, make_parser, implementation))

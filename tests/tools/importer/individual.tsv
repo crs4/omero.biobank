@@ -1,7 +1,0 @@
-study	label	gender	father	mother
-BSTUDY	I001	male	None	None
-BSTUDY	I002	female	None	None
-BSTUDY	I003	male	I001	I002
-BSTUDY	I004	female	I001	I002
-BSTUDY	I005	male	I003	I004
-BSTUDY	I006	male	I003	I004

@@ -1,60 +1,49 @@
 #!/usr/bin/env python
+
 """
+Destroy and recreate OMERO tables
+=================================
 
-Destroy and Recreate Omero/VL Tables
-====================================
-
-This is a dangerous thing to do. It is destructive, and it should be
+This is a dangerous thing to do. It is destructive, and should be
 done only when all tables need to be redefined.
-
-FIXME
 """
 
-import logging
+import sys, argparse, logging
+from bl.vl.kb.drivers.omero.proxy import Proxy
+
 
 LOG_FILENAME='create_tables.log'
 logging.basicConfig(
   format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
   level=logging.INFO,
   filename=LOG_FILENAME)
-
 logger = logging.getLogger()
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
+formatter = logging.Formatter(
+  fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  )
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
 
-#------------------------------------------------------------------------------------
-
-from bl.vl.kb.drivers.omero.proxy import Proxy
-
-
-import os, sys
-import argparse
 
 def make_parser():
-  desc="Destroy and re-create snp support OmeroTables."
-  epilog="*** THIS PROGRAM WILL DESTROY ALL YOUR SNP TABLE DATA ***"
-  parser = argparse.ArgumentParser(description=desc,
-                                   epilog=epilog,
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument('-H', '--host', type=str,
-                      help='omero host system',
-                      default='localhost')
-  parser.add_argument('-U', '--user', type=str,
-                      help='omero user',
-                      default='test')
-  parser.add_argument('-P', '--passwd', type=str,
-                      help='omero user passwd',
-                      required=True)
+  desc="Destroy and recreate OMERO tables"
+  epilog="*** THIS PROGRAM WILL DESTROY ALL YOUR OMERO TABLE DATA ***"
+  parser = argparse.ArgumentParser(
+    description=desc, epilog=epilog,
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+  parser.add_argument('-H', '--host', metavar="STRING",
+                      help='OMERO hostname', default='localhost')
+  parser.add_argument('-U', '--user', metavar="STRING",
+                      help='OMERO user', default='test')
+  parser.add_argument('-P', '--passwd', metavar="STRING",
+                      help='OMERO password', required=True)  
   parser.add_argument('--do-it', action='store_true',
-                      default=False, help='I known the risks. I still want to do it.')
+                      help='I known the risks. I still want to do it')
   return parser
+
 
 def main():
   parser = make_parser()
@@ -64,27 +53,22 @@ def main():
     parser.print_usage()
     sys.exit(0)
   host, user, passwd = args.host, args.user, args.passwd
-
   logger.info('connecting to %s with user %s' % (host, user))
   p = Proxy(host, user, passwd)
   logger.info('connected')
-
-  #----- MARKER DEFINITIONS TABLE
   logger.info('deleting current snp marker definition table')
   p.delete_snp_marker_defitions_table()
   logger.info('deleted current snp marker definition table')
-  #--
   logger.info('creating snp marker definition table')
   p.create_snp_marker_definitions_table()
   logger.info('created snp marker definition table')
-
-  #----- EHR TABLE
   logger.info('deleting current ehr tables')
   p.delete_ehr_tables()
   logger.info('deleted current ehr tables')
   logger.info('creating ehr tables')
   p.create_ehr_tables()
   logger.info('created ehr tables')
+
 
 if __name__ == "__main__":
   main()
@@ -93,6 +77,3 @@ if __name__ == "__main__":
 # Local Variables: **
 # mode: python **
 # End: **
-
-
-
