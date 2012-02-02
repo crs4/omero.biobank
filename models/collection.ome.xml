@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<!--
+BEGIN_COPYRIGHT
+END_COPYRIGHT
+-->
+
 <types>
   <!-- Collection has already been used by omero -->
   <type id="ome.model.vl.VLCollection">
