@@ -1,2 +1,20 @@
 include AUTHORS CHANGES COPYING NAME VERSION
+
 recursive-include docs *
+
+recursive-include models *
+
+recursive-include galaxy *
+recursive-exclude galaxy/CRS4 *
+
+include tools
+include tools/create_tables
+include tools/importer
+include tools/kb_query
+include tools/snp_reannotator
+
+recursive-include test *
+recursive-exclude test/galaxy *
+recursive-exclude test/tools *
+exclude test/genotype/test_ped_writer.py
+exclude test/utils/check_strand_vs_ann.py

@@ -3,7 +3,6 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-
 """
 Destroy and recreate OMERO tables
 =================================

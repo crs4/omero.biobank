@@ -45,7 +45,6 @@ AUTHOR_INFO = [
   ]
 MAINTAINER_INFO = [
   ("Simone Leo", "simone.leo@crs4.it"),
-  ("Luca Lianas", "luca.lianas@crs4.it"),
   ]
 AUTHOR = ", ".join(t[0] for t in AUTHOR_INFO)
 AUTHOR_EMAIL = ", ".join("<%s>" % t[1] for t in AUTHOR_INFO)
