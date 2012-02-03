@@ -4,6 +4,7 @@
 	(SNPMarkersSet.has_add_marker_info): added 
 	(SNPMarkersSet.get_add_marker_info_fields): added
 	(SNPMarkersSet.has_add_marker_info): added
+	(SNPMarkersSet.define_range_selector): added
 
 	* bl/vl/genotype/io.py (read_ssc): updated to the new
 	SNPMarkersSet interface.

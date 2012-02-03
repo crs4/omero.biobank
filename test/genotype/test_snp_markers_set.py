@@ -202,12 +202,17 @@ class markers_set(unittest.TestCase):
     ref_genome = 'g' + ('%f' % time.time())[-14:]
     pos = self.create_alignments(mset, ref_genome, N_dups)
     mset.load_alignments(ref_genome)
-    low_pos, high_pos = min(pos), max(pos)
+    pos.sort()
+    if len(pos) > 2:
+      low_pos, high_pos = pos[1], pos[-2]
     gc_range = (low_pos, high_pos)
     range_sel = self.kb.SNPMarkersSet.define_range_selector(mset, gc_range)
     i = 0
-    for (p, m) in it.izip(pos, mset.get_markers_iterator()):
-      self.assertEqual(p, m.position)
+    for (i, m) in enumerate(mset.get_markers_iterator()):
+      if i in range_sel:
+        self.assertTrue(low_pos <= m.position <= high_pos)
+      else:
+        self.assertTrue(low_pos > m.position or high_pos < m.position)
     # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
@@ -215,10 +220,11 @@ class markers_set(unittest.TestCase):
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(markers_set('test_creation_destruction'))
-  suite.addTest(markers_set('test_align'))
-  suite.addTest(markers_set('test_read_ssc'))
-  suite.addTest(markers_set('test_gdo'))
+  # suite.addTest(markers_set('test_creation_destruction'))
+  # suite.addTest(markers_set('test_align'))
+  # suite.addTest(markers_set('test_read_ssc'))
+  # suite.addTest(markers_set('test_gdo'))
+  suite.addTest(markers_set('test_define_range_selector'))
   return suite
 
 

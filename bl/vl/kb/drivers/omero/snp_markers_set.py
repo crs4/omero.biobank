@@ -10,6 +10,10 @@ import wrapper as wp
 from genotyping import Marker
 
 
+SCALE_CONST = 10**10
+def compute_global_position(p):
+  return p[0]*SCALE_CONST + p[1]
+
 class SNPMarkersSet(wp.OmeroWrapper):
 
   OME_TABLE = 'SNPMarkersSet'
@@ -51,16 +55,15 @@ class SNPMarkersSet(wp.OmeroWrapper):
       for i in indices:
         assert (beg_chr, beg_pos) <= ms.markers[i].position < (end_chr, end_pos)
     """
+    if not mset.has_aligns():
+      raise ValueError('aligns vector has not been loaded')
     beg, end = gc_range
-    # FIXME inefficient implementation
-    return np.array([i for i, m in enumerate(mset.markers)
-                     if beg <= m.position < end], dtype=np.int32)
-    low_gpos = compute_global_pos(beg)
-    high_gpos = compute_global_pos(end)
-    (low_pos <= self.aligns) &  (self.aligns < high_gpos)
-
-
-
+    global_pos = mset.aligns['global_pos']
+    idx = mset.markers['marker_indx']
+    low_gpos = compute_global_position(beg)
+    high_gpos = compute_global_position(end)
+    sel = (low_gpos <= global_pos) &  (global_pos <= high_gpos)
+    return idx[sel]
 
   def __preprocess_conf__(self, conf):
     if not 'snpMarkersSetUK' in conf:
