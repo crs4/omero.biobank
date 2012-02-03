@@ -1,3 +1,13 @@
+2012-02-03    <zag@manzanillo>
+
+	* bl/vl/kb/drivers/omero/snp_markers_set.py 
+	(SNPMarkersSet.has_add_marker_info): added 
+	(SNPMarkersSet.get_add_marker_info_fields): added
+	(SNPMarkersSet.has_add_marker_info): added
+
+	* bl/vl/genotype/io.py (read_ssc): updated to the new
+	SNPMarkersSet interface.
+
 2012-01-24    <simleo@neuron.crs4.it>
 
 	* bl/vl/kb/drivers/omero/utils.py (ome_hash): changed to hash

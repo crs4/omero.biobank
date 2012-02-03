@@ -11,9 +11,9 @@ from genotyping import Marker
 
 
 class SNPMarkersSet(wp.OmeroWrapper):
-  
+
   OME_TABLE = 'SNPMarkersSet'
-  
+
   __fields__ = [('label', wp.STRING, wp.REQUIRED),
                 ('maker', wp.STRING, wp.REQUIRED),
                 ('model', wp.STRING, wp.REQUIRED),
@@ -22,13 +22,13 @@ class SNPMarkersSet(wp.OmeroWrapper):
                 ('snpMarkersSetUK', wp.STRING, wp.REQUIRED)]
 
   @staticmethod
-  def define_range_selector(mset, gc_range):
+  def define_range_selector(mset, gc_range, closed_interval=True):
     """
     Returns a numpy array with the indices of the markers of mset that
     are contained in the provided gc_range. A gc_range is a two
     elements tuple, with each element a tuple (chromosome,
     position), where chromosome is an int in [1,26], and pos is a positive
-    int. Both positional tuples should be for the same reference
+    int. Both positional tuples should be for the same refereyesnce
     genome.  It is a responsibility of the caller to assure that mset
     has loaded markers definitions aligned on the same reference genome.
 
@@ -55,6 +55,12 @@ class SNPMarkersSet(wp.OmeroWrapper):
     # FIXME inefficient implementation
     return np.array([i for i, m in enumerate(mset.markers)
                      if beg <= m.position < end], dtype=np.int32)
+    low_gpos = compute_global_pos(beg)
+    high_gpos = compute_global_pos(end)
+    (low_pos <= self.aligns) &  (self.aligns < high_gpos)
+
+
+
 
   def __preprocess_conf__(self, conf):
     if not 'snpMarkersSetUK' in conf:
@@ -68,6 +74,9 @@ class SNPMarkersSet(wp.OmeroWrapper):
 
   def has_markers(self):
     return hasattr(self, 'markers')
+
+  def has_add_marker_info(self):
+    return hasattr(self, 'add_marker_info')
 
   def has_aligns(self):
     return hasattr(self, 'aligns')
@@ -90,6 +99,11 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def __get_aligns(self):
     return self.bare_getattr('aligns')
 
+  def get_add_marker_info_fields(self):
+    if not self.has_add_marker_info():
+      return ()
+    return self.add_marker_info.dtype.names
+
   def __len__(self):
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded')
@@ -97,6 +111,10 @@ class SNPMarkersSet(wp.OmeroWrapper):
 
   def __nonzero__(self):
     return True
+
+  def has_add_marker_info(self):
+    return hasattr(self, 'add_marker_info')
+
 
   def __getitem__(self, i):
     if not self.has_markers():

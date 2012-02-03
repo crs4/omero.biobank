@@ -3,16 +3,20 @@
 
 import unittest, time, os, random
 import itertools as it
-
+import tempfile
 import numpy as np
 
 from bl.vl.kb import KnowledgeBase as KB
+from bl.core.io import MessageStreamWriter
+import bl.core.gt.messages.SnpCall as SnpCall
 
+import bl.vl.genotype.io as gio
 
 OME_HOST = os.getenv('OME_HOST', 'localhost')
 OME_USER = os.getenv('OME_USER', 'root')
 OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
 
+PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
 def make_fake_data(mset):
   n = len(mset)
@@ -20,6 +24,25 @@ def make_fake_data(mset):
   confs = np.cast[np.float32](np.random.random(n))
   return probs, confs
 
+def make_fake_ssc(mset, sample_id, probs, conf, fn):
+  header = {'markers_set' : mset.label, 'sample_id':  sample_id}
+  stream = MessageStreamWriter(fn, PAYLOAD_MSG_TYPE, header)
+  labels = mset.add_marker_info['label']
+  for l, p_AA, p_BB, c in  it.izip(labels, probs[0], probs[1], conf):
+    p_AB = 1.0 - (p_AA + p_BB)
+    w_aa, w_ab, w_bb = p_AA, p_AB, p_BB
+    stream.write({
+      'sample_id': sample_id,
+      'snp_id': l,
+      'call': SnpCall.NOCALL, # we will not test this anyway
+      'confidence': float(c),
+      'sig_A': float(p_AA),
+      'sig_B': float(p_BB),
+      'w_AA': float(w_aa),
+      'w_AB': float(w_ab),
+      'w_BB': float(w_bb),
+      })
+  stream.close()
 
 class markers_set(unittest.TestCase):
 
@@ -132,6 +155,21 @@ class markers_set(unittest.TestCase):
     # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
+  def test_read_ssc(self):
+    N = 16
+    N_dups = 4
+    lvs = self.create_markers(N)
+    mset = self.create_snp_markers_set(lvs)
+    mset.load_markers(additional_fields=['label'])
+    probs, confs = make_fake_data(mset)
+    sample_id = 'ffoo-%f' % time.time()
+    fn = tempfile.NamedTemporaryFile().name
+    make_fake_ssc(mset, sample_id, probs, confs, fn)
+    probs_1, confs_1 = gio.read_ssc(fn, mset)
+    self.assertAlmostEqual(np.sum(np.abs(probs - probs_1)), 0.0)
+    self.assertAlmostEqual(np.sum(np.abs(confs - confs_1)), 0.0)
+    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
+
   def test_gdo(self):
     N = 16
     lvs = self.create_markers(N)
@@ -157,11 +195,29 @@ class markers_set(unittest.TestCase):
     # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
+  def test_define_range_selector(self):
+    N, N_dups = 16, 0
+    lvs = self.create_markers(N)
+    mset = self.create_snp_markers_set(lvs)
+    ref_genome = 'g' + ('%f' % time.time())[-14:]
+    pos = self.create_alignments(mset, ref_genome, N_dups)
+    mset.load_alignments(ref_genome)
+    low_pos, high_pos = min(pos), max(pos)
+    gc_range = (low_pos, high_pos)
+    range_sel = self.kb.SNPMarkersSet.define_range_selector(mset, gc_range)
+    i = 0
+    for (p, m) in it.izip(pos, mset.get_markers_iterator()):
+      self.assertEqual(p, m.position)
+    # FIXME this should happen automatically
+    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
+
+
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(markers_set('test_creation_destruction'))
   suite.addTest(markers_set('test_align'))
+  suite.addTest(markers_set('test_read_ssc'))
   suite.addTest(markers_set('test_gdo'))
   return suite
 

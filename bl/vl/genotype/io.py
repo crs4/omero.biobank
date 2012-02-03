@@ -8,6 +8,7 @@ Genotyping-related I/O
 
 import array, struct
 import numpy as np
+import itertools as it
 
 from bl.core.io import MessageStreamReader
 from bl.vl.genotype.algo import project_to_discrete_genotype
@@ -179,7 +180,7 @@ class PedWriter(object):
   :param selected_markers: an array with the indices of the selected
     markers.
   :type selected_markers: numpy.ndarray of numpy.int32
-  """  
+  """
   def __init__(self, mset, base_path="bl_vl_ped",
                ref_genome=None, selected_markers=None):
     self.mset = mset
@@ -286,20 +287,27 @@ def read_ssc(fn, mset):
   :param mset: a reference markers set
   :type mset: SNPMarkersSet
   """
-  if not mset.has_markers():
-    mset.load_markers()
+  if (not mset.has_markers()
+      or 'label' not in mset.get_add_marker_info_fields()):
+    mset.load_markers(additional_fields=['label'])
   n_markers = len(mset)
   probs = np.empty((2, n_markers), dtype=np.float32)
   probs.fill(1/3.)
   confs = np.zeros((n_markers,), dtype=np.float32)
-  label2marker = dict((m.label, (m, i)) for (i, m) in enumerate(mset.markers))
+  markers = mset.markers
+  add_marker_info = mset.add_marker_info
+  labels = add_marker_info['label']
+  flips = markers['allele_flip']
+  indx  = markers['marker_indx']
+
+  l2m = dict((l, (f, i)) for (l, f, i) in it.izip(labels, flips, indx))
   reader = MessageStreamReader(fn)
   for i in xrange(n_markers):
     _, snp_label, _, conf, _, _, w_AA, w_AB, w_BB = reader.read()
-    m, idx = label2marker[snp_label]
+    flip, idx = l2m[snp_label]
     S = w_AA + w_AB + w_BB
     p_AA, p_BB = w_AA / S, w_BB / S
-    if m.flip:
+    if flip:
       p_AA, p_BB = p_BB, p_AA
     probs[0,idx] = p_AA
     probs[1,idx] = p_BB
