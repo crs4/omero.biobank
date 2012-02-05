@@ -222,32 +222,68 @@ class markers_set(unittest.TestCase):
   def test_intersect(self):
     ref_genome = 'g' + ('%f' % time.time())[-14:]
     N1 = 16
+    M1 = 2
     N2 = N1/2
+    M2 = 1
     lvs = self.create_markers(N1)
     mset1 = self.create_snp_markers_set(lvs)
     mset1.load_markers()
     aligns = [(m[0], random.randint(1,26), 1 + i*2000, True, 'A', 1)
               for i, m in enumerate(mset1.markers)]
+    for i in range(M1):
+      aligns[i] = (aligns[i][0], 0, 0, True, 'A', 0)
     self.kb.align_snp_markers_set(mset1, ref_genome, aligns, self.action)
     lvs = self.create_markers(N2)
     mset2 = self.create_snp_markers_set(lvs)
     mset2.load_markers()
     aligns = [(m[0], a[1], a[2], a[3], a[4], a[5])
               for m, a in it.izip(mset2.markers, aligns[:len(mset2)])]
+    for i in range(M2):
+      aligns[i] = (aligns[i][0], 0, 0, True, 'A', 0)
     self.kb.align_snp_markers_set(mset2, ref_genome, aligns, self.action)
     mset1.load_alignments(ref_genome)
     mset2.load_alignments(ref_genome)
     idx1, idx2 = self.kb.SNPMarkersSet.intersect(mset1, mset1)
     self.assertTrue(np.array_equal(idx1, idx2))
     self.assertEqual(len(idx1), len(mset1))
+    self.assertEqual(len(idx1), N1)
 
     idx1, idx2 = self.kb.SNPMarkersSet.intersect(mset1, mset2)
     self.assertEqual(len(idx1), len(idx2))
-    self.assertEqual(len(idx1), N2)
+    self.assertEqual(len(idx1), N2 - max(M1, M2))
     for i,j in it.izip(idx1, idx2):
       m1, m2 = mset1[i], mset2[j]
       self.assertEqual(m1.position, m2.position)
       self.assertTrue(m1.position > (0,0))
+
+  def test_speed(self):
+    ref_genome = 'g' + ('%f' % time.time())[-14:]
+    N1 = 1024*1024
+    N2 = N1/2
+    beg = time.time()
+    lvs = self.create_markers(N1)
+    print ''
+    print 'creating %d markers took %f' % (N1, time.time() - beg)
+    beg = time.time()
+    mset1 = self.create_snp_markers_set(lvs)
+    print 'creating a markers set with %d markers took %f' % (N1,
+                                                              time.time() - beg)
+    beg = time.time()
+    mset1.load_markers()
+    print 'loading markers took %f' % (time.time() - beg)
+    beg = time.time()
+    aligns = [(m[0], random.randint(1,26), 1 + i*2000, True, 'A', 1)
+              for i, m in enumerate(mset1.markers)]
+    print 'creating %d aligns took %f' % (N1, time.time() - beg)
+    beg = time.time()
+    self.kb.align_snp_markers_set(mset1, ref_genome, aligns, self.action)
+    print 'saving  %d aligns took %f' % (N1, time.time() - beg)
+    beg = time.time()
+    mset1.load_alignments(ref_genome)
+    print 'loading  %d aligns took %f' % (N1, time.time() - beg)
+    beg = time.time()
+    idx1, idx2 = self.kb.SNPMarkersSet.intersect(mset1, mset1)
+    print 'intersecting  %d aligns took %f' % (N1, time.time() - beg)
 
 def suite():
   suite = unittest.TestSuite()
@@ -257,6 +293,7 @@ def suite():
   suite.addTest(markers_set('test_gdo'))
   suite.addTest(markers_set('test_define_range_selector'))
   suite.addTest(markers_set('test_intersect'))
+  suite.addTest(markers_set('test_speed'))
   return suite
 
 

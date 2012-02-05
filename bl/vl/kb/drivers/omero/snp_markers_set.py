@@ -194,7 +194,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
     aligns = aligns[['chromosome', 'pos', 'global_pos', 'copies']]
     aligns = aligns[:len(self)]
     no_align_positions =  - (self.markers['marker_indx'] + (self.omero_id * 10**7))
-    aligns['global_pos'] = np.choose(aligns['copies'] < 2,
+    aligns['global_pos'] = np.choose(aligns['copies'] == 1,
                                      [no_align_positions, aligns['global_pos']])
     self.bare_setattr('aligns', aligns)
     self.bare_setattr('ref_genome', ref_genome)
