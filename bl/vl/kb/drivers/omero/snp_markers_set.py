@@ -65,6 +65,31 @@ class SNPMarkersSet(wp.OmeroWrapper):
     sel = (low_gpos <= global_pos) &  (global_pos <= high_gpos)
     return idx[sel]
 
+  @staticmethod
+  def intersect(mset1, mset2):
+    """
+    Returns a pair of equal length numpy arrays where corresponding
+    array elements are the indices of markers, respectively in mset1
+    and mset2, that align to the same position on the same ref_genome.
+
+    .. code-block:: python
+
+      ref_genome = 'hg19'
+      ms1.load_alignments(ref_genome)
+      ms2.load_alignments(ref_genome)
+      idx1, idx2 = kb.SNPMarkersSet.intersect(ms1, ms2)
+      for i1, i2 in it.izip(idx1, idx2):
+        assert ms1[i].position == ms2[i].position
+
+    """
+    if not (mset1.has_aligns() and mset2.has_aligns()):
+      raise ValueError('both mset should be aligned')
+    if mset1.ref_genome != mset2.ref_genome:
+      raise ValueError('msets should be aligned to the same ref_genome')
+    gpos1 = mset1.aligns['global_pos']
+    gpos2 = mset2.aligns['global_pos']
+    return np_ext.index_intersect(gpos1, gpos2)
+
   def __preprocess_conf__(self, conf):
     if not 'snpMarkersSetUK' in conf:
       conf['snpMarkersSetUK'] = make_unique_key(conf['maker'], conf['model'],
@@ -156,6 +181,9 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def load_alignments(self, ref_genome, batch_size=1000):
     """
     Load marker positions using known alignments on ref_genome.
+    Markers that do not align will be forced to a global position
+    equal to minus (marker_indx + 10**7 * omero_id of self). This is
+    done to avoid ambiguities in mset intersection.
     """
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded')
@@ -165,8 +193,9 @@ class SNPMarkersSet(wp.OmeroWrapper):
     assert len(aligns) >= len(self)
     aligns = aligns[['chromosome', 'pos', 'global_pos', 'copies']]
     aligns = aligns[:len(self)]
+    no_align_positions =  - (self.markers['marker_indx'] + (self.omero_id * 10**7))
     aligns['global_pos'] = np.choose(aligns['copies'] < 2,
-                                     [0, aligns['global_pos']])
+                                     [no_align_positions, aligns['global_pos']])
     self.bare_setattr('aligns', aligns)
     self.bare_setattr('ref_genome', ref_genome)
 

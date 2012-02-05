@@ -80,7 +80,7 @@ class markers_set(unittest.TestCase):
     return lvs
 
   def create_snp_markers_set(self, lvs):
-    label = 'a-fake-marker-set'
+    label = 'ams-%f' % time.time()
     maker, model, release = 'FOO', 'FOO1', '%f' % time.time()
     markers_selection = [(v[1], i, False) for i, v in enumerate(lvs)]
     mset = self.kb.create_snp_markers_set(label, maker, model, release,
@@ -131,6 +131,12 @@ class markers_set(unittest.TestCase):
     self.kill_list.append(do)
     return probs, confs
 
+  def create_aligned_mset(self, N, N_dups, ref_genome):
+    lvs = self.create_markers(N)
+    mset = self.create_snp_markers_set(lvs)
+    pos = self.create_alignments(mset, ref_genome, N_dups)
+    return mset, pos
+
   def test_creation_destruction(self):
     N = 32
     lvs = self.create_markers(N)
@@ -145,10 +151,8 @@ class markers_set(unittest.TestCase):
   def test_align(self):
     N = 16
     N_dups = 4
-    lvs = self.create_markers(N)
-    mset = self.create_snp_markers_set(lvs)
     ref_genome = 'g' + ('%f' % time.time())[-14:]
-    pos = self.create_alignments(mset, ref_genome, N_dups)
+    mset, pos = self.create_aligned_mset(N, N_dups, ref_genome)
     mset.load_alignments(ref_genome)
     for p, m in it.izip(pos, mset.get_markers_iterator()):
       self.assertEqual(p, m.position)
@@ -158,8 +162,8 @@ class markers_set(unittest.TestCase):
   def test_read_ssc(self):
     N = 16
     N_dups = 4
-    lvs = self.create_markers(N)
-    mset = self.create_snp_markers_set(lvs)
+    ref_genome = 'g' + ('%f' % time.time())[-14:]
+    mset, pos = self.create_aligned_mset(N, N_dups, ref_genome)
     mset.load_markers(additional_fields=['label'])
     probs, confs = make_fake_data(mset)
     sample_id = 'ffoo-%f' % time.time()
@@ -197,10 +201,8 @@ class markers_set(unittest.TestCase):
 
   def test_define_range_selector(self):
     N, N_dups = 16, 0
-    lvs = self.create_markers(N)
-    mset = self.create_snp_markers_set(lvs)
     ref_genome = 'g' + ('%f' % time.time())[-14:]
-    pos = self.create_alignments(mset, ref_genome, N_dups)
+    mset, pos = self.create_aligned_mset(N, N_dups, ref_genome)
     mset.load_alignments(ref_genome)
     pos.sort()
     if len(pos) > 2:
@@ -217,14 +219,44 @@ class markers_set(unittest.TestCase):
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
 
+  def test_intersect(self):
+    ref_genome = 'g' + ('%f' % time.time())[-14:]
+    N1 = 16
+    N2 = N1/2
+    lvs = self.create_markers(N1)
+    mset1 = self.create_snp_markers_set(lvs)
+    mset1.load_markers()
+    aligns = [(m[0], random.randint(1,26), 1 + i*2000, True, 'A', 1)
+              for i, m in enumerate(mset1.markers)]
+    self.kb.align_snp_markers_set(mset1, ref_genome, aligns, self.action)
+    lvs = self.create_markers(N2)
+    mset2 = self.create_snp_markers_set(lvs)
+    mset2.load_markers()
+    aligns = [(m[0], a[1], a[2], a[3], a[4], a[5])
+              for m, a in it.izip(mset2.markers, aligns[:len(mset2)])]
+    self.kb.align_snp_markers_set(mset2, ref_genome, aligns, self.action)
+    mset1.load_alignments(ref_genome)
+    mset2.load_alignments(ref_genome)
+    idx1, idx2 = self.kb.SNPMarkersSet.intersect(mset1, mset1)
+    self.assertTrue(np.array_equal(idx1, idx2))
+    self.assertEqual(len(idx1), len(mset1))
+
+    idx1, idx2 = self.kb.SNPMarkersSet.intersect(mset1, mset2)
+    self.assertEqual(len(idx1), len(idx2))
+    self.assertEqual(len(idx1), N2)
+    for i,j in it.izip(idx1, idx2):
+      m1, m2 = mset1[i], mset2[j]
+      self.assertEqual(m1.position, m2.position)
+      self.assertTrue(m1.position > (0,0))
 
 def suite():
   suite = unittest.TestSuite()
-  # suite.addTest(markers_set('test_creation_destruction'))
-  # suite.addTest(markers_set('test_align'))
-  # suite.addTest(markers_set('test_read_ssc'))
-  # suite.addTest(markers_set('test_gdo'))
+  suite.addTest(markers_set('test_creation_destruction'))
+  suite.addTest(markers_set('test_align'))
+  suite.addTest(markers_set('test_read_ssc'))
+  suite.addTest(markers_set('test_gdo'))
   suite.addTest(markers_set('test_define_range_selector'))
+  suite.addTest(markers_set('test_intersect'))
   return suite
 
 
