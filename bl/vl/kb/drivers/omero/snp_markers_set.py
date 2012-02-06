@@ -10,10 +10,6 @@ import wrapper as wp
 from genotyping import Marker
 
 
-SCALE_CONST = 10**10
-def compute_global_position(p):
-  return p[0]*SCALE_CONST + p[1]
-
 class SNPMarkersSet(wp.OmeroWrapper):
 
   OME_TABLE = 'SNPMarkersSet'
@@ -24,6 +20,13 @@ class SNPMarkersSet(wp.OmeroWrapper):
                 ('release', wp.STRING, wp.REQUIRED),
                 ('markersSetVID', wp.VID, wp.REQUIRED),
                 ('snpMarkersSetUK', wp.STRING, wp.REQUIRED)]
+
+  MAX_LEN = 10**8
+  MAX_GENOME_LEN = 10**10
+
+  @staticmethod
+  def compute_global_position(p):
+    return p[0]*SNPMarkersSet.MAX_GENOME_LEN + p[1]
 
   @staticmethod
   def define_range_selector(mset, gc_range, closed_interval=True):
@@ -60,8 +63,8 @@ class SNPMarkersSet(wp.OmeroWrapper):
     beg, end = gc_range
     global_pos = mset.aligns['global_pos']
     idx = mset.markers['marker_indx']
-    low_gpos = compute_global_position(beg)
-    high_gpos = compute_global_position(end)
+    low_gpos = SNPMarkersSet.compute_global_position(beg)
+    high_gpos = SNPMarkersSet.compute_global_position(end)
     sel = (low_gpos <= global_pos) &  (global_pos <= high_gpos)
     return idx[sel]
 
@@ -182,8 +185,8 @@ class SNPMarkersSet(wp.OmeroWrapper):
     """
     Load marker positions using known alignments on ref_genome.
     Markers that do not align will be forced to a global position
-    equal to minus (marker_indx + 10**7 * omero_id of self). This is
-    done to avoid ambiguities in mset intersection.
+    equal to minus (marker_indx + SNPMarkersSet.MAX_LEN * omero_id of
+    self). This is done to avoid ambiguities in mset intersection.
     """
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded')
@@ -193,7 +196,8 @@ class SNPMarkersSet(wp.OmeroWrapper):
     assert len(aligns) >= len(self)
     aligns = aligns[['chromosome', 'pos', 'global_pos', 'copies']]
     aligns = aligns[:len(self)]
-    no_align_positions =  - (self.markers['marker_indx'] + (self.omero_id * 10**7))
+    no_align_positions =  - (self.markers['marker_indx'] +
+                             (self.omero_id * self.MAX_LEN))
     aligns['global_pos'] = np.choose(aligns['copies'] == 1,
                                      [no_align_positions, aligns['global_pos']])
     self.bare_setattr('aligns', aligns)

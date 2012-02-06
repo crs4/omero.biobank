@@ -1,7 +1,13 @@
+2012-02-06    <simleo@neuron.crs4.it>
+
+	* bl/vl/kb/drivers/omero/snp_markers_set.py (SNPMarkersSet):
+	defined appropriate constants for max markers set len and genome
+	len.
+
 2012-02-03    <zag@manzanillo>
 
-	* bl/vl/kb/drivers/omero/snp_markers_set.py 
-	(SNPMarkersSet.has_add_marker_info): added 
+	* bl/vl/kb/drivers/omero/snp_markers_set.py
+	(SNPMarkersSet.has_add_marker_info): added
 	(SNPMarkersSet.get_add_marker_info_fields): added
 	(SNPMarkersSet.has_add_marker_info): added
 	(SNPMarkersSet.define_range_selector): added
