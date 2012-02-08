@@ -25,8 +25,8 @@ MS_ICD10 = 'icd10-cm:G35'
 NEFRO_ICD10 = 'icd10-cm:E23.2'
 
 PLINK_MISSING = -9
-PLINK_UNAFFECTED = 0
-PLINK_AFFECTED = 1
+PLINK_UNAFFECTED = 1
+PLINK_AFFECTED = 2
 
 FIELDS = ["fam_label", "ind_label", "fat_label", "mot_label", "gender",
           "t1d_status", "ms_status", "nefro_status"]
