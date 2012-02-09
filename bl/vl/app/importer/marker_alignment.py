@@ -36,6 +36,7 @@ MANDATORY_FIELDS = [
   'strand',
   'allele',
   'copies',
+  'study',
   ]
 STRAND_ENCODINGS = frozenset(['TRUE', '+'])
 
@@ -134,11 +135,10 @@ import new marker alignments into the KB.
 
 
 def make_parser(parser):
-  parser.add_argument('-S', '--study', metavar="STRING", required=True,
-                      help="study label")
   parser.add_argument('--markers-set', metavar="STRING", required=True,
                       help="related markers set")
-  parser.add_argument('--ref-genome', metavar="STRING", required=True,
+  parser.add_argument('-S', '--study', metavar="STRING", help="study label")
+  parser.add_argument('--ref-genome', metavar="STRING",
                       help="reference genome, e.g., hg19")
 
 
