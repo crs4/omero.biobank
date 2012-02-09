@@ -92,7 +92,7 @@ class Recorder(core.Core):
         f = reject + 'missing mandatory field.'
         self.logger.error(f)
         continue
-      if not 0 < r['chromosome'] < 27:
+      if not 0 <= r['chromosome'] < 27:
         f = reject + 'chomosome value out ot the [1:26] range.'
         self.logger.error(f)
         continue
