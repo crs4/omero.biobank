@@ -122,9 +122,11 @@ class RecordCanonizer(core.RecordCanonizer):
 
   def canonize(self, r):
     super(RecordCanonizer, self).canonize(r)
-    r['chromosome'] = int(r['chromosome'])
-    r['pos'] = int(r['pos'])
-    r['global_pos'] = 10**10 * r['chromosome'] + r['pos']
+    try:
+      r['chromosome'] = int(r['chromosome'])
+      r['pos'] = int(r['pos'])
+    except ValueError:
+      r['chromosome'] = r['pos'] = 0
     r['strand'] = r['strand'].upper() in STRAND_ENCODINGS
     r['copies'] = int(r['copies'])
 
@@ -152,12 +154,7 @@ def implementation(logger, args):
                       ms_label=args.markers_set)
   f = csv.DictReader(args.ifile, delimiter='\t')
   recorder.logger.info('start processing file %s' % args.ifile.name)
-  records = []
-  for r in f:
-    if r['chromosome'] == 'None':
-      logger.warn('%s: chr is None, skipping' % r['marker_vid'])
-    else:
-      records.append(r)
+  records = [r for r in f]
   args.ifile.close()
   canonizer = RecordCanonizer(fields_to_canonize, args)
   canonizer.canonize_list(records)

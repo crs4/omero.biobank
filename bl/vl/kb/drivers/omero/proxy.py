@@ -234,6 +234,7 @@ class Proxy(ProxyCore):
     be N records pertaining to the same marker.
     """
     # FIXME no checking
+    global_pos = snp_markers_set.SNPMarkersSet.compute_global_position
     def gen(s):
       for x in s:
         y = {
@@ -241,7 +242,7 @@ class Proxy(ProxyCore):
           'ref_genome': ref_genome,
           'chromosome': x[1],
           'pos': x[2],
-          'global_pos': (x[1]*10**10 + x[2]),
+          'global_pos': global_pos((x[1],x[2])),
           'strand': x[3],
           'allele': x[4],
           'copies': x[5],

@@ -51,7 +51,7 @@ The following is a list of the typical steps.
    information...  The global_pos column provides a sortable
    coordinate for the SNP position. It is currently defined as::
    
-     global_pos = chromosome * 10**10 + pos
+     global_pos = chromosome * MAX_GENOME_LEN + pos
 
    where chromosome should be one of range(1, 25) and 23 (X), 24 (Y)
    and 25(MT).

@@ -50,7 +50,6 @@ class Marker(object):
   """
   Wraps the contents of a marker definition and associate information.
   """
-
   def __init__(self, vid, index=None, position=(0,0), flip=None, **kwargs):
     self.id = vid
     self.index = index
@@ -213,7 +212,7 @@ class GenotypingAdapter(object):
     ('string', 'ref_genome', 'Reference alignment genome', 16, None),
     ('long', 'chromosome', '1-22, 23(X), 24(Y), 25(XY), 26(MT)', None),
     ('long', 'pos', "Position on the chromosome wrt 5'", None),
-    ('long', 'global_pos', "Global position (chr*10**10 + pos)", None),
+    ('long', 'global_pos', "Overall position in the genome", None),
     ('bool', 'strand', 'True if aligned on reference strand', None),
     ('string', 'allele', 'Allele found at this position (A/B)', 1, None),
     ('long', 'copies', "Number of alignments for this marker", None),
@@ -276,8 +275,11 @@ class GenotypingAdapter(object):
                                      batch_size=BATCH_SIZE):
     """
     Add alignment info to a SNPMarkersSet table.
+    
+    In the case of multiple hits, only the first copy encountered is
+    added in the same order as it is found in the input stream;
+    additional copies are temporarily stored and appended at the end.
     """
-    # TODO explain how multiple hits are managed
     def add_vids(stream):
       multiple_hits = {}
       for x in stream:
@@ -290,10 +292,9 @@ class GenotypingAdapter(object):
           else:
             multiple_hits[k] = []
         yield x
-      if multiple_hits:
-        for k in multiple_hits:
-          for x in multiple_hits[k]:
-            yield x
+      for v in multiple_hits.itervalues():
+        for x in v:
+          yield x
     i_s = add_vids(stream)
     return self._fill_snp_markers_set_table('align', set_vid, i_s,
                                             batch_size=batch_size)

@@ -79,8 +79,8 @@ class SnpHitProcessor(object):
         r = [hit.tid, str(start), str(end), name, '0', strand]
       self.current_hits.append(r)
     else:
-      self.logger.info("%r: mapped:%r; NM:%r; qual:%r" % (
-        name, mapped, nm, hit.qual))
+      self.logger.info("%r: mapped:%r; NM:%r; qual:%r" %
+                       (name, mapped, nm, hit.qual))
 
   def dump_current_hits(self):
     nh = len(self.current_hits)
@@ -88,7 +88,7 @@ class SnpHitProcessor(object):
       self.logger.warn("hit count for %s: %d != 1" % (self.current_id, nh))
     if nh == 0 and self.outfmt == DEFAULT_OUTPUT_FORMAT:
       self.current_hits.append(
-        [self.current_id, self.ref_tag, 'None', 'None', 'None', 'None']
+        [self.current_id, self.ref_tag, '0', '0', '-', 'A']
         )
     if self.outfmt == DEFAULT_OUTPUT_FORMAT:
       for hit in self.current_hits:
