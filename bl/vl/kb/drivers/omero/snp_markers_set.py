@@ -193,16 +193,13 @@ class SNPMarkersSet(wp.OmeroWrapper):
     aligns = self.proxy.gadpt.read_snp_markers_set_alignments(
       self.id, batch_size=batch_size
       )
-    indexes, _ = np_ext.index_intersect(
-      self.markers['marker_vid'], aligns['marker_vid']
-      )
+    assert len(aligns) >= len(self)
     aligns = aligns[['chromosome', 'pos', 'global_pos', 'copies']]
-    no_align_positions =  - (
-      self.markers[indexes]['marker_indx'] + (self.omero_id * self.MAX_LEN)
-      )
-    aligns['global_pos'] = np.choose(
-      aligns['copies'] == 1, [no_align_positions, aligns['global_pos']]
-      )
+    aligns = aligns[:len(self)]
+    no_align_positions =  - (self.markers['marker_indx'] +
+                             (self.omero_id * self.MAX_LEN))
+    aligns['global_pos'] = np.choose(aligns['copies'] == 1,
+                                     [no_align_positions, aligns['global_pos']])
     self.bare_setattr('aligns', aligns)
     self.bare_setattr('ref_genome', ref_genome)
 
