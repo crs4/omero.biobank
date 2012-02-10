@@ -45,7 +45,7 @@ The alignment step is external.
 
 import logging
 import convert_dbsnp, convert_affy, convert_ill, markers_to_fastq, \
-       convert_sam, build_index, lookup_index
+       convert_sam, patch_alignments, build_index, lookup_index
 
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
@@ -62,6 +62,7 @@ class App(object):
     convert_ill.do_register(self.supported_submodules)
     markers_to_fastq.do_register(self.supported_submodules)
     convert_sam.do_register(self.supported_submodules)
+    patch_alignments.do_register(self.supported_submodules)
     build_index.do_register(self.supported_submodules)
     lookup_index.do_register(self.supported_submodules)
 

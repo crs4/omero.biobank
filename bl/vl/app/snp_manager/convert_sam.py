@@ -15,7 +15,8 @@ from contextlib import nested
 from bl.core.seq.align.mapping import SAMMapping
 from bl.core.utils import NullLogger
 import bl.vl.utils.snp as vlu_snp
-from common import MARKER_AL_FIELDS, CHR_CODES, SeqNameSerializer
+from common import MARKER_AL_FIELDS, CHR_CODES, DUMMY_AL_VALUES, \
+     SeqNameSerializer
 
 
 HELP_DOC = __doc__
@@ -87,9 +88,14 @@ class SnpHitProcessor(object):
     if nh != 1:
       self.logger.warn("hit count for %s: %d != 1" % (self.current_id, nh))
     if nh == 0 and self.outfmt == DEFAULT_OUTPUT_FORMAT:
-      self.current_hits.append(
-        [self.current_id, self.ref_tag, '0', '0', '-', 'A']
-        )
+      self.current_hits.append([
+        self.current_id,
+        self.ref_tag,
+        DUMMY_AL_VALUES["chromosome"],
+        DUMMY_AL_VALUES["pos"],
+        DUMMY_AL_VALUES["strand"],
+        DUMMY_AL_VALUES["allele"],
+        ])
     if self.outfmt == DEFAULT_OUTPUT_FORMAT:
       for hit in self.current_hits:
         hit.append(str(nh))

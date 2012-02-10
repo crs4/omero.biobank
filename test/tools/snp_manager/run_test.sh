@@ -3,7 +3,7 @@
 TOOL="../../../tools/snp_manager --loglevel DEBUG"
 
 if [ "$1" == "--clean" ]; then
-    rm -fv *.log *marker_definitions.tsv *.fastq marker_alignment.tsv segment_extractor.tsv dbsnp_index*.db *.dump affy_marker_definitions_reannot.tsv
+    rm -fv *.log *marker_definitions.tsv *.fastq marker_alignment.tsv segment_extractor.tsv dbsnp_index*.db *.dump affy_marker_definitions_reannot.tsv al.tsv al_patched.tsv
     exit 0
 fi
 
@@ -29,3 +29,7 @@ python dump_db.py dbsnp_index_hg18_251.db
 
 echo "Testing lookup_index"
 ${TOOL} --logfile lookup_index.log lookup_index -i test_extracted_segments.tsv --index-file dbsnp_index_hg18_251.db -O affy_marker_definitions_mod.tsv -o affy_marker_definitions_reannot.tsv --align-file affy_marker_alignments.tsv
+
+echo "Testing patch_alignments"
+python generate_alignments.py affy_marker_definitions.tsv al.tsv hg18
+${TOOL} --logfile patch_alignments.log patch_alignments -a al.tsv -d affy_marker_definitions.tsv -o al_patched.tsv --reftag hg18

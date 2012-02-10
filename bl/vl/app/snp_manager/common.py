@@ -9,8 +9,12 @@ POSSIBLE_ALLELES = frozenset(['A', 'C', 'G', 'T'])
 MARKER_DEF_FIELDS = ("label", "rs_label", "mask", "allele_a", "allele_b")
 MARKER_AL_FIELDS = ("marker_vid", "ref_genome", "chromosome", "pos", "strand",
                     "allele", "copies")
-
-
+DUMMY_AL_VALUES = {
+  "chromosome": '0',
+  "pos": '0',
+  "strand": '-',
+  "allele": 'A',
+  }
 CHR_CODES = {
   "chr1": 1,
   "chr2": 2,
