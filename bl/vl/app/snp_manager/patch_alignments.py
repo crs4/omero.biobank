@@ -13,9 +13,12 @@ HELP_DOC = __doc__
 
 
 def get_al_records(align_in_file):
+  al_records = {}
   with open(align_in_file) as f:
     reader = csv.DictReader(f, delimiter='\t')
-    return dict((r['marker_vid'], r) for r in reader)
+    for r in reader:
+      al_records.setdefault(r['marker_vid'], []).append(r)
+  return al_records
 
 
 def make_parser(parser):
@@ -44,10 +47,11 @@ def main(logger, args):
     _strand = DUMMY_AL_VALUES["strand"]
     _allele = DUMMY_AL_VALUES["allele"]
     for r in reader:
-      out_r = al_records.get(r['label'], dict(zip(
+      out_records = al_records.get(r['label'], [dict(zip(
         MARKER_AL_FIELDS, [r['label'], _tag, _chr, _pos, _strand, _allele, '0']
-        )))
-      writer.writerow(out_r)
+        ))])
+      for out_r in out_records:
+        writer.writerow(out_r)
     logger.info("wrote %s" % outf.name)
 
 
