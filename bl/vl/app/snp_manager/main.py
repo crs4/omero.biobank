@@ -1,8 +1,6 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import sys, argparse
-
 """
 Check chip manufacturer's marker annotations against NCBI dbSNP.
 
@@ -43,28 +41,32 @@ Given the above mask canonization strategy::
 The alignment step is external.
 """
 
-import logging
-import convert_dbsnp, convert_affy, convert_ill, markers_to_fastq, \
-       convert_sam, patch_alignments, build_index, lookup_index
+import argparse, logging
+from importlib import import_module
 
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+SUBMOD_NAMES = [
+  "convert_dbsnp",
+  "convert_affy",
+  "convert_ill",
+  "markers_to_fastq",
+  "convert_sam",
+  "patch_alignments",
+  "build_index",
+  "lookup_index",
+  ]
+SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 
 
 class App(object):
   
   def __init__(self):
     self.supported_submodules = []
-    convert_dbsnp.do_register(self.supported_submodules)
-    convert_affy.do_register(self.supported_submodules)
-    convert_ill.do_register(self.supported_submodules)
-    markers_to_fastq.do_register(self.supported_submodules)
-    convert_sam.do_register(self.supported_submodules)
-    patch_alignments.do_register(self.supported_submodules)
-    build_index.do_register(self.supported_submodules)
-    lookup_index.do_register(self.supported_submodules)
+    for m in SUBMODULES:
+      m.do_register(self.supported_submodules)
 
   def make_parser(self):
     parser = argparse.ArgumentParser(description="Manage SNP data")

@@ -24,7 +24,7 @@ The user is responsible for mapping labels to VIDs: in most cases you
 should be able to use ``kb_query map_vid`` for this.
 """
 
-import sys, os, argparse, logging
+import sys, argparse, logging
 from importlib import import_module
 
 
