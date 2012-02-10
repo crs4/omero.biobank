@@ -128,7 +128,7 @@ setup(
     'bl.vl.app',
     'bl.vl.app.importer',
     'bl.vl.app.kb_query',
-    'bl.vl.app.snp_reannotator',
+    'bl.vl.app.snp_manager',
     ],
   cmdclass={"sdist": sdist, "build_py": build_py},
   )

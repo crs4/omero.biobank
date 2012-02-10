@@ -66,7 +66,7 @@ class App(object):
     lookup_index.do_register(self.supported_submodules)
 
   def make_parser(self):
-    parser = argparse.ArgumentParser(description="A SNP reannotator app")
+    parser = argparse.ArgumentParser(description="Manage SNP data")
     parser.add_argument('--logfile', type=str,
                         help='logfile. Will write to stderr if not specified')
     parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,

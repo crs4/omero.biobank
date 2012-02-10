@@ -73,7 +73,7 @@ The general strategy to define new markers is the following:
 
 #. Acquire the list of markers for a given technology
 
-#. Use snp_reannotator to find out if they correspond to known dbSNP
+#. Use snp_manager to find out if they correspond to known dbSNP
    SNPs. If they do, register a line such as the following one in omero::
 
      source context label rs_label mask

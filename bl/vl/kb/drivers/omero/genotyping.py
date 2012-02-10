@@ -22,7 +22,7 @@ Here, a SNP is defined by:
 
 SNPs can have a dbSNP rs label that depends on a specific dbSNP
 release and reference genome. The association of SNPs to their rs
-labels (see the snp_reannotator app) is based on the comparison of the
+labels (see the snp_manager app) is based on the comparison of the
 aligment position of the SNP mask wrt a given reference genome and
 that of dbSNP masks wrt the same genome. To keep track of this, each
 SNP record has the following additional fields:

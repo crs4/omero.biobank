@@ -11,7 +11,7 @@ include tools
 include tools/create_tables
 include tools/importer
 include tools/kb_query
-include tools/snp_reannotator
+include tools/snp_manager
 
 recursive-include test *
 recursive-exclude test/galaxy *

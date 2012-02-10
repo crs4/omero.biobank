@@ -37,7 +37,7 @@ clean:
 	rm -rf build
 	rm -f $(GENERATED_FILES)
 	make -C docs clean
-	cd test/tools/snp_reannotator && bash test_snp_reannotator.sh --clean
+	cd test/tools/snp_manager && bash test_snp_manager.sh --clean
 	rm -f `svn status test/tools/importer | grep '^?' | awk '{print $2}'`
 	find . -regex '.*\(\.pyc\|\.pyo\|~\|\.so\)' -exec rm -fv {} \;
 
