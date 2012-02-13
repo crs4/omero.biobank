@@ -474,6 +474,34 @@ class ProxyCore(object):
     finally:
       self.disconnect()
 
+  def update_table_rows(self, table_name, selector, update_items):
+    s = self.connect()
+    try:
+      t = self._get_table(s, table_name)
+      idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
+      self.logger.debug('\tselector %s results in %s' % (selector, idxs))
+      if len(idxs) == 0:
+        self.logger.debug('\tno rows to update') 
+        return
+      data = t.readCoordinates(idxs)
+      self.logger.debug('\tdata read: %s' % data)
+      cols = [c.name for c in data.columns]
+      for x in update_items.keys():
+        if x not in cols:
+          raise ValueError('%s is not a valid field for table %s' % (x, table_name))
+      for dc in data.columns:
+        if dc.name in update_items.keys():
+          for x in range(0, len(dc.values)):
+            self.logger.debug('\tcolumn :%s  -> setting value to %s (old value %s)' % (dc.name,
+                                                                                     update_items[dc.name],
+                                                          dc.values[x]))
+            dc.values[x] = update_items[dc.name]
+      self.logger.debug('\trecords have been modified')
+      t.update(data)
+      self.logger.debug('\tdata update complete')
+    finally:
+      self.disconnect()
+
   def __update_data_contents(self, data, row):
     assert len(data.rowNumbers) == 1
     if hasattr(row, 'dtype'):

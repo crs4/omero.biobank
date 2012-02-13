@@ -1,3 +1,12 @@
+2012-02-13  Luca Lianas  <luca@tensa-zangetsu>
+
+	* bl/vl/kb/drivers/omero/proxy_core.py
+	(ProxyCore.update_table_rows): added new method that makes
+	possible to update multiple table rows at the same time.
+
+	* bl/vl/kb/drivers/omero/proxy.py (Proxy): added new methods that
+	make possible to mark multiple EHR record as valid\invalid.
+
 2012-02-06    <simleo@neuron.crs4.it>
 
 	* bl/vl/kb/drivers/omero/snp_markers_set.py (SNPMarkersSet):

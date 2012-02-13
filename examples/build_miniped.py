@@ -90,7 +90,7 @@ def main(argv):
   enrolled_map = dict((e.individual.id, (e.studyCode, e.individual))
                       for e in enrolled)
   logging.debug('Loading EHR records')
-  ehr_records = kb.get_ehr_records('(valid == True)')
+  ehr_records = kb.get_ehr_records()
   logging.debug('%s EHR records loaded' % len(ehr_records))
   ehr_records_map = {}
   for r in ehr_records:

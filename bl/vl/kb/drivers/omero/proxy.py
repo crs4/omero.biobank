@@ -528,7 +528,7 @@ class Proxy(ProxyCore):
         }
       self.eadpt.add_eav_record_row(row)
 
-  def get_ehr_records(self, selector=None):
+  def get_ehr_records(self, selector='(valid == True)'):
     rows = self.eadpt.get_eav_record_rows(selector)
     if len(rows) == 0:
       return rows
@@ -538,8 +538,6 @@ class Proxy(ProxyCore):
     x = {}
     fields = {}
     for r in rows:
-      if not r[3]:
-        continue
       if g_vid != r[4]:
         if g_vid:
           x['fields'] = fields
@@ -550,6 +548,7 @@ class Proxy(ProxyCore):
           'i_id': r[1],
           'a_id': r[2],
           'archetype': r[5],
+          'valid' : r[3],
           }
         fields = {}
       fields[r[6]] = self.eadpt.decode_field_value(
@@ -560,6 +559,48 @@ class Proxy(ProxyCore):
         x['fields'] = fields
         recs.append(x)
     return recs
+
+  def __build_ehr_selector(self, individual_id, timestamp, archetype_id,
+                           grouper_id, valid, archetype, field, field_value):
+    selector = []
+    if individual_id:
+      selector.append('(i_vid == "%s")' % individual_id)
+    if timestamp:
+      selector.append('(timestamp == %d)' % timestamp)
+    if archetype_id:
+      selector.append('(a_vid == "%s")' % archetype_id)
+    if grouper_id:
+      selector.append('(g_vid == "%s")' % grouper_id)
+    if not valid is None:
+      selector.append('(valid == %s)' % valid)
+    if archetype:
+      selector.append('(archetype == "%s")' % archetype)
+    if field :
+      selector.append('(field == "%s")' % field)
+    if not field_value is None:
+      ftype, fval, defval = self.eadpt.FIELD_TYPE_ENCODING_TABLE[type(field_value).__name__]
+      selector.append('(type == "%s")' % ftype)
+      if ftype == 'str':
+        selector.append('(%s == "%s")' % (fval, field_value))
+      else:
+        selector.append('(%s == %s)' % (fval, field_value))
+    return ' & '.join(selector)
+
+  def invalidate_ehr_records(self, individual_id, timestamp = None,
+                             archetype_id = None, grouper_id = None,
+                             archetype = None, field = None, field_value = None):
+    selector = self.__build_ehr_selector(individual_id, timestamp, archetype_id,
+                                         grouper_id, True, archetype, field,
+                                         field_value)
+    self.update_table_rows(self.eadpt.EAV_EHR_TABLE, selector, {'valid' : False})
+
+  def validate_ehr_records(self, individual_id, timestamp = None,
+                             archetype_id = None, grouper_id = None,
+                             archetype = None, field = None, field_value = None):
+    selector = self.__build_ehr_selector(individual_id, timestamp, archetype_id,
+                                         grouper_id, False, archetype, field,
+                                         field_value)
+    self.update_table_rows(self.eadpt.EAV_EHR_TABLE, selector, {'valid' : True})
 
   def get_ehr_iterator(self, selector=None):
     # FIXME this is a quick and dirty implementation.
