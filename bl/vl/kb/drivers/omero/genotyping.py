@@ -36,6 +36,8 @@ SNP record has the following additional fields:
 """
 
 import numpy as np
+import itertools as it
+from operator import itemgetter
 
 import bl.vl.utils as vlu
 import bl.vl.utils.snp as vlu_snp
@@ -44,6 +46,12 @@ from utils import assign_vid
 
 BATCH_SIZE = 5000
 VID_SIZE = vlu.DEFAULT_VID_LEN
+
+# mset tables
+ALIGN_TABLE = 'align'
+GDO_TABLE = 'gdo'
+MSET_TABLE = 'mset'
+MS_TABLES = frozenset([ALIGN_TABLE, GDO_TABLE, MSET_TABLE])
 
 
 class Marker(object):
@@ -170,13 +178,13 @@ class GenotypingAdapter(object):
   #--- SNPMarkersSet ---
   @classmethod
   def snp_markers_set_table_name(klass, table_name_root, set_vid):
-    assert(table_name_root in ['align', 'gdo', 'mset'])
+    assert(table_name_root in MS_TABLES)
     return '%s-%s.h5' % (table_name_root, set_vid)
 
   @classmethod
   def snp_markers_set_table_name_parse(klass, table_name):
     tag, set_vid = table_name.rsplit('.')[0].split('-', 1)
-    if tag not in  ['align', 'gdo', 'mset']:
+    if tag not in MS_TABLES:
       raise ValueError('tag %s from %s is illegal' % (tag, table_name))
     return tag, set_vid
 
@@ -238,18 +246,17 @@ class GenotypingAdapter(object):
     Create all tables needed by a SNPMarkersSet.
     """
     snp_gdo_repo_cols = self.SNP_GDO_REPO_COLS(N)
-    self._create_snp_markers_set_table('mset', self.SNP_SET_COLS, set_vid)
-    self._create_snp_markers_set_table('align', self.SNP_ALIGNMENT_COLS,
-                                       set_vid)
-    self._create_snp_markers_set_table('gdo', snp_gdo_repo_cols, set_vid)
-
+    for table, cols in ((MSET_TABLE, self.SNP_SET_COLS),
+                        (ALIGN_TABLE, self.SNP_ALIGNMENT_COLS),
+                        (GDO_TABLE, snp_gdo_repo_cols)):
+      self._create_snp_markers_set_table(table, cols, set_vid)
+      
   def delete_snp_markers_set_tables(self, set_vid):
     """
     Delete all tables related to a SNPMarkersSet.
     """
-    self._delete_snp_markers_set_table('mset', set_vid)
-    self._delete_snp_markers_set_table('align', set_vid)
-    self._delete_snp_markers_set_table('gdo', set_vid)
+    for table in MS_TABLES:
+      self._delete_snp_markers_set_table(table, set_vid)
 
   def define_snp_markers_set(self, set_vid, stream, op_vid,
                              batch_size=BATCH_SIZE):
@@ -263,12 +270,13 @@ class GenotypingAdapter(object):
         yield x
     N = [0]
     i_s = add_op_vid(stream, N)
-    self._fill_snp_markers_set_table('mset', set_vid, i_s,
+    by_idx_s = iter(sorted(i_s, key=itemgetter('marker_indx')))  # uses memory
+    self._fill_snp_markers_set_table(MSET_TABLE, set_vid, by_idx_s,
                                      batch_size=batch_size)
     return N[0]
 
   def read_snp_markers_set(self, set_vid, selector=None, batch_size=BATCH_SIZE):
-    return self._read_snp_markers_set_table('mset', set_vid, selector,
+    return self._read_snp_markers_set_table(MSET_TABLE, set_vid, selector,
                                             batch_size=batch_size)
 
   def add_snp_markers_set_alignments(self, set_vid, stream, op_vid,
@@ -280,6 +288,9 @@ class GenotypingAdapter(object):
     added in the same order as it is found in the input stream;
     additional copies are temporarily stored and appended at the end.
     """
+    tname = self.snp_markers_set_table_name(MSET_TABLE, set_vid)
+    vids = [t[0] for t in
+            self.kb.get_table_rows(tname, None, col_names=['marker_vid'])]
     def add_vids(stream):
       multiple_hits = {}
       for x in stream:
@@ -296,19 +307,25 @@ class GenotypingAdapter(object):
         for x in v:
           yield x
     i_s = add_vids(stream)
-    return self._fill_snp_markers_set_table('align', set_vid, i_s,
+    by_vid = {}
+    for i in xrange(len(vids)):
+      r = i_s.next()
+      by_vid[r['marker_vid']] = r
+    records = [by_vid[v] for v in vids]
+    i_s = it.chain(iter(records), i_s)
+    return self._fill_snp_markers_set_table(ALIGN_TABLE, set_vid, i_s,
                                             batch_size=batch_size)
 
   def read_snp_markers_set_alignments(self, set_vid, selector=None,
                                       batch_size=BATCH_SIZE):
-    return self._read_snp_markers_set_table('align', set_vid, selector,
+    return self._read_snp_markers_set_table(ALIGN_TABLE, set_vid, selector,
                                             batch_size=batch_size)
 
   def add_gdo(self, set_vid, probs, confidence, op_vid):
     pstr = probs.tostring()
     cstr = confidence.tostring()
     assert len(pstr) == 2*len(cstr)
-    table_name = self.snp_markers_set_table_name('gdo', set_vid)
+    table_name = self.snp_markers_set_table_name(GDO_TABLE, set_vid)
     row = {'op_vid': op_vid, 'probs':  pstr, 'confidence': cstr}
     assign_vid(row)
     self.kb.add_table_row(table_name, row)
@@ -330,7 +347,7 @@ class GenotypingAdapter(object):
     return r
 
   def get_gdo(self, set_vid, vid, indices=None):
-    table_name = self.snp_markers_set_table_name('gdo', set_vid)
+    table_name = self.snp_markers_set_table_name(GDO_TABLE, set_vid)
     rows = self.kb.get_table_rows(table_name, selector='(vid == "%s")' % vid)
     assert len(rows) == 1
     return self._unwrap_gdo(rows[0], indices)
@@ -339,7 +356,7 @@ class GenotypingAdapter(object):
     def iterator(stream):
       for d in stream:
         yield self._unwrap_gdo(d, indices)
-    table_name = self.snp_markers_set_table_name('gdo', set_vid)
+    table_name = self.snp_markers_set_table_name(GDO_TABLE, set_vid)
     return iterator(
       self.kb.get_table_rows_iterator(table_name, batch_size=batch_size)
       )

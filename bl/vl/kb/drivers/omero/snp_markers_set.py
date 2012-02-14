@@ -169,7 +169,6 @@ class SNPMarkersSet(wp.OmeroWrapper):
     stored in the add_marker_info attribute.
     """
     data = self.proxy.gadpt.read_snp_markers_set(self.id, batch_size=batch_size)
-    data.sort(order='marker_indx')
     self.__set_markers(data)
     if additional_fields is not None:
       if "vid" not in additional_fields:
@@ -178,7 +177,8 @@ class SNPMarkersSet(wp.OmeroWrapper):
                                                    batch_size=batch_size)
       i1, i2 = np_ext.index_intersect(data['marker_vid'], recs['vid'])
       recs = recs[i2]
-      # FIXME sort rows according to data's vid column
+      by_vid = dict((r['vid'], r) for r in recs)
+      recs = [by_vid[d['marker_vid']] for d in data]
       self.__set_add_marker_info(recs)
 
   def load_alignments(self, ref_genome, batch_size=1000):

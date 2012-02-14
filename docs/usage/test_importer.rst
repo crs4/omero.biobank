@@ -8,5 +8,5 @@ of importer, and some of the things that can be done with kb_query.
 
    need to add some text that explains what the script does.
 
-.. literalinclude:: /../tests/tools/importer/test_importer.sh
+.. literalinclude:: ../../test/tools/importer/test_importer.sh
    :language: bash

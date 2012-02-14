@@ -12,17 +12,20 @@ import bl.core.gt.messages.SnpCall as SnpCall
 
 import bl.vl.genotype.io as gio
 
+
 OME_HOST = os.getenv('OME_HOST', 'localhost')
 OME_USER = os.getenv('OME_USER', 'root')
 OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
 
 PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
+
 def make_fake_data(mset):
   n = len(mset)
   probs = 0.5 * np.cast[np.float32](np.random.random((2, n)))
   confs = np.cast[np.float32](np.random.random(n))
   return probs, confs
+
 
 def make_fake_ssc(mset, sample_id, probs, conf, fn):
   header = {'markers_set' : mset.label, 'sample_id':  sample_id}
@@ -43,6 +46,7 @@ def make_fake_ssc(mset, sample_id, probs, conf, fn):
       'w_BB': float(w_bb),
       })
   stream.close()
+
 
 class markers_set(unittest.TestCase):
 
@@ -93,7 +97,6 @@ class markers_set(unittest.TestCase):
     mset.load_markers()
     self.assertTrue(len(mset) > 0)
     n_aligns = len(mset.markers) + n_duplicates
-
     pos = []
     def insert_duplicates(markers):
       count = 0
@@ -110,6 +113,7 @@ class markers_set(unittest.TestCase):
         pos.append((0,0) if n_copies > 1 else (r[1], r[2]))
         yield r
     aligns = [x for x in insert_duplicates(mset.markers)]
+    random.shuffle(aligns)
     self.kb.align_snp_markers_set(mset, ref_genome, aligns, self.action)
     return pos
 
@@ -218,7 +222,6 @@ class markers_set(unittest.TestCase):
     # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
-
   def test_intersect(self):
     ref_genome = 'g' + ('%f' % time.time())[-14:]
     N1 = 16
@@ -285,6 +288,7 @@ class markers_set(unittest.TestCase):
     idx1, idx2 = self.kb.SNPMarkersSet.intersect(mset1, mset1)
     print 'intersecting  %d aligns took %f' % (N1, time.time() - beg)
 
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(markers_set('test_creation_destruction'))
@@ -293,7 +297,7 @@ def suite():
   suite.addTest(markers_set('test_gdo'))
   suite.addTest(markers_set('test_define_range_selector'))
   suite.addTest(markers_set('test_intersect'))
-  suite.addTest(markers_set('test_speed'))
+  #suite.addTest(markers_set('test_speed'))
   return suite
 
 

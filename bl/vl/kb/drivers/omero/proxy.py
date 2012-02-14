@@ -223,15 +223,19 @@ class Proxy(ProxyCore):
 
   def align_snp_markers_set(self, mset, ref_genome, stream, action):
     """
-    Given a stream of five-element tuples, save alignment information
+    Given a stream of six-element tuples, save alignment information
     of markers wrt a reference genome.
 
-    Tuple elements are, respectively: the marker vid; the chromosome
-    number (23=X, 24=Y, 25=XY, 26=MT); a boolean that's True if the
-    marker aligns on the 5' strand; the allele seen on the reference
-    genome; the number of times the given marker has been seen on the
-    reference genome. If the latter is larger than 1, there should
-    be N records pertaining to the same marker.
+    Tuple elements are, respectively:
+    
+      #. the marker vid;
+      #. the chromosome number (23=X, 24=Y, 25=XY, 26=MT);
+      #. the position within the chromosome;
+      #. a boolean that's True if the marker aligns on the 5' strand;
+      #. the allele seen on the reference genome;
+      #. the number of times this marker has been seen on the
+         reference genome. If the latter is larger than 1, there
+         should be N records for this marker.
     """
     # FIXME no checking
     global_pos = snp_markers_set.SNPMarkersSet.compute_global_position
