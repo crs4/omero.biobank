@@ -21,6 +21,9 @@ def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
 
+    # This is a temporary hack!!!
+    to_be_ignored = ['IMMUNOCHIP_DISCARDED']
+
     logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     loglevel  = getattr(logging, args.loglevel)
     if args.logfile:
@@ -41,6 +44,7 @@ def main(argv):
 
     # Retrieve all studies from omero
     studies = kb.get_objects(kb.Study)
+    studies = [s for s in studies if s.label not in to_be_ignored]
     logging.info('Retrieved %d studies from database' % len(studies))
 
     csv_header = ['individual_uuid']
