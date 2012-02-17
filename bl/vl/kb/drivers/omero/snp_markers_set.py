@@ -177,8 +177,9 @@ class SNPMarkersSet(wp.OmeroWrapper):
                                                    batch_size=batch_size)
       i1, i2 = np_ext.index_intersect(data['marker_vid'], recs['vid'])
       recs = recs[i2]
+      # FIXME: this is not very efficient
       by_vid = dict((r['vid'], r) for r in recs)
-      recs = [by_vid[d['marker_vid']] for d in data]
+      recs = np.array([by_vid[d['marker_vid']] for d in data], dtype=recs.dtype)
       self.__set_add_marker_info(recs)
 
   def load_alignments(self, ref_genome, batch_size=1000):
