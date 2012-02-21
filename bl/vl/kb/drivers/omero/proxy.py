@@ -319,7 +319,7 @@ class Proxy(ProxyCore):
               )
           yield self.get_gdo(mset, vid, indices)
         else:
-          raise ValueError("cannot handle mimetype %r" % (do.mimetype,))
+          pass
     if data_samples is None:
       return self.gadpt.get_gdo_iterator(mset.id, indices, batch_size)
     for d in data_samples:
