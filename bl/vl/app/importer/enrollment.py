@@ -123,7 +123,6 @@ class Recorder(core.Core):
           'studyCode': r['label'],
           }
       en = self.kb.factory.create(self.kb.Enrollment, conf)
-      self.logger.debug(en.stIndUK)
       enrollments.append(en)
     assert len(chunk) == len(enrollments)
     self.kb.save_array(enrollments)
