@@ -22,7 +22,7 @@ LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 def make_parser():
     parser = argparse.ArgumentParser(description = 'Swaps individuals related to two Immunochip enrollment codes',
                                    formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--logfile', type = str, help = 'log file (defalut = stderr)')
+    parser.add_argument('--logfile', type = str, help = 'log file (default = stderr)')
     parser.add_argument('--loglevel', type = str, choices = LOG_LEVELS,
                         help = 'logging level', default = 'INFO')
     parser.add_argument('-H', '--host', type = str, help = 'omero hostname',
@@ -89,10 +89,10 @@ def main(argv):
         logger.info('Swap completed')
         kb.reload_object(en1)
         logger.debug('Enrollment %s --- Individual ID %s' % (en1.studyCode,
-                                                           en1.individual.id))
+                                                             en1.individual.id))
         kb.reload_object(en2)
         logger.debug('Enrollment %s --- Individual ID %s' % (en2.studyCode,
-                                                           en2.individual.id))
+                                                             en2.individual.id))
 
         
 if __name__ == '__main__':
