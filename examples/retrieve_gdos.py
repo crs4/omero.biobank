@@ -57,6 +57,7 @@ def main(argv):
 
     logger.info('Loading GDOs')
     for gdo in gdo_iterator:
+        logger.info(gdo['vid'])
         gdos.append(gdo)
         logger.debug('%d/%d GDOs loaded' % (len(gdos), args.fetch_size))
     logger.info('Loaded %d GDOs' % len(gdos))

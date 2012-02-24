@@ -22,7 +22,7 @@ def main(argv):
     args = parser.parse_args(argv)
 
     # This is a temporary hack!!!
-    to_be_ignored = ['IMMUNOCHIP_DISCARDED']
+    to_be_ignored = ['IMMUNOCHIP_DISCARDED', 'CASI_MS_CSM_TMP']
 
     logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     loglevel  = getattr(logging, args.loglevel)

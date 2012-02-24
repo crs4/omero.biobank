@@ -328,8 +328,9 @@ class GenotypingAdapter(object):
     table_name = self.snp_markers_set_table_name(GDO_TABLE, set_vid)
     row = {'op_vid': op_vid, 'probs':  pstr, 'confidence': cstr}
     assign_vid(row)
-    self.kb.add_table_row(table_name, row)
-    return row['vid']
+    row_indices = self.kb.add_table_row(table_name, row)
+    assert len(row_indices) == 1
+    return row['vid'], row_indices[0]
 
   def _unwrap_gdo(self, row, indices):
     def unpack(r, field):
@@ -346,10 +347,11 @@ class GenotypingAdapter(object):
     r['confidence'] = c[indices] if indices is not None else c
     return r
 
-  def get_gdo(self, set_vid, vid, indices=None):
+  def get_gdo(self, set_vid, vid, row_index, indices=None):
     table_name = self.snp_markers_set_table_name(GDO_TABLE, set_vid)
-    rows = self.kb.get_table_rows(table_name, selector='(vid == "%s")' % vid)
+    rows = self.kb.get_table_rows_by_indices(table_name, [row_index])
     assert len(rows) == 1
+    assert rows[0]['vid'] == vid
     return self._unwrap_gdo(rows[0], indices)
 
   def get_gdo_iterator(self, set_vid, indices=None, batch_size=100):

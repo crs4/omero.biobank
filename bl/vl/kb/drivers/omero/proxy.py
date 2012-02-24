@@ -257,15 +257,17 @@ class Proxy(ProxyCore):
       raise ValueError('len("%s") > %d' % (ref_genome, max_len))
     self.gadpt.add_snp_markers_set_alignments(mset.id, gen(stream), action.id)
 
-  def make_gdo_path(self, mset, vid):
+  def make_gdo_path(self, mset, vid, index):
     table_name = self.gadpt.snp_markers_set_table_name('gdo', mset.id)
-    return 'table:%s/vid=%s' % (table_name, vid)
+    return 'table:%s/vid=%s/row_index=%d' % (table_name, vid, index)
 
   def parse_gdo_path(self, path):
-    head, vid = path.split('/vid=')
+    head, vid, index = path.split('/')
     head = head[len('table:'):]
+    vid = vid[len('vid='):]
     tag, set_vid = self.gadpt.snp_markers_set_table_name_parse(head)
-    return set_vid, vid
+    index = int(index[len('row_index='):])
+    return set_vid, vid, index
 
   def add_gdo_data_object(self, action, sample, probs, confs):
     """
@@ -285,14 +287,14 @@ class Proxy(ProxyCore):
       raise ValueError('sample should be an instance of GenotypeDataSample')
     mset = sample.snpMarkersSet
     # FIXME doesn't check that probs and confs have the right dtype and size
-    gdo_vid = self.gadpt.add_gdo(mset.id, probs, confs, avid)
+    gdo_vid, row_index = self.gadpt.add_gdo(mset.id, probs, confs, avid)
     size = 0
     sha1 = hashlib.sha1()
     s = probs.tostring();  size += len(s) ; sha1.update(s)
     s = confs.tostring();  size += len(s) ; sha1.update(s)
     conf = {
       'sample': sample,
-      'path': self.make_gdo_path(mset, gdo_vid),
+      'path': self.make_gdo_path(mset, gdo_vid, row_index),
       'mimetype': mimetypes.GDO_TABLE,
       'sha1': sha1.hexdigest(),
       'size': size,
@@ -300,8 +302,8 @@ class Proxy(ProxyCore):
     gds = self.factory.create(self.DataObject, conf).save()
     return gds
 
-  def get_gdo(self, mset, vid, indices=None):
-    return self.gadpt.get_gdo(mset.id, vid, indices)
+  def get_gdo(self, mset, vid, row_index, indices=None):
+    return self.gadpt.get_gdo(mset.id, vid, row_index, indices)
 
 
   #FIXME this is the basic object, we should have some support for selections
@@ -312,12 +314,14 @@ class Proxy(ProxyCore):
       for do in dos:
         # FIXME we could, in principle, handle other mimetypes too
         if do.mimetype == mimetypes.GDO_TABLE:
-          mset_vid, vid = self.parse_gdo_path(do.path)
+          self.logger.debug(do.path)
+          mset_vid, vid, row_index = self.parse_gdo_path(do.path)
+          self.logger.debug('%r' % [vid, row_index])
           if mset_vid != mset.id:
             raise ValueError(
               'DataObject %s map to data with a wrong SNPMarkersSet' % do.path
               )
-          yield self.get_gdo(mset, vid, indices)
+          yield self.get_gdo(mset, vid, row_index, indices)
         else:
           pass
     if data_samples is None:

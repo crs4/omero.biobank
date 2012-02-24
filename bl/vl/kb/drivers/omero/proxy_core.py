@@ -356,6 +356,27 @@ class ProxyCore(object):
       self.disconnect()
     return res
 
+  def get_table_rows_by_indices(self, table_name, indices, col_names=None,
+                                batch_size=BATCH_SIZE):
+    """
+    indices must be a list of integer values.
+    """
+    s = self.connect()
+    try:
+      t = self._get_table(s, table_name)
+      col_numbers = self.__convert_col_names_to_indices(t, col_names)
+      res = self.__get_table_rows_by_indices(t, indices, col_numbers,
+                                             batch_size)
+    finally:
+      self.disconnect()
+    return res
+
+  def __get_table_rows_by_indices(self, table, row_indices, col_numbers,
+                                  batch_size):
+    d = table.slice(col_numbers, row_indices)
+    res = [convert_coordinates_to_np(d)]
+    return np.concatenate(tuple(res)) if res else []
+    
   def __get_table_rows_selected(self, table, selector, col_numbers, batch_size):
     res, row_read, max_row = [], 0, table.getNumberOfRows()
     if isinstance(selector, str):
@@ -435,16 +456,23 @@ class ProxyCore(object):
   def __extend_table(self, table_name, batch_loader, records_stream,
                      batch_size=BATCH_SIZE):
     s = self.connect()
+    indices = []
     try:
       t = self._get_table(s, table_name)
       col_objs = t.getHeaders()
       batch = batch_loader(records_stream, col_objs, batch_size)
+      # First index of the new batch of rows is the number of rows
+      # already stored into the table
+      first_index = t.getNumberOfRows()
       while batch:
         t.addData(batch)
+        indices.extend(range(first_index, t.getNumberOfRows()))
         col_objs = t.getHeaders()
         batch = batch_loader(records_stream, col_objs, batch_size)
+        first_index = t.getNumberOfRows()
     finally:
       self.disconnect()
+      return indices
 
   def __load_batch(self, records_stream, col_objs, chunk_size):
     v = {}
