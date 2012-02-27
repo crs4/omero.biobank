@@ -568,14 +568,14 @@ class Proxy(ProxyCore):
         recs.append(x)
     return recs
 
-  def __build_ehr_selector(self, individual_id, timestamp, archetype_id,
+  def __build_ehr_selector(self, individual_id, timestamp, action_id,
                            grouper_id, valid, archetype, field, field_value):
     selector = []
     if individual_id:
       selector.append('(i_vid == "%s")' % individual_id)
     if timestamp:
       selector.append('(timestamp == %d)' % timestamp)
-    if archetype_id:
+    if action_id:
       selector.append('(a_vid == "%s")' % archetype_id)
     if grouper_id:
       selector.append('(g_vid == "%s")' % grouper_id)
@@ -595,22 +595,22 @@ class Proxy(ProxyCore):
     return ' & '.join(selector)
 
   def invalidate_ehr_records(self, individual_id, timestamp = None,
-                             archetype_id = None, grouper_id = None,
+                             action_id = None, grouper_id = None,
                              archetype = None, field = None, field_value = None):
-    selector = self.__build_ehr_selector(individual_id, timestamp, archetype_id,
+    selector = self.__build_ehr_selector(individual_id, timestamp, action_id,
                                          grouper_id, True, archetype, field,
                                          field_value)
     self.update_table_rows(self.eadpt.EAV_EHR_TABLE, selector, {'valid' : False})
 
   def validate_ehr_records(self, individual_id, timestamp = None,
-                             archetype_id = None, grouper_id = None,
+                             action_id = None, grouper_id = None,
                              archetype = None, field = None, field_value = None):
-    selector = self.__build_ehr_selector(individual_id, timestamp, archetype_id,
+    selector = self.__build_ehr_selector(individual_id, timestamp, action_id,
                                          grouper_id, False, archetype, field,
                                          field_value)
     self.update_table_rows(self.eadpt.EAV_EHR_TABLE, selector, {'valid' : True})
 
-  def get_ehr_iterator(self, selector=None):
+  def get_ehr_iterator(self, selector='(valid == True)'):
     # FIXME this is a quick and dirty implementation.
     recs = self.get_ehr_records(selector)
     by_individual = {}
@@ -619,6 +619,9 @@ class Proxy(ProxyCore):
     for k,v in by_individual.iteritems():
       yield (k, EHR(v))
 
-  def get_ehr(self, individual):
-    recs = self.get_ehr_records(selector='(i_vid=="%s")' % individual.id)
+  def get_ehr(self, individual, get_invalid = False):
+    if not get_invalid:
+      recs = self.get_ehr_records(selector='(i_vid=="%s") & (valid == True)' % individual.id)
+    else:
+      recs = selg.get_ehr_records(selector='(i_vid=="%s")' % individual.id)
     return EHR(recs)
