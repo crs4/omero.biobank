@@ -557,6 +557,7 @@ class Proxy(ProxyCore):
           'a_id': r[2],
           'archetype': r[5],
           'valid' : r[3],
+          'g_id' : r[4],
           }
         fields = {}
       fields[r[6]] = self.eadpt.decode_field_value(
