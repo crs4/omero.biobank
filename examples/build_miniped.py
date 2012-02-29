@@ -45,7 +45,7 @@ def make_parser():
                       required=True)
   parser.add_argument('-S', '--study', type=str, required=True,
                       help='study used to retrieve individuals that will be written to ped file')
-  parser.add_argument('--out_file', type=str, help='output file path',
+  parser.add_argument('--ofile', type=str, help='output file path',
                       required=True)
   return parser
 
