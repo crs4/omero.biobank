@@ -68,10 +68,10 @@ class PlateWell(Vessel):
       conf['containerSlotIndexUK'] = make_unique_key(clabel, '%04d' % slot)
     return conf
 
-  def __update_constraints__(self, fields):
+  def __update_constraints__(self):
     csl_uk = make_unique_key(self.container.label, self.label)
     setattr(self.ome_obj, 'containerSlotLabelUK',
-            self.to_omero(fields['containerSlotLabelUK'][0], csl_uk))
+            self.to_omero(self.__fields__['containerSlotLabelUK'][0], csl_uk))
     csi_uk = make_unique_key(self.container.label, '%04d' % self.slot)
     setattr(self.ome_obj, 'containerSlotIndexUK',
-            self.to_omero(fields['containerSlotIndexUK'][0], csi_uk))
+            self.to_omero(self.__fields__['containerSlotIndexUK'][0], csi_uk))

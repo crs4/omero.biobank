@@ -210,6 +210,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
     for i in xrange(len(self)):
       yield self[i]
 
-  def __update_constraints__(self, fields):
+  def __update_constraints__(self):
     uk = make_unique_key(self.maker, self.model, self.release)
-    setattr(self.ome_obj, 'snpMarkersSetUK', self.to_omero(fields['snpMarkersSetUK'][0], uk))
+    setattr(self.ome_obj, 'snpMarkersSetUK',
+            self.to_omero(self.__fields__['snpMarkersSetUK'][0], uk))

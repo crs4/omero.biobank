@@ -94,7 +94,6 @@ def main(argv):
     for disc in to_be_discarded:
         try:
             kb.save(disc)
-            pass
         except KBError:
             logger.error('Can\'t save enrollment %s in study %s' % (disc.studyCode,
                                                                     disct.study.label))

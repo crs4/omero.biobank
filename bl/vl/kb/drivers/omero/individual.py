@@ -61,8 +61,10 @@ class Enrollment(wp.OmeroWrapper):
       conf['stIndUK'] = make_unique_key(svid, ivid)
     return conf
 
-  def __update_constraints__(self, fields):
+  def __update_constraints__(self):
     st_code_uk = make_unique_key(self.study.id, self.studyCode)
-    setattr(self.ome_obj, 'stCodeUK', self.to_omero(fields['stCodeUK'][0], st_code_uk))
+    setattr(self.ome_obj, 'stCodeUK',
+            self.to_omero(self.__fields__['stCodeUK'][0], st_code_uk))
     st_ind_uk = make_unique_key(self.study.id, self.individual.id)
-    setattr(self.ome_obj, 'stIndUK', self.to_omero(fields['stIndUK'][0], st_ind_uk))
+    setattr(self.ome_obj, 'stIndUK',
+            self.to_omero(self.__fields__['stIndUK'][0], st_ind_uk))
