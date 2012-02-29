@@ -128,7 +128,7 @@ def main(argv):
   gender_map = lambda x: 2 if x == kb.Gender.FEMALE else 1
 
   logger.info("writing miniped")
-  with open(args.out_file, "w") as f:
+  with open(args.ofile, "w") as f:
     writer = csv.DictWriter(f, FIELDS, delimiter="\t", lineterminator="\n")
     for k, fam in enumerate(families):
       fam_label = "FAM_%d" % (k+1)
