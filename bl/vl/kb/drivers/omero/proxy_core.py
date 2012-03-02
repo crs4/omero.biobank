@@ -495,9 +495,7 @@ class ProxyCore(object):
         raise ValueError('selector %s does not yield a single row' % selector)
       self.logger.debug('\tselected idx: %s' % idxs)
       data = t.readCoordinates(idxs)
-      self.logger.debug('\tdata read: %s' % data)
       self.__update_data_contents(data, row)
-      self.logger.debug('\tupdated data: %s' % data)
       t.update(data)
     finally:
       self.disconnect()
@@ -512,7 +510,6 @@ class ProxyCore(object):
         self.logger.debug('\tno rows to update') 
         return
       data = t.readCoordinates(idxs)
-      self.logger.debug('\tdata read: %s' % data)
       cols = [c.name for c in data.columns]
       for x in update_items.keys():
         if x not in cols:
@@ -521,8 +518,8 @@ class ProxyCore(object):
         if dc.name in update_items.keys():
           for x in range(0, len(dc.values)):
             self.logger.debug('\tcolumn :%s  -> setting value to %s (old value %s)' % (dc.name,
-                                                                                     update_items[dc.name],
-                                                          dc.values[x]))
+                                                                                       update_items[dc.name],
+                                                                                       dc.values[x]))
             dc.values[x] = update_items[dc.name]
       self.logger.debug('\trecords have been modified')
       t.update(data)
