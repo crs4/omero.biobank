@@ -24,7 +24,7 @@
 #   fixed when a proper ALIASES manegement will be introduced)
 # =======================================
 
-import sys, argparse, logging, traceback, csv
+import sys, argparse, logging, csv
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb import KBError
