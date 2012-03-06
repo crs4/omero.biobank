@@ -1,4 +1,4 @@
-import sys, csv, argparse, logging, json, time
+import sys, csv, argparse, logging
 
 from bl.vl.kb import KnowledgeBase as KB
 
@@ -17,58 +17,11 @@ def make_parser():
                         default='root')
     parser.add_argument('-P', '--passwd', type=str, required=True,
                         help='omero password')
-    parser.add_argument('-O', '--operator', type=str, required=True,
-                        help='action operator')
-    parser.add_argument('--inds_list', type=str, required=True,
+    parser.add_argument('--in_file', type=str, required=True,
                         help='list of the individuals')
+    parser.add_argument('--out_file', type=str, required=True,
+                        help='output file')
     return parser
-
-def drop_parents(individual, operator, kb):
-    logger = logging.getLogger()
-    backup = {}
-    if individual.father:
-        logger.info('Removing father (ID %s) for individual %s' % (individual.father.id,
-                                                                   individual.id))
-        backup['father'] = individual.father.id
-        individual.father = None
-    if individual.mother:
-        logger.info('Removing mother (ID %s) for individual %s' % (individual.mother.id,
-                                                                   individual.id))
-        backup['mother'] = individual.mother.id
-        individual.mother = None
-    if len(backup.items()) > 0:
-        update_object(individual, backup, operator, kb)
-        return individual
-    else:
-        logger.warning('No update needed for individual %s' % individual.id)
-        return None
-
-def build_action_setup(label, backup, kb):
-    logger = logging.getLogger()
-    logger.debug('Creating a new ActionSetup with label %s and backup %r' % (label,
-                                                                             backup))
-    conf = {
-        'label': label,
-        'conf': json.dumps({'backup' : backup})
-        }
-    asetup = kb.factory.create(kb.ActionSetup, conf)
-    return asetup
-
-def update_object(obj, backup_values, operator, kb):
-    logger = logging.getLogger()
-    logger.debug('Building ActionOnAction for object %s' % obj.id)
-    act_setup = build_action_setup('drop-parents-%f' % time.time(),
-                                   backup_values, kb)
-    aoa_conf = {
-        'setup': act_setup,
-        'actionCategory': kb.ActionCategory.UPDATE,
-        'operator': operator,
-        'target': obj.lastUpdate if obj.lastUpdate else obj.action,
-        'context': obj.action.context
-        }
-    logger.debug('Updating object with new ActionOnAction')
-    obj.lastUpdate = kb.factory.create(kb.ActionOnAction, aoa_conf)
-
 
 def main(argv):
     parser = make_parser()
@@ -92,19 +45,26 @@ def main(argv):
     for i in inds:
         inds_lookup[i.id] = i
 
-    with open(args.inds_list) as in_file:
-        to_be_updated = []
+    with open(args.in_file) as in_file:
         reader = csv.DictReader(in_file, delimiter='\t')
+        records = []
         for row in reader:
             try:
-                ind = drop_parents(inds_lookup[row['individual']], args.operator, kb)
-                if ind:
-                    to_be_updated.append(ind)
-            except KeyError:
-                logger.error('%s is not a valid individual id' % row['individual'])
-    
-    logger.debug('Updating %d individuals' % len(to_be_updated))
-    kb.save_array(to_be_updated)
+                # The 'individual' : inds_lookup[row['individual']].id
+                # is quite redundant but is a usefull check in order
+                # to filter wrong VIDs
+                record = {'individual' : inds_lookup[row['individual']].id,
+                          'father' : 'None',
+                          'mother' : 'None'}
+                records.append(record)
+            except KeyError, ke:
+                logger.warning('Individual with VID %s does not exist, skipping line' % ke)
+
+    with open(args.out_file, 'w') as out_file:
+        writer = csv.DictWriter(out_file, ['individual', 'father', 'mother'],
+                                delimiter = '\t')
+        writer.writeheader()
+        writer.writerows(records)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
