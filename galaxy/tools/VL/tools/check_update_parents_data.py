@@ -88,6 +88,7 @@ def main(argv):
         for row in reader:
             if check_row(row, inds_lookup, kb):
                 writer.writerow(row)
+                logger.debug('Record %r written in output file' % row)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
