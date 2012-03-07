@@ -25,7 +25,6 @@ def make_parser():
 
 def update_parents(individual, father, mother, operator, kb):
     logger = logging.getLogger()
-    check_parents(father, mother, kb)
     backup = {}
     logger.info('Updating parents for individual %s' % (individual.id))
     if individual.father != father:
@@ -42,16 +41,8 @@ def update_parents(individual, father, mother, operator, kb):
         update_object(individual, backup, operator, kb)
         return individual
     else:
-        logger.warning('No update needed for individual %s' % individual.id)
+        logger.info('No update needed for individual %s' % individual.id)
         return None
-
-def check_parents(father, mother, kb):
-    if father and father.gender.enum_label() != kb.Gender.MALE.enum_label():
-        raise ValueError('Father (individual %s) gender is %s' % (father.id,
-                                                                  father.gender.enum_label()))
-    if mother and mother.gender.enum_label() != kb.Gender.FEMALE.enum_label():
-        raise ValueError('Mother (individual %s) gender is %s' % (mother.id,
-                                                                  mother.gender.enum_label()))
 
 def update_object(obj, backup_values, operator, kb):
     logger = logging.getLogger()
@@ -86,7 +77,7 @@ def main(argv):
     log_level = getattr(logging, args.loglevel)
     kwargs = {'format': LOG_FORMAT,
               'datefmt': LOG_DATEFMT,
-              'level' : log_level}
+              'level': log_level}
     if args.logfile:
         kwargs['filename'] = args.logfile
     logging.basicConfig(**kwargs)
@@ -105,18 +96,12 @@ def main(argv):
         to_be_updated = []
         reader = csv.DictReader(in_file, delimiter='\t')
         for row in reader:
-            try:
-                ind = inds_lookup[row['individual']]
-                father = inds_lookup[row['father']] if row['father'] != 'None' else None
-                mother = inds_lookup[row['mother']] if row['mother'] != 'None' else None
-                ind = update_parents(ind, father, mother, args.operator, kb)
-                if ind:
-                    to_be_updated.append(ind)
-            except KeyError, ke:
-                logger.error('Unable to find individual %s' % ke)
-            except ValueError, ve:
-                logger.error('Unable to update parents for individual %s: %s' % (row['individual'],
-                                                                                 ve))
+            ind = inds_lookup[row['individual']]
+            father = inds_lookup[row['father']] if row['father'] != 'None' else None
+            mother = inds_lookup[row['mother']] if row['mother'] != 'None' else None
+            ind = update_parents(ind, father, mother, args.operator, kb)
+            if ind:
+                to_be_updated.append(ind)
                 
     logger.info('%d individuals are going to be updated' % len(to_be_updated))
     kb.save_array(to_be_updated)
