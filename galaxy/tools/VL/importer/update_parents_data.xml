@@ -16,6 +16,7 @@
       --passwd=$__app__.config.omero_default_passwd
     #end if
     --in_file=${input1}
+    --operator=$__user_email__
     --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
   </command>  
