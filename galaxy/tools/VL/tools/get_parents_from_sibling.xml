@@ -1,0 +1,70 @@
+<tool id="vl_tools_get_parents_from_sibling" name="VLT.get_parents_from_sibling">
+  <description>
+    Retrieve individual's parents using sibling informations
+  </description>
+  <command interpreter="python">
+    get_parents_from_sibling.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=${advanced_configuration.vl_host}
+      --user=${advanced_configuration.vl_user}
+      --passwd=${advanced_configuration.vl_passwd}
+    #else
+      --host=$__app__.config.omero_default_host
+      --user=$__app__.config.omero_default_user
+      --passwd=$__app__.config.omero_default_passwd
+    #end if
+    --in_file=${input1}
+    --out_file=${output1}
+    --loglevel=$__app__.config.vl_loglevel
+    --logfile=${logfile}
+  </command>  
+  <inputs>   
+    <param format="tabular" name="input1" type="data"
+           label="A tabular dataset with two 'label' column. See below."/>
+    <!-- ************************************************** -->
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="biobank09.crs4.it" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="galaxy" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="output1" label="${tool.name}.csv"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
+  </outputs>
+  <help>
+.. class:: infomark
+
+**TIP:** If your data is not TAB delimited, use *Text Manipulation-&gt;Convert*
+
+-----
+
+It will retrieve indivual's parents using sibling informations from a file like this::
+      
+    individual                           sibling
+    V08E18411BC66F4987BCA43EFC6F636224   V0AE5660BF4A7149589BE9DB3308B50327
+    V0FAE2B10F690041509739A3F4B314DC8F   V00875417B31684EC2A62EE37717913445
+    V0382EF862AA4B475697C95D3777043239   V08E376727ED8E4B369DAA3B62A9395E1B
+    
+and build a tsv file like this::
+
+    individual                           father                               mother
+    V08E18411BC66F4987BCA43EFC6F636224	None	None
+    V0FAE2B10F690041509739A3F4B314DC8F	V07282522B89FC4F7CA08094537A13C0D1	V09D459311D1254095AE9F00B45E5A101E
+    V0382EF862AA4B475697C95D3777043239	V04CD9561F753F4853838E2E96819AAAC0	V0382EF862AA4B475697C95D3777043239
+
+  </help>
+
+</tool>
