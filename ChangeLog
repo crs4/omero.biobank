@@ -1,3 +1,21 @@
+2012-03-12  Luca Lianas  <luca@tensa-zangetsu>
+
+	* bl/vl/app/kb_query/map_vid.py: added rules for mapping
+	DataCollectionItem objects.
+
+	* bl/vl/app/importer/data_collection.py: updated importer, now
+	existing DataCollection are allowed, if a label of a know
+	DataCollection is passed as input the DataCollection will be used,
+	if an unknown one is passed the importer creates a new
+	DataCollection.
+
+	* bl/vl/kb/drivers/omero/objects_collections.py
+	(DataCollectionItem): DataCollectionItem class updated with vid
+	and dataCollectionItemUK fields.
+
+	* models/collection.ome.xml: added fields vid and
+	dataCollectionItemUK to object ome.model.vl.DataCollectionItem.
+
 2012-02-13  Luca Lianas  <luca@tensa-zangetsu>
 
 	* bl/vl/kb/drivers/omero/proxy_core.py

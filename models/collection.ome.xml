@@ -55,8 +55,11 @@ END_COPYRIGHT
 
   <type id="ome.model.vl.DataCollectionItem">
     <properties>
-      <required name="dataSample"     type="ome.model.vl.DataSample"/>      
-      <required name="dataCollection" type="ome.model.vl.DataCollection"/>      
+      <required name="vid" type="string" unique="true"/>
+      <required name="dataSample" type="ome.model.vl.DataSample"/>      
+      <required name="dataCollection" type="ome.model.vl.DataCollection"/>
+      <!-- dataCollection.vid, dataSample.vid -->
+      <required name="dataCollectionItemUK" type="string" unique="true"/>
     </properties>
   </type>
 

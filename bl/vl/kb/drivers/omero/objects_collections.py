@@ -3,14 +3,14 @@
 
 import wrapper as wp
 from action import Action
-from utils import assign_vid_and_timestamp
+from utils import assign_vid_and_timestamp, assign_vid, make_unique_key
 from data_samples import DataSample
 
 
 class VLCollection(wp.OmeroWrapper):
   
   OME_TABLE = 'VLCollection'
-  __fields__ = [('vid', wp.STRING, wp.REQUIRED),
+  __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
                 ('creationDate', wp.TIMESTAMP, wp.REQUIRED),
                 ('action', Action, wp.REQUIRED),
@@ -63,5 +63,19 @@ class DataCollection(VLCollection):
 class DataCollectionItem(wp.OmeroWrapper):
   
   OME_TABLE = 'DataCollectionItem'
-  __fields__ = [('dataSample', DataSample, wp.REQUIRED),
-                ('dataCollection', DataCollection, wp.REQUIRED)]
+  __fields__ = [('vid', wp.VID, wp.REQUIRED),
+                ('dataSample', DataSample, wp.REQUIRED),
+                ('dataCollection', DataCollection, wp.REQUIRED),
+                ('dataCollectionItemUK', wp.STRING, wp.REQUIRED)]
+
+  def __preprocess_conf__(self, conf):
+    if not 'dataCollectionItemUK' in conf:
+      dc_vid = conf['dataCollection'].id
+      ds_vid = conf['dataSample'].id
+      conf['dataCollectionItemUK'] = make_unique_key(dc_vid, ds_vid)
+    return assign_vid(conf)
+
+  def __update_constraints__(self):
+    dci_uk = make_unique_key(self.dataCollection.id, self.dataSample.id)
+    setattr(self.ome_obj, 'dataCollectionItemUK',
+            self.to_omero(self.__fields__['dataCollectionItemUK'][0], dci_uk))

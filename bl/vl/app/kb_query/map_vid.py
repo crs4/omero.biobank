@@ -20,7 +20,7 @@ class MapVIDApp(Core):
 
   SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
                             'Chip', 'DataSample', 'Marker', 'Scanner',
-                            'SoftwareProgram', 'SNPMarkersSet']
+                            'SoftwareProgram', 'SNPMarkersSet', 'DataCollectionItem']
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None, operator='Alfred E. Neumann', logger=None):
@@ -57,6 +57,28 @@ class MapVIDApp(Core):
     self.logger.info('done selecting %s' % source_type.get_ome_table())
     return mapping
 
+  def resolve_mapping_data_collection_item(self, source_type, labels):
+    self.logger.info('start selecting %s' % source_type.get_ome_table())
+    self.logger.debug('retrieving data collections')
+    dcols = self.kb.get_objects(self.kb.DataCollection)
+    self.logger.debug('%d data collections loaded' % len(dcols))
+    dcols_map = {}
+    for dc in dcols:
+      self.logger.debug('loading items for data collection %s' % dc.label)
+      dc_items = self.kb.get_data_collection_items(dc)
+      self.logger.debug('%d data collection items loaded' % len(dc_items))
+      for dci in dc_items:
+        dcols_map.setdefault(dc.label, {})[dci.dataSample.label] = dci
+    self.logger.info('done selection %s' % source_type.get_ome_table())
+    mapping = {}
+    for l in labels:
+      try:
+        mapping[l] = dcols_map[l.split(':')[0]][l.split(':')[1]].id
+      except KeyError, ke:
+        self.error('Cannot map label %s' % l)
+        self.logger.debug('invalid key %s' % ke)
+    return mapping
+
   def resolve_mapping_object(self, source_type, labels):
     mapping = {}
     self.logger.info('start selecting %s' % source_type.get_ome_table())
@@ -87,6 +109,8 @@ class MapVIDApp(Core):
       return self.resolve_mapping_plate_well(source_type, labels)
     elif source_type == self.kb.Marker:
       return self.resolve_mapping_marker(source_type, labels)
+    elif source_type == self.kb.DataCollectionItem:
+      return self.resolve_mapping_data_collection_item(source_type, labels)
     else:
       return self.resolve_mapping_object(source_type, labels)
 
