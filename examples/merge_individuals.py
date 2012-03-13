@@ -24,7 +24,7 @@
 #   fixed when a proper ALIASES manegement will be introduced)
 # =======================================
 
-import sys, argparse, logging, csv
+import sys, argparse, logging, csv, time, json
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb import KBError
@@ -36,7 +36,7 @@ LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
 def make_parser():
-    parser = argparse.ArgumentParser(description='merge informations related to an individual ("source") to another one ("destination")')
+    parser = argparse.ArgumentParser(description='merge informations related to an individual ("source") to another one ("target")')
     parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
     parser.add_argument('--loglevel', type=str, choices = LOG_LEVELS,
                         help='logging level (default=INFO)', default='INFO')
@@ -46,11 +46,39 @@ def make_parser():
                         default='root')
     parser.add_argument('-P', '--passwd', type=str, required = True,
                         help='omero password')
+    parser.add_argument('-O', '--operator', type=str, help='operator',
+                        required=True)
     parser.add_argument('--in_file', type=str, required = True,
                         help='input TSV file')
     return parser
 
-def update_children(source_ind, target_ind, kb):
+def update_object(obj, backup_values, operator, kb):
+    logger = logging.getLogger()
+    logger.debug('Building ActionOnAction for object %s::%s' % (obj.get_ome_table(),
+                                                                obj.id))
+    act_setup = build_action_setup('merge-individuals-%f' % time.time(),
+                                   backup_value, kb)
+    aoa_conf = {
+        'setup': act_setup,
+        'actionCategory' : kb.ActionCategory.UPDATE,
+        'operator': operator,
+        'target': obj.lastUpdate if obj.lastUpdate else obj.action,
+        'context': obj.action.context
+        }
+    logger.debug('Updating object with new ActionOnAction')
+    obj.lastUpdate = kb.factory.create(kb.ActionOnAction, aoa_conf)
+
+def build_action_setup(label, backup, kb):
+    logger = logging.getLogger()
+    logger.debug('Creating a new ActionSetup with label %s and backup %r' % (label, backup))
+    conf = {
+        'label': label,
+        'conf': json.dumps({'backup' : backup})
+        }
+    asetup = kb.factory.create(kb.ActionSetup, conf)
+    return asetup
+
+def update_children(source_ind, target_ind, operator, kb):
     logger = logging.getLogger()
     if source_ind.gender.enum_label() == kb.Gender.MALE.enum_label():
         parent_type = 'father'
@@ -66,12 +94,15 @@ def update_children(source_ind, target_ind, kb):
     children = kb.find_all_by_query(query, {'parent_vid' : source_ind.id})
     logger.info('Retrieved %d children for source individual' % len(children))
     for child in children:
+        backup = {}
         logger.debug('Changing %s for individual %s' % (parent_type,
                                                         child.id))
+        backup[parent_type] = getattr(child, parent_type).id
         setattr(child, parent_type, target_ind)
+        update_object(child, backup, operator, kb)
     kb.save_array(children)
 
-def update_action_on_ind(source_ind, target_ind, kb):
+def update_action_on_ind(source_ind, target_ind, operator, kb):
     logger = logging.getLogger()
     query = '''SELECT act FROM ActionOnIndividual act
                JOIN act.target AS ind
@@ -80,11 +111,15 @@ def update_action_on_ind(source_ind, target_ind, kb):
     acts = kb.find_all_by_query(query, {'ind_vid' : source_ind.id})
     logger.info('Retrieved %d actions for source individual' % len(acts))
     for sa in src_acts:
-        sa.target = target
-        kb.save(sa)
+        backup = {}
+        logger.debug('Changing target for action %s' % sa.id)
+        backup['target'] = sa.target.id
+        sa.target = target_ind
+        update_object(sa, backup, operator, kb)
         logger.debug('Action %s target updated' % sa.id)
+    kb.save_array(src_acts)
 
-def update_enrollments(source_ind, target_ind, kb):
+def update_enrollments(source_ind, target_ind, operator, kb):
     logger = logging.getLogger()
     query = '''SELECT en FROM Enrollment en
                JOIN en.individual AS ind
@@ -94,7 +129,10 @@ def update_enrollments(source_ind, target_ind, kb):
     logger.info('Retrieved %d enrollments for source individual' % len(enrolls))
     for en in enrolls:
         try:
+            backup = {}
+            backup['individual'] = en.individual.id
             en.individual = target_ind
+            update_object(en, backup, operator, kb)
             logger.debug('Changing individual for enrollment %s in study %s' % (sren.studyCode,
                                                                                 sren.study.label))
             kb.save(en)
@@ -105,7 +143,8 @@ def update_enrollments(source_ind, target_ind, kb):
             logger.warning('Unable to update enrollment %s (study code %s -- study %s)' % (sren.id,
                                                                                            sren.studyCode,
                                                                                            sren.study.label))
-            move_to_duplicated(en, kb)
+            rollback_update(en, kb)
+            move_to_duplicated(en, backup, operator, kb)
 
 def update_ehr_records(source_ind, target_ind, kb):
     kb.update_table_rows(kb.eadpt.EAV_EHR_TABLE, '(i_vid == "%s")' % source_ind.id,
@@ -115,15 +154,17 @@ def update_ehr_records(source_ind, target_ind, kb):
 # This method should be considered as a temporary hack that will be
 # used untill a proper ALIAS management will be introduced into the
 # system
-def move_to_duplicated(enrollment, kb):
+def move_to_duplicated(enrollment, enroll_backup, operator, kb):
     logger = logging.getLogger()
     old_st = enrollment.study
     dupl_st = kb.get_study('%s_DUPLICATI' % old_st.label)
     if not dupl_st:
         logger.warning('No "duplicated" study ({0}_DUPLICATI) found for study {0}'.format(old_st.label))
         return
+    enroll_backup['study'] = enrollment.study.id
     enrollment.study = dupl_st
     try:
+        update_object(enrollment, backup, operator, kb)
         kb.save(enrollment)
         logger.info('Enrollmnet %s moved from study %s to study %s' % (enrollment.studyCode,
                                                                        old_st.label, dupl_st.label))
@@ -131,6 +172,24 @@ def move_to_duplicated(enrollment, kb):
         logger.error('An error occurred while moving enrollment %s from study %s to %s' % (enrollment.studyCode,
                                                                                            old_st.label,
                                                                                            dupl_st.label))
+
+def rollback_update(obj, kb):
+    logger = logging.getLogger()
+    logger.debug('Rollback last update for object %s::%s' % (obj.get_ome_table(), obj.id))
+    last_update_act = obj.lastUpdate
+    if obj.lastUpdate.target == obj.action:
+        logger.debug('restoring object to its original state')
+        obj.lastUpdate = None
+    else:
+        obj.lastUpdate = obj.lastUpdate.target
+        logger.debug('last update for the object is now %s' % obj.lastUpdate.id)
+    try:
+        kb.reload_object(last_update_act)
+        logger.debug('last update action reloaded')
+        kb.delete(last_update_act)
+        logger.debug('last update action deleted')
+    except:
+        pass
 
 
 def main(argv):
@@ -168,15 +227,15 @@ def main(argv):
                 continue
 
             logger.info('Updating children connected to source individual')
-            update_children(source, target, kb)
+            update_children(source, target, args.operator, kb)
             logger.info('Children update complete')
 
             logger.info('Updating ActionOnIndividual related to source individual')
-            update_action_on_ind(source, target, kb)
+            update_action_on_ind(source, target, args.operator, kb)
             logger.info('ActionOnIndividual update completed')
 
             logger.info('Updating enrollments related to source individual')
-            update_enrollments(source, target, kb)
+            update_enrollments(source, target, args.operator, kb)
             logger.info('Enrollments update completed')
             
             logger.info('Updating EHR records related to source individual')

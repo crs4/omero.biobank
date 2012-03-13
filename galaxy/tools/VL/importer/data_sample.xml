@@ -59,6 +59,7 @@
       <option value="Tube">Tube</option>
       <option value="PlateWell">PlateWell</option>
       <option value="DataSample">DataSample</option>
+      <option value="DataCollectionItem">DataCollectionItem</option>
     </param>
 
     <param name="device_type" type="select"
