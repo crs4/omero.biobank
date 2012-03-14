@@ -6,9 +6,6 @@
 # * Enrollments
 # * EHR records
 #
-# At the end of the merge procedure, the script will try to delete the
-# "source" individual
-#
 # The tool expects as input a TSV file like this
 #   source                               target
 #   V0468D2D96999548BF9FC6AD24C055E038   V060BAA01C662240D181BB98A51885C498
@@ -16,12 +13,14 @@
 #   V0B20C93E8A88D43EFB87A7E6911292A05   V0BED85E8E76A54AA7AB0AFB09F95798A8
 #   ...
 #
-# NOTE WELL:
-# * Parents of the "source" indivudal WILL NOT BE ASSIGNED to the "target" individual
-# * For the Enrollmnent objects, if "target" individual has already a
-#   code in the same study of "source" individual, the script will try
-#   to move the Enrollment to the "duplicated" study (this will be
-#   fixed when a proper ALIASES manegement will be introduced)
+# NOTE WELL: 
+# * Parents of the "source" indivudal WILL NOT BE ASSIGNED
+#   to the "target" individual
+# * For the Enrollmnent objects, if
+#   "target" individual has already a code in the same study of "source"
+#   individual, the script will try to move the Enrollment to the
+#   "duplicated" study (this will be fixed when a proper ALIASES
+#   manegement will be introduced)
 # =======================================
 
 import sys, argparse, logging, csv, time, json
@@ -54,10 +53,12 @@ def make_parser():
 
 def update_object(obj, backup_values, operator, kb):
     logger = logging.getLogger()
-    logger.debug('Building ActionOnAction for object %s::%s' % (obj.get_ome_table(),
-                                                                obj.id))
+    logger.debug('Building ActionOnAction for object %s::%s' % 
+                 (obj.get_ome_table(),
+                  obj.id)
+                 )
     act_setup = build_action_setup('merge-individuals-%f' % time.time(),
-                                   backup_value, kb)
+                                   backup_values, kb)
     aoa_conf = {
         'setup': act_setup,
         'actionCategory' : kb.ActionCategory.UPDATE,
@@ -108,14 +109,11 @@ def update_action_on_ind(source_ind, target_ind, operator, kb):
                JOIN act.target AS ind
                WHERE ind.vid = :ind_vid
             '''
-    acts = kb.find_all_by_query(query, {'ind_vid' : source_ind.id})
-    logger.info('Retrieved %d actions for source individual' % len(acts))
+    src_acts = kb.find_all_by_query(query, {'ind_vid' : source_ind.id})
+    logger.info('Retrieved %d actions for source individual' % len(src_acts))
     for sa in src_acts:
-        backup = {}
         logger.debug('Changing target for action %s' % sa.id)
-        backup['target'] = sa.target.id
         sa.target = target_ind
-        update_object(sa, backup, operator, kb)
         logger.debug('Action %s target updated' % sa.id)
     kb.save_array(src_acts)
 
@@ -127,15 +125,12 @@ def update_enrollments(source_ind, target_ind, operator, kb):
             '''
     enrolls = kb.find_all_by_query(query, {'ind_vid' : source_ind.id})
     logger.info('Retrieved %d enrollments for source individual' % len(enrolls))
-    for en in enrolls:
+    for sren in enrolls:
         try:
-            backup = {}
-            backup['individual'] = en.individual.id
-            en.individual = target_ind
-            update_object(en, backup, operator, kb)
+            sren.individual = target_ind
             logger.debug('Changing individual for enrollment %s in study %s' % (sren.studyCode,
                                                                                 sren.study.label))
-            kb.save(en)
+            kb.save(sren)
             logger.info('Changed individual for enrollment %s (study code %s -- study %s)' % (sren.id,
                                                                                               sren.studyCode,
                                                                                               sren.study.label))
@@ -143,8 +138,7 @@ def update_enrollments(source_ind, target_ind, operator, kb):
             logger.warning('Unable to update enrollment %s (study code %s -- study %s)' % (sren.id,
                                                                                            sren.studyCode,
                                                                                            sren.study.label))
-            rollback_update(en, kb)
-            move_to_duplicated(en, backup, operator, kb)
+            move_to_duplicated(sren, operator, kb)
 
 def update_ehr_records(source_ind, target_ind, kb):
     kb.update_table_rows(kb.eadpt.EAV_EHR_TABLE, '(i_vid == "%s")' % source_ind.id,
@@ -154,17 +148,15 @@ def update_ehr_records(source_ind, target_ind, kb):
 # This method should be considered as a temporary hack that will be
 # used untill a proper ALIAS management will be introduced into the
 # system
-def move_to_duplicated(enrollment, enroll_backup, operator, kb):
+def move_to_duplicated(enrollment, operator, kb):
     logger = logging.getLogger()
     old_st = enrollment.study
     dupl_st = kb.get_study('%s_DUPLICATI' % old_st.label)
     if not dupl_st:
         logger.warning('No "duplicated" study ({0}_DUPLICATI) found for study {0}'.format(old_st.label))
         return
-    enroll_backup['study'] = enrollment.study.id
     enrollment.study = dupl_st
     try:
-        update_object(enrollment, backup, operator, kb)
         kb.save(enrollment)
         logger.info('Enrollmnet %s moved from study %s to study %s' % (enrollment.studyCode,
                                                                        old_st.label, dupl_st.label))
@@ -172,25 +164,6 @@ def move_to_duplicated(enrollment, enroll_backup, operator, kb):
         logger.error('An error occurred while moving enrollment %s from study %s to %s' % (enrollment.studyCode,
                                                                                            old_st.label,
                                                                                            dupl_st.label))
-
-def rollback_update(obj, kb):
-    logger = logging.getLogger()
-    logger.debug('Rollback last update for object %s::%s' % (obj.get_ome_table(), obj.id))
-    last_update_act = obj.lastUpdate
-    if obj.lastUpdate.target == obj.action:
-        logger.debug('restoring object to its original state')
-        obj.lastUpdate = None
-    else:
-        obj.lastUpdate = obj.lastUpdate.target
-        logger.debug('last update for the object is now %s' % obj.lastUpdate.id)
-    try:
-        kb.reload_object(last_update_act)
-        logger.debug('last update action reloaded')
-        kb.delete(last_update_act)
-        logger.debug('last update action deleted')
-    except:
-        pass
-
 
 def main(argv):
     parser = make_parser()
@@ -242,13 +215,5 @@ def main(argv):
             update_ehr_records(source, target, kb)
             logger.info('EHR records update completed')
     
-            try:
-                kb.delete(source)
-                ind_lookup.pop(source.id)
-                logger.info('Individual %s deleted' % source.id)
-            except KBError, kb:
-                logger.error('Unable to delete individual %s' % source.id)
-                logger.error(kb)
-
 if __name__ == '__main__':
     main(sys.argv[1:])
