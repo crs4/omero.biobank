@@ -6,9 +6,12 @@ Genotyping-related I/O
 ======================
 """
 
-import array, struct
+import array, struct, logging
+logger = logging.getLogger('bl.vl.genotype.io')
 import numpy as np
 import itertools as it
+
+from collections import Counter
 
 from bl.core.io import MessageStreamReader
 from bl.vl.genotype.algo import project_to_discrete_genotype
@@ -287,6 +290,7 @@ def read_ssc(fn, mset):
   :param mset: a reference markers set
   :type mset: SNPMarkersSet
   """
+  ct = Counter()
   if (not mset.has_markers()
       or 'label' not in mset.get_add_marker_info_fields()):
     mset.load_markers(additional_fields=['label'])
@@ -306,10 +310,18 @@ def read_ssc(fn, mset):
     _, snp_label, _, conf, _, _, w_AA, w_AB, w_BB = reader.read()
     flip, idx = l2m[snp_label]
     S = w_AA + w_AB + w_BB
-    p_AA, p_BB = w_AA / S, w_BB / S
-    if flip:
-      p_AA, p_BB = p_BB, p_AA
-    probs[0,idx] = p_AA
-    probs[1,idx] = p_BB
-    confs[idx] = conf
+    try:
+      p_AA, p_BB = w_AA / S, w_BB / S
+      if flip:
+        p_AA, p_BB = p_BB, p_AA
+        probs[0,idx] = p_AA
+        probs[1,idx] = p_BB
+    except ZeroDivisionError, zde:
+      logger.warning('read_ssc:\tZeroDevisionError raised while parsing file %s' % fn)
+      logger.debug('read_ssc:\tsnp_label = %s -- w_AA, w_AB, w_BB = %r' % (snp_label,
+                                                                  (w_AA, w_AB, w_BB)))
+      logger.debug('read_ssc:\tusing default probs %r' % ((probs[0,idx], probs[1,idx]),))
+      ct['outliers'] += 1
+  confs[idx] = conf
+  logger.info('read_scc:\tfound %d suspected outliers in %s' % (ct['outliers'], fn))
   return probs, confs
