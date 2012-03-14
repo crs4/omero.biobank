@@ -17,15 +17,7 @@ from bl.core.io import MessageStreamReader
 from bl.vl.genotype.algo import project_to_discrete_genotype
 
 
-class Error(Exception):
-
-  def __init__(self, msg):
-    self.msg = msg
-
-  def __str__(self):
-    return str(self.msg)
-
-
+class Error(Exception): pass
 class InvalidRecordError(Error): pass
 class MismatchError(Error): pass
 
@@ -52,7 +44,7 @@ def DatReader(datfile):
         raise InvalidRecordError("Invalid data type %r in line %r" % (t, line))
     else:
       n_items = 1
-    for i in xrange(n_items):
+    for _ in xrange(n_items):
       yield t[0], name.rstrip()
 
 
@@ -93,7 +85,7 @@ def get_dat_types(datfile):
   if not hasattr(datfile, "next"):
     datfile = open(datfile)
   dat_types = array.array('c')
-  for t, name in DatReader(datfile):
+  for t, _ in DatReader(datfile):
     dat_types.append(t)
   if hasattr(datfile, "close"):
     datfile.close()
@@ -113,8 +105,8 @@ def get_map_data(mapfile):
   map_data = {}
   if not hasattr(mapfile, "next"):
     mapfile = open(mapfile)
-  for chr, marker, pos in MapReader(mapfile):
-    map_data[marker] = [chr, pos]
+  for chr_, marker, pos in MapReader(mapfile):
+    map_data[marker] = [chr_, pos]
   if hasattr(mapfile, "close"):
     mapfile.close()
   return map_data
@@ -193,7 +185,7 @@ class PedWriter(object):
     self.ped_file = None
     try:
       N = len(self.mset)
-    except ValueError as e:
+    except ValueError:
       self.mset.load_markers()
       N = len(self.mset)
     self.null_probs = np.empty((2, N), dtype=np.float32)
@@ -212,6 +204,7 @@ class PedWriter(object):
     distance, so we force it to 0.
     """
     def chrom_label(x):
+      # FIXME this function is not used
       if x < 23:
         return x
       return { 23 : 'X', 24 : 'Y', 25 : 'XY', 26 : 'MT'}[x]
@@ -303,10 +296,9 @@ def read_ssc(fn, mset):
   labels = add_marker_info['label']
   flips = markers['allele_flip']
   indx  = markers['marker_indx']
-
   l2m = dict((l, (f, i)) for (l, f, i) in it.izip(labels, flips, indx))
   reader = MessageStreamReader(fn)
-  for i in xrange(n_markers):
+  for _ in xrange(n_markers):
     _, snp_label, _, conf, _, _, w_AA, w_AB, w_BB = reader.read()
     flip, idx = l2m[snp_label]
     S = w_AA + w_AB + w_BB
@@ -316,12 +308,19 @@ def read_ssc(fn, mset):
         p_AA, p_BB = p_BB, p_AA
         probs[0,idx] = p_AA
         probs[1,idx] = p_BB
-    except ZeroDivisionError, zde:
-      logger.warning('read_ssc:\tZeroDevisionError raised while parsing file %s' % fn)
-      logger.debug('read_ssc:\tsnp_label = %s -- w_AA, w_AB, w_BB = %r' % (snp_label,
-                                                                  (w_AA, w_AB, w_BB)))
-      logger.debug('read_ssc:\tusing default probs %r' % ((probs[0,idx], probs[1,idx]),))
+    except ZeroDivisionError:
+      logger.warning(
+        'read_ssc:\tZeroDivisionError raised while parsing file %s' % fn
+        )
+      logger.debug('read_ssc:\tsnp_label = %s -- w_AA, w_AB, w_BB = %r' % (
+        snp_label, (w_AA, w_AB, w_BB)
+        ))
+      logger.debug('read_ssc:\tusing default probs %r' % (
+        (probs[0,idx], probs[1,idx]),
+        ))
       ct['outliers'] += 1
   confs[idx] = conf
-  logger.info('read_scc:\tfound %d suspected outliers in %s' % (ct['outliers'], fn))
+  logger.info('read_scc:\tfound %d suspected outliers in %s' % (
+    ct['outliers'], fn
+    ))
   return probs, confs
