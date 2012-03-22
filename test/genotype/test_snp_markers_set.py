@@ -149,7 +149,6 @@ class markers_set(unittest.TestCase):
     self.assertEqual(len(mset), N)
     for lv, m in it.izip(lvs, mset.markers):
       self.assertEqual(lv[1], m[0])
-    # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_align(self):
@@ -160,7 +159,6 @@ class markers_set(unittest.TestCase):
     mset.load_alignments(ref_genome)
     for p, m in it.izip(pos, mset.get_markers_iterator()):
       self.assertEqual(p, m.position)
-    # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_read_ssc(self):
@@ -179,7 +177,7 @@ class markers_set(unittest.TestCase):
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_gdo(self):
-    N = 16
+    N = 32
     lvs = self.create_markers(N)
     mset = self.create_snp_markers_set(lvs)
     mset.load_markers()
@@ -200,7 +198,6 @@ class markers_set(unittest.TestCase):
       self.assertTrue((probs[:,indices] == x['probs']).all())
       self.assertTrue((confs[indices] == x['confidence']).all())
     self.assertEqual(i, 0)
-    # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_define_range_selector(self):
@@ -219,7 +216,6 @@ class markers_set(unittest.TestCase):
         self.assertTrue(low_pos <= m.position <= high_pos)
       else:
         self.assertTrue(low_pos > m.position or high_pos < m.position)
-    # FIXME this should happen automatically
     self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_intersect(self):
@@ -288,16 +284,55 @@ class markers_set(unittest.TestCase):
     idx1, idx2 = self.kb.SNPMarkersSet.intersect(mset1, mset1)
     print 'intersecting  %d aligns took %f' % (N1, time.time() - beg)
 
+  def test_speed_gdo(self):
+    N = 1024*1024
+    beg = time.time()
+    lvs = self.create_markers(N)
+    print ''
+    print 'creating %d markers took %f' % (N, time.time() - beg)
+    mset = self.create_snp_markers_set(lvs)
+    beg = time.time()
+    mset.load_markers()
+    print 'loading %d markers took %f' % (N, time.time() - beg)
+    beg = time.time()
+    data_sample = self.create_data_sample(mset, 'foo-data')
+    print 'creating a data sample took %f' % (time.time() - beg)
+    beg = time.time()
+    probs, confs = self.create_data_object(data_sample)
+    print 'creating a data object took %f' % (time.time() - beg)
+    beg = time.time()
+    probs1, confs1 = data_sample.resolve_to_data()
+    print 'resolving to data  took %f' % (time.time() - beg)
+    self.assertTrue((probs == probs1).all())
+    self.assertTrue((confs == confs1).all())
+    beg = time.time()
+    s = self.kb.get_gdo_iterator(mset, data_samples=[data_sample])
+    for i, x in enumerate(s):
+      self.assertTrue((probs == x['probs']).all())
+      self.assertTrue((confs == x['confidence']).all())
+    self.assertEqual(i, 0)
+    print 'iterating took %f' % (time.time() - beg)
+    indices = slice(N/4, N/2)
+    beg = time.time()
+    s = self.kb.get_gdo_iterator(mset, data_samples=[data_sample],
+                                 indices=indices)
+    for i, x in enumerate(s):
+      self.assertTrue((probs[:,indices] == x['probs']).all())
+      self.assertTrue((confs[indices] == x['confidence']).all())
+    self.assertEqual(i, 0)
+    print 'iterating with indices took %f' % (time.time() - beg)
+    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(markers_set('test_creation_destruction'))
-  suite.addTest(markers_set('test_align'))
-  suite.addTest(markers_set('test_read_ssc'))
-  suite.addTest(markers_set('test_gdo'))
-  suite.addTest(markers_set('test_define_range_selector'))
-  suite.addTest(markers_set('test_intersect'))
-  #suite.addTest(markers_set('test_speed'))
+  # suite.addTest(markers_set('test_creation_destruction'))
+  # suite.addTest(markers_set('test_align'))
+  # suite.addTest(markers_set('test_read_ssc'))
+  # suite.addTest(markers_set('test_gdo'))
+  # suite.addTest(markers_set('test_define_range_selector'))
+  # suite.addTest(markers_set('test_intersect'))
+  # suite.addTest(markers_set('test_speed'))
+  suite.addTest(markers_set('test_speed_gdo'))
   return suite
 
 
