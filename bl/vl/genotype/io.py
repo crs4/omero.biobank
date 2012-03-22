@@ -306,8 +306,8 @@ def read_ssc(fn, mset):
       p_AA, p_BB = w_AA / S, w_BB / S
       if flip:
         p_AA, p_BB = p_BB, p_AA
-        probs[0,idx] = p_AA
-        probs[1,idx] = p_BB
+      probs[0,idx] = p_AA
+      probs[1,idx] = p_BB
     except ZeroDivisionError:
       logger.warning(
         'read_ssc:\tZeroDivisionError raised while parsing file %s' % fn
@@ -319,7 +319,7 @@ def read_ssc(fn, mset):
         (probs[0,idx], probs[1,idx]),
         ))
       ct['outliers'] += 1
-  confs[idx] = conf
+    confs[idx] = conf
   logger.info('read_scc:\tfound %d suspected outliers in %s' % (
     ct['outliers'], fn
     ))
