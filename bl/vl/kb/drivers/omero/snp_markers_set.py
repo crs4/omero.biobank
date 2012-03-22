@@ -35,7 +35,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
     are contained in the provided gc_range. A gc_range is a two
     elements tuple, with each element a tuple (chromosome,
     position), where chromosome is an int in [1,26], and pos is a positive
-    int. Both positional tuples should be for the same refereyesnce
+    int. Both positional tuples should be for the same reference
     genome.  It is a responsibility of the caller to assure that mset
     has loaded markers definitions aligned on the same reference genome.
 

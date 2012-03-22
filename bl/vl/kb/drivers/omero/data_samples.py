@@ -90,10 +90,11 @@ class GenotypeDataSample(DataSample):
     for do in dos:
       do.reload()
       if do.mimetype == mimetypes.GDO_TABLE:
-        jnk, vid = do.path.split('=')
+        set_vid, vid, index = self.proxy.parse_gdo_path(do.path)
         mset = self.snpMarkersSet
+        assert mset.id == set_vid
         mset.reload()
-        res = self.proxy.get_gdo(mset, vid)
+        res = self.proxy.get_gdo(mset, vid, index)
         return res['probs'], res['confidence']
     else:
       raise ValueError('DataObject is not a %s' % mimetypes.GDO_TABLE)
