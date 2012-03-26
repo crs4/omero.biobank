@@ -230,6 +230,7 @@ class ProxyCore(object):
       raise kb.KBError("trying to delete non-persistent object")
     else:
       self.del_from_cache(kb_obj.ome_obj)
+      kb_obj.__cleanup__()
     return result
 
   #----------------------------------------------------------------------------

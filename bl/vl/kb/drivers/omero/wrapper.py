@@ -296,5 +296,8 @@ class OmeroWrapper(CoreOmeroWrapper):
   def __update_constraints__(self):
     pass
 
+  def __cleanup__(self):
+    pass
+
   def configure(self, conf):
     self.__config__(self.ome_obj, conf)

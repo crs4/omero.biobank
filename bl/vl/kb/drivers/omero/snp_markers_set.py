@@ -99,6 +99,9 @@ class SNPMarkersSet(wp.OmeroWrapper):
                                                 conf['release'])
     return conf
 
+  def __cleanup__(self):
+    self.proxy.gadpt.delete_snp_markers_set_tables(self.id)
+
   @property
   def id(self):
     return self.markersSetVID

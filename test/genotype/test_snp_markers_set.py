@@ -20,10 +20,15 @@ OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
 PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
 
-def make_fake_data(mset):
+def make_fake_data(mset, add_nan=False):
   n = len(mset)
   probs = 0.5 * np.cast[np.float32](np.random.random((2, n)))
   confs = np.cast[np.float32](np.random.random(n))
+  if add_nan:
+    rand_indices = np.random.random_integers(0, len(probs[0]) - 1, len(probs[0])/2)
+    for x in set(rand_indices):
+      probs[0][x] = np.nan
+      probs[1][x] = np.nan
   return probs, confs
 
 
@@ -129,8 +134,8 @@ class markers_set(unittest.TestCase):
     self.kill_list.append(data_sample)
     return data_sample
 
-  def create_data_object(self, data_sample):
-    probs, confs = make_fake_data(data_sample.snpMarkersSet)
+  def create_data_object(self, data_sample, add_nan=False):
+    probs, confs = make_fake_data(data_sample.snpMarkersSet, add_nan)
     do = self.kb.add_gdo_data_object(self.action, data_sample, probs, confs)
     self.kill_list.append(do)
     return probs, confs
@@ -149,7 +154,6 @@ class markers_set(unittest.TestCase):
     self.assertEqual(len(mset), N)
     for lv, m in it.izip(lvs, mset.markers):
       self.assertEqual(lv[1], m[0])
-    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_align(self):
     N = 16
@@ -159,7 +163,6 @@ class markers_set(unittest.TestCase):
     mset.load_alignments(ref_genome)
     for p, m in it.izip(pos, mset.get_markers_iterator()):
       self.assertEqual(p, m.position)
-    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_read_ssc(self):
     N = 16
@@ -174,7 +177,6 @@ class markers_set(unittest.TestCase):
     probs_1, confs_1 = gio.read_ssc(fn, mset)
     self.assertAlmostEqual(np.sum(np.abs(probs - probs_1)), 0.0)
     self.assertAlmostEqual(np.sum(np.abs(confs - confs_1)), 0.0)
-    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_gdo(self):
     N = 32
@@ -198,7 +200,6 @@ class markers_set(unittest.TestCase):
       self.assertTrue((probs[:,indices] == x['probs']).all())
       self.assertTrue((confs[indices] == x['confidence']).all())
     self.assertEqual(i, 0)
-    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_define_range_selector(self):
     N, N_dups = 16, 0
@@ -216,7 +217,6 @@ class markers_set(unittest.TestCase):
         self.assertTrue(low_pos <= m.position <= high_pos)
       else:
         self.assertTrue(low_pos > m.position or high_pos < m.position)
-    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
   def test_intersect(self):
     ref_genome = 'g' + ('%f' % time.time())[-14:]
@@ -285,7 +285,7 @@ class markers_set(unittest.TestCase):
     print 'intersecting  %d aligns took %f' % (N1, time.time() - beg)
 
   def test_speed_gdo(self):
-    N = 1024*1024
+    N = 934968
     beg = time.time()
     lvs = self.create_markers(N)
     print ''
@@ -321,18 +321,17 @@ class markers_set(unittest.TestCase):
       self.assertTrue((confs[indices] == x['confidence']).all())
     self.assertEqual(i, 0)
     print 'iterating with indices took %f' % (time.time() - beg)
-    self.kb.gadpt.delete_snp_markers_set_tables(mset.id)
 
 def suite():
   suite = unittest.TestSuite()
   # suite.addTest(markers_set('test_creation_destruction'))
   # suite.addTest(markers_set('test_align'))
   # suite.addTest(markers_set('test_read_ssc'))
-  # suite.addTest(markers_set('test_gdo'))
+  suite.addTest(markers_set('test_gdo'))
   # suite.addTest(markers_set('test_define_range_selector'))
   # suite.addTest(markers_set('test_intersect'))
   # suite.addTest(markers_set('test_speed'))
-  suite.addTest(markers_set('test_speed_gdo'))
+  # suite.addTest(markers_set('test_speed_gdo'))
   return suite
 
 
