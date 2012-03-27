@@ -5,6 +5,8 @@ import omero.model
 import omero.rtypes
 import omero_Tables_ice
 
+import tables
+
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
@@ -24,6 +26,8 @@ def make_parser():
                         help='omero.Table name')
     parser.add_argument('--lines', '-L', type=int, default=1000,
                         help='lines that will be read for the speed test')
+    parser.add_argument('--file_path', '-F', type=str, default=None,
+                        help='filen used for the low-level test usint pytables libs (default=None, no low-level test will be performed')
     return parser
     
 def main(argv):
@@ -63,7 +67,16 @@ def main(argv):
         logger.debug('Reading line %d' % x)
         data = t.read(range(len(cols)), x, x+1)
 
-    logger.info('Read complete in %f' % (time.time() - start))
+    logger.info('Read completed in %f' % (time.time() - start))
+
+    if args.file_path:
+        start = time.time()
+        table = tables.openFile(args.file_path)
+        logger.info('Start reading %d lines using pytables API' % args.lines)
+        for x in xrange(args.lines):
+            logger.debug('Reading line %d' % x)
+            data = table.root.OME.Measurements.read(x, x+1)
+        logger.info('Read completed in %f' % (time.time() - start))
 
 if __name__ == '__main__':
     main(sys.argv[1:])
