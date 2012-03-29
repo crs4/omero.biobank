@@ -64,11 +64,7 @@ class DependencyTree(object):
         if hasattr(a, 'target'):
           x, y = o, obj_by_oid[okey(a.target)]
           if type(y) in relationship:
-            self.logger.debug('-- -- --object %r is connected to a "relationship" type obj' % 
-                              type(x))
             y = getattr(y, relationship[type(y)])
-            self.logger.debug('-- -- --linked to object %r with VID %s' % 
-                              (type(y), y.id))
           edges.append((x.id, y.id))
       except AttributeError, ae:
         #self.logger.debug(ae)
