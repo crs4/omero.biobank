@@ -3,8 +3,8 @@ This script generates the input file for the hadoop version of the
 kinship algorithm.
 The output file will be like
 
-AA AB 00 BB AB
-BB 00 AA AA AB
+AA AB NN BB AB
+BB NN AA AA AB
 AA AA BB BB AB
 ...
 
@@ -87,6 +87,21 @@ class KinshipWriter(object):
         self.out_ds_file.close()
         
 
+def ome_env_variable(name):
+    if os.environ.has_key(name):
+        return os.environ[name]
+    else:
+        msg = 'environment variable %s does not exist' % name
+        raise argparse.ArgumentTypeError(msg)
+
+def ome_host():
+    return ome_env_variable('OME_HOST')
+
+def ome_user():
+    return ome_env_variable('OME_USER')
+
+def ome_passwd():
+    return ome_env_variable('OME_PASSWD')
 
 def make_parser():
     parser = argparse.ArgumentParser(description = 'build kinship input from VL')
@@ -103,12 +118,15 @@ def make_parser():
                         help = 'write the transposed version of the standard output')
     parser.add_argument('--ignore_duplicated', action='store_true',
                         help = 'if more than one data sample is connected to an indiviudal use only the first one')
-    parser.add_argument('--host', '-H', type = str, help = 'omero hostname',
-                        default = 'localhost')
-    parser.add_argument('--user', '-U', type = str, help = 'omero user',
-                        default = 'root')
-    parser.add_argument('--passwd', '-P', type = str, help  = 'omero password',
-                        required = True)
+    parser.add_argument('--host', '-H', type = str,
+                        help = 'omero hostname (default ${OME_HOST})',
+                        default = ome_host())
+    parser.add_argument('--user', '-U', type = str,
+                        help = 'omero user (default ${OME_USER})',
+                        default = ome_user())
+    parser.add_argument('--passwd', '-P', type = str,
+                        help  = 'omero password (default ${OME_PASSWD})',
+                        default = ome_passwd())
     parser.add_argument('--out_path', type = str, help = 'output files path',
                         required = True)
     parser.add_argument('--base_filename', type = str, default = None,
@@ -119,7 +137,7 @@ def make_parser():
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
-    
+
     log_level = getattr(logging, args.loglevel)
     kwargs = {'format' : LOG_FORMAT,
               'datefmt' : LOG_DATEFMT,
