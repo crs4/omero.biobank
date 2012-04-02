@@ -149,7 +149,7 @@ def main(argv):
         user = args.user if args.user else ome_user()
         passwd = args.passwd if args.passwd else ome_passwd()
     except ValueError, ve:
-        print ve
+        logger.error(ve)
         sys.exit(2)
 
     kb = KB(driver='omero')(host, user, passwd)
