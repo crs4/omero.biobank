@@ -91,8 +91,8 @@ def ome_env_variable(name):
     if os.environ.has_key(name):
         return os.environ[name]
     else:
-        msg = 'environment variable %s does not exist' % name
-        raise argparse.ArgumentTypeError(msg)
+        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
+        raise ValueError(msg)
 
 def ome_host():
     return ome_env_variable('OME_HOST')
@@ -119,14 +119,11 @@ def make_parser():
     parser.add_argument('--ignore_duplicated', action='store_true',
                         help = 'if more than one data sample is connected to an indiviudal use only the first one')
     parser.add_argument('--host', '-H', type = str,
-                        help = 'omero hostname (default ${OME_HOST})',
-                        default = ome_host())
+                        help = 'omero hostname (default ${OME_HOST})')
     parser.add_argument('--user', '-U', type = str,
-                        help = 'omero user (default ${OME_USER})',
-                        default = ome_user())
+                        help = 'omero user (default ${OME_USER})')
     parser.add_argument('--passwd', '-P', type = str,
-                        help  = 'omero password (default ${OME_PASSWD})',
-                        default = ome_passwd())
+                        help  = 'omero password (default ${OME_PASSWD})')
     parser.add_argument('--out_path', type = str, help = 'output files path',
                         required = True)
     parser.add_argument('--base_filename', type = str, default = None,
@@ -147,7 +144,15 @@ def main(argv):
     logging.basicConfig(**kwargs)
     logger = logging.getLogger()
 
-    kb = KB(driver='omero')(args.host, args.user, args.passwd)
+    try:
+        host = args.host if args.host else ome_host()
+        user = args.user if args.user else ome_user()
+        passwd = args.passwd if args.passwd else ome_passwd()
+    except ValueError, ve:
+        print ve
+        sys.exit(2)
+
+    kb = KB(driver='omero')(host, user, passwd)
     
     logger.info('Loading individuals from study %s' % args.study)
     inds = [en.individual
