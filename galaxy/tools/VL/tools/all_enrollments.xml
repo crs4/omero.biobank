@@ -1,0 +1,49 @@
+<tool id="vl_tools_all_enrollments" name="VLT.all_enrollments">
+  <description>
+    Retrieve all enrollments codes from Omero server
+  </description>
+  <command interpreter="python">
+    retrieve_all_enrollments.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=${advanced_configuration.vl_host}
+      --user=${advanced_configuration.vl_user}
+      --passwd=${advanced_configuration.vl_passwd}
+    #else
+      --host=$__app__.config.omero_default_host
+      --user=$__app__.config.omero_default_user
+      --passwd=$__app__.config.omero_default_passwd
+    #end if
+    --ofile=${output1}
+    --loglevel=$__app__.config.vl_loglevel
+    --logfile=${logfile}
+  </command>  
+  <inputs>   
+
+    <!-- ************************************************** -->
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="biobank09.crs4.it" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="galaxy" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="output1" label="${tool.name}.csv"/>
+    <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
+  </outputs>
+  <help>
+    It will output a tsv files with the following columns:
+  </help>
+
+</tool>
