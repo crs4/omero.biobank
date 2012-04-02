@@ -2,17 +2,34 @@ import logging, csv, os, sys, argparse
 
 from bl.vl.kb import KnowledgeBase as KB
 
+LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
+LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
+LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+
+def ome_env_variable(name):
+    if os.environ.has_key(name):
+        return os.environ[name]
+    else:
+        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
+        raise ValueError(msg)
+
+def ome_host():
+    return ome_env_variable('OME_HOST')
+
+def ome_user():
+    return ome_env_variable('OME_USER')
+
+def ome_passwd():
+    return ome_env_variable('OME_PASSWD')
+
 def make_parser():
     parser = argparse.ArgumentParser(description='Retrieve all enrollments')
     parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
-    parser.add_argument('--loglevel', type=str, choices = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+    parser.add_argument('--loglevel', type=str, choices = LOG_LEVELS,
                         help='logging level', default='INFO')
-    parser.add_argument('--host', type=str, help='omero hostname',
-                        default='localhost')
-    parser.add_argument('--user', type=str, help='omero user',
-                        default='root')
-    parser.add_argument('--passwd', type=str, help='omero password',
-                        required=True)
+    parser.add_argument('--host', type=str, help='omero hostname')
+    parser.add_argument('--user', type=str, help='omero user')
+    parser.add_argument('--passwd', type=str, help='omero password')
     parser.add_argument('--ofile', type=str, help='output file path',
                         required=True)
     return parser
@@ -24,14 +41,23 @@ def main(argv):
     # This is a temporary hack!!!
     to_be_ignored = ['IMMUNOCHIP_DISCARDED', 'CASI_MS_CSM_TMP']
 
-    logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    loglevel  = getattr(logging, args.loglevel)
+    log_level  = getattr(logging, args.loglevel)
+    kwargs = {'format' : LOG_FORMAT,
+              'datefmt' : LOG_DATEFMT,
+              'level' : log_level}
     if args.logfile:
-        logging.basicConfig(filename=args.logfile, format=logformat, level=loglevel)
-    else:
-        logging.basicConfig(format=logformat, level=loglevel)
-        logger = logging.getLogger()
+        kwargs['filename'] = args.logfile
+    logging.basicConfig(**kwargs)
+    logger = logging.getLogger()
         
+    try:
+        host = args.host if args.host else ome_host()
+        user = args.user if args.user else ome_user()
+        passwd = args.passwd if args.passwd else ome_passwd()
+    except ValueError, ve:
+        logger.error(ve)
+        sys.exit(2)
+
     try:
         out_file_path = args.ofile
     except IndexError:
@@ -40,7 +66,7 @@ def main(argv):
         sys.exit(2)
 
     # Create the KnowledgeBase object
-    kb = KB(driver='omero')(args.host, args.user, args.passwd)
+    kb = KB(driver='omero')(host, user, passwd)
 
     # Retrieve all studies from omero
     studies = kb.get_objects(kb.Study)
