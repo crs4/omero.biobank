@@ -1,0 +1,9 @@
+build
+docs/_build
+*.pyc
+*~
+MANIFEST
+README
+bl/vl/version.py
+dist
+
