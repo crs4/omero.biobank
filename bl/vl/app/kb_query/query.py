@@ -95,8 +95,8 @@ def make_parser(parser):
                       required=True, help="query code file")
 
 
-def implementation(logger, args):
-  selector = Selector(host=args.host, user=args.user, passwd=args.passwd,
+def implementation(logger, host, user, passwd, args):
+  selector = Selector(host=host, user=user, passwd=passwd,
                       logger=logger)
   selector.dump(args)
 

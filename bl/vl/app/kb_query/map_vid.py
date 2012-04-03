@@ -172,8 +172,8 @@ def make_parser(parser):
   parser.add_argument('--study', metavar="STRING", help="study label")
 
 
-def implementation(logger, args):
-  app = MapVIDApp(host=args.host, user=args.user, passwd=args.passwd,
+def implementation(logger, host, user, passwd, args):
+  app = MapVIDApp(host=host, user=user, passwd=passwd,
                   keep_tokens=args.keep_tokens,
                   study_label=args.study, logger=logger)
   app.dump(args.ifile, args.source_type,

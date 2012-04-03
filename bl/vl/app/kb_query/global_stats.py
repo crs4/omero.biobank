@@ -99,8 +99,8 @@ def make_parser(parser):
   parser.add_argument('--study', metavar="STRING", help="study label")
 
 
-def implementation(logger, args):
-  global_stats = GlobalStats(host=args.host, user=args.user, passwd=args.passwd,
+def implementation(logger, host, user, passwd, args):
+  global_stats = GlobalStats(host=host, user=user, passwd=passwd,
                              logger=logger)
   fieldnames = ['study', 'diagnosis', 'technologies', 'gender', 'counts']
   otsv = csv.DictWriter(args.ofile, fieldnames, delimiter='\t',

@@ -6,7 +6,7 @@
 from the Knowledge Base (KB).
 """
 
-import sys, argparse, logging
+import sys, argparse, logging, os
 from importlib import import_module
 
 
@@ -21,6 +21,9 @@ SUBMOD_NAMES = [
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 
+LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
+LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
+LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 class App(object):
   
@@ -39,9 +42,9 @@ class App(object):
     parser.add_argument('-o', '--ofile', type=argparse.FileType('w'),
                         help='output tsv file', default=sys.stdout)
     parser.add_argument('-H', '--host', metavar="STRING",
-                        help='OMERO hostname', default='localhost')
+                        help='OMERO hostname')
     parser.add_argument('-U', '--user', metavar="STRING",
-                        help='OMERO user', default='test')
+                        help='OMERO user')
     parser.add_argument('-P', '--passwd', metavar="STRING",
                         help='OMERO password')
     parser.add_argument('--operator', metavar="STRING",
@@ -56,16 +59,39 @@ class App(object):
     self.parser = parser
     return parser
 
+def ome_env_variable(name):
+    if os.environ.has_key(name):
+        return os.environ[name]
+    else:
+        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
+        raise ValueError(msg)
+
+def ome_host():
+    return ome_env_variable('OME_HOST')
+
+def ome_user():
+    return ome_env_variable('OME_USER')
+
+def ome_passwd():
+    return ome_env_variable('OME_PASSWD')
 
 def main(argv=None):
   app = App()
   parser = app.make_parser()
   args = parser.parse_args(argv)
-  logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
   loglevel  = getattr(logging, args.loglevel)
+  kwargs = {'format'  : LOG_FORMAT,
+            'datefmt' : LOG_DATEFMT,
+            'level'   : loglevel}
   if args.logfile:
-    logging.basicConfig(filename=args.logfile, format=logformat, level=loglevel)
-  else:
-    logging.basicConfig(format=logformat, level=loglevel)
+    kwargs['filename'] = args.logfile
+  logging.basicConfig(**kwargs)
   logger = logging.getLogger()
-  args.func(logger, args)
+  try:
+    host = args.host if args.host else ome_host()
+    user = args.user if args.user else ome_user()
+    passwd = args.passwd if args.passwd else ome_passwd()
+  except ValueError, ve:
+    logger.critical(ve)
+    sys.exit(2)
+  args.func(logger, host, user, passwd, args)

@@ -184,8 +184,8 @@ def make_parser(parser):
   parser.add_argument('--seed', type=int, metavar="INT", help="random seed")
 
 
-def implementation(logger, args):
-  selector = Selector(host=args.host, user=args.user, passwd=args.passwd,
+def implementation(logger, host, user, passwd, args):
+  selector = Selector(host=host, user=user, passwd=passwd,
                       logger=logger)
   otsv = csv.DictWriter(args.ofile, ['group', 'group_code', 'individual'],
                         delimiter='\t', lineterminator=os.linesep)
