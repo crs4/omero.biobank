@@ -120,7 +120,7 @@ class RecordCanonizer(core.RecordCanonizer):
     r.setdefault('description', DEFAULT_DESCRIPTION)
 
 
-def implementation(logger, args):
+def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
@@ -132,7 +132,7 @@ def implementation(logger, args):
   canonizer.canonize_list(records)
   o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
                      delimiter='\t', lineterminator=os.linesep)
-  recorder = Recorder(o, host=args.host, user=args.user, passwd=args.passwd,
+  recorder = Recorder(o, host=host, user=user, passwd=passwd,
                       keep_tokens=args.keep_tokens, logger=logger)
   recorder.record(records)
   args.ofile.close()

@@ -309,7 +309,7 @@ def make_parser(parser):
                       help="n. of objects to be processed at a time")
 
 
-def implementation(logger, args):
+def implementation(logger, host, user, passwd, args):
   fields_to_canonize = [
     'study',
     'source_type',
@@ -321,7 +321,7 @@ def implementation(logger, args):
     'action_category',
     ]
   action_setup_conf = Recorder.find_action_setup_conf(args)
-  recorder = Recorder(host=args.host, user=args.user, passwd=args.passwd,
+  recorder = Recorder(host=host, user=user, passwd=passwd,
                       keep_tokens=args.keep_tokens,
                       batch_size=args.batch_size, operator=args.operator,
                       action_setup_conf=action_setup_conf, logger=logger)

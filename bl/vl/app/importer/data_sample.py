@@ -370,7 +370,7 @@ def make_parser(parser):
                       help="n. of objects to be processed at a time")
 
 
-def implementation(logger, args):
+def implementation(logger, host, user, passwd, args):
   fields_to_canonize = [
     'study',
     'scanner',
@@ -382,7 +382,7 @@ def implementation(logger, args):
     ]
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
-                      host=args.host, user=args.user, passwd=args.passwd,
+                      host=host, user=user, passwd=passwd,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf,
                       logger=logger)

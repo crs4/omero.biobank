@@ -129,10 +129,10 @@ def make_parser(parser):
                       help="overrides the mimetype column value")
 
 
-def implementation(logger, args):
+def implementation(logger, host, user, passwd, args):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
-                      host=args.host, user=args.user, passwd=args.passwd,
+                      host=host, user=user, passwd=passwd,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf,
                       logger=logger)

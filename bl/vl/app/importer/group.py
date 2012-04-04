@@ -136,9 +136,9 @@ def make_parser(parser):
                       help="overrides the group column value")
 
 
-def implementation(logger, args):
+def implementation(logger, host, user, passwd, args):
   action_setup_conf = Recorder.find_action_setup_conf(args)
-  recorder = Recorder(host=args.host, user=args.user, passwd=args.passwd,
+  recorder = Recorder(host=host, user=user, passwd=passwd,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf, logger=logger)
   f = csv.DictReader(args.ifile, delimiter='\t')

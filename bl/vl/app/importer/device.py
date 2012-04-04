@@ -178,11 +178,11 @@ def make_parser(parser):
     )
 
 
-def implementation(logger, args):
+def implementation(logger, host, user, passwd, args):
   fields_to_canonize = ['study', 'maker', 'model', 'release', 'device_type']
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
-                      host=args.host, user=args.user, passwd=args.passwd,
+                      host=host, user=user, passwd=passwd,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf,
                       keep_tokens=args.keep_tokens, logger=logger)

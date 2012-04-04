@@ -142,9 +142,9 @@ def make_parser(parser):
                       help="n. of objects to be processed at a time")
 
 
-def implementation(logger, args):
+def implementation(logger, host, user, passwd, args):
   recorder = Recorder(args.study,
-                      host=args.host, user=args.user, passwd=args.passwd,
+                      host=host, user=user, passwd=passwd,
                       logger=logger)
   logger.info('start processing file %s' % args.ifile.name)
   f = csv.DictReader(args.ifile, delimiter='\t')

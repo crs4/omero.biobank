@@ -144,11 +144,11 @@ def make_parser(parser):
                       help="reference genome, e.g., hg19")
 
 
-def implementation(logger, args):
+def implementation(logger, host, user, passwd, args):
   fields_to_canonize = ['study', 'ref_genome']
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
-                      host=args.host, user=args.user, passwd=args.passwd,
+                      host=host, user=user, passwd=passwd,
                       action_setup_conf=action_setup_conf,
                       operator=args.operator, logger=logger, keep_tokens=1,
                       ms_label=args.markers_set)

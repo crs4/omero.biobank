@@ -204,7 +204,7 @@ def make_parser(parser):
                       help="n. of objects to be processed at a time")
 
 
-def implementation(logger, args):
+def implementation(logger, host, user, passwd, args):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   f = csv.DictReader(args.ifile, delimiter='\t')
   records = [r for r in f]
@@ -216,7 +216,7 @@ def implementation(logger, args):
   study_label = records[0]['study']
   o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
                      delimiter='\t', lineterminator=os.linesep)
-  recorder = Recorder(o, study_label, args.host, args.user, args.passwd,
+  recorder = Recorder(o, study_label, host, user, passwd,
                       args.keep_tokens, args.batch_size,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf, logger=logger)
