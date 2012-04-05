@@ -1,4 +1,4 @@
-import sys, csv, argparse, logging
+import sys, csv, argparse, logging, os
 from collections import Counter
 
 from bl.vl.kb import KnowledgeBase as KB
@@ -7,17 +7,30 @@ LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
+def ome_env_variable(name):
+    if os.environ.has_key(name):
+        return os.environ[name]
+    else:
+        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
+        raise ValueError(msg)
+
+def ome_host():
+    return ome_env_variable('OME_HOST')
+
+def ome_user():
+    return ome_env_variable('OME_USER')
+
+def ome_passwd():
+    return ome_env_variable('OME_PASSWD')
+
 def make_parser():
     parser = argparse.ArgumentParser(description='check data that will be passed to the merge_individuals tool')
     parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
     parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
                         help='logging level (default=INFO)', default='INFO')
-    parser.add_argument('-H', '--host', type=str, help='omero hostname',
-                        default='localhost')
-    parser.add_argument('-U', '--user', type=str, help='omero user',
-                        default='root')
-    parser.add_argument('-P', '--passwd', type=str, required=True,
-                        help='omero password')
+    parser.add_argument('-H', '--host', type=str, help='omero hostname')
+    parser.add_argument('-U', '--user', type=str, help='omero user')
+    parser.add_argument('-P', '--passwd', type=str, help='omero password')
     parser.add_argument('--in_file', type=str, required=True,
                         help='input file')
     parser.add_argument('--out_file', type=str, required=True,
@@ -77,7 +90,15 @@ def main(argv):
     logging.basicConfig(**kwargs)
     logger = logging.getLogger()
 
-    kb = KB(driver='omero')(args.host, args.user, args.passwd)
+    try:
+        host = args.host if args.host else ome_host()
+        user = args.user if args.user else ome_user()
+        passwd = args.passwd if args.passwd else ome_passwd()
+    except ValueError, ve:
+        logger.error(ve)
+        sys.exit(2)
+
+    kb = KB(driver='omero')(host, user, passwd)
     
     logger.info('Preloading all individuals')
     inds = kb.get_objects(kb.Individual)
