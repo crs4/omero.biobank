@@ -69,6 +69,22 @@ class VidMapper(object):
       r["source"] = imm_wells[0].id
 
 
+def ome_env_variable(name):
+    if os.environ.has_key(name):
+        return os.environ[name]
+    else:
+        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
+        raise ValueError(msg)
+
+def ome_host():
+    return ome_env_variable('OME_HOST')
+
+def ome_user():
+    return ome_env_variable('OME_USER')
+
+def ome_passwd():
+    return ome_env_variable('OME_PASSWD')
+
 def make_parser():
   parser = argparse.ArgumentParser(description="map immuno vids")
   parser.add_argument('-i', '--input-file', metavar='FILE', required=True,
@@ -78,12 +94,9 @@ def make_parser():
   parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
   parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
                       help='logging level', default='INFO')
-  parser.add_argument('-H', '--host', type=str, help='omero hostname',
-                      default='localhost')
-  parser.add_argument('-U', '--user', type=str, help='omero user',
-                      default='root')
-  parser.add_argument('-P', '--passwd', type=str, help='omero password',
-                      required=True)
+  parser.add_argument('-H', '--host', type=str, help='omero hostname')
+  parser.add_argument('-U', '--user', type=str, help='omero user')
+  parser.add_argument('-P', '--passwd', type=str, required=True)
   parser.add_argument('-s', '--study', metavar='STRING', default=STUDY,
                       help='study label')
   return parser
@@ -103,8 +116,14 @@ def main(argv):
     writer = csv.DictWriter(fo, reader.fieldnames, delimiter="\t",
                             lineterminator=os.linesep)
     writer.writeheader()
-    vid_mapper = VidMapper(args.host, args.user, args.passwd, logger,
-                           args.study)
+    try:
+      host = args.host or ome_host()
+      user = args.user or ome_user()
+      passwd = args.passwd or ome_passwd()
+    except ValueError, ve:
+      logger.critical(ve)
+      sys.exit(ve)
+    vid_mapper = VidMapper(host, user, passwd, logger, args.study)
     counter = Counter()
     for r in reader:
       counter["input_lines"] += 1

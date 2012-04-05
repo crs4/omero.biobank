@@ -6,17 +6,30 @@ LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
+def ome_env_variable(name):
+    if os.environ.has_key(name):
+        return os.environ[name]
+    else:
+        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
+        raise ValueError(msg)
+
+def ome_host():
+    return ome_env_variable('OME_HOST')
+
+def ome_user():
+    return ome_env_variable('OME_USER')
+
+def ome_passwd():
+    return ome_env_variable('OME_PASSWD')
+
 def make_parser():
     parser = argparse.ArgumentParser(description = 'This tool will find identical EHR records for all the individuals in the system and will invalidate all the duplicated')
     parser.add_argument('--logfile', type=str, help='log file (default = stderr)')
     parser.add_argument('--loglevel', type=str, choices = LOG_LEVELS,
                         help = 'logging level', default = 'INFO')
-    parser.add_argument('-H', '--host', type=str, help='omero hostname',
-                        default = 'localhost')
-    parser.add_argument('-U', '--user', type=str, help='omero user',
-                        default='root')
-    parser.add_argument('-P', '--passwd', type=str, required=True,
-                        help = 'omero password')
+    parser.add_argument('-H', '--host', type=str, help='omero hostname')
+    parser.add_argument('-U', '--user', type=str, help='omero user')
+    parser.add_argument('-P', '--passwd', type=str, help = 'omero password')
     return parser
 
 def get_ehr_key(ehr_record):
@@ -36,7 +49,15 @@ def main(argv):
     logging.basicConfig(**kwargs)
     logger = logging.getLogger()
 
-    kb = KB(driver='omero')(args.host, args.user, args.passwd)
+    try:
+        host = args.host or ome_host()
+        user = args.user or ome_user()
+        passwd = args.passwd or ome_passwd()
+    except ValueError, ve:
+        logger.critical(ve)
+        sys.exit(ve)
+
+    kb = KB(driver='omero')(host, user, passwd)
 
     logging.info('Loading EHR records')
     ehr_records = kb.get_ehr_records()

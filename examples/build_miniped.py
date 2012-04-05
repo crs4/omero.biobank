@@ -7,7 +7,7 @@ A rough example of basic pedigree info generation.
 
 # HARDWIRED TO IMMUNO DATA
 
-import logging, csv, argparse, sys
+import logging, csv, argparse, sys, os
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb.drivers.omero.ehr import EHR
@@ -32,17 +32,30 @@ FIELDS = ["fam_label", "ind_label", "fat_label", "mot_label", "gender",
           "t1d_status", "ms_status", "nefro_status"]
 
 
+def ome_env_variable(name):
+    if os.environ.has_key(name):
+        return os.environ[name]
+    else:
+        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
+        raise ValueError(msg)
+
+def ome_host():
+    return ome_env_variable('OME_HOST')
+
+def ome_user():
+    return ome_env_variable('OME_USER')
+
+def ome_passwd():
+    return ome_env_variable('OME_PASSWD')
+
 def make_parser():
   parser = argparse.ArgumentParser(description='build the first columns of a ped file from VL')
   parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
   parser.add_argument('--loglevel', type=str, choices = LOG_LEVELS,
                       help='logging level', default='INFO')
-  parser.add_argument('-H', '--host', type=str, help='omero hostname',
-                      default='localhost')
-  parser.add_argument('-U', '--user', type=str, help='omero user',
-                      default='root')
-  parser.add_argument('-P', '--passwd', type=str, help='omero password',
-                      required=True)
+  parser.add_argument('-H', '--host', type=str, help='omero hostname')
+  parser.add_argument('-U', '--user', type=str, help='omero user')
+  parser.add_argument('-P', '--passwd', type=str, help='omero password')
   parser.add_argument('-S', '--study', type=str, required=True,
                       help='study used to retrieve individuals that will be written to ped file')
   parser.add_argument('--ofile', type=str, help='output file path',
@@ -70,13 +83,23 @@ def main(argv):
   args = parser.parse_args(argv)
 
   log_level = getattr(logging, args.loglevel)
-  kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
+  kwargs = {'format': LOG_FORMAT, 
+            'datefmt': LOG_DATEFMT,
+            'level': log_level}
   if args.logfile:
     kwargs['filename'] = args.logfile
   logging.basicConfig(**kwargs)
   logger = logging.getLogger()
   
-  kb = KB(driver='omero')(args.host, args.user, args.passwd)
+  try:
+    host = args.host or ome_host()
+    user = args.user or ome_user()
+    passwd = args.user or ome_passwd()
+  except ValueError, ve:
+    logger.critical(ve)
+    sys.exit(ve)
+
+  kb = KB(driver='omero')(host, user, passwd)
   logging.debug('Loading all individuals from omero')
   all_inds = kb.get_objects(kb.Individual)  # store all inds to cache
   logging.debug('%d individuals loaded' % len(all_inds))

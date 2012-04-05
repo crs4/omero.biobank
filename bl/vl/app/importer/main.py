@@ -115,10 +115,10 @@ def main(argv=None):
   logging.basicConfig(**kwargs)
   logger = logging.getLogger()
   try:
-    host = args.host if args.host else ome_host()
-    user = args.user if args.user else ome_user()
-    passwd = args.passwd if args.passwd else ome_passwd()
+    host = args.host or ome_host()
+    user = args.user or ome_user()
+    passwd = args.passwd or ome_passwd()
   except ValueError, ve:
     logger.critical(ve)
-    sys.exit(2)
+    sys.exit(ve)
   args.func(logger, host, user, passwd, args)
