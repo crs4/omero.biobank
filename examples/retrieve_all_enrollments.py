@@ -36,9 +36,9 @@ def main(argv):
     logger = logging.getLogger()
         
     try:
-        host = args.host if args.host else vlu.ome_host()
-        user = args.user if args.user else vlu.ome_user()
-        passwd = args.passwd if args.passwd else vlu.ome_passwd()
+        host = args.host or vlu.ome_host()
+        user = args.user or vlu.ome_user()
+        passwd = args.passwd or vlu.ome_passwd()
     except ValueError, ve:
         logger.critical(ve)
         sys.exit(ve)
