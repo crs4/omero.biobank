@@ -18,26 +18,11 @@ V0FAE2B10F690041509739A3F4B314DC8F   V0E966B53BDCC942C09D6B6D96DE98F4F4   V0F7B6
 import sys, csv, argparse, logging, os
 
 from bl.vl.kb import KnowledgeBase as KB
+import bl.vl.kb.drivers.omero.utils as vlu
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-
-def ome_env_variable(name):
-    if os.environ.has_key(name):
-        return os.environ[name]
-    else:
-        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
-        raise ValueError(msg)
-
-def ome_host():
-    return ome_env_variable('OME_HOST')
-
-def ome_user():
-    return ome_env_variable('OME_USER')
-
-def ome_passwd():
-    return ome_env_variable('OME_PASSWD')
 
 def make_parser():
     parser = argparse.ArgumentParser(description='retrieve parents information using sibling')
@@ -68,9 +53,9 @@ def main(argv):
     logger = logging.getLogger()
 
     try:
-        host = args.host if args.host else ome_host()
-        user = args.user if args.user else ome_user()
-        passwd = args.passwd if args.passwd else ome_passwd()
+        host = args.host or vlu.ome_host()
+        user = args.user or vlu.ome_user()
+        passwd = args.passwd or vlu.ome_passwd()
     except ValueError, ve:
         logger.critical(ve)
         sys.exit(ve)

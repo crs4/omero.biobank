@@ -12,6 +12,7 @@ import logging, csv, argparse, sys, os
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb.drivers.omero.ehr import EHR
 import bl.vl.individual.pedigree as ped
+import bl.vl.kb.drivers.omero.utils as vlu
 
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
@@ -31,22 +32,6 @@ PLINK_AFFECTED = 2
 FIELDS = ["fam_label", "ind_label", "fat_label", "mot_label", "gender",
           "t1d_status", "ms_status", "nefro_status"]
 
-
-def ome_env_variable(name):
-    if os.environ.has_key(name):
-        return os.environ[name]
-    else:
-        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
-        raise ValueError(msg)
-
-def ome_host():
-    return ome_env_variable('OME_HOST')
-
-def ome_user():
-    return ome_env_variable('OME_USER')
-
-def ome_passwd():
-    return ome_env_variable('OME_PASSWD')
 
 def make_parser():
   parser = argparse.ArgumentParser(description='build the first columns of a ped file from VL')
@@ -92,9 +77,9 @@ def main(argv):
   logger = logging.getLogger()
   
   try:
-    host = args.host or ome_host()
-    user = args.user or ome_user()
-    passwd = args.user or ome_passwd()
+    host = args.host or vlu.ome_host()
+    user = args.user or vlu.ome_user()
+    passwd = args.user or vlu.ome_passwd()
   except ValueError, ve:
     logger.critical(ve)
     sys.exit(ve)

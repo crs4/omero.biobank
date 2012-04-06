@@ -1,26 +1,11 @@
 import sys, argparse, logging
 
+import bl.vl.kb.driver.omero.utils as vlu
 from bl.vl.kb import KnowledgeBase as KB
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-
-def ome_env_variable(name):
-    if os.environ.has_key(name):
-        return os.environ[name]
-    else:
-        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
-        raise ValueError(msg)
-
-def ome_host():
-    return ome_env_variable('OME_HOST')
-
-def ome_user():
-    return ome_env_variable('OME_USER')
-
-def ome_passwd():
-    return ome_env_variable('OME_PASSWD')
 
 def make_parser():
     parser = argparse.ArgumentParser(description = 'This tool will find identical EHR records for all the individuals in the system and will invalidate all the duplicated')
@@ -50,9 +35,9 @@ def main(argv):
     logger = logging.getLogger()
 
     try:
-        host = args.host or ome_host()
-        user = args.user or ome_user()
-        passwd = args.passwd or ome_passwd()
+        host = args.host or vlu.ome_host()
+        user = args.user or vlu.ome_user()
+        passwd = args.passwd or vlu.ome_passwd()
     except ValueError, ve:
         logger.critical(ve)
         sys.exit(ve)

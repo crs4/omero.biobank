@@ -8,6 +8,7 @@ from the Knowledge Base (KB).
 
 import sys, argparse, logging, os
 from importlib import import_module
+import bl.vl.kb.drivers.omero.utils as vlu
 
 
 SUBMOD_NAMES = [
@@ -59,22 +60,6 @@ class App(object):
     self.parser = parser
     return parser
 
-def ome_env_variable(name):
-    if os.environ.has_key(name):
-        return os.environ[name]
-    else:
-        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
-        raise ValueError(msg)
-
-def ome_host():
-    return ome_env_variable('OME_HOST')
-
-def ome_user():
-    return ome_env_variable('OME_USER')
-
-def ome_passwd():
-    return ome_env_variable('OME_PASSWD')
-
 def main(argv=None):
   app = App()
   parser = app.make_parser()
@@ -88,9 +73,9 @@ def main(argv=None):
   logging.basicConfig(**kwargs)
   logger = logging.getLogger()
   try:
-    host = args.host or ome_host()
-    user = args.user or ome_user()
-    passwd = args.passwd or ome_passwd()
+    host = args.host or vlu.ome_host()
+    user = args.user or vlu.ome_user()
+    passwd = args.passwd or vlu.ome_passwd()
   except ValueError, ve:
     logger.critical(ve)
     sys.exit(ve)
