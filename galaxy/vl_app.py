@@ -1,16 +1,32 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
+import os
 
 from galaxy.app import UniverseApplication as OrigUniverseApplication
 from bl.vl.kb import KnowledgeBase as KB
 
+def ome_env_variable(name):
+    if os.environ.has_key(name):
+        return os.environ[name]
+    else:
+        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
+        raise ValueError(msg)
+
+def ome_host():
+    return ome_env_variable('OME_HOST')
+
+def ome_user():
+    return ome_env_variable('OME_USER')
+
+def ome_passwd():
+    return ome_env_variable('OME_PASSWD')
 
 class UniverseApplication(OrigUniverseApplication):
   
   def __init__(self, **kwargs):
-    omero_host = kwargs.get('omero_default_host')
-    omero_user = kwargs.get('omero_default_user')
-    omero_passwd = kwargs.get('omero_default_passwd')
+    omero_host = ome_host()
+    omero_user = ome_user()
+    omero_passwd = ome_passwd()
     self.kb = KB(driver='omero')(omero_host, omero_user, omero_passwd)
     super(UniverseApplication, self).__init__(**kwargs)
     self.config.omero_default_host = kwargs.get('omero_default_host')
