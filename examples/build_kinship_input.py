@@ -23,6 +23,7 @@ import sys, os, argparse, csv, logging
 import numpy as np
 
 from bl.vl.kb import KnowledgeBase as KB
+import bl.vl.kb.drivers.omero.utils as vlu
 from bl.vl.genotype.algo import project_to_discrete_genotype
 
 
@@ -87,22 +88,6 @@ class KinshipWriter(object):
         self.out_ds_file.close()
         
 
-def ome_env_variable(name):
-    if os.environ.has_key(name):
-        return os.environ[name]
-    else:
-        msg = 'Can\'t use default parameter, environment variable %s does not exist' % name
-        raise ValueError(msg)
-
-def ome_host():
-    return ome_env_variable('OME_HOST')
-
-def ome_user():
-    return ome_env_variable('OME_USER')
-
-def ome_passwd():
-    return ome_env_variable('OME_PASSWD')
-
 def make_parser():
     parser = argparse.ArgumentParser(description = 'build kinship input from VL')
     parser.add_argument('--logfile', type = str, help = 'log file(default=stderr)')
@@ -145,9 +130,9 @@ def main(argv):
     logger = logging.getLogger()
 
     try:
-        host = args.host or ome_host()
-        user = args.user or ome_user()
-        passwd = args.passwd or ome_passwd()
+        host = args.host or vlu.ome_host()
+        user = args.user or vlu.ome_user()
+        passwd = args.passwd or vlu.ome_passwd()
     except ValueError, ve:
         logger.critical(ve)
         sys.exit(ve)
