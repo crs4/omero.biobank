@@ -19,7 +19,7 @@ specific map-reduce job.
 
 """
 
-import sys, os, argparse, csv, logging
+import sys, os, argparse, csv, logging, bz2
 import numpy as np
 
 from bl.vl.kb import KnowledgeBase as KB
@@ -37,13 +37,20 @@ class KinshipWriter(object):
     TODO: write something....
     """
     def __init__(self, mset, path, base_filename = 'bl-vl-kinship',
-                 transpose_output = False, ignore_duplicated = False):
+                 transpose_output = False, ignore_duplicated = False,
+                 enable_compression = False, compression_level = None):
         self.mset = mset
-        self.out_k_file = open(os.path.join(path, '%s.genotypes' % base_filename),
-                               'w')
+        if not enable_compression:
+            self.out_k_file = open(os.path.join(path, '%s.genotypes' % base_filename),
+                                   'w')
+            self.out_ds_file = open(os.path.join(path, '%s.data_samples' % base_filename),
+                                    'w')
+        else:
+            self.out_k_file = bz2.BZ2File(os.path.join(path, '%s.genotypes.bz' % base_filename),
+                                          'w', compresslevel = compression_level)
+            self.out_ds_file = bz2.BZ2File(os.path.join(path, '%s.data_samples.bz' % base_filename),
+                                           'w', compresslevel  = compression_level)
         self.out_k_csvw = csv.writer(self.out_k_file, delimiter='\t')
-        self.out_ds_file = open(os.path.join(path, '%s.data_samples' % base_filename),
-                               'w')
         self.out_ds_csvw = csv.writer(self.out_ds_file, delimiter='\t')
         self.tro = transpose_output
         self.igd = ignore_duplicated
@@ -99,7 +106,7 @@ def make_parser():
                         required = True)
     parser.add_argument('--data_collection', type = str, help = 'data collection label',
                         default = None)
-    parser.add_argument('--transpose_output', action='store_true',
+    parser.add_argument('--transpose_output', action = 'store_true',
                         help = 'write the transposed version of the standard output')
     parser.add_argument('--ignore_duplicated', action='store_true',
                         help = 'if more than one data sample is connected to an indiviudal use only the first one')
@@ -113,6 +120,11 @@ def make_parser():
                         required = True)
     parser.add_argument('--base_filename', type = str, default = None,
                         help = 'base name for output files')
+    parser.add_argument('--compress_output', action = 'store_true',
+                        help = 'write output files in compressed bzip2 format')
+    parser.add_argument('--compression_level', type = int, choices = range(1,10),
+                        help = 'compression level (read python bz2 documentation for legal values)',
+                        default = 5)
     return parser
 
 
@@ -161,7 +173,10 @@ def main(argv):
     kw_args = {'mset' : mset,
                'path' : args.out_path,
                'transpose_output' : args.transpose_output,
-               'ignore_duplicated' : args.ignore_duplicated}
+               'ignore_duplicated' : args.ignore_duplicated,
+               'enable_compression' : args.compress_output}
+    if args.compress_output:
+        kw_args['compression_level'] = args.compression_level
     if args.base_filename:
         kw_args['base_filename'] = args.base_filename
         
