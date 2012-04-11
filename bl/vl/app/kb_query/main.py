@@ -16,6 +16,7 @@ SUBMOD_NAMES = [
   "global_stats",
   "selector",
   "query",
+  "build_kinship_input",
   # "tabular",
   # "markers",
   # "ehr",
