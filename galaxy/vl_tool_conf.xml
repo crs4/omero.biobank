@@ -10,6 +10,7 @@
     <tool file="VL/importer/data_object.xml"/>
     <tool file="VL/importer/data_collection.xml"/>
     <tool file="VL/importer/diagnosis.xml"/>
+    <tool file="VL/importer/enrollment.xml"/>
   </section>
   <section name="VL Tools" id="vlSection.tools">
     <tool file="VL/tools/markers_to_fastq.xml"/>
