@@ -44,3 +44,19 @@ class UniverseApplication(OrigUniverseApplication):
       return sources
     else:
       return []
+
+  @property
+  def known_marker_sets(self):
+    msets = self.kb.get_objects(self.kb.SNPMarkersSet)
+    if msets:
+      return [(ms.id, ms.label) for ms in msets]
+    else:
+      return []
+
+  @property
+  def known_data_collections(self):
+    dcolls = self.kb.get_objects(self.kb.DataCollection)
+    if dcolls:
+      return [(dc.id, dc.label) for dc in dcolls]
+    else:
+      return []
