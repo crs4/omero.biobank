@@ -19,17 +19,11 @@ specific map-reduce job.
 
 """
 
-import os, argparse, csv, logging, bz2
+import os, argparse, csv, bz2
 import numpy as np
 
 from bl.vl.app.importer.core import Core
 from bl.vl.genotype.algo import project_to_discrete_genotype
-
-
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-
 
 class KinshipWriter(object):
     """
