@@ -17,6 +17,7 @@ SUBMOD_NAMES = [
   "selector",
   "query",
   "build_kinship_input",
+  "build_gstudio_datasheet"
   # "tabular",
   # "markers",
   # "ehr",
