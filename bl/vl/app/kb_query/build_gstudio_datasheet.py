@@ -87,7 +87,7 @@ class BuildDatasheetApp(Core):
         self.logger.info('Loading plate %s' % plate_barcode)
         plate = self.load_plate(plate_barcode)
         if not plate:
-            msg = 'Barcode %s is not related to a know plate' % plate_barcode
+            msg = 'Barcode %s is not related to a known plate' % plate_barcode
             self.logger.critical(msg)
             raise ValueError(msg)
         
