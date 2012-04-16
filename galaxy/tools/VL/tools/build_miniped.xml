@@ -1,14 +1,15 @@
-<tool id="vl_tools_all_enrollments" name="VLT.all_enrollments">
+<tool id="vl_tools_build_miniped" name="VLT.build_miniped">
   <description>
-    Retrieve all enrollments codes from Omero server
+    Build a reduced ped file from Omero server
   </description>
   <command interpreter="python">
-    all_enrollments.py
+    build_miniped.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=${advanced_configuration.vl_host}
       --user=${advanced_configuration.vl_user}
       --passwd=${advanced_configuration.vl_passwd}
     #end if
+    --study=IMMUNOCHIP
     --ofile=${output1}
     --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
@@ -39,7 +40,7 @@
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-    It will output a tsv files with the following columns:
+    It will output a tsv files with a column of codes for each groups of samples.
   </help>
 
 </tool>

@@ -81,7 +81,7 @@ def make_parser():
                       help='logging level', default='INFO')
   parser.add_argument('-H', '--host', type=str, help='omero hostname')
   parser.add_argument('-U', '--user', type=str, help='omero user')
-  parser.add_argument('-P', '--passwd', type=str, required=True)
+  parser.add_argument('-P', '--passwd', type=str, help='omero passwd')
   parser.add_argument('-s', '--study', metavar='STRING', default=STUDY,
                       help='study label')
   return parser
