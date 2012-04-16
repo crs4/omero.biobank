@@ -90,7 +90,8 @@ class BuildPlateDataSamplesDetails(Core):
         self.logger.info('Job completed')
 
 help_doc = """
-TBD
+Write the status of a TiterPlate, retrieving PlateWell and DataSamples
+connected to them.
 """
 
 def make_parser(parser):
