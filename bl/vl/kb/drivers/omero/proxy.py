@@ -467,7 +467,7 @@ class Proxy(ProxyCore):
     individual.
 
     :param individual: the root individual object
-    :type group: Individual
+    :type individual: Individual
 
     :param vessel_klass_name: the name of the selected vessel class,
       e.g. 'Vial' or 'PlateWell'
@@ -482,6 +482,22 @@ class Proxy(ProxyCore):
       self.update_dependency_tree()
     return (v for v in self.dt.get_connected(individual, aklass=klass))
 
+  def get_wells_by_plate(self, plate):
+    """
+    Syntactic sugar to simplify PlateWell retrival using a known TiterPlate
+
+    :param plate: a known TiterPlate
+    :type plate: TiterPlate
+
+    :type return: generator of a sequence of PlateWell objects
+    """
+    query = '''
+    SELECT pw FROM PlateWell pw
+    JOIN pw.container AS pl
+    WHERE pl.vid = :pl_vid
+    '''
+    wells = self.find_all_by_query(query, {'pl_vid' : plate.vid})
+    return (w for w in wells)
 
   # EVA-related utility functions
   # =============================
