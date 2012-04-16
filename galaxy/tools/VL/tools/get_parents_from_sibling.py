@@ -31,7 +31,7 @@ def make_parser():
                         help='logging level (default=INFO)', default='INFO')
     parser.add_argument('-H', '--host', type=str, help='omero hostname')
     parser.add_argument('-U', '--user', type=str, help='omero user')
-    parser.add_argument('-P', '--passwd', type=str, required=True)
+    parser.add_argument('-P', '--passwd', type=str, help='omero passwd')
     parser.add_argument('--in_file', type=str, required=True,
                         help='input file with individual-sibling couples')
     parser.add_argument('--out_file', type=str, required=True,
