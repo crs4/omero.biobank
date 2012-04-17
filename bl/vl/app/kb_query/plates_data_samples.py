@@ -38,7 +38,7 @@ class BuildPlateDataSamplesDetails(Core):
                 'PLATE_label' : plate.label,
                 'WELL_label' : self.calculate_well_label(slot_index,
                                                          plate.columns),
-                'WELL_status' : 'FAKE'}
+                'WELL_status' : 'UNKNOWN OR EMPTY'}
 
     def dump(self, plate_barcode, out_file):
         self.logger.info('Loading plate %s' % plate_barcode)
