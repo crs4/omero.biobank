@@ -60,3 +60,11 @@ class UniverseApplication(OrigUniverseApplication):
       return [(dc.id, dc.label) for dc in dcolls]
     else:
       return []
+
+  @property
+  def known_titer_plates(self):
+    plates = self.kb.get_objects(self.kb.TiterPlate)
+    if plates:
+      return [(pl.barcode, pl.label) for pl in plates if pl.barcode]
+    else:
+      return []
