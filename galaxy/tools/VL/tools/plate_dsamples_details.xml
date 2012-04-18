@@ -17,9 +17,13 @@
     #if str($plate) != 'select_one'
       --plate=${plate}
     #end if
+    #if $fetch_all
+      --fetch_all
+    #end if
   </command>
   <inputs>
     <param name="plate" type="select" label="Context Titer Plate"
+	   multiple="true"
 	   help="Choose one of the already defined Titer Plates">
       <options from_parameter="tool.app.known_titer_plates"
 	       transform_lines="[ &quot;%s%s%s:%s&quot;
@@ -32,10 +36,12 @@
 		value="select_one" index="0"/>
       </options>
     </param>
+    <param name="fetch_all" type="boolean" label="Fetch all plates"
+	   help="Use all plates with a barcode, this parameter will override every choice in the 'Context Titer Plate' selection list"/>
 
     <!-- ************************************************** -->
     <conditional name="advanced_configuration">
-      <param name="configuration_level" type="select" 
+      <param name="configuration_level" type="select"
 	     label="Configuration level">
 	<option value="default" selected="true">Default configuration</option>	
 	<option value="advanced">Advanced configuration</option>
