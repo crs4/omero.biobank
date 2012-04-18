@@ -79,7 +79,7 @@ def main(argv):
   try:
     host = args.host or vlu.ome_host()
     user = args.user or vlu.ome_user()
-    passwd = args.user or vlu.ome_passwd()
+    passwd = args.passwd or vlu.ome_passwd()
   except ValueError, ve:
     logger.critical(ve)
     sys.exit(ve)
