@@ -63,4 +63,19 @@ END_COPYRIGHT
     </properties>
   </type>
 
+  <type id="ome.model.vl.VesselsCollection" superclass="ome.model.vl.VLCollection">
+    <properties>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.VesselsCollectionItem">
+    <properties>
+      <required name="vid" type="string" unique="true"/>
+      <required name="vessel" type="ome.model.vl.Vessel"/>
+      <required name="vesselsCollection" type="ome.model.vl.VesselsCollection"/>
+      <!-- vesselsCollection.vid, vessel.vid -->
+      <required name="vesselsCollectionItemUK" type="string" unique="true"/>
+    </properties>
+  </type>
+
 </types>
