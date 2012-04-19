@@ -101,8 +101,14 @@ class Proxy(ProxyCore):
   def get_data_collection(self, label):
     return self.madpt.get_data_collection(label)
 
+  def get_vessels_collection(self, label):
+    return self.madpt.get_vessels_collection(label)
+
   def get_data_collection_items(self, dc):
     return self.madpt.get_data_collection_items(dc)
+
+  def get_vessels_collection_items(self, vc):
+    return self.madpt.get_vessels_collection_items(vc)
 
   def get_objects(self, klass):
     return self.madpt.get_objects(klass)

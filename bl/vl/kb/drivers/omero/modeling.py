@@ -91,6 +91,17 @@ class ModelingAdapter(object):
                                    query, pars)
     return None if result is None else self.kb.factory.wrap(result)
 
+  def get_vessels_collection(self, label):
+    """
+    Return the VesselsCollection object labeled 'label' or None if
+    nothing matches 'label'.
+    """
+    query = 'select vc from VesselsCollection vc where vc.label = :label'
+    pars = self.kb.ome_query_params({'label' : wp.ome_wrap(label, wp.STRING)})
+    result = self.kb.ome_operation('getQueryService', 'findByQuery',
+                                   query, pars)
+    return None if result is None else self.kb.factory.wrap(result)
+
   def get_objects(self, klass):
     query = "from %s o" % klass.get_ome_table()
     pars = None
@@ -136,6 +147,20 @@ class ModelingAdapter(object):
       'dcid': wp.ome_wrap(dc.omero_id, wp.LONG),
       })
     result = self.kb.ome_operation("getQueryService", "findAllByQuery",
+                                   query, pars)
+    return [self.kb.factory.wrap(i) for i in result]
+
+  def get_vessels_collection_items(self, vc):
+    query = """select i
+    from VesselsCollectionItem i
+    join fetch i.vessel as v
+    join fetch i.vesselsCollection as vc
+    where vc.id = :vcid
+    """
+    pars = self.kb.ome_query_params({
+        'vcid' : wp.ome_wrap(vc.omero_id, wp.LONG),
+        })
+    result = self.kb.ome_operation('getQueryService', 'findAllByQuery',
                                    query, pars)
     return [self.kb.factory.wrap(i) for i in result]
 
