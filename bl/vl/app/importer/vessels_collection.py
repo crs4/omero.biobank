@@ -7,18 +7,18 @@ Import data_collection
 
 Will read in a tsv file with the following columns::
 
-  study    label data_sample
-  BSTUDY   dc-01 V0390290
-  BSTUDY   dc-01 V0390291
-  BSTUDY   dc-02 V0390292
-  BSTUDY   dc-02 V390293
+  study    label vessel   vessel_type
+  BSTUDY   dc-01 V0390290 Vessel
+  BSTUDY   dc-01 V0390291 Vessel
+  BSTUDY   dc-02 V0390292 Vessel
+  BSTUDY   dc-02 V390293  Vessel
   ...
 
-This will create new DataCollection(s), whose label is defined by the
-label column, and link to it, using DataCollectionItem objects,
-the DataSample object identified by data_sample (a VID).
+This will create new VesselCollection(s), whose label is defined by
+the label column, and link to it, using DataCollectionItem objects,
+the DataSample object identified by vessel (a VID).
 
-Records that point to an unknown DataSample will abort the data
+Records that point to an unknown Vessel will abort the vessels
 collection loading. Previously seen collections will be noisily
 ignored. It is not legal to use the importer to add items to a
 previously known collection.
@@ -43,8 +43,8 @@ class Recorder(core.Core):
     self.batch_size = batch_size
     self.operator = operator
     self.action_setup_conf = action_setup_conf
-    self.preloaded_data_samples = {}
-    self.preloaded_data_collections = {}
+    self.preloaded_vessels = {}
+    self.preloaded_vessels_collections = {}
     self.preloaded_items = {}
 
   def record(self, records, otsv):
@@ -53,22 +53,22 @@ class Recorder(core.Core):
       while len(records[offset:]) > 0:
         yield records[offset:offset+batch_size]
         offset += batch_size
-    def get_data_collection(label, action):
-      if label in self.preloaded_data_collections:
-        return self.preloaded_data_collections[label]
+    def get_vessels_collection(label, action):
+      if label in self.preloaded_vessels_collections:
+        return self.preloaded_vessels_collections[label]
       else:
-        dc_conf = {'label' : label, 'action': action}
-        return self.kb.factory.create(self.kb.DataCollection, dc_conf)
+        vc_conf = {'label' : label, 'action': action}
+        return self.kb.factory.create(self.kb.VesselsCollection, vc_conf)
     if len(records) == 0:
       self.logger.warn('no records')
       return
     study = self.find_study(records)
-    self.data_sample_klass = self.find_data_sample_klass(records)
-    self.preload_data_samples()
-    self.preload_data_collections()
-    asetup = self.get_action_setup('importer.data_collection-%f' % time.time(),
+    self.vessel_klass = self.find_vessel_klass(records)
+    self.preload_vessels()
+    self.preload_vessels_collections()
+    asetup = self.get_action_setup('importer.vessels_collection-%f' % time.time(),
                                    json.dumps(self.action_setup_conf))
-    device = self.get_device('importer-%s.data_collection' % version,
+    device = self.get_device('importer-%s.vessels_collection' % version,
                              'CRS4', 'IMPORT', version)
     conf = {
       'setup': asetup,
@@ -80,11 +80,11 @@ class Recorder(core.Core):
     action = self.kb.factory.create(self.kb.Action, conf).save()
     def keyfunc(r): return r['label']
     sub_records = []
-    data_collections = {}
+    vessels_collections = {}
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
-      data_collections[k] = get_data_collection(k, action)
-      sub_records.append(self.do_consistency_checks(data_collections[k], list(g)))
+      vessels_collections[k] = get_vessels_collection(k, action)
+      sub_records.append(self.do_consistency_checks(vessels_collections[k], list(g)))
     records = sum(sub_records, [])
     if len(records) == 0:
       self.logger.warn('no records')
@@ -92,83 +92,81 @@ class Recorder(core.Core):
       return
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
-      dc = data_collections[k]
-      if not dc.is_mapped():
-        dc.save()
+      vc = vessels_collections[k]
+      if not vc.is_mapped():
+        vc.save()
       for i, c in enumerate(records_by_chunk(self.batch_size, list(g))):
         self.logger.info('start processing chunk %s-%d' % (k, i))
-        self.process_chunk(otsv, study, dc, c)
+        self.process_chunk(otsv, study, vc, c)
         self.logger.info('done processing chunk %s-%d' % (k,i))
 
-  def find_data_sample_klass(self, records):
-    return self.find_klass('data_sample_type', records)
+  def find_vessel_klass(self, records):
+    return self.find_klass('vessel_type', records)
 
-  def preload_data_samples(self):
-    self.preload_by_type('data_samples', self.data_sample_klass,
-                         self.preloaded_data_samples)
+  def preload_vessels(self):
+    self.preload_by_type('vessel', self.vessel_klass,
+                         self.preloaded_vessels)
 
-  def preload_data_collections(self):
-    self.logger.info('start preloading data collections')
-    ds = self.kb.get_objects(self.kb.DataCollection)
-    for d in ds:
-      self.preloaded_data_collections[d.label] = d
-    self.logger.info('there are %d DataCollection(s) in the kb'
-                     % len(self.preloaded_data_collections))
+  def preload_vessels_collections(self):
+    self.logger.info('start preloading vessels collections')
+    vs = self.kb.get_objects(self.kb.VesselsCollection)
+    for v in vs:
+      self.preloaded_vessels_collections[v.label] = v
+    self.logger.info('there are %d VesselsCollection(s) in the kb'
+                     % len(self.preloaded_vessels_collections))
 
-  def do_consistency_checks(self, data_collection, records):
-    def preload_data_collection_items():
-      self.logger.info('start preloading data collection items')
-      objs = self.kb.get_objects(self.kb.DataCollectionItem)
+  def do_consistency_checks(self, vessels_collection, records):
+    def preload_vessels_collection_items():
+      self.logger.info('start preloading vessels collection items')
+      objs = self.kb.get_objects(self.kb.VesselsCollectionItem)
       for o in objs:
-        assert not o.dataCollectionItemUK in self.preloaded_items
-        self.preloaded_items[o.dataCollectionItemUK] = o
-      self.logger.info('done preloading data collection items')
-    self.logger.info('start consistency checks on %s' % data_collection.label)
-    def build_key(dc, r):
-      data_collection = dc
-      data_sample = self.preloaded_data_samples[r['data_sample']]
-      return make_unique_key(data_collection.id, data_sample.id)
-    preload_data_collection_items()
+        assert not o.vesselsCollectionItemUK in self.preloaded_items
+        self.preloaded_items[o.vesselsCollectionItemUK] = o
+      self.logger.info('done preloading vessels collection items')
+    self.logger.info('start consistency checks on %s' % vessels_collection.label)
+    def build_key(vc, r):
+      vessels_collection = vc
+      vessel = self.preloaded_vessels[r['vessel']]
+      return make_unique_key(vessels_collection.id, vessel.id)
+    preload_vessels_collection_items()
     #failures = 0
     good_records = []
     seen = []
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i
-      if not r['data_sample'] in self.preloaded_data_samples:
-        f = reject + 'bad data_sample in %s.'
+      if not r['vessel'] in self.preloaded_vessels:
+        f = reject + 'bad vessel in %s.'
         self.logger.error( f % r['label'])
-        #failures += 1
         continue
-      if r['data_sample'] in seen:
-        f = reject + 'multiple copy of the same data_sample %s in %s.'
+      if r['vessel'] in seen:
+        f = reject + 'multiple copy of the same vessel %s in %s.'
         self.logger.error( f % (r['label'], k))
-        #failures += 1
         continue
-      key = build_key(data_collection, r)
+      key = build_key(vessels_collection, r)
       if key in self.preloaded_items:
-        f = reject + 'there is a pre-existing data collection item with key %s'
+        f = reject + 'there is a pre-existing vessels collection item with key %s'
         self.logger.warn(f % key)
         continue
-      seen.append(r['data_sample'])
+      seen.append(r['vessel'])
       good_records.append(r)
-    self.logger.info('done consistency checks on %s' % data_collection.label)
+    self.logger.info('done consistency checks on %s' % vessels_collection.label)
     #return [] if failures else records
     return good_records
 
-  def process_chunk(self, otsv, study, dc, chunk):
+  def process_chunk(self, otsv, study, vc, chunk):
     items = []
     for r in chunk:
       conf = {
-        'dataSample': self.preloaded_data_samples[r['data_sample']],
-        'dataCollection': dc,
+        'vessel': self.preloaded_vessels[r['vessel']],
+        'vesselsCollection': vc,
         }
-      items.append(self.kb.factory.create(self.kb.DataCollectionItem, conf))
+      items.append(self.kb.factory.create(self.kb.VesselsCollectionItem, conf))
     self.kb.save_array(items)
     otsv.writerow({
       'study': study.label,
-      'label': dc.label,
-      'type': dc.get_ome_table(),
-      'vid': dc.id
+      'label': vc.label,
+      'type': vc.get_ome_table(),
+      'vid': vc.id
       })
 
 
@@ -176,21 +174,21 @@ class RecordCanonizer(core.RecordCanonizer):
   
   def canonize(self, r):
     super(RecordCanonizer, self).canonize(r)
-    r.setdefault('data_sample_type', 'DataSample')
+    r.setdefault('vessel_type', 'Vessel')
 
 
 def make_parser(parser):
   parser.add_argument('--study', metavar="STRING",
                       help="overrides the study column value")
-  parser.add_argument('--data_sample-type', metavar="STRING",
-                      choices=['DataSample'],
-                      help="overrides the data_sample_type column value")
+  parser.add_argument('--vessel-type', metavar="STRING",
+                      choices=['Vessel'],
+                      help="overrides the vessel_type column value")
   parser.add_argument('--label', metavar="STRING",
                       help="overrides the label column value")
 
 
 def implementation(logger, host, user, passwd, args):
-  fields_to_canonize = ['study', 'data_sample_type', 'label']
+  fields_to_canonize = ['study', 'vessel_type', 'label']
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
                       host=host, user=user, passwd=passwd,
@@ -212,10 +210,10 @@ def implementation(logger, host, user, passwd, args):
 
 
 help_doc = """
-import a new data collection definition into the KB.
+import a new vessels collection definition into the KB.
 """
 
 
 def do_register(registration_list):
-  registration_list.append(('data_collection', help_doc, make_parser,
+  registration_list.append(('vessels_collection', help_doc, make_parser,
                             implementation))

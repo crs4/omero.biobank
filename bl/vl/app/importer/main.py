@@ -38,6 +38,7 @@ SUBMOD_NAMES = [
   "data_object",
   "group",
   "data_collection",
+  "vessels_collection",
   "marker_definition",
   "marker_alignment",
   "markers_set",
