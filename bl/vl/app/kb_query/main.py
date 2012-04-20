@@ -19,6 +19,7 @@ SUBMOD_NAMES = [
   "build_kinship_input",
   "build_gstudio_datasheet",
   "plates_data_samples",
+  "vessels_by_individual",
   # "tabular",
   # "markers",
   # "ehr",
