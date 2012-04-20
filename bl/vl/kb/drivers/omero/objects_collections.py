@@ -79,30 +79,3 @@ class DataCollectionItem(wp.OmeroWrapper):
     dci_uk = make_unique_key(self.dataCollection.id, self.dataSample.id)
     setattr(self.ome_obj, 'dataCollectionItemUK',
             self.to_omero(self.__fields__['dataCollectionItemUK'][0], dci_uk))
-
-
-# class VesselsCollection(VLCollection):
-  
-#   OME_TABLE = 'VesselsCollection'
-#   __fields__ = []
-
-
-# class VesselsCollectionItem(wp.OmeroWrapper):
-
-#   OME_TABLE = 'VesselsCollectionItem'
-#   __fields__ = [('vid', wp.VID, wp.REQUIRED),
-#                 ('vessel', Vessel, wp.REQUIRED),
-#                 ('vesselsCollection', VesselsCollection, wp.REQUIRED),
-#                 ('vesselsCollectionItemUK', wp.STRING, wp.REQUIRED)]
-
-#   def __preprocess_conf__(self, conf):
-#     if not 'vesselsCollectionItemUK' in conf:
-#       v_vid = conf['vessel'].id
-#       vc_vid = conf['vesselsCollection'].id
-#       conf['vesselsCollectionItemUK'] = make_unique_key(vc_vid, v_vid)
-#     return assign_vid(conf)
-
-#   def __update_contraints__(self):
-#     vci_uk = make_unique_key(self.vesselsCollection.id, self.vessel.id)
-#     setattr(self.ome_obj, 'vesselsCollectionItemUK',
-#             self.to_omero(self.__fields__['vesselsCollectionItemUK'][0], vci_uk))
