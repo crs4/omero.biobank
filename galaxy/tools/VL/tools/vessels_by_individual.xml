@@ -1,0 +1,74 @@
+<tool id="vl_tools_vessels_by_individual" name="VLT.vessels_by_individual">
+  <description>
+    Retrieve all vessels related to individuals passed with the input
+    file. Vessel type and a Vessel Collection can be used as filters.
+  </description>
+  <command interpreter="python">
+    kb_query.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=$advanced_configuration.vl_host
+      --user=$advanced_configuration.vl_user
+      --passwd=$advanced_configuration.vl_passwd
+    #end if
+    --operator=galaxy
+    --loglevel=$__app__.config.vl_loglevel
+    --logfile=${logfile}
+    --ofile=${outfile}
+    vessels_by_individual
+    --ifile=${infile}
+    #if str($collection_label) != 'no_collection'
+      --vessels_collection ${collection_label}
+    #end if
+    #if str($vessel_type) != 'no_type'
+      --vessel_type ${vessel_type}
+    #end if
+  </command>
+  <inputs>
+    <param format="tabular" name="infile" type="data"
+	   label="A tabular dataset with the following columns..."/>
+
+    <param name="collection_label" type="select" label="Vessels Collection label"
+	   help="Choose from the already defined studies. See below.">
+      <options from_parameter="tool.app.known_vessels_collections"
+	       transform_lines="[ &quot;%s%s%s&quot;
+	                          % (l[1], self.separator, l[1] )
+				  for l in obj ]">
+	<column name="value" index="1"/>
+	<column name="name" index="0"/>
+	<filter type="sort_by" column="0"/>
+	<filter type="add_value" name="Don't filter by Vessels Collection"
+		value="no_collection" index="0"/>
+      </options>
+    </param>
+
+    <param name="vessel_type" type="select" label="Select Vessel type"
+	   help="Choose from the possible Vessel types. See below.">
+      <option value="no_type">All vessels (ignore type)</option>
+      <option value="Tube">Tube</option>
+      <option value="PlateWell">PlateWell</option>
+    </param>
+
+    <!-- ************************************************** -->
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="biobank05.crs4.it" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="galaxy" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="outfile" label="${tool.name}.mapped"/>
+    <data format="txt"     name="logfile" label="${tool.name}.logfile"/>
+  </outputs>
+</tool>

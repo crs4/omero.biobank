@@ -62,6 +62,14 @@ class UniverseApplication(OrigUniverseApplication):
       return []
 
   @property
+  def known_vessels_collections(self):
+    vcolls = self.kb.get_objects(self.kb.VesselsCollection)
+    if vcolls:
+      return [(vc.id, vc.label) for vc in vcolls]
+    else:
+      return []
+
+  @property
   def known_titer_plates(self):
     plates = self.kb.get_objects(self.kb.TiterPlate)
     if plates:
