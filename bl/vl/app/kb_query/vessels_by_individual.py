@@ -29,6 +29,7 @@ class RetrieveVesselsByIndividual(Core):
     def load_vcoll_filters(self, vessels_collection_label, vessel_type):
         vcoll = self.logger.info('Loading VesselsCollection %s' % \
                                      vessels_collection_label)
+        vcoll = self.kb.get_vessels_collection(vessels_collection_label)
         if vcoll is None:
             msg = '%s is not a valid VesselsCollection label, aborting' % \
                 vessels_collection_label
