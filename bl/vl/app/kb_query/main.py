@@ -20,6 +20,7 @@ SUBMOD_NAMES = [
   "build_gstudio_datasheet",
   "plates_data_samples",
   "vessels_by_individual",
+  "map_to_collection",
   # "tabular",
   # "markers",
   # "ehr",
