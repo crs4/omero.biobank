@@ -17,10 +17,10 @@
     vessels_by_individual
     --ifile=${infile}
     #if str($collection_label) != 'no_collection'
-      --vessels_collection ${collection_label}
+      --vessels_collection=${collection_label}
     #end if
     #if str($vessel_type) != 'no_type'
-      --vessel_type ${vessel_type}
+      --vessel_type=${vessel_type}
     #end if
   </command>
   <inputs>
