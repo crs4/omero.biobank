@@ -1,39 +1,49 @@
-<tool id="vl_update_discard_from_collection" name="VLU.discard_from_collection">
+<tool id="vl_tools_map_to_collection" name="VLT.map_to_collection">
   <description>
-    Discard input elements from the selected collection
+    Map a list of objects (vessels or data samples) to the specified
+    collection.
   </description>
   <command interpreter="python">
-    discard_from_collection.py
+    kb_query.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user
       --passwd=$advanced_configuration.vl_passwd
     #end if
+    --operator=galaxt
     --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
-    --ifile=${ifile}
+    --ofile=${outfile}
+    map_to_collection
+    --ifile=${infile}
+    #if str($field_label) != ''
+      --field_label=${field_label}
+    #end if
     #if str($collection_selector.collection_type) != 'no_coll_selected'
       --collection_type=${collection_selector.collection_type}
       #if str($collection_selector.collection_type) == 'DataCollection'
         #if str($collection_selector.dcoll_label) != 'no_label_selected'
-          --collection_label=${collection_selector.dcoll_label}
+	  --collection_label=${collection_selector.dcoll_label}
 	#end if
       #elif str($collection_selector.collection_type) == 'VesselsCollection'
         #if str($collection_selector.vcoll_label) != 'no_label_selected'
-          --collection_label=${collection_selector.vcoll_label}
+	  --collection_label=${collection_selector.vcoll_label}
 	#end if
       #end if
     #end if
   </command>
 
   <inputs>
-    <param format="tabular" name="ifile" type="data"
+    <param format="tabular" name="infile" type="data"
 	   label="A tabular dataset with the following columns..."/>
-
+    <param name="field_label" label="label of the lookup field"
+	   type="text" size="40" value=""
+	   help="if field is empty, the default 'item_label' column will be used"/>
     <conditional name="collection_selector">
       <param name="collection_type" type="select"
 	     label="Collection Type">
-	<option value="no_coll_selected">Select a Collection type...</option>
+	<option value="no_coll_selected">Select a Collection
+	type...</option>
 	<option value="DataCollection">Data Collection</option>
 	<option value="VesselsCollection">Vessels Collection</option>
       </param>
@@ -89,6 +99,7 @@
   </inputs>
 
   <outputs>
-    <data format="txt" name="logfile" label="${tool.name}.logfile"/>
+    <data format="tabular" name="outfile" label="${tool.name}.mapping"/>
+    <data format="txt"     name="logfile" label="${tool.name}.logfile"/>
   </outputs>
 </tool>
