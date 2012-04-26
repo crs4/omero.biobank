@@ -1,4 +1,4 @@
-import csv, argparse
+import csv, argparse, sys
 
 from bl.vl.app.importer.core import Core
 
@@ -57,9 +57,43 @@ class BuildPlateDataSamplesDetails(Core):
                                                          plate.columns),
                 'WELL_status' : 'UNKNOWN OR EMPTY'}
 
-    def dump(self, plate_barcodes, fetch_all, out_file):
+    def load_collection_filter(self, vessels_collection):
+        coll_items = self.kb.get_vessels_collection_items(vessels_collection)
+        return [vci.vessel.id for vci in coll_items if vci.vessel.OME_TABLE == 'PlateWell']
+
+    def load_plate_wells_lookup(self, plate, wells_filter):
+        self.logger.info('Loading wells for plate %s (barcode %s)' % (plate.label,
+                                                                      plate.barcode))
+        if wells_filter:
+            wells = [w for w in self.kb.get_wells_by_plate(plate) if w.id in wells_filter]
+        else:
+            wells = list(self.kb.get_wells_by_plate(plate))
+        self.logger.info('Loaded %d wells' % len(wells))
+        wells_map = {}
+        for w in wells:
+            wells_map[w.slot] = w
+        return wells_map
+
+    def dump(self, plate_barcodes, fetch_all, vessels_collection, out_file):
         if not plate_barcodes and not fetch_all:
             raise ValueError('At least one between the --plate and --fetch_all parameters must be submitted')
+        
+        if vessels_collection:
+            vcoll = self.kb.get_vessels_collection(vessels_collection)
+            if vcoll is None:
+                msg = 'Unable to find VesselsCollection object with label %s' % vessels_collection
+                self.logger.warning(msg)
+                sys.exit()
+            else:
+                wells_filter = self.load_collection_filter(vcoll)
+                self.logger.info('Loaded %d wells to apply as filter' % len(wells_filter))
+                if len(wells_filter) == 0:
+                    msg = 'Filter is empty, nothing to do'
+                    self.logger.warning(msg)
+                    sys.exit(0)
+        else:
+            wells_filter = None
+        
         self.logger.info('Loading plates')
         if fetch_all:
             plates = [pl for pl in self.kb.get_objects(self.kb.TiterPlate) \
@@ -80,13 +114,7 @@ class BuildPlateDataSamplesDetails(Core):
 
         plates_lookup = {}
         for pl in plates:
-            self.logger.info('Loading wells for plate %s' % pl.barcode)
-            wells = list(self.kb.get_wells_by_plate(pl))
-            self.logger.info('Loaded %d wells' % len(wells))
-            wells_map = {}
-            for w in wells:
-                wells_map[w.slot] = w
-            plates_lookup[pl] = wells_map
+            plates_lookup[pl] = self.load_plate_wells_lookup(pl, wells_filter)
 
         writer = csv.DictWriter(out_file, delimiter='\t', restval = 'X',
                                 fieldnames = ['PLATE_barcode', 'PLATE_label',
@@ -129,16 +157,19 @@ connected to them.
 """
 
 def make_parser(parser):
-    parser.add_argument('-p', '--plates', type=str, help = 'one or more barcodes separated with a comma')
+    parser.add_argument('-p', '--plates', type=str, help = 'one or more barcodes separated by a comma')
     parser.add_argument('--fetch_all', action='store_true',
                         help='retrieve all plates with a barcode, this parameter overrides the --plate')
+    parser.add_argument('--vessels_collection', type=str,
+                        help='vessels collection label used as a filter, wells that no belog to this collection will be treated as empty')
 
 def implementation(logger, host, user, passwd, args):
     app = BuildPlateDataSamplesDetails(host = host, user = user,
                                        passwd = passwd, study_label = None,
                                        keep_tokens = args.keep_tokens,
                                        logger = logger)
-    app.dump(args.plates, args.fetch_all, args.ofile)
+    app.dump(args.plates, args.fetch_all, args.vessels_collection, 
+             args.ofile)
 
 def do_register(registration_list):
     registration_list.append(('plate_data_samples', help_doc, make_parser,

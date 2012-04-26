@@ -20,6 +20,9 @@
     #if $fetch_all
       --fetch_all
     #end if
+    #if str($vcoll_label) != 'no_collection'
+      --vessels_collection=${vcoll_label}
+    #end if
   </command>
   <inputs>
     <param name="plate" type="select" label="Context Titer Plate"
@@ -38,6 +41,19 @@
     </param>
     <param name="fetch_all" type="boolean" label="Fetch all plates"
 	   help="Use all plates with a barcode, this parameter will override every choice in the 'Context Titer Plate' selection list"/>
+    <param name="vcoll_label" type="select" label="Vessels Collection label"
+	   help="Choose one of the already defined Vessels Collections.">
+      <options from_parameter="tool.app.known_vessels_collections"
+	       transform_lines="[ &quot;%s%s%s&quot;
+	                          % (l[1], self.separator, l[1])
+				  for l in obj ]">
+	<column name="value" index="1"/>
+	<column name="name" index="0"/>
+	<filter type="sort_by" column="0"/>
+	<filter type="add_value" name="Select a Vessels Collection..."
+		value="no_collection" index="0"/>
+      </options>
+    </param>
 
     <!-- ************************************************** -->
     <conditional name="advanced_configuration">
