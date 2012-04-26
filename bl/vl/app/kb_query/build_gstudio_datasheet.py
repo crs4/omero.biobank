@@ -78,7 +78,9 @@ class BuildDatasheetApp(Core):
         return ehr_map
 
     def get_empty_record(self, plate, slot_index):
-        return {'PLATE_barcode' : plate.barcode, 
+        return {'Sample_ID':'%s:%s' % (plate.barcode, self.calculate_well_label(slot_index,
+                                                                                plate.columns)),
+                'PLATE_barcode' : plate.barcode, 
                 'PLATE_label' : plate.label,
                 'WELL_label' : self.calculate_well_label(slot_index,
                                                          plate.columns)}
@@ -128,7 +130,7 @@ class BuildDatasheetApp(Core):
                 self.logger.info('No data for well %s, filling with dummy record' % 
                                  self.calculate_well_label(last_slot, plate.columns))
                 writer.writerow(self.get_empty_record(plate, last_slot))
-            record = {'Sample_ID' : '%s|%s' % (plate.barcode, well.label),
+            record = {'Sample_ID' : '%s:%s' % (plate.barcode, well.label),
                       'PLATE_barcode' : plate.barcode,
                       'PLATE_label' : plate.label,
                       'WELL_label' : well.label,
@@ -140,6 +142,12 @@ class BuildDatasheetApp(Core):
                 record['MS_affected'] = ms
             writer.writerow(record)
             last_slot = slot
+        #Fill empty slots at the end of the plate
+        while (last_slot != (plate.rows * plate.columns)):
+            last_slot += 1
+            self.logger.info('No data for well %s, filling with dummy record' %
+                             self.calculate_well_label(last_slot, plate.columns))
+            writer.writerow(self.get_empty_record(plate, last_slot))
 
         out_file.close()
         self.logger.info('Job completed')
