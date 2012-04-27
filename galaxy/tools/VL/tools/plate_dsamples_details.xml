@@ -23,6 +23,12 @@
     #if str($vcoll_label) != 'no_collection'
       --vessels_collection=${vcoll_label}
     #end if
+    #if $vessel_types
+      --ignore_types=${vessel_types}
+    #end if
+    #if str($study_label) != 'no_study'
+      --map_study=${study_label}
+    #end if
   </command>
   <inputs>
     <param name="plate" type="select" label="Context Titer Plate"
@@ -52,6 +58,33 @@
 	<filter type="sort_by" column="0"/>
 	<filter type="add_value" name="Select a Vessels Collection..."
 		value="no_collection" index="0"/>
+      </options>
+    </param>
+
+    <param name="vessel_types" type="select" label="Ignore wells with status..."
+	   display="checkboxes" multiple="true"
+	   help="Treat as 'empty' wells with one of the following status.">
+      <options from_parameter="tool.app.known_vessel_status"
+	       transform_lines="[ &quot;%s%s%s&quot;
+	                         % (l[1], self.separator, l[1])
+				 for l in obj ]">
+	<column name="value" index="1"/>
+	<column name="name" index="0"/>
+	<filter type="sort_by" column="0"/>
+      </options>
+    </param>
+
+    <param name="study_label" type="select" label="Mapping study"
+	   help="If a study is selected, enrollment codes will be written in the output file.">
+      <options from_parameter="tool.app.known_studies"
+	       transform_lines="[ &quot;%s%s%s:%s&quot;
+	                          % ( l[0], self.separator, l[0], l[1][:60] )
+				  for l in obj ]">
+	<column name="value" index="0"/>
+	<column name="name" index="1"/>
+	<filter type="sort_by" column="0"/>
+	<filter type="add_value" name="Ignore enrollments"
+		value="no_study" index="0"/>
       </options>
     </param>
 

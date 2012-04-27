@@ -76,3 +76,11 @@ class UniverseApplication(OrigUniverseApplication):
       return [(pl.barcode, pl.label) for pl in plates if pl.barcode]
     else:
       return []
+
+  @property
+  def known_vessel_status(self):
+    vstatus = self.kb.get_objects(self.kb.VesselStatus)
+    if vstatus:
+      return [(v.omero_id, v.enum_label()) for v in vstatus]
+    else:
+      return []

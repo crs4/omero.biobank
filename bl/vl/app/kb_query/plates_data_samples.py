@@ -1,8 +1,23 @@
 import csv, argparse, sys
 
 from bl.vl.app.importer.core import Core
+from bl.vl.kb.drivers.omero.vessels import VesselStatus
+from bl.vl.kb.drivers.omero.ehr import EHR
 
 class BuildPlateDataSamplesDetails(Core):
+
+    VESSEL_STATUS = [VesselStatus.CONTENTCORRUPTED.enum_label(),
+                     VesselStatus.CONTENTUSABLE.enum_label(),
+                     VesselStatus.DISCARDED.enum_label(),
+                     VesselStatus.UNKNOWN.enum_label(),
+                     VesselStatus.UNUSABLE.enum_label(),
+                     VesselStatus.UNUSED.enum_label()]
+
+    DIAGNOSIS_ARCH = 'openEHR-EHR-EVALUATION.problem-diagnosis.v1'
+    DIAGNOSIS_FIELD = 'at0002.1'
+    T1D_ICD10 = 'icd10-cm:E10'
+    MS_ICD10 = 'icd10-cm:G35'
+    NEFRO_ICD10 = 'icd10-cm:E23.2'
 
     def __init__(self, host = None, user = None, passwd = None, keep_tokens = 1,
                  logger = None, study_label = None, operator = 'Alfred E. Neumann'):
@@ -61,23 +76,83 @@ class BuildPlateDataSamplesDetails(Core):
         coll_items = self.kb.get_vessels_collection_items(vessels_collection)
         return [vci.vessel.id for vci in coll_items if vci.vessel.OME_TABLE == 'PlateWell']
 
-    def load_plate_wells_lookup(self, plate, wells_filter):
+    def load_plate_wells_lookup(self, plate, wells_filter, vessels_type_filter = None):
         self.logger.info('Loading wells for plate %s (barcode %s)' % (plate.label,
                                                                       plate.barcode))
         if wells_filter:
             wells = [w for w in self.kb.get_wells_by_plate(plate) if w.id in wells_filter]
         else:
             wells = list(self.kb.get_wells_by_plate(plate))
+        if vessels_type_filter:
+            wells = [w for w in wells if w.status.enum_label() \
+                         not in vessels_type_filter]
         self.logger.info('Loaded %d wells' % len(wells))
         wells_map = {}
         for w in wells:
             wells_map[w.slot] = w
         return wells_map
 
-    def dump(self, plate_barcodes, fetch_all, vessels_collection, out_file):
+    def load_study_map(self, study_label):
+        st = self.kb.get_study(study_label)
+        if not st:
+            msg = 'Study %s unknown' % study_label
+            self.logger.error(msg)
+            raise ValueError(msg)
+        enrolled = self.kb.get_enrolled(st)
+        st_map = {}
+        for en in enrolled:
+            st_map[en.individual] = en
+        return st_map
+
+    def get_individual(self, plate_well):
+        if not self.kb.dt:
+            self.kb.update_dependency_tree()
+        return self.kb.dt.get_connected(plate_well, self.kb.Individual)[0]
+
+    def load_ehr_map(self):
+        self.logger.info('Loading EHR informations')
+        ehr_records = self.kb.get_ehr_records()
+        self.logger.info('Loaded %d clinical records' % len(ehr_records))
+        ehr_map = {}
+        for r in ehr_records:
+            ehr_map.setdefault(r['i_id'], []).append(r)
+        return ehr_map
+
+    def get_affections(self, ehr_records):
+        if len(ehr_records) == 0:
+            return None, None, None
+        t1d = False
+        ms = False
+        nefro = False
+        ehr = EHR(ehr_records)
+        if ehr.matches(self.DIAGNOSIS_ARCH, self.DIAGNOSIS_FIELD, self.T1D_ICD10):
+            t1d = True
+        if ehr.matches(self.DIAGNOSIS_ARCH, self.DIAGNOSIS_FIELD, self.MS_ICD10):
+            ms = True
+        if ehr.matches(self.DIAGNOSIS_ARCH, self.DIAGNOSIS_FIELD, self.NEFRO_ICD10):
+            nefro = True
+        return t1d, ms, nefro
+
+    def dump(self, plate_barcodes, fetch_all, vessels_collection, 
+             ignore_types, map_study, out_file):
         if not plate_barcodes and not fetch_all:
             raise ValueError('At least one between the --plate and --fetch_all parameters must be submitted')
         
+        if ignore_types:
+            type_filter = ignore_types.split(',')
+            for tf in type_filter:
+                if tf not in self.VESSEL_STATUS:
+                    msg = '%s is not a legal VesselStatus' % tf
+                    self.logger.critical(msg)
+                    sys.exit(msg)
+        else:
+            type_filter = None
+
+        if map_study:
+            study_map = self.load_study_map(map_study)
+        else:
+            study_map = None
+
         if vessels_collection:
             vcoll = self.kb.get_vessels_collection(vessels_collection)
             if vcoll is None:
@@ -93,6 +168,8 @@ class BuildPlateDataSamplesDetails(Core):
                     sys.exit(0)
         else:
             wells_filter = None
+
+        ehr_map = self.load_ehr_map()
         
         self.logger.info('Loading plates')
         if fetch_all:
@@ -114,12 +191,16 @@ class BuildPlateDataSamplesDetails(Core):
 
         plates_lookup = {}
         for pl in plates:
-            plates_lookup[pl] = self.load_plate_wells_lookup(pl, wells_filter)
+            plates_lookup[pl] = self.load_plate_wells_lookup(pl, wells_filter, type_filter)
 
+        field_names = ['PLATE_barcode', 'PLATE_label', 'WELL_label', 'WELL_status',
+                       'DATA_SAMPLE_label']
+        if map_study:
+            field_names.extend(['STUDY_label', 'ENROLLMENT_code'])
+        field_names.extend(['INDIVIDUAL_gender', 'T1D_affection', 'MS_affection',
+                            'NEFRO_affection'])
         writer = csv.DictWriter(out_file, delimiter='\t', restval = 'X',
-                                fieldnames = ['PLATE_barcode', 'PLATE_label',
-                                              'WELL_label', 'WELL_status',
-                                              'DATA_SAMPLE_label'])
+                                fieldnames = field_names)
         writer.writeheader()
         for pl, wmap in plates_lookup.iteritems():
             last_slot = 0
@@ -139,6 +220,25 @@ class BuildPlateDataSamplesDetails(Core):
                                                                             well.label))
                 if len(dsamples) > 0:
                     record['DATA_SAMPLE_label'] = dsamples[0].label
+                ind = self.get_individual(well)
+                record['INDIVIDUAL_gender'] = ind.gender.enum_label()
+                if map_study:
+                    try:
+                        record['STUDY_label'] = study_map[ind].study.label
+                        record['ENROLLMENT_code'] = study_map[ind].studyCode
+                    except KeyError, ke:
+                        self.logger.debug('Individual %s has no enrollment in %s' % (ind.id,
+                                                                                     map_study))
+                try:
+                    t1d, ms, nefro = self.get_affections(ehr_map[ind.id])
+                    if not t1d is None:
+                        record['T1D_affection'] = t1d
+                    if not ms is None:
+                        record['MS_affection'] = ms
+                    if not nefro is None:
+                        record['NEFRO_affection'] = nefro
+                except KeyError, ke:
+                    self.logger.debug('Unable to find EHR lookup for %s' % ind.id)
                 writer.writerow(record)
                 last_slot = slot
             # Fill empty records if last_slot != plate.rows * plate.columns
@@ -162,6 +262,10 @@ def make_parser(parser):
                         help='retrieve all plates with a barcode, this parameter overrides the --plate')
     parser.add_argument('--vessels_collection', type=str,
                         help='vessels collection label used as a filter, wells that no belog to this collection will be treated as empty')
+    parser.add_argument('--ignore_types', type=str,
+                        help='a comma separated list of VesselStatus, vessels that match with one of these parameters will be treated as empty. Legal values are %r' % BuildPlateDataSamplesDetails.VESSEL_STATUS)
+    parser.add_argument('--map_study', type=str,
+                        help='retrieve enrollment codes for the specified study and add "study" and "study_code" columns to the output file')
 
 def implementation(logger, host, user, passwd, args):
     app = BuildPlateDataSamplesDetails(host = host, user = user,
@@ -169,7 +273,7 @@ def implementation(logger, host, user, passwd, args):
                                        keep_tokens = args.keep_tokens,
                                        logger = logger)
     app.dump(args.plates, args.fetch_all, args.vessels_collection, 
-             args.ofile)
+             args.ignore_types, args.map_study, args.ofile)
 
 def do_register(registration_list):
     registration_list.append(('plate_data_samples', help_doc, make_parser,
