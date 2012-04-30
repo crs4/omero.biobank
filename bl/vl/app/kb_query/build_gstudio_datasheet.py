@@ -112,7 +112,7 @@ class BuildDatasheetApp(Core):
         self.logger.info('Writing output')
         writer = csv.DictWriter(out_file, delimiter='\t', restval='X',
                                 fieldnames = ['Sample_ID', 'PLATE_barcode',
-                                              'PLATE_label', 'WELL_label',
+                                              'PLATE_label', 'AMP_Plate', 'WELL_label',
                                               'INDIVIDUAL_id', 'INDIVIDUAL_gender',
                                               'T1D_affected', 'MS_affected'])
         writer.writeheader()
