@@ -55,6 +55,14 @@ class BuildDatasheetApp(Core):
             col = slot_position % plate_columns + plate_columns
         return '%s%02d' % (row, col)
 
+    def calculate_sentrix_position(self, slot_position):
+        row = (slot_position % 6) + 1
+        if ((slot_position % 12) in range(0,6)):
+            col = 1
+        else:
+            col = 2    
+        return 'R%02dC%02d' % (row, col)
+    
     def get_affections(self, clinical_records):
         if len(clinical_records) == 0:
             return 'none', 'none'
@@ -80,9 +88,14 @@ class BuildDatasheetApp(Core):
     def get_empty_record(self, plate, slot_index):
         return {'Sample_ID':'%s:%s' % (plate.barcode, self.calculate_well_label(slot_index,
                                                                                 plate.columns)),
-                'PLATE_barcode' : plate.barcode, 
-                'PLATE_label' : plate.label,
-                'WELL_label' : self.calculate_well_label(slot_index,
+#                'PLATE_barcode' : plate.barcode, 
+                'Sample_Plate' : plate.label,
+                'Sample_Name':'%s:%s' % (plate.barcode, self.calculate_well_label(slot_index,
+                                                                                plate.columns)),
+                                                                                
+                'AMP_Plate' : 0,
+                'SentrixPosition_A' : self.calculate_sentrix_position(slot_index-1),
+                'Sample_Well' : self.calculate_well_label(slot_index,
                                                          plate.columns)}
 
     def dump(self, plate_barcode, out_file):
@@ -104,42 +117,60 @@ class BuildDatasheetApp(Core):
         self.logger.info('Building individuals-wells lookup table')
         wells_lookup = self.get_wells_inds_lookup(inds)
 
-        self.logger.info('Loading clinical records')
-        ehr_records = self.kb.get_ehr_records()
-        ehr_records_map = self.get_ehr_records_map(ehr_records)
-        self.logger.info('Clinical record loaded')
+#        self.logger.info('Loading clinical records')
+#        ehr_records = self.kb.get_ehr_records()
+#        ehr_records_map = self.get_ehr_records_map(ehr_records)
+#        self.logger.info('Clinical record loaded')
 
         self.logger.info('Writing output')
-        writer = csv.DictWriter(out_file, delimiter='\t', restval='X',
-                                fieldnames = ['Sample_ID', 'PLATE_barcode',
-                                              'PLATE_label', 'AMP_Plate', 'WELL_label',
-                                              'INDIVIDUAL_id', 'INDIVIDUAL_gender',
-                                              'T1D_affected', 'MS_affected'])
+
+        headerWriter = csv.writer(out_file, delimiter='\t',
+                                  quoting=csv.QUOTE_MINIMAL)
+        headerWriter.writerow(['[Header]'])
+        headerWriter.writerow(['Investigator Name'])
+        headerWriter.writerow(['Project Name'])
+        headerWriter.writerow(['Experiment Name'])
+        headerWriter.writerow(['Date'])
+        headerWriter.writerow(['[Manifests]'])
+        headerWriter.writerow(['A', 'HumanOmniExpress-12v1-Multi_H.bpm'])
+        headerWriter.writerow(['[Data]'])
+        #out_file.close()
+
+        
+        writer = csv.DictWriter(out_file, delimiter='\t', restval='',
+                                fieldnames = ['Sample_ID', 'Sample_Plate', 'Sample_Name',
+                                              'Project', 'AMP_Plate', 'Sample_Well',
+                                              'SentrixBarcode_A', 'SentrixPosition_A',
+                                              'Scanner', 'Date_Scan', 'Replicate',
+                                              'Parent1', 'Parent2', 'Gender'])
         writer.writeheader()
         last_slot = 0
         for slot, well in sorted(wells.iteritems()):
             self.logger.debug('WELL: %s --- SLOT: %d' % (well.label, slot))
-            try:
-                cl_records = ehr_records_map[list(wells_lookup[well])[0].id]
-            except KeyError, ke:
-                self.logger.warning('Individual %s has no clinical records' % ke)
-                cl_records = []
-            t1d, ms = self.get_affections(cl_records)
+#            try:
+#                cl_records = ehr_records_map[list(wells_lookup[well])[0].id]
+#            except KeyError, ke:
+#                self.logger.warning('Individual %s has no clinical records' % ke)
+#                cl_records = []
+#            t1d, ms = self.get_affections(cl_records)
             while(last_slot != slot-1):
                 last_slot += 1
                 self.logger.info('No data for well %s, filling with dummy record' % 
                                  self.calculate_well_label(last_slot, plate.columns))
                 writer.writerow(self.get_empty_record(plate, last_slot))
             record = {'Sample_ID' : '%s:%s' % (plate.barcode, well.label),
-                      'PLATE_barcode' : plate.barcode,
-                      'PLATE_label' : plate.label,
-                      'WELL_label' : well.label,
-                      'INDIVIDUAL_gender' : list(wells_lookup[well])[0].gender.enum_label().lower(),
-                      'INDIVIDUAL_id' : list(wells_lookup[well])[0].id}
-            if t1d:
-                record['T1D_affected'] = t1d
-            if ms:
-                record['MS_affected'] = ms
+#                      'PLATE_barcode' : plate.barcode,
+                      'Sample_Plate' : plate.label,
+                      'Sample_Name' : '%s:%s' % (plate.barcode, well.label),
+                      'AMP_Plate' : 0,
+                      'Sample_Well' : well.label,
+                      'SentrixPosition_A' : self.calculate_sentrix_position(last_slot),
+                      'Gender' : list(wells_lookup[well])[0].gender.enum_label().upper()}
+#                      'INDIVIDUAL_id' : list(wells_lookup[well])[0].id}
+#            if t1d:
+#                record['T1D_affected'] = t1d
+#            if ms:
+#                record['MS_affected'] = ms
             writer.writerow(record)
             last_slot = slot
         #Fill empty slots at the end of the plate
