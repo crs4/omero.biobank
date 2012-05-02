@@ -31,9 +31,9 @@ class BuildDatasheetApp(Core):
             w_lookup[w.slot] = w
         return w_lookup
 
-    def load_plate(self, plate_barcode):
-        query = 'SELECT pl FROM TiterPlate pl WHERE pl.barcode = :pl_barcode'
-        plate = self.kb.find_all_by_query(query, {'pl_barcode' : plate_barcode})
+    def load_plate(self, plate_label):
+        query = 'SELECT pl FROM TiterPlate pl WHERE pl.label = :pl_label'
+        plate = self.kb.find_all_by_query(query, {'pl_label' : plate_label})
         return plate[0] if len(plate) > 0 else None
 
     def get_wells_inds_lookup(self, individuals):
@@ -86,13 +86,15 @@ class BuildDatasheetApp(Core):
         return ehr_map
 
     def get_empty_record(self, plate, slot_index):
-        return {'Sample_ID':'%s:%s' % (plate.barcode, self.calculate_well_label(slot_index,
-                                                                                plate.columns)),
+        return { #'Sample_ID':'%s:%s' % (plate.barcode, self.calculate_well_label(slot_index,
+#                                                                                plate.columns)),
 #                'PLATE_barcode' : plate.barcode, 
                 'Sample_Plate' : plate.label,
-                'Sample_Name':'%s:%s' % (plate.barcode, self.calculate_well_label(slot_index,
-                                                                                plate.columns)),
-                                                                                
+#                'Sample_Name':'%s:%s' % (plate.barcode, self.calculate_well_label(slot_index,
+#                plate.columns)),
+                'Sample_ID' : 'Empty',
+                'Sample_Name' : 'Empty',
+                'Gender' : 'Empty',
                 'AMP_Plate' : 0,
                 'SentrixPosition_A' : self.calculate_sentrix_position(slot_index-1),
                 'Sample_Well' : self.calculate_well_label(slot_index,
@@ -124,7 +126,7 @@ class BuildDatasheetApp(Core):
 
         self.logger.info('Writing output')
 
-        headerWriter = csv.writer(out_file, delimiter='\t',
+        headerWriter = csv.writer(out_file, delimiter=';',
                                   quoting=csv.QUOTE_MINIMAL)
         headerWriter.writerow(['[Header]'])
         headerWriter.writerow(['Investigator Name'])
@@ -137,7 +139,7 @@ class BuildDatasheetApp(Core):
         #out_file.close()
 
         
-        writer = csv.DictWriter(out_file, delimiter='\t', restval='',
+        writer = csv.DictWriter(out_file, delimiter=';', restval='',
                                 fieldnames = ['Sample_ID', 'Sample_Plate', 'Sample_Name',
                                               'Project', 'AMP_Plate', 'Sample_Well',
                                               'SentrixBarcode_A', 'SentrixPosition_A',
@@ -162,6 +164,7 @@ class BuildDatasheetApp(Core):
 #                      'PLATE_barcode' : plate.barcode,
                       'Sample_Plate' : plate.label,
                       'Sample_Name' : '%s:%s' % (plate.barcode, well.label),
+                      'Project' : '%s_OmniExpress' % (plate.label),
                       'AMP_Plate' : 0,
                       'Sample_Well' : well.label,
                       'SentrixPosition_A' : self.calculate_sentrix_position(last_slot),
