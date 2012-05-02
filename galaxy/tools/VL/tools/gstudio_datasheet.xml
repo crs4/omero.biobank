@@ -53,6 +53,7 @@
   </inputs>
 
   <outputs>
+<<<<<<< HEAD
     <data format="tabular" name="outfile" label="${plate.value}_samplesheet.csv"/>
     <data format="txt"     name="logfile" label="${plate.value}_samplesheet.log"/>
   </outputs>
@@ -61,3 +62,9 @@
     Build a Genome Studio datasheet for the given plate
   </help>
 </tool>
+=======
+    <data format="tabular" name="outfile" label="${plate}_datasheet.csv"/>
+    <data format="txt"     name="logfile" label="${plate}_datasheet.log"/>
+  </outputs>
+</tool>
+>>>>>>> 55e3d74f6a3f35f67f4dfc19292c389f78222680
