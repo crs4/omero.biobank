@@ -112,7 +112,16 @@
     <data format="txt" name="logfile"     label="${tool.name}.logfile"/>
   </outputs>
   <help>
-    
+
+The tool resolves VIDs for the given column and rename the column
+iteself with a new label. Usually to map the items' VIDs the simple
+item label is necessary but in some cases a special syntax is needed:
+
+* for PlateWell items the pattern is **PLATE_LABEL:WELL_LABEL**
+
+* for DataCollectionItem items the pattern is
+  **DATA_COLLECTION_LABEL:ITEM_LABEL**
+
   </help>
 
 </tool>
