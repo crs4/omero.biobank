@@ -17,7 +17,7 @@ class Demographic(wp.OmeroWrapper):
   OME_TABLE = 'Demographic'
   __fields__ = [('vid',   wp.VID, wp.REQUIRED),
                 ('name',  wp.STRING, wp.REQUIRED),
-                ('surnname',  wp.STRING, wp.REQUIRED),
+                ('surname',  wp.STRING, wp.REQUIRED),
                 ('gender', Gender, wp.REQUIRED),
                 ('birthPlace', Location, wp.REQUIRED),
                 ('birthDate', wp.TIMESTAMP, wp.REQUIRED),
