@@ -91,4 +91,26 @@
   <outputs>
     <data format="txt" name="logfile" label="${tool.name}.logfile"/>
   </outputs>
+
+  <help>
+This tool discard from a DataCollection or a VesselCollection one or
+more items.
+
+The expected input file must be like
+
++---------------+
+|collection_item|
++---------------+
+|V013AFF22311   |
++---------------+
+|V0ABB3451516   |
++---------------+
+|V012441AAEEC   |
++---------------+
+
+Input file rows must be VIDs obtained using the **map_vid** tool.
+
+Collection must be selected using the specific selection lists that
+show only the ones imported into the system.
+  </help>
 </tool>
