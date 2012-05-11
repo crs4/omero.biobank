@@ -77,19 +77,22 @@ def main(argv):
                                 delimiter = '\t')
         writer.writeheader()
 
+        inds = []
+
         oe_index = get_first_index(kb, logger)
         for pl in plates:
             wells = list(kb.get_wells_by_plate(pl))
             logger.info('Loaded %d wells for plate %s' % (len(wells),
                                                           pl.barcode))
             for w in wells:
-                ind = kb.dt.get_connected(w, kb.Individual)[0]
-                writer.writerow({'source' : ind.id,
-                                 'study'  : 'OMNIEXPRESS',
-                                 'label'  : OE_STCODE_PATTERN % oe_index})
-                oe_index += 1
+                inds.append(kb.dt.get_connected(w, kb.Individual)[0])
+        inds = set(inds)
+        for ind in inds:
+            writer.writerow({'source' : ind.id,
+                             'study'  : 'OMNIEXPRESS',
+                             'label'  : OE_STCODE_PATTERN % oe_index})
+            oe_index += 1
     logger.info('Job completed')
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-
