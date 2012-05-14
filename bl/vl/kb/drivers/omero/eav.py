@@ -1,8 +1,10 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import bl.vl.utils as vlu
+import time
+from datetime import datetime
 
+import bl.vl.utils as vlu
 
 VID_SIZE = vlu.DEFAULT_VID_LEN
 
@@ -63,6 +65,7 @@ class EAVAdapter(object):
     'float': ('float', 'dvalue', 0.0),
     'str': ('str', 'svalue', None),
     'bool': ('bool', 'bvalue', False),
+    'datetime' : ('date', 'dvalue', 0.0),
     }
 
   @classmethod
@@ -73,7 +76,11 @@ class EAVAdapter(object):
     conv = EAVAdapter.FIELD_TYPE_ENCODING_TABLE[type(value).__name__]
     row['type'] = conv[0]
     # FIXME do we need to convert int to long?
-    row[conv[1]] = value
+    # Convert special data types
+    if type(value).__name__ == 'datetime':
+      row[conv[1]] = time.mktime(value.timetuple())
+    else:
+      row[conv[1]] = value
 
   @classmethod
   def decode_field_value(klass, ftype, svalue, bvalue, lvalue, dvalue):
@@ -82,9 +89,11 @@ class EAVAdapter(object):
     elif ftype == 'long':
       return long(lvalue)
     elif ftype == 'float':
-      return float(fvalue)
+      return float(dvalue)
     elif ftype == 'bool':
       return bool(bvalue)
+    elif ftype == 'date':
+      return datetime.fromtimestamp(float(dvalue))
 
   def __init__(self, kb):
     self.kb = kb

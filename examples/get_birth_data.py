@@ -83,7 +83,7 @@ def main(argv):
     in_file = open(args.in_file)
     reader = csv.DictReader(in_file, delimiter='\t')
     bd_matches_file = open(args.match_files, 'w')
-    bd_writer = csv.DictWriter(bd_matches_file, ['individual_id', 'birth_date',
+    bd_writer = csv.DictWriter(bd_matches_file, ['individual', 'birth_date',
                                                  'birth_place_name', 'birth_place_code'],
                                delimiter='\t', restval='')
     bd_writer.writeheader()
@@ -100,8 +100,8 @@ def main(argv):
                 bdate = format_date(datetime.fromtimestamp(demogs_lookup[ind].birthDate))
                 bplace = demogs_lookup[ind].birthPlace
                 if bdate != '01/01/9999':
-                    record = {'individual_id' : ind.id,
-                              'birth_date'    : bdate}
+                    record = {'individual' : en,
+                              'birth_date' : bdate}
                     if bplace.name != 'UNKNOWN':
                         record['birth_place_name'] = bplace.name
                         record['birth_place_code'] = bplace.istatCode

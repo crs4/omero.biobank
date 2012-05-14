@@ -44,6 +44,7 @@ SUBMOD_NAMES = [
   "markers_set",
   "diagnosis",
   "enrollment",
+  "birth_data",
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 
