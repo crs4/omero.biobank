@@ -111,12 +111,12 @@ def main(argv):
                 logger.debug('No match for enrollment %s' % en)
                 pass
         else:
-            if no_bd_writer:
+            if 'no_bd_writer' in locals():
                 no_bd_writer.writerow(row)
 
     in_file.close()
     bd_matches_file.close()
-    if no_bd_matches_file:
+    if 'no_bd_matches_file' in locals():
         no_bd_matches_file.close()
     logger.info('Job completed')
     
