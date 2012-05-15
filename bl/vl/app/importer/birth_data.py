@@ -14,7 +14,7 @@ Will read in a tsv file with the following columns::
   .....
 
 where birth_place is a valid ISTAT code for an Italian city or a
-foreign Country.
+foreign Country and birth_date must have the dd/mm/YYYY format.
 
 Birth data will be imported as EHR records using the
 openEHR-DEMOGRAPHIC-CLUSTER.person_birth_data_iso.v1
