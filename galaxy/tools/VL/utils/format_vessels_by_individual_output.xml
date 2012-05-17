@@ -1,0 +1,25 @@
+<tool id="vl_tools_format_vessels_by_individual" name="VLUTILS.format_vessels_by_individual">
+  <description>
+    Format the output from VLU.vessels_by_individual into a tabular
+    format
+  </description>
+  <command interpreter="python">
+    format_vessels_by_individual_output.py
+    --loglevel=$__app__.config.vl_loglevel
+    --logfile=${logfile}
+    --in_file=${in_file}
+    --map_file=${map_file}
+    --out_file=${out_file}
+  </command>
+  <inputs>
+    <param format="tabular" name="in_file" type="data"
+	   label="Output file produced by the VLU.vessels_by_individual tool"/>
+    <param format="tabular" name="map_file" type="data"
+	   label="Individuals ID mapping file"/>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="out_file" label="${tool.name}.tsv'"/>
+    <data format="txt" name="logfile" label="${tool.name}.log"/>
+  </outputs>
+</tool>
