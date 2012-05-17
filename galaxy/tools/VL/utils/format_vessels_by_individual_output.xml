@@ -19,7 +19,7 @@
   </inputs>
 
   <outputs>
-    <data format="tabular" name="out_file" label="${tool.name}.tsv'"/>
+    <data format="tabular" name="out_file" label="${tool.name}.tsv"/>
     <data format="txt" name="logfile" label="${tool.name}.log"/>
   </outputs>
 </tool>
