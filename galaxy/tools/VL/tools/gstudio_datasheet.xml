@@ -16,6 +16,7 @@
     gstudio_datasheet
     #if str($plate) != 'no_plate'
       --plate=${plate}
+      --manifest=${manifest}
     #end if
   </command>
   <inputs>
