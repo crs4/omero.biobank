@@ -32,6 +32,11 @@
 		value="no_plate" index="0"/>
       </options>
     </param>
+    <param name="manifest" type="select" label="Probes descriptor">
+      <option value="Immuno_BeadChip_11419691_B.bpm">Immuno Chip</option>
+      <option value="HumanOmniExpress-12v1-Multi_H.bpm">OmniExpress Chip</option>
+      <option value="HumanExome-12v1_A.bpm">Exome Chip</option>
+    </param>
 
     <!-- ************************************************** -->
     <conditional name="advanced_configuration">
