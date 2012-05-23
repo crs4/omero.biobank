@@ -100,7 +100,7 @@ class BuildDatasheetApp(Core):
                 'Sample_Well' : self.calculate_well_label(slot_index,
                                                          plate.columns)}
 
-    def dump(self, plate_barcode, manifest, out_file):
+    def dump(self, operator, plate_barcode, manifest, out_file):
         self.logger.info('Loading plate %s' % plate_barcode)
         plate = self.load_plate(plate_barcode)
         if not plate:
@@ -129,7 +129,7 @@ class BuildDatasheetApp(Core):
         headerWriter = csv.writer(out_file, delimiter=';',
                                   quoting=csv.QUOTE_MINIMAL)
         headerWriter.writerow(['[Header]'])
-        headerWriter.writerow(['Investigator Name'])
+        headerWriter.writerow(['Investigator Name', operator])
         headerWriter.writerow(['Project Name'])
         headerWriter.writerow(['Experiment Name'])
         headerWriter.writerow(['Date'])
@@ -203,7 +203,7 @@ def implementation(logger, host, user, passwd, args):
     app = BuildDatasheetApp(host = host, user = user, passwd = passwd,
                             keep_tokens = args.keep_tokens, logger = logger,
                             study_label = None)
-    app.dump(args.plate, args.manifest, args.ofile)
+    app.dump(args.operator, args.plate, args.manifest, args.ofile)
 
 def do_register(registration_list):
     registration_list.append(('gstudio_datasheet', help_doc, make_parser,
