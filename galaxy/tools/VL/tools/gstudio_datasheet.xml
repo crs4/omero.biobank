@@ -9,7 +9,7 @@
       --user=$advanced_configuration.vl_user
       --passwd=$advanced_configuration.vl_passwd
     #end if
-    --operator=galaxy
+    --operator=$__user_email__
     --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
     --ofile=${outfile}
@@ -33,7 +33,8 @@
 		value="no_plate" index="0"/>
       </options>
     </param>
-    <param name="manifest" type="select" label="Probes descriptor">
+    <param name="manifest" type="select" label="Probes descriptor"
+	   help="Choose one of the manifest file description available">
       <option value="Immuno_BeadChip_11419691_B.bpm">Immuno Chip</option>
       <option value="HumanOmniExpress-12v1-Multi_H.bpm">OmniExpress Chip</option>
       <option value="HumanExome-12v1_A.bpm">Exome Chip</option>
