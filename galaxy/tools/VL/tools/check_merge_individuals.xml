@@ -1,6 +1,6 @@
 <tool id="vl_tools_check_merge_individuals" name="VLT.check_merge_individuals">
   <description>
-    Verify data that will be passed to the update_parents tool
+    Verify data that will be passed to the merge_individuals tool
   </description>
   <command interpreter="python">
     check_merge_individuals.py
