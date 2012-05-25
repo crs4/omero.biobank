@@ -14,9 +14,9 @@ A biosample record will have, at least, the following fields::
 Where label is the label of the biosample container. Another example,
 this time involving DNA samples::
 
-  label    source     used_volume current_volume
-  I001-dna V932814899 0.3         0.2
-  I002-dna V932814900 0.22        0.2
+  label    source     used_volume current_volume activation_date
+  I001-dna V932814899 0.3         0.2            17/03/2007
+  I002-dna V932814900 0.22        0.2            21/01/2004
 
 A special case is when records refer to biosamples contained in plate
 wells. In this case, an additional column must be present with the VID
@@ -44,6 +44,7 @@ vessel identified by source. row and column are base 1.
 
 import os, csv, json, time, re
 import itertools as it
+from datetime import datetime
 
 from bl.vl.kb.drivers.omero.vessels import VesselContent, VesselStatus
 from bl.vl.kb.drivers.omero.utils import make_unique_key
@@ -135,6 +136,13 @@ class Recorder(core.Core):
         f = reject + 'missing mandatory field.'
         self.logger.error(f)
         continue
+      if 'activation_date' in r and r['activation_date'] != '':
+        try:
+          datetime.strptime(r['activation_date'], '%d/%m/%Y')
+        except ValueError:
+          f = reject + 'invalid date format for %s'
+          self.logger.error(f % r['activation_date'])
+          continue
       if r['source'] not in  self.preloaded_sources:
         f = reject + 'no known source maps to %s.'
         self.logger.error(f % r['source'])
@@ -184,6 +192,13 @@ class Recorder(core.Core):
         f = 'there is a pre-existing vessel with label %s. ' + reject
         self.logger.warn(f % r['label'])
         continue
+      if 'activation_date' in r and r['activation_date'] != '':
+        try:
+          datetime.strptime(r['activation_date'], '%d/%m/%Y')
+        except ValueError:
+          f = reject + 'invalid date format for %s'
+          self.logger.error(f % r['activation_date'])
+          continue
       if not r['source'] in  self.preloaded_sources:
         f = 'no known source maps to %s. ' + reject
         self.logger.error(f % r['source'])
@@ -229,6 +244,8 @@ class Recorder(core.Core):
         'status': getattr(self.kb.VesselStatus, r['vessel_status'].upper()),
         'action': a,
         }
+      if 'activation_date' in r:
+        conf['activationDate'] = time.mktime(datetime.strptime(r['activation_date'], '%d/%m/%Y').timetuple())
       if self.vessel_klass == self.kb.PlateWell:
         plate = self.preloaded_plates[r['plate']]
         row, column = r['row'], r['column']
