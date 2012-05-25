@@ -16,7 +16,7 @@ def assign_vid(conf):
 
 def assign_vid_and_timestamp(conf, time_stamp_field='startDate'):
   conf = assign_vid(conf)
-  conf.setdefault(time_stamp_field, time2rtime(time.time()))
+  conf.setdefault(time_stamp_field, time.time())
   return conf
 
 

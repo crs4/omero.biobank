@@ -23,7 +23,7 @@ TEXT = 'text'
 TIMESTAMP = 'timestamp'
 SELF_TYPE = 'self-type'
 WRAPPING = {
-  TIMESTAMP: ort.rtime,
+  TIMESTAMP: vluo.time2rtime,
   VID: ort.rstring,
   STRING: ort.rstring,
   TEXT: ort.rstring,
