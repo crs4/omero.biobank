@@ -9,6 +9,17 @@ import wrapper as wp
 from snp_markers_set import SNPMarkersSet
 
 
+class OriginalFile(wp.OmeroWrapper):
+
+  # Mapping only fields used also to define DataObjects
+  OME_TABLE = 'OriginalFile'
+  __fields__ = [('name',     wp.STRING, wp.REQUIRED),
+                ('path',     wp.STRING, wp.REQUIRED),
+                ('mimetype', wp.STRING, wp.OPTIONAL),
+                ('sha1',     wp.STRING, wp.REQUIRED),
+                ('size',     wp.LONG,   wp.REQUIRED)]
+
+
 class Study(wp.OmeroWrapper):
   
   OME_TABLE = 'Study'
@@ -61,6 +72,12 @@ class Chip(Device):
   
   OME_TABLE = 'Chip'
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL)]
+
+
+class AnnotatedChip(Chip):
+
+  OME_TABLE = 'AnnotatedChip'
+  __fields__ = [('annotation', OriginalFile, wp.REQUIRED)]
 
 
 class ActionCategory(wp.OmeroWrapper):

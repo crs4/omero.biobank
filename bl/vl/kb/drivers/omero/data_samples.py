@@ -3,7 +3,7 @@
 
 from bl.vl.kb import mimetypes
 import wrapper as wp
-from action import Action
+from action import Action, OriginalFile
 from snp_markers_set import SNPMarkersSet
 from utils import assign_vid_and_timestamp
 
@@ -27,16 +27,21 @@ class DataSample(wp.OmeroWrapper):
     return assign_vid_and_timestamp(conf, time_stamp_field='creationDate')
 
 
-class DataObject(wp.OmeroWrapper):
+# class OriginalFile(wp.OmeroWrapper):
+
+#   # Mapping only fields used also to define DataObjects
+#   OME_TABLE = 'OriginalFile'
+#   __fields__ = [('name',     wp.STRING, wp.REQUIRED),
+#                 ('path',     wp.STRING, wp.REQUIRED),
+#                 ('mimetype', wp.STRING, wp.OPTIONAL),
+#                 ('sha1',     wp.STRING, wp.REQUIRED),
+#                 ('size',     wp.LONG,   wp.REQUIRED)]
+
+
+class DataObject(OriginalFile):
 
   OME_TABLE = 'DataObject'
-  __fields__ = [('sample', DataSample, wp.REQUIRED),
-                 # the following fields come from OriginalFile
-                ('name',   wp.STRING,  wp.REQUIRED),
-                ('path',   wp.STRING,  wp.REQUIRED),
-                ('mimetype', wp.STRING, wp.REQUIRED),
-                ('sha1',   wp.STRING, wp.REQUIRED),
-                ('size',   wp.LONG,    wp.REQUIRED)]
+  __fields__ = [('sample', DataSample, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
     conf['name'] = conf['sample'].vid
