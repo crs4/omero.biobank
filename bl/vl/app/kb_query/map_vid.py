@@ -26,20 +26,26 @@ class MapVIDApp(Core):
                study_label=None, operator='Alfred E. Neumann', logger=None):
     super(MapVIDApp, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
                                     study_label=study_label, logger=logger)
+    if study_label is None:
+      self.default_study = None
 
   def resolve_mapping_individual(self, labels):
     mapping = {}
     self.logger.info('start selecting enrolled individuals')
-    known_enrollments = self.kb.get_enrolled(self.default_study)
+    known_studies = set([lab.split(':')[0] for lab in labels])
+    known_enrollments = []
+    for kst in known_studies:
+      known_enrollments.extend(self.kb.get_enrolled(self.kb.get_study(kst)))
+      self.logger.debug('Loaded enrollments for study %s' % kst)
     for e in known_enrollments:
-      if e.studyCode in labels:
+      enroll_label = '%s:%s' % (e.study.label, e.studyCode)
+      if enroll_label in labels:
         i = e.individual
-        mapping[e.studyCode] = i.id
+        mapping[enroll_label] = i.id
     diff = set(labels).difference(mapping)
     if len(diff) > 0:
       for x in diff:
-        self.logger.error('cannot map %s as an individual in study %s' %
-                          (x, self.default_study.label))
+        self.logger.error('cannot map %s as an individual' % x)
       self.logger.error('the lines with unmapped individuals will be ignored.')
     self.logger.info('done selecting enrolled individuals')
     return mapping
@@ -128,17 +134,42 @@ class MapVIDApp(Core):
     if len(records) == 0:
       self.logger.info('file %s is empty.' % ifile.name)
       return
-    labels = [r[column_label] for r in records]
+    if source_type == self.kb.Individual:
+      if self.default_study:
+        labels = ['%s:%s' % (self.default_study.label, r[column_label])
+                  for r in records]
+      else:
+        try:
+          labels = ['%s:%s' % (r['study'], r[column_label])
+                    for r in records]
+        except KeyError, ke:
+          msg = 'No %s column and no default study provided' % ke
+          self.logger.critical(msg)
+          sys.exit(msg)
+    else:
+      labels = [r[column_label] for r in records]
     mapping = self.resolve_mapping(source_type, labels)
+    self.logger.debug('mapped %d records' % len(mapping))
     self.logger.info('start writing %s' % ofile.name)
     fieldnames = [k for k in records[0].keys() if k != column_label]
     fieldnames.append(transformed_column_label)
-    o = csv.DictWriter(ofile, fieldnames=fieldnames, delimiter='\t')
+    o = csv.DictWriter(ofile, fieldnames=fieldnames, delimiter='\t',
+                       extrasaction = 'ignore')
     o.writeheader()
     for r in records:
-      if r[column_label] in mapping:
-        r[transformed_column_label] = mapping[r.pop(column_label)]
+      if source_type == self.kb.Individual:
+        if self.default_study:
+          field = '%s:%s' % (self.default_study.label, r[column_label])
+        else:
+          field = '%s:%s' % (r['study'], r[column_label])
+      else:
+        field = r[column_label]
+      if field in mapping:
+        r[transformed_column_label] = mapping[field]
+        # if column_label != transformed_column_label:
+        #   r.pop(column_label)
         o.writerow(r)
+    ofile.close()
     self.logger.info('done writing %s' % ofile.name)
 
 
