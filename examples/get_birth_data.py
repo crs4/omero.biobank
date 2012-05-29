@@ -84,7 +84,8 @@ def main(argv):
     reader = csv.DictReader(in_file, delimiter='\t')
     bd_matches_file = open(args.match_files, 'w')
     bd_writer = csv.DictWriter(bd_matches_file, ['individual', 'birth_date',
-                                                 'birth_place_name', 'birth_place_code'],
+                                                 'birth_place_name', 'birth_place_code',
+                                                 'birth_place_district'],
                                delimiter='\t', restval='')
     bd_writer.writeheader()
     if args.no_matches_file:
@@ -105,6 +106,8 @@ def main(argv):
                     if bplace.name != 'UNKNOWN':
                         record['birth_place_name'] = bplace.name
                         record['birth_place_code'] = bplace.istatCode
+                        if bplace.OME_TABLE == 'City':
+                            record['birth_place_district'] = bplace.districtLabel
                     bd_writer.writerow(record)
                     break
             except KeyError:

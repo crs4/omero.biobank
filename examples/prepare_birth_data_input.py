@@ -66,7 +66,8 @@ def main(argv):
         ts = long(time.time())
         reader = csv.DictReader(in_file, delimiter='\t')
         writer = csv.DictWriter(out_file, ['study', 'individual', 'timestamp',
-                                           'birth_date', 'birth_place'],
+                                           'birth_date', 'birth_place',
+                                           'birth_place_district'],
                                 delimiter='\t')
         writer.writeheader()
         for row in reader:
@@ -75,7 +76,8 @@ def main(argv):
                                  'individual' : enrolls_map[row['individual']].individual.id,
                                  'timestamp' : ts,
                                  'birth_date' : row['birth_date'],
-                                 'birth_place' : row['birth_place_code']
+                                 'birth_place' : row['birth_place_code'],
+                                 'birth_place_district' : row['birth_place_district']
                                  })
             except KeyError, ke:
                 logger.warning('Unable to map %s' % row['individual'])
