@@ -27,17 +27,6 @@ class DataSample(wp.OmeroWrapper):
     return assign_vid_and_timestamp(conf, time_stamp_field='creationDate')
 
 
-# class OriginalFile(wp.OmeroWrapper):
-
-#   # Mapping only fields used also to define DataObjects
-#   OME_TABLE = 'OriginalFile'
-#   __fields__ = [('name',     wp.STRING, wp.REQUIRED),
-#                 ('path',     wp.STRING, wp.REQUIRED),
-#                 ('mimetype', wp.STRING, wp.OPTIONAL),
-#                 ('sha1',     wp.STRING, wp.REQUIRED),
-#                 ('size',     wp.LONG,   wp.REQUIRED)]
-
-
 class DataObject(OriginalFile):
 
   OME_TABLE = 'DataObject'
