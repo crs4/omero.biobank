@@ -7,10 +7,10 @@ Import birth data
 
 Will read in a tsv file with the following columns::
 
-  study   individual   timestamp      birth_date   birth_place
-  ASTUDY  V1234        1310057541608  12/03/1978   006171
-  ASTUDY  V14112       1310057541608  25/04/1983   006149
-  ASTUDY  V1241        1310057541608  12/03/2001   006172
+  study   individual   timestamp      birth_date   birth_place   birth_place_district
+  ASTUDY  V1234        1310057541608  12/03/1978   006171        AL
+  ASTUDY  V14112       1310057541608  25/04/1983   006149        AL
+  ASTUDY  V1241        1310057541608  12/03/2001   006172        AL
   .....
 
 where birth_place is a valid ISTAT code for an Italian city or a
@@ -19,7 +19,12 @@ foreign Country and birth_date must have the dd/mm/YYYY format.
 Birth data will be imported as EHR records using the
 openEHR-DEMOGRAPHIC-CLUSTER.person_birth_data_iso.v1
  * birth_date will be stored in at0001 field
- * birth_place will be stored in at0002 field
+ * birth_place will be stored in at0002 field if birth_plate column corresponds to a 
+   foreign country (Italy will be stored for Italian cities)
+ * birth_place will be stored in at0006.openEHR-DEMOGRAPHIC-CLUSTER.person_other_birth_data_br.v1.at0002
+   for Italian cities
+ * birth_place_district will be stored in at0006.openEHR-DEMOGRAPHIC-CLUSTER.person_other_birth_data_br.v1.at0001
+   for Italian cities
 """
 
 import csv, json, time
@@ -69,6 +74,17 @@ class Recorder(core.Core):
         self.preload_by_type('individual', self.kb.Individual,
                              self.preloaded_individuals)
 
+    def append_birth_place_data(self, atype_fields, record):
+        if record['birth_place'].startswith('999'):
+            # Foreign country
+            atype_fields['at0002'] = record['birth_place']
+        else:
+            # Italian city
+            atype_fields['at0002'] = '999100'
+            atype_fields['at0006.openEHR-DEMOGRAPHIC-CLUSTER.person_other_birth_data_br.v1.at0002'] = record['birth_place']
+            if record['birth_place_district']:
+                atype_fields['at0006.openEHR-DEMOGRAPHIC-CLUSTER.person_other_birth_data_br.v1.at0001'] = record['birth_place_district']
+
     def process_chunk(self, chunk, study, asetup, device):
         actions = []
         for r in chunk:
@@ -88,7 +104,7 @@ class Recorder(core.Core):
             if r['birth_date']:
                 fields['at0001'] = datetime.strptime(r['birth_date'], '%d/%m/%Y')
             if r['birth_place']:
-                fields['at0002'] = r['birth_place']
+                self.append_birth_place_data(fields, r)
             self.logger.debug('Saving record [%s --- %r]' % (archetype, fields))
             self.kb.add_ehr_record(a, long(r['timestamp']), archetype, fields)
 
