@@ -49,7 +49,7 @@ class EAVAdapter(object):
     archetype); everything else we need to make this field understandable by
     a human user can be found in the ontology section of the archetype (a name
     in a human language, an explanation about what the field means).""",
-    64, None),
+    256, None),
    ('string', 'type', "this record type, one of str, long, float, bool",
     10, None),
    ('string', 'svalue', "this record string value",   256, None),
