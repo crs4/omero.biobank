@@ -45,13 +45,6 @@ END_COPYRIGHT
     </properties>
   </type>
 
-  <type id="ome.model.vl.AnnotatedChip"
-	superclass="ome.model.vl.Chip">
-    <properties>
-      <required name="annotation" type="ome.model.core.OriginalFile"/>
-    </properties>
-  </type>
-
   <type id="ome.model.vl.HardwareDevice"
 	superclass="ome.model.vl.Device">
     <properties>
