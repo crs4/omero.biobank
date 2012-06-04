@@ -42,7 +42,11 @@ def make_parser():
   parser.add_argument('-U', '--user', metavar="STRING",
                       help='OMERO user', default='test')
   parser.add_argument('-P', '--passwd', metavar="STRING",
-                      help='OMERO password', required=True)  
+                      help='OMERO password', required=True)
+  parser.add_argument('--ehr', action='store_true',
+                      help='Create the EHR table')
+  parser.add_argument('--markers', action='store_true',
+                      help='Create the Markers definition table')
   parser.add_argument('--do-it', action='store_true',
                       help='I known the risks. I still want to do it')
   return parser
@@ -55,22 +59,28 @@ def main():
     print 'Are you sure? Really? Then enable the --do-it flag.'
     parser.print_usage()
     sys.exit(0)
+  if not args.ehr and not args.markers:
+    print 'Please select at least one table'
+    parser.print_usage()
+    sys.exit(0)
   host, user, passwd = args.host, args.user, args.passwd
   logger.info('connecting to %s with user %s' % (host, user))
   p = Proxy(host, user, passwd)
   logger.info('connected')
-  logger.info('deleting current snp marker definition table')
-  p.delete_snp_marker_defitions_table()
-  logger.info('deleted current snp marker definition table')
-  logger.info('creating snp marker definition table')
-  p.create_snp_marker_definitions_table()
-  logger.info('created snp marker definition table')
-  logger.info('deleting current ehr tables')
-  p.delete_ehr_tables()
-  logger.info('deleted current ehr tables')
-  logger.info('creating ehr tables')
-  p.create_ehr_tables()
-  logger.info('created ehr tables')
+  if args.markers:
+    logger.info('deleting current snp marker definition table')
+    p.delete_snp_marker_defitions_table()
+    logger.info('deleted current snp marker definition table')
+    logger.info('creating snp marker definition table')
+    p.create_snp_marker_definitions_table()
+    logger.info('created snp marker definition table')
+  if args.ehr:
+    logger.info('deleting current ehr tables')
+    p.delete_ehr_tables()
+    logger.info('deleted current ehr tables')
+    logger.info('creating ehr tables')
+    p.create_ehr_tables()
+    logger.info('created ehr tables')
 
 
 if __name__ == "__main__":
