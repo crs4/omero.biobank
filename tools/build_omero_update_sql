@@ -3,7 +3,7 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import re, optparse, sys
+import re, argparse, sys
 
 """
 
@@ -66,46 +66,73 @@ def purge_text(text, purge_list):
 # Compare the SQL statements found in the new file against the statements of the old one.
 # New file's statements are not transformed into a set beacause we need to preserve the 
 # order of the instructions as we found them in the original file. 
-def compare_sql_statements(old_sql, new_sql):
+def compare_sql_statements(old_sql, new_sql, perform_deep_check):
     updated_sql = []
     old_sql = set(old_sql)
     for x in new_sql:
         if x not in old_sql:
-            updated_sql.append(x)
+            if perform_deep_check:
+                if not deep_check(x, old_sql):
+                    updated_sql.append(x)
+            else:
+                updated_sql.append(x)
     return updated_sql
 #---------------------------
 def write_output(out_file_name, seqs_to_append):
     with open(out_file_name, 'w') as f:
         f.write('\n'.join(seqs_to_append))
 #---------------------------
+# Perfmorma  deeper check for the given statement
+def deep_check(statement, old_sql):
+    stat = statement.replace('\n\n', '\n')
+    st_lines = stat.split('\n')
+    for x in old_sql:
+        x = x.replace('\n\n', '\n')
+        xl = x.split('\n')
+        diff = set(st_lines) - set(xl)
+        if len(diff) == 0:
+            return True
+    return False
+#---------------------------
 def make_parser():
-    parser = optparse.OptionParser(usage='%prog OLD_SQL_FILE NEW_SQL_FILE UPDATE_SQL_FILE')
+    parser = argparse.ArgumentParser('Build the SQL statements for new models deployment')
+    parser.add_argument('--old_file', type=str, required=True,
+                        help='old OMERO SQL script')
+    parser.add_argument('--new_file', type=str, required=True,
+                        help='new OMERO SQL script')
+    parser.add_argument('--patch_file', type=str, required=True,
+                        help='SQL patch file')
+    parser.add_argument('--deep_check', action='store_true',
+                        help='enable deep check')
     return parser
 #---------------------------
 
 def main(argv):
     parser = make_parser()
-    opt, args = parser.parse_args()
+    args = parser.parse_args()
 
-    try:
-        old_fname = args[0]
-        new_fname = args[1]
-        out_fname = args[2]
-    except IndexError:
-        parser.print_help()
-        sys.exit(2)
+    old_fname = args.old_file
+    new_fname = args.new_file
+    out_fname = args.patch_file
 
     oldf_content = get_file_content(old_fname)
     newf_content = get_file_content(new_fname)
        
     oldf_ft = extract_functions_triggers_views(oldf_content)
     newf_ft = extract_functions_triggers_views(newf_content)
-    updated_ft = compare_sql_statements(oldf_ft, newf_ft)
+    updated_ft = compare_sql_statements(oldf_ft, newf_ft, args.deep_check)
     # The script works with SQL files generated using the same versione of Omero server.
     # Views, functions and triggers are always the same if the server version does not change,
     # if one of these elements found in the new file has no match inside the old file the script
     # must exit with an error code
-    assert len(updated_ft) == 0
+    if len(updated_ft) > 0:
+        print 'ALERT: %d triggers\\views\\functions differences' % len(updated_ft)
+        for uft in updated_ft:
+            print '----'
+            print uft
+        print '----'
+        print 'No deep check performed. Aborting execution.'
+        sys.exit(2)
 
     # Clean the text, we don't need functions, views and triggers if they are the same in 
     # both files
@@ -116,9 +143,9 @@ def main(argv):
     print 'Found %d SQL statements in OLD FILE %s' % (len(oldf_sql), old_fname)
     newf_sql = extract_sql_statements(newf_content)
     print 'Found %d SQL statements in NEW FILE %s' % (len(newf_sql), new_fname)
-    updated_sql = compare_sql_statements(oldf_sql, newf_sql)
+    updated_sql = compare_sql_statements(oldf_sql, newf_sql, args.deep_check)
     print 'Found %d differences, write them to file %s' % (len(updated_sql), out_fname)
     write_output(out_fname, updated_sql)
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main(sys.argv[1:])
