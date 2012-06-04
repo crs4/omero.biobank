@@ -45,6 +45,14 @@ END_COPYRIGHT
     </properties>
   </type>
 
+  <type id="ome.model.vl.AnnotatedChip"
+	superclass="ome.model.vl.Chip">
+    <properties>
+      <!-- annotation file's path -->
+      <required name="annotationFile" type="string" unique="true"/>
+    </properties>
+  </type>
+
   <type id="ome.model.vl.HardwareDevice"
 	superclass="ome.model.vl.Device">
     <properties>

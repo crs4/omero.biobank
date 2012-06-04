@@ -74,6 +74,12 @@ class Chip(Device):
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL)]
 
 
+class AnnotatedChip(Chip):
+
+  OME_TABLE = 'AnnotatedChip'
+  __fields__ = [('annotationFile', wp.STRING, wp.REQUIRED)]
+
+
 class ActionCategory(wp.OmeroWrapper):
   
   OME_TABLE = 'ActionCategory'
