@@ -48,8 +48,8 @@ END_COPYRIGHT
   <type id="ome.model.vl.AnnotatedChip"
 	superclass="ome.model.vl.Chip">
     <properties>
-      <!-- annotation file's path -->
-      <required name="annotationFile" type="string" unique="true"/>
+      <required name="annotationFile" type="ome.model.core.OriginalFile" 
+		unique="true"/>
     </properties>
   </type>
 

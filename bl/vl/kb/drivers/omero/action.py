@@ -77,7 +77,7 @@ class Chip(Device):
 class AnnotatedChip(Chip):
 
   OME_TABLE = 'AnnotatedChip'
-  __fields__ = [('annotationFile', wp.STRING, wp.REQUIRED)]
+  __fields__ = [('annotationFile', OriginalFile, wp.REQUIRED)]
 
 
 class ActionCategory(wp.OmeroWrapper):
