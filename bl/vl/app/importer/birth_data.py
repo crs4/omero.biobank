@@ -27,7 +27,7 @@ openEHR-DEMOGRAPHIC-CLUSTER.person_birth_data_iso.v1
    for Italian cities
 """
 
-import csv, json, time
+import csv, json, time, sys
 import itertools as it
 from datetime import datetime
 
@@ -46,6 +46,8 @@ class Recorder(core.Core):
         self.action_setup_conf = action_setup_conf
         self.operator = operator
         self.preloaded_individuals = {}
+        self.preloaded_birth_records = {}
+        self.preloaded_locations = []
 
     def record(self, records):
         def records_by_chunk(batch_size, records):
@@ -57,7 +59,13 @@ class Recorder(core.Core):
             self.logger.warning('no records')
             return
         self.preload_individuals()
+        self.preload_birth_data_records()
+        self.preload_locations()
         records = self.do_consistency_checks(records)
+        if len(records) == 0:
+            msg = 'No records left, nothing to do'
+            self.logger.critical(msg)
+            sys.exit(msg)
         study = self.find_study(records)
         device_label = 'importer.birth_data-%s' % (version)
         device = self.get_device(label = device_label,
@@ -73,6 +81,19 @@ class Recorder(core.Core):
     def preload_individuals(self):
         self.preload_by_type('individual', self.kb.Individual,
                              self.preloaded_individuals)
+
+    def preload_birth_data_records(self):
+        self.logger.info('Start preloading birth data records')
+        bd_records = self.kb.get_birth_data()
+        for bdr in bd_records:
+            self.preloaded_birth_records[bdr['i_id']] = bdr
+        self.logger.info('Done preloading birth data records')
+
+    def preload_locations(self):
+        self.logger.info('Start preloading locations')
+        locs = self.kb.get_objects(self.kb.Location)
+        self.preloaded_locations = [l.istatCode for l in locs]
+        self.logger.info('Done preloading birth data records')
 
     def append_birth_place_data(self, atype_fields, record):
         if record['birth_place'].startswith('999'):
@@ -122,11 +143,19 @@ class Recorder(core.Core):
                 msg = reject + 'unknown individual.'
                 self.logger.error(msg)
                 continue
-            # TODO: check birth plate codes
+            if r['individual'] in self.preloaded_birth_records:
+                msg = reject + 'birth data already loaded'
+                self.logger.error(msg)
+                self.logger.debug(self.preloaded_birth_records[r['individual']])
+                continue
             try:
                 long(r['timestamp'])
             except ValueError, e:
                 msg = reject + ('timestamp %r is not a long.' % r['timestamp'])
+                self.logger.error(msg)
+                continue
+            if r['birth_place'] != '' and r['birth_place'] not in self.preloaded_locations:
+                msg = reject + ('unknown ISTAT code %s' % r['birth_place'])
                 self.logger.error(msg)
                 continue
             good_records.append(r)
