@@ -591,6 +591,13 @@ class Proxy(ProxyCore):
         recs.append(x)
     return recs
 
+  def get_birth_data(self, individual=None):
+    selector = '(valid == True) & (archetype == "openEHR-DEMOGRAPHIC-CLUSTER.person_birth_data_iso.v1")'
+    if individual:
+      selector += ' & (i_vid == "%s")' % individual.id
+    rows = self.get_ehr_records(selector)
+    return rows
+
   def __build_ehr_selector(self, individual_id, timestamp, action_id,
                            grouper_id, valid, archetype, field, field_value):
     selector = []
