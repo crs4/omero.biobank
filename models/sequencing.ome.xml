@@ -21,7 +21,7 @@
       <required name="lane" type="ome.model.vl.Lane"/>
       <optional name="tag" type="string"/>
       <!-- tag_lane.label -->
-      <required name="laneSlotUK" type="string" unique="true"/>
+      <optional name="laneSlotUK" type="string" unique="true"/>
       <required name="action" type="ome.model.vl.Action"/>
       <optional name="lastUpdate" type="ome.model.vl.Action"/>
     </properties>
