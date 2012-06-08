@@ -92,3 +92,15 @@ class GenotypeDataSample(DataSample):
         return res['probs'], res['confidence']
     else:
       raise ValueError('DataObject is not a %s' % mimetypes.GDO_TABLE)
+
+
+class Reads(DataSample):
+  
+  OME_TABLE = 'Reads'
+  __fields__ = []
+
+
+class AlignedReads(DataSample):
+
+  OME_TABLE = 'AlignedReads'
+  __fields__ = []
