@@ -137,5 +137,11 @@ END_COPYRIGHT
       <required name="target" type="ome.model.vl.Action"/>
     </properties>
   </type>
-
+  
+  <type id="ome.model.vl.ActionOnCollection"
+	superclass="ome.model.vl.Action">
+    <properties>
+      <required name="target" type="ome.model.vl.Collection"/>
+    </properties>
+  </type>
 </types>

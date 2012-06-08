@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <types>
-  <type id="ome.model.vl.TaggedSample"
-	superclass="ome.model.vl.Vessel">
-    <properties>
-      <required name="tag" type="string"/>
-    </properties>
-  </type>
-
   <type id="ome.model.vl.FlowCell"
 	superclass="ome.model.vl.SlottedContainer">
     <properties>
@@ -15,7 +8,7 @@
   </type>
 
   <type id="ome.model.vl.Lane"
-	superclass="ome.model.vl.SlottedContainer">
+	superclass="ome.model.vl.Container">
     <properties>
       <required name="flowCell" type="ome.model.vl.FlowCell"/>
       <required name="slot" type="int"/>
@@ -24,50 +17,34 @@
 
   <type id="ome.model.vl.LaneSlot">
     <properties>
-      <required name="sample" type="ome.model.vl.TaggedSample"/>
+      <required name="vid" type="string"/>
       <required name="lane" type="ome.model.vl.Lane"/>
-      <required name="slot" type="int"/> <!-- TODO: check -->
-      <!-- sample.label_lane.label -->
-      <required name="sampleLaneUK" type="string" unique="true"/> <!-- TODO check if needed -->
-      <!-- lane.label_slot -->
-      <required name="laneSlotUK" type="string" unique="true"/> <!-- needed only if "slot" field is needed -->
-    </properties>
-  </type>
-
-  <type id="ome.model.vl.Read">
-    <properties>
+      <optional name="tag" type="string"/>
+      <!-- tag_lane.label -->
+      <required name="laneSlotUK" type="string" unique="true"/>
+      <required name="action" type="ome.model.vl.Action"/>
+      <optional name="lastUpdate" type="ome.model.vl.Action"/>
     </properties>
   </type>
 
   <type id="ome.model.vl.Reads"
 	superclass="ome.model.vl.DataSample">
     <properties>
-      <required name="type" type="string"/> <!-- change with an enumeration? -->
-      <required name="read1" type="ome.model.vl.Read"/>
-      <optional name="read2" type="ome.model.vl.Read"/>
-      <optional name="read3" type="ome.model.vl.Read"/>
     </properties>
   </type>
 
-  <!-- TODO: if the only thing that must be recorded is the "aligned"
-       property, add a field to ome.model.vl.Reads -->
+  <type id="ome.model.vl.SequencerOutput"
+	superclass="ome.model.vl.DataCollection">
+    <properties>
+      <required name="read1" type="ome.model.vl.Reads"/>
+      <optional name="read2" type="ome.model.vl.Reads"/>
+      <optional name="read3" type="ome.model.vl.Reads"/>
+    </properties>
+  </type>
+
   <type id="ome.model.vl.AlignedReads"
-	superclass="ome.model.vl.Reads">
+	superclass="ome.model.vl.DataSample">
     <properties>
-    </properties>
-  </type>
-
-  <type id="ome.model.vl.TaggedSampleReads"
-	superclass="ome.model.vl.DataCollection">
-    <properties>
-      <required name="sample" type="ome.model.vl.TaggedSample"/>
-    </properties>
-  </type>
-
-  <type id="ome.model.vl.FlowCellReads"
-	superclass="ome.model.vl.DataCollection">
-    <properties>
-      <required name="lane" type="ome.model.vl.Lane"/> <!-- not very sure about this... -->
     </properties>
   </type>
 </types>
