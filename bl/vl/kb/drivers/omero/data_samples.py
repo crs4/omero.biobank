@@ -96,5 +96,5 @@ class GenotypeDataSample(DataSample):
 
 class SequencingDataSample(DataSample):
   
-  OME_TABLE = 'Reads'
+  OME_TABLE = 'SequencingDataSample'
   __fields__ = []
