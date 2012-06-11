@@ -4,7 +4,7 @@
 import wrapper as wp
 from action import Action
 from utils import assign_vid_and_timestamp, assign_vid, make_unique_key
-from data_samples import DataSample, Reads
+from data_samples import DataSample
 
 
 class VLCollection(wp.OmeroWrapper):
