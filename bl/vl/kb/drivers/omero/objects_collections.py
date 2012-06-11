@@ -96,9 +96,10 @@ class DataCollection(VLCollection):
 class SequencerOutput(DataCollection):
 
   OME_TABLE = 'SequencerOutput'
-  __fields__ = [('read1', Reads, wp.REQUIRED),
-                ('read2', Reads, wp.OPTIONAL),
-                ('read3', Reads, wp.OPTIONAL)]
+  __fields__ = [('demuxed', wp.BOOLEAN, wp.REQUIRED),
+                ('read1', DataCollection, wp.REQUIRED),
+                ('read2', DataCollection, wp.OPTIONAL),
+                ('read3', DataCollection, wp.OPTIONAL)]
 
 
 class DataCollectionItem(wp.OmeroWrapper):

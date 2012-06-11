@@ -94,13 +94,7 @@ class GenotypeDataSample(DataSample):
       raise ValueError('DataObject is not a %s' % mimetypes.GDO_TABLE)
 
 
-class Reads(DataSample):
+class SequencingDataSample(DataSample):
   
   OME_TABLE = 'Reads'
-  __fields__ = []
-
-
-class AlignedReads(DataSample):
-
-  OME_TABLE = 'AlignedReads'
   __fields__ = []
