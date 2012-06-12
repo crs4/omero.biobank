@@ -97,4 +97,4 @@ class GenotypeDataSample(DataSample):
 class SequencingDataSample(DataSample):
   
   OME_TABLE = 'SequencingDataSample'
-  __fields__ = []
+  __fields__ = [('collectionIndex', wp.INT, wp.REQUIRED)]

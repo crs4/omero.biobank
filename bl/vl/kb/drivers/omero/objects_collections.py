@@ -96,7 +96,7 @@ class DataCollection(VLCollection):
 class SequencerOutput(DataCollection):
 
   OME_TABLE = 'SequencerOutput'
-  __fields__ = [('demuxed', wp.BOOLEAN, wp.REQUIRED),
+  __fields__ = [('multiplexed', wp.BOOLEAN, wp.REQUIRED),
                 ('read1', DataCollection, wp.REQUIRED),
                 ('read2', DataCollection, wp.OPTIONAL),
                 ('read3', DataCollection, wp.OPTIONAL)]
