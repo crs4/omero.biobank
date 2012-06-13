@@ -134,7 +134,7 @@ class Recorder(core.Core):
         good_records = []
         mandatory_fields = ['individual', 'timestamp']
         for i, r in enumerate(records):
-            reject = 'Rejecting import %d: ' % i
+            reject = 'Rejecting record %d: ' % i
             if self.missing_fields(mandatory_fields, r):
                 f = reject + 'missing mandatory field.'
                 self.logger.error(f)
@@ -147,6 +147,12 @@ class Recorder(core.Core):
                 msg = reject + 'birth data already loaded'
                 self.logger.error(msg)
                 self.logger.debug(self.preloaded_birth_records[r['individual']])
+                continue
+            try:
+                datetime.strptime(r['birth_date'], '%d/%m/%Y')
+            except ValueError, e:
+                msg = reject + str(e)
+                self.logger.error(msg)
                 continue
             try:
                 long(r['timestamp'])
