@@ -164,7 +164,7 @@ class BuildDatasheetApp(Core):
 #                      'PLATE_barcode' : plate.barcode,
                       'Sample_Plate' : plate.label,
                       'Sample_Name' : '%s:%s' % (plate.barcode, well.label),
-                      'Project' : '%s_OmniExpress' % (plate.label),
+                      'Project' : '%s_%s' % (plate.label, plate.action.context.label),
                       'AMP_Plate' : 0,
                       'Sample_Well' : well.label,
                       'SentrixPosition_A' : self.calculate_sentrix_position(last_slot),
