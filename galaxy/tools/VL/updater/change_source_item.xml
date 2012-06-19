@@ -1,0 +1,57 @@
+<tool id="vl_update_change_source_item" name="VLU.change_source">
+  <description>
+    Change source items for given objects
+  </description>
+  <command interpreter="python">
+    change_source_item.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=$advanced_configuration.vl_host
+      --user=$advanced_configuration.vl_user
+      --passwd=$advanced_configuration.vl_passwd
+    #end if
+    --loglevel=$__app__.config.vl_loglevel
+    --logfile=${logfile}
+    --operator=$__user_email__
+    --in_file=${infile}
+    --target_type=${target_type}
+    --source_type=${source_type}
+  </command>
+  <inputs>
+    <param name="infile" format="tabular" type="data"
+	   label="A tabular dataset with the following columns ..."/>
+    <param name="target_type" type="select" label="Select target type"
+	   help="Choose from the possible target types. See below">
+      <option value="PlateWell">PlateWell</option>
+      <option value="Tube">Tube</option>
+      <option value="DataSample">DataSample</option>
+    </param>
+    <param name="source_type" type="select" label="Select source type"
+	   help="Choose from the possible source types. See below">
+      <option value="Individual">Individual</option>
+      <option value="Tube">Tube</option>
+      <option value="PlateWell">PlateWell</option>
+      <option value="DataSample">DataSample</option>
+    </param>
+      
+    <!-- ************************************************** -->
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="biobank05.crs4.it" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="galaxy" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+  <outputs>
+    <data format="txt" name="logfile" label="${tool.name}.log"/>
+  </outputs>
+</tool>
