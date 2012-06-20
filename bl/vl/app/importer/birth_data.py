@@ -27,7 +27,7 @@ openEHR-DEMOGRAPHIC-CLUSTER.person_birth_data_iso.v1
    for Italian cities
 """
 
-import csv, json, time, sys
+import csv, json, time, sys, copy, os
 import itertools as it
 from datetime import datetime
 
@@ -49,7 +49,7 @@ class Recorder(core.Core):
         self.preloaded_birth_records = {}
         self.preloaded_locations = []
 
-    def record(self, records):
+    def record(self, records, rtsv):
         def records_by_chunk(batch_size, records):
             offset = 0
             while len(records[offset:]) > 0:
@@ -61,7 +61,9 @@ class Recorder(core.Core):
         self.preload_individuals()
         self.preload_birth_data_records()
         self.preload_locations()
-        records = self.do_consistency_checks(records)
+        records, bad_records = self.do_consistency_checks(records)
+        for br in bad_records:
+            rtsv.writerow(br)
         if len(records) == 0:
             msg = 'No records left, nothing to do'
             self.logger.critical(msg)
@@ -132,41 +134,60 @@ class Recorder(core.Core):
     def do_consistency_checks(self, records):
         self.logger.info('start consistenxy checks')
         good_records = []
+        bad_records = []
         mandatory_fields = ['individual', 'timestamp']
         for i, r in enumerate(records):
             reject = 'Rejecting record %d: ' % i
             if self.missing_fields(mandatory_fields, r):
-                f = reject + 'missing mandatory field.'
-                self.logger.error(f)
+                msg = 'missing mandatory field.'
+                self.logger.warning(reject + msg)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = msg
+                bad_records.append(bad_rec)
                 continue
             if not r['individual'] in self.preloaded_individuals:
-                msg = reject + 'unknown individual.'
-                self.logger.error(msg)
+                msg = 'unknown individual.'
+                self.logger.warning(reject + msg)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = msg
+                bad_records.append(bad_rec)
                 continue
             if r['individual'] in self.preloaded_birth_records:
-                msg = reject + 'birth data already loaded'
-                self.logger.error(msg)
+                msg = 'birth data already loaded'
+                self.logger.error(reject + msg)
                 self.logger.debug(self.preloaded_birth_records[r['individual']])
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = msg
+                bad_records.append(bad_rec)
                 continue
             try:
                 datetime.strptime(r['birth_date'], '%d/%m/%Y')
             except ValueError, e:
-                msg = reject + str(e)
-                self.logger.error(msg)
+                msg = str(e)
+                self.logger.error(reject + msg)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = msg
+                bad_records.append(bad_rec)
                 continue
             try:
                 long(r['timestamp'])
             except ValueError, e:
-                msg = reject + ('timestamp %r is not a long.' % r['timestamp'])
-                self.logger.error(msg)
+                msg = ('timestamp %r is not a long.' % r['timestamp'])
+                self.logger.error(reject + msg)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = msg
+                bad_records.append(bad_rec)
                 continue
             if r['birth_place'] != '' and r['birth_place'] not in self.preloaded_locations:
-                msg = reject + ('unknown ISTAT code %s' % r['birth_place'])
-                self.logger.error(msg)
+                msg = ('unknown ISTAT code %s' % r['birth_place'])
+                self.logger.error(reject + msg)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = msg
+                bad_records.append(bad_rec)
                 continue
             good_records.append(r)
         self.logger.info('done consistenxy checks')
-        return good_records
+        return good_records, bad_records
 
 
 help_doc = """
@@ -189,7 +210,15 @@ def implementation(logger, host, user, passwd, args):
     args.ifile.close()
     canonizer = core.RecordCanonizer(['study'], args)
     canonizer.canonize_list(records)
-    recorder.record(records)
+    report_fnames = copy.deepcopy(f.fieldnames)
+    report_fnames.append('error')
+    report = csv.DictWriter(args.report_file, report_fnames,
+                            delimiter='\t', lineterminator=os.linesep,
+                            extrasaction='ignore')
+    report.writeheader()
+    recorder.record(records, report)
+    args.ifile.close()
+    args.report_file.close()
     logger.info('done processing file %s' % args.ifile.name)
 
 def do_register(registration_list):
