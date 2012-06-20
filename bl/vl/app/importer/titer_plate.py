@@ -14,7 +14,7 @@ The maker and model columns are optional, as well as the barcode one.
 Default plate dimensions can be provided via command line.
 """
 
-import os, csv, json
+import os, csv, json, copy
 import itertools as it
 
 from bl.vl.kb.drivers.omero.objects_collections import ContainerStatus
@@ -38,7 +38,7 @@ class Recorder(core.Core):
     self.operator = operator
     self.action_setup_conf = action_setup_conf
 
-  def record(self, records, otsv):
+  def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -48,7 +48,9 @@ class Recorder(core.Core):
       self.logger.warn('no records')
       return
     self.preload_plates()
-    records = self.do_consistency_checks(records)
+    records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      rtsv.writerow(br)
     if len(records) == 0:
       return
     study = self.find_study(records)
@@ -77,25 +79,55 @@ class Recorder(core.Core):
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
     good_records = []
+    bad_records = []
+    grecs_barcodes = {}
+    grecs_labels = {}
     for i, r in enumerate(records):
       reject = 'Rejecting import of line %d.' % i
+      if r['label'] in grecs_labels:
+        m = 'label %s alredy used in record %d. ' % (r['label'],
+                                                     grecs_labels[r['label']])
+        self.logger.warn(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
+        continue
+      if r['barcode'] and r['barcode'] in grecs_barcodes:
+        m = 'barcode %s already used in record %d. ' % (r['barcode'],
+                                                        grecs_barcodes[r['barcode']])
+        self.logger.warn(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
+        continue
       if r['barcode'] and r['barcode'] in self.known_barcodes:
-        m = 'there is a pre-existing object with barcode %s. ' + reject
-        self.logger.warn(m % r['barcode'])
+        m = 'there is a pre-existing object with barcode %s. ' % r['barcode']
+        self.logger.warn(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
         continue
       if self.known_plates.has_key(r['label']):
-        f = 'there is a pre-existing plate with label %s. ' + reject
-        self.logger.warn(f % r['label'])
+        m = 'there is a pre-existing object with label %s. ' % r['label']
+        self.logger.warn(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
         continue
       for k in ['rows', 'columns']:
         if not (k in r
                 and (type(r[k]) is int or r[k].isdigit())):
-          msg = 'undefined/bad value for % for %s. ' + reject
-          self.logger.error(msg % (k, r['label']))
+          m = 'undefined/bad value for % for %s. ' % (k, r['label'])
+          self.logger.warn(m + reject)
+          bad_rec = copy.deepcopy(r)
+          bad_rec['error'] = m
+          bad_records.append(bad_rec)
           continue
       good_records.append(r)
+      grecs_barcodes[r['barcode']] = i
+      grecs_labels[r['label']] = i
     self.logger.info('done consistency checks')
-    return good_records
+    return good_records, bad_records
 
   def process_chunk(self, otsv, chunk, study, asetup, device, category):
     actions = []
@@ -197,8 +229,15 @@ def implementation(logger, host, user, passwd, args):
                      fieldnames=['study', 'label', 'type', 'vid'],
                      delimiter='\t', lineterminator=os.linesep)
   o.writeheader()
-  recorder.record(records, o)
+  report_fnames = copy.deepcopy(f.fieldnames)
+  report_fnames.append('error')
+  report = csv.DictWriter(args.report_file, report_fnames,
+                          delimiter='\t', lineterminator=os.linesep,
+                          extrasaction='ignore')
+  report.writeheader()
+  recorder.record(records, o, report)
   args.ofile.close()
+  args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 

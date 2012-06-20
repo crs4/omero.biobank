@@ -70,6 +70,8 @@ class App(object):
                         help='input tsv file', default=sys.stdin)
     parser.add_argument('-o', '--ofile', type=argparse.FileType('w'),
                         help='output tsv file', default=sys.stdout)
+    parser.add_argument('-r', '--report_file', type=argparse.FileType('w'),
+                        help='report tsv file', default=sys.stdout)
     parser.add_argument('-H', '--host', metavar="STRING",
                         help='OMERO hostname')
     parser.add_argument('-U', '--user', metavar="STRING",
