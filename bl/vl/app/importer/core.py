@@ -31,6 +31,7 @@ class Core(object):
     # HACKS
     action_setup_conf['ifile'] = action_setup_conf['ifile'].name
     action_setup_conf['ofile'] = action_setup_conf['ofile'].name
+    action_setup_conf['report_file'] = action_setup_conf['report_file'].name
     return action_setup_conf
 
   def get_device(self, label, maker, model, release):
