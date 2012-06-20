@@ -236,6 +236,7 @@ def implementation(logger, host, user, passwd, args):
                           extrasaction='ignore')
   report.writeheader()
   recorder.record(records, o, report)
+  args.ifile.close()
   args.ofile.close()
   args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
