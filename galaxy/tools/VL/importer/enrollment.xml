@@ -10,8 +10,9 @@
       --passwd=$advanced_configuration.vl_passwd
     #end if
     --operator=galaxy
-    --ifile=$input1
-    --ofile=$output1
+    --ifile=$input
+    --ofile=$output
+    --report_file=$report
     --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
     enrollment
@@ -20,7 +21,7 @@
     #end if
   </command>
   <inputs>
-    <param format="tabular" name="input1" type="data"
+    <param format="tabular" name="input" type="data"
 	   label="A tabular dataset with the following columns ..."/>
 
     <param name="study_label" type="select" label="Context study"
@@ -54,8 +55,9 @@
     </conditional>
   </inputs>
   <outputs>
-    <data format="tabular" name="output1" label="${tool.name}.mapping"/>
-    <data format="txt"     name="logfile" label="${tool.name}.logfile"/>
+    <data format="tabular" name="output" label="${tool.name}.mapping"/>
+    <data format="tabular" name="report" label="${tool.name}.report"/>
+    <data format="txt" name="logfile" label="${tool.name}.logfile"/>
   </outputs>  
   <help>
 Import of new enrollments related to existing individuals.

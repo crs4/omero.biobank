@@ -24,7 +24,7 @@ possible to enroll a patient twice in the same study, even with
 different codes.
 """
 
-import os, csv
+import os, csv, copy
 
 import core
 
@@ -41,7 +41,7 @@ class Recorder(core.Core):
     self.preloaded_enrollments = {}
     self.preloaded_enrolled_inds = {}
 
-  def record(self, records, otsv):
+  def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -53,7 +53,9 @@ class Recorder(core.Core):
     study = self.find_study(records)
     self.preload_individuals()
     self.preload_enrollments(study)
-    records = self.do_consistency_checks(records)
+    records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      rtsv.writerow(br)
     if not records:
       self.logger.warn('no records')
       return
@@ -85,33 +87,49 @@ class Recorder(core.Core):
     self.logger.info('starting consistency checks')
     k_map = {}
     good_records = []
+    bad_records = []
     mandatory_fields = ['label', 'study', 'source']
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
       if self.missing_fields(mandatory_fields, r):
-        f = reject + 'missing mandatory field.'
-        self.logger.error(f)
+        f = 'missing mandatory field'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['label'] in self.preloaded_enrollments:
-        f = reject + 'there is a pre-existing Enrollment with label %s.'
-        self.logger.warn(f % r['label'])
+        f = 'there is a pre-existing Enrollment with label %s' % r['label']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['source'] in self.preloaded_enrolled_inds:
-        f = reject + 'Individual with VID %s already enrolled'
-        self.logger.warn(f % r['source'])
+        f = 'Individual with ID %s already enrolled' % r['source']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['label'] in k_map:
-        f = reject + 'duplicate label %s (in this batch)'
-        self.logger.error(f % r['label'])
+        f = 'duplicate label %s in this batch' % r['label']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['source'] not in self.preloaded_sources:
-        f = reject + 'no known source for Individual with label %s'
-        self.logger.error(f % r['label'])
+        f = 'no known Individual with ID %s' % r['source']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       k_map[r['label']] = r
       good_records.append(r)
     self.logger.info('done with consistency checks')
-    return good_records
+    return good_records, bad_records
 
   def process_chunk(self, otsv, chunk, study):
     enrollments = []
@@ -149,7 +167,6 @@ def implementation(logger, host, user, passwd, args):
   logger.info('start processing file %s' % args.ifile.name)
   f = csv.DictReader(args.ifile, delimiter='\t')
   records = [r for r in f]
-  args.ifile.close()
   canonizer = core.RecordCanonizer(["study"], args)
   canonizer.canonize_list(records)
   if len(records) > 0:
@@ -157,10 +174,18 @@ def implementation(logger, host, user, passwd, args):
                        fieldnames=['study', 'label', 'type', 'vid'],
                        delimiter='\t', lineterminator=os.linesep)
     o.writeheader()
-    recorder.record(records, o)
+    report_fnames = copy.deepcopy(f.fieldnames)
+    report_fnames.append('error')
+    report = csv.DictWriter(args.report_file, report_fnames,
+                            delimiter='\t', lineterminator=os.linesep,
+                            extrasaction='ignore')
+    report.writeheader()
+    recorder.record(records, o, report)
   else:
     logger.info('empty file')
+  args.ifile.close()
   args.ofile.close()
+  args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 

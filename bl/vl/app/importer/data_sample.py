@@ -43,7 +43,7 @@ an example::
   ...
 """
 
-import os, csv, json, time
+import os, csv, json, time, copy
 import itertools as it
 
 import core
@@ -140,7 +140,7 @@ class Recorder(core.Core):
     self.preloaded_data_samples = {}
     self.preloaded_markers_sets = {}
 
-  def record(self, records, otsv):
+  def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -157,7 +157,9 @@ class Recorder(core.Core):
     self.preload_sources()
     self.preload_markers_sets()
     self.preload_data_samples()
-    records = self.do_consistency_checks(records)
+    records, bad_records = self.do_consistency_checks(records)
+    for bd in bad_records:
+      rtsv.writerow(br)
     if not records:
       self.logger.warn('no records')
       return
@@ -197,50 +199,77 @@ class Recorder(core.Core):
     self.logger.info('start consistency checks')
     k_map = {}
     good_records = []
+    bad_records = []
     mandatory_fields = ['label', 'source', 'device', 'status']
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
       mf = self.missing_fields(mandatory_fields, r)
       if mf:
-        f = reject + 'missing mandatory field %s' % mf
-        self.logger.error(f)
+        f = 'missing mandatory field %s' % mf
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['status'] not in ['UNKNOWN', 'DESTROYED', 'CORRUPTED', 'USABLE']:
-        f = reject + 'unknown status value.'
-        self.logger.error(f)
+        f = 'unknown status value.'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['label'] in self.preloaded_data_samples:
-        f = reject + 'there is a pre-existing DataSample with label %s.'
-        self.logger.warn(f % r['label'])
+        f = 'there is a pre-existing DataSample with label %s' % r['label']
+        self.logger.warn(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['label'] in k_map:
-        f = (reject +
-             'there is a pre-existing record with label %s.(in this batch).')
-        self.logger.error(f % r['label'])
+        f = 'there is a pre-existing record with label %s.(in this batch)' % r['label']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['source'] not in self.preloaded_sources:
-        f = reject + 'there is no known source for DataSample with label %s.'
-        self.logger.error(f % r['label'])
+        f = 'there is no known source with ID %s' % r['source']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['device'] not in self.preloaded_devices:
-        f = reject + 'there is no known device for DataSample with label %s.'
-        self.logger.error(f % r['label'])
+        f = 'there is no known device with ID %s' % r['device']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['scanner'] and r['scanner'] not in self.preloaded_scanners:
-        f = reject + 'there is no known scanner for DataSample with label %s.'
-        self.logger.error(f % r['label'])
+        f = 'there is no known scanner with ID %s' % r['scanner']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if (r['data_sample_type']
           and r['data_sample_type'] == 'GenotypeDataSample'):
         device = self.preloaded_devices[r['device']]
         if not isinstance(device, self.kb.GenotypingProgram):
           if not r['markers_set']:
-            f = reject + 'no markers_set vid for GenotypeDataSample %s.'
-            self.logger.error(f % r['label'])
+            f = 'no markers set specified for data sample %s' % r['label']
+            self.logger.error(reject + f)
+            bad_rec = copy.deepcopy(r)
+            bad_rec['error'] = f
+            bad_records.append(bad_rec)
             continue
           elif not r['markers_set'] in self.preloaded_markers_sets:
-            f = reject + 'illegal markers_set vid for GenotypeDataSample %s.'
-            self.logger.error(f % r['label'])
+            f = 'there is no known markers set with ID %s' % r['markers_set']
+            self.logger.error(reject + f)
+            bad_rec = copy.deepcopy(r)
+            bad_rec['error'] = f
+            bad_records.append(bad_rec)
             continue
       if r['options'] :
         try:
@@ -248,13 +277,16 @@ class Recorder(core.Core):
           for kv in kvs:
             k,v = kv.split('=')
         except ValueError, e:
-          f = reject + 'illegal options string.'
-          self.logger.error(f)
+          f = 'illegal options string'
+          self.logger.error(reject + f)
+          bad_rec = copy.deep_copy(r)
+          bad_rec['error'] = f
+          bad_records.append(bad_rec)
           continue
       k_map[r['label']] = r
       good_records.append(r)
     self.logger.info('done consistency checks')
-    return good_records
+    return good_records, bad_records
 
   def process_chunk(self, otsv, chunk, study):
     def get_options(r):
@@ -397,10 +429,18 @@ def implementation(logger, host, user, passwd, args):
                        fieldnames=['study', 'label', 'type', 'vid'],
                        delimiter='\t', lineterminator=os.linesep)
     o.writeheader()
-    recorder.record(records, o)
+    report.fnames = copy.deepcopy(f.fieldnames)
+    report_fnames.append('error')
+    report = csv.DictWriter(args.report_file, report_fnames,
+                            delimiter='\t', lineterminator=os.linesep,
+                            extrasaction='ignore')
+    report.writeheader()
+    recorder.record(records, o, report)
   else:
     logger.info('empty file')
+  args.ifile.close()
   args.ofile.close()
+  args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 

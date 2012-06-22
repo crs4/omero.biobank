@@ -24,7 +24,7 @@ loaded study.
 kinship.
 """
 
-import os, time, json, csv
+import os, time, json, csv, copy
 import itertools as it
 
 from bl.vl.individual.pedigree import import_pedigree
@@ -149,33 +149,47 @@ class Recorder(core.Core):
     return i
 
   def do_consistency_checks(self, records):
+    good_records = []
+    bad_records = []
     study_label = records[0]['study']
     seen = {}
     mandatory_fields = ['study', 'gender', 'father', 'mother']
     for i, r in enumerate(records):
       reject = 'Rejecting record %d:' % i
       if self.missing_fields(mandatory_fields, r):
-        msg = 'missing mandatory field. aborting'
-        self.logger.critical(reject + msg)
-        raise ValueError(msg)
+        msg = 'missing mandatory field'
+        self.logger.error(reject + msg)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = msg
+        bad_records.append(bad_rec)
+        continue
       if r['study'] != study_label:
-        msg = 'non uniform study label. aborting'
-        self.logger.critical(reject + msg)
-        raise ValueError(msg)
+        msg = 'non uniform study label'
+        self.logger.error(reject + msg)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = msg
+        bad_records.append(bad_rec)
+        continue
       if r['gender'].upper() not in ['MALE', 'FEMALE']:
-        msg = 'unknown gender value. aborting'
-        self.logger.critical(reject + msg)
-        raise ValueError(msg)
+        msg = 'unknown gender value'
+        self.logger.error(reject + msg)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = msg
+        bad_records.append(bad_rec)
+        continue
       seen[r['label']] = r
     for i, r in enumerate(records):
-      reject = 'Rejecting record %d:' % i
-      for parent in ['father', 'mother']:
-        if not (r[parent].upper() == 'NONE' or
-                r[parent] in seen or
-                r[parent] in self.known_enrollments):
-          msg = 'undefined %s label.' % parent
-          self.logger.critical(reject + msg)
-          raise ValueError(msg)
+      if r not in bad_records:
+        reject = 'Rejecting record %d:' % i
+        for parent in ['father', 'mother']:
+          if not (r[parent].upper() == 'NONE' or
+                  r[parent] in seen or
+                  r[parent] in self.known_enrollments):
+            msg = 'undefined %s label.' % parent
+            self.logger.critical(reject + msg)
+            raise ValueError(msg)
+        good_records.append(r)
+    return good_records, bad_records
 
 
 def make_ind_by_label(records):
@@ -208,7 +222,6 @@ def implementation(logger, host, user, passwd, args):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   f = csv.DictReader(args.ifile, delimiter='\t')
   records = [r for r in f]
-  args.ifile.close()
   if len(records) == 0:
     return
   canonizer = core.RecordCanonizer(['study'], args)
@@ -220,11 +233,21 @@ def implementation(logger, host, user, passwd, args):
                       args.keep_tokens, args.batch_size,
                       operator=args.operator,
                       action_setup_conf=action_setup_conf, logger=logger)
-  recorder.do_consistency_checks(records)
+  report_fnames = copy.deepcopy(f.fieldnames)
+  report_fnames.append('error')
+  report = csv.DictWriter(args.report_file, report_fnames,
+                          delimiter='\t', lineterminator=os.linesep,
+                          extrasaction='ignore')
+  report.writeheader()
+  records, bad_records = recorder.do_consistency_checks(records)
+  for br in bad_records:
+    report.writerow(br)
   by_label = make_ind_by_label(records)
   import_pedigree(recorder, by_label.itervalues())
   recorder.clean_up()
   args.ofile.close()
+  args.ifile.close()
+  args.report_file.close()
 
 
 def do_register(registration_list):

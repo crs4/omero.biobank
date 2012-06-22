@@ -17,9 +17,8 @@ where the diagnosis column contains `openEHR
 <http://www.openehr.org>`_ diagnosis codes.
 """
 
-import logging
+import logging, os, copy, csv, json, time
 logger = logging.getLogger()
-import csv, json, time
 import itertools as it
 
 import core
@@ -43,7 +42,7 @@ class Recorder(core.Core):
     self.operator = operator
     self.preloaded_individuals = {}
 
-  def record(self, records):
+  def record(self, records, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -53,7 +52,9 @@ class Recorder(core.Core):
       self.logger.warn('no records')
       return
     self.preload_individuals()
-    records = self.do_consistency_checks(records)
+    records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      rtsv.writerow(br)
     study = self.find_study(records)
     device_label = 'importer.ehr.diagnosis-%s' %  (version)
     device = self.get_device(label=device_label,
@@ -105,30 +106,43 @@ class Recorder(core.Core):
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
     good_records = []
+    bad_records = []
     mandatory_fields = ['individual', 'diagnosis', 'timestamp']
     for i, r in enumerate(records):
       reject = 'Rejecting import %d: ' % i
       if self.missing_fields(mandatory_fields, r):
-        f = reject + 'missing mandatory field.'
-        self.logger.error(f)
+        f = 'missing mandatory field'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if not r['individual'] in self.preloaded_individuals:
-        msg = reject + 'unknown individual.'
-        self.logger.error(msg)
+        f = 'unknown individual with ID %s' % r['individual']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if not self.legal_diagnosis(r['diagnosis']):
-        msg = reject + ('illegal diagnosis code %s.' % r['diagnosis'])
-        self.logger.error(msg)
+        f = 'illegal diagnosis code %s' % r['diagnosis']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       try:
         long(r['timestamp'])
       except ValueError, e:
-        msg = reject + ('timestamp %r is not a long.' % r['timestamp'])
-        self.logger.error(msg)
+        f = 'timestamp %r is not a long' % r['timestamp']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       good_records.append(r)
     self.logger.info('done consistency checks')
-    return good_records
+    return good_records, bad_records
 
 
 help_doc = """
@@ -150,10 +164,17 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   canonizer = core.RecordCanonizer(['study'], args)
   canonizer.canonize_list(records)
-  recorder.record(records)
+  report_fnames = copy.deepcopy(f.fieldnames)
+  report_fnames.append('error')
+  report = csv.DictWriter(args.report_file, report_fnames,
+                          delimiter='\t', lineterminator=os.linesep,
+                          extrasaction='ignore')
+  report.writeheader()
+  recorder.record(records, report)
+  args.ifile.close()
+  args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 

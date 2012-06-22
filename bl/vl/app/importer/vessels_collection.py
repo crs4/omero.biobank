@@ -24,7 +24,7 @@ ignored. It is not legal to use the importer to add items to a
 previously known collection.
 """
 
-import csv, json, time
+import csv, json, time, copy
 import itertools as it
 
 from bl.vl.kb.drivers.omero.utils import make_unique_key
@@ -47,7 +47,7 @@ class Recorder(core.Core):
     self.preloaded_vessels_collections = {}
     self.preloaded_items = {}
 
-  def record(self, records, otsv):
+  def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -84,7 +84,10 @@ class Recorder(core.Core):
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       vessels_collections[k] = get_vessels_collection(k, action)
-      sub_records.append(self.do_consistency_checks(vessels_collections[k], list(g)))
+      good_records, bad_records = self.do_consistency_checks(vessels_collection[k], list(g))
+      sub_records.append(good_records)
+      for br in bad_records:
+        rstv.writerow(br)
     records = sum(sub_records, [])
     if len(records) == 0:
       self.logger.warn('no records')
@@ -129,29 +132,37 @@ class Recorder(core.Core):
       vessel = self.preloaded_vessels[r['vessel']]
       return make_unique_key(vessels_collection.id, vessel.id)
     preload_vessels_collection_items()
-    #failures = 0
     good_records = []
+    bad_records = []
     seen = []
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i
       if not r['vessel'] in self.preloaded_vessels:
-        f = reject + 'bad vessel in %s.'
-        self.logger.error( f % r['label'])
+        f = 'there is no known vessel with ID %s' % r['vessel']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['vessel'] in seen:
-        f = reject + 'multiple copy of the same vessel %s in %s.'
-        self.logger.error( f % (r['label'], k))
+        f = 'multiple copy of the same vessel %s in %s in this batch' % (r['vessel'], k)
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       key = build_key(vessels_collection, r)
       if key in self.preloaded_items:
-        f = reject + 'there is a pre-existing vessels collection item with key %s'
-        self.logger.warn(f % key)
+        f = 'vessel %s already in collection %s' % (r['vessel'], k)
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       seen.append(r['vessel'])
       good_records.append(r)
     self.logger.info('done consistency checks on %s' % vessels_collection.label)
-    #return [] if failures else records
-    return good_records
+    return good_records, bad_records
 
   def process_chunk(self, otsv, study, vc, chunk):
     items = []
@@ -197,15 +208,21 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   canonizer = RecordCanonizer(fields_to_canonize, args)
   canonizer.canonize_list(records)
   o = csv.DictWriter(args.ofile,
                      fieldnames=['study', 'label', 'type', 'vid'],
                      delimiter='\t')
   o.writeheader()
-  recorder.record(records, o)
+  report_fnames = copy.deepcopy(f.fieldnames)
+  report_fnames.append('error')
+  report = csv.DictWriter(args.report_file, report_fnames,
+                          delimiter='\t', extrasaction='ignore')
+  report.writeheader()
+  recorder.record(records, o, report)
+  args.ifile.close()
   args.ofile.close()
+  args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 

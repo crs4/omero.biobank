@@ -22,7 +22,7 @@ strand. The chromosome field is an integer field with values in the
 chromosome, the Y chromosome, the pseudoautosomal regions (XY) and the
 mitochondrial DNA (MT).
 """
-import csv, json, time, os
+import csv, json, time, os, copy
 
 import core
 from version import version
@@ -80,37 +80,52 @@ class Recorder(core.Core):
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
-    accepted = []
+    good_records = []
+    bad_records = []
     preloaded_marker_vids = self.preloaded_marker_vids  # speed hack
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i
       if r['marker_vid'] not in preloaded_marker_vids:
-        f = reject + 'marker_vid %s not found in the KB' % r['marker_vid']
-        self.logger.error(f)
+        f = 'there is no marker with ID %s' % r['marker_vid']
+        self.logger.error(reject + f)
+        bar_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if self.missing_fields(MANDATORY_FIELDS, r):
-        f = reject + 'missing mandatory field'
-        self.logger.error(f)
+        f = 'missing mandatory field'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if not 0 <= r['chromosome'] < 27:
-        f = reject + 'chomosome value out ot the [0:26] range'
-        self.logger.error(f)
+        f = 'chomosome value out ot the [0:26] range'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if not 0 <= r['pos']:
-        f = reject + 'negative pos'
-        self.logger.error(f)
+        f = 'negative pos'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
-      accepted.append(r)
-    return accepted
+      good_records.append(r)
+    return good_records, bad_records
 
-  def record(self, records):
+  def record(self, records, rtsv):
     self.logger.info('start preloading marker vids')
     ref_genome = records[0]["ref_genome"]
     self.preloaded_marker_vids = set(
       m[0] for m in self.kb.get_snp_marker_definitions(col_names=["vid"])
       )
     self.logger.info('done preloading marker vids')
-    records = self.do_consistency_checks(records)
+    records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      rtsv.writerow(br)
     def stream():
       for r in records:
         yield (r['marker_vid'], r['chromosome'], r['pos'],
@@ -155,12 +170,18 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   recorder.logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   canonizer = RecordCanonizer(fields_to_canonize, args)
   canonizer.canonize_list(records)
-  recorder.record(records)
+  report_fnames = copy.deepcopy(f.fieldnames)
+  report_fnames.append('error')
+  report = csv.DictWriter(args.report_file, report_fnames,
+                          delimiter='\t', lineterminator=os.linesep,
+                          extrasaction='ignore')
+  report.writeheader()
+  recorder.record(records, report)
+  args.ifile.close()
+  args.report_file.close()
   recorder.logger.info('done processing file %s' % args.ifile.name)
-
 
 def do_register(registration_list):
   registration_list.append(('marker_alignment', help_doc, make_parser,

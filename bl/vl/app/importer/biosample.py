@@ -42,7 +42,7 @@ used_volume material taken from the bio material contained in the
 vessel identified by source. row and column are base 1.
 """
 
-import os, csv, json, time, re
+import os, csv, json, time, re, copy
 import itertools as it
 from datetime import datetime
 
@@ -72,7 +72,7 @@ class Recorder(core.Core):
     self.preloaded_plates = {}
     self.preloaded_vessels = {}
 
-  def record(self, records, otsv):
+  def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -87,7 +87,9 @@ class Recorder(core.Core):
     self.preload_sources()
     if self.vessel_klass == self.kb.PlateWell:
       self.preload_plates()
-    records = self.do_consistency_checks(records)
+    records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      rtsv.writerow(br)
     device = self.get_device('importer-%s.biosample' % version,
                              'CRS4', 'IMPORT', version)
     asetup = self.get_action_setup('import-prog-%f' % time.time(),
@@ -129,43 +131,62 @@ class Recorder(core.Core):
       return make_unique_key(plate.label, r['label'])
     preload_vessels()
     good_records = []
+    bad_records = []
+    grecs_keys = {}
     mandatory_fields = ['label', 'source', 'plate', 'row', 'column']
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i
       if self.missing_fields(mandatory_fields, r):
-        f = reject + 'missing mandatory field.'
-        self.logger.error(f)
+        f = 'missing mandatory field'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if 'activation_date' in r and r['activation_date'] != '':
         try:
           datetime.strptime(r['activation_date'], '%d/%m/%Y')
         except ValueError:
-          f = reject + 'invalid date format for %s'
-          self.logger.error(f % r['activation_date'])
+          f = 'invalid date format for %s' % r['activation_date']
+          self.logger.error(reject + f)
+          bad_rec = copy.deepcopy(r)
+          bad_rec['error'] = f
+          bad_records.append(bad_rec)
           continue
       if r['source'] not in  self.preloaded_sources:
-        f = reject + 'no known source maps to %s.'
-        self.logger.error(f % r['source'])
+        f = 'no known source with ID %s' % r['source']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['plate'] not in  self.preloaded_plates:
-        f = reject + 'no known plate maps to %s.'
-        self.logger.error(f % r['plate'])
+        f = 'no known plate with ID %s' % r['plate']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       key = build_key(r)
       if key in self.preloaded_vessels:
-        f = reject + 'there is a pre-existing vessel with key %s.'
-        self.logger.warn(f % key)
+        f = 'there is a pre-existing vessel with label %s in plate %s' % (r['label'],
+                                                                          r['plate'])
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
+        continue
+      if key in grecs_keys:
+        f = 'multiple records for label %s in plate %s' % (r['label'], r['plate'])
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       good_records.append(r)
+      grecs_keys[key] = i
     self.logger.info('done consistency checks')
-    k_map = {}
-    for r in good_records:
-      key = build_key(r)
-      if key in k_map:
-        self.logger.error('multiple records for key %s' % key)
-      else:
-        k_map[key] = r
-    return k_map.values()
+    return good_records, bad_records
 
   def do_consistency_checks_tube(self, records):
     def preload_vessels():
@@ -175,37 +196,46 @@ class Recorder(core.Core):
         assert not o.label in self.preloaded_vessels
         self.preloaded_vessels[o.label] = o
       self.logger.info('done preloading vessels')
-    k_map = {}
-    for r in records:
-      if r['label'] in k_map:
-        self.logger.error('multiple records for label %s' % r['label'])
-      else:
-        k_map[r['label']] = r
-    records = k_map.values()
-    if len(records) == 0:
-      return []
     preload_vessels()
     good_records = []
+    bad_records = []
+    grecs_labels = {}
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d.' % i
       if r['label'] in self.preloaded_vessels:
-        f = 'there is a pre-existing vessel with label %s. ' + reject
-        self.logger.warn(f % r['label'])
+        f = 'there is a pre-existing vessel with label %s' % r['label']
+        self.logger.warn(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if 'activation_date' in r and r['activation_date'] != '':
         try:
           datetime.strptime(r['activation_date'], '%d/%m/%Y')
         except ValueError:
-          f = reject + 'invalid date format for %s'
-          self.logger.error(f % r['activation_date'])
+          f = 'invalid date format for %s' % r['activation_date']
+          self.logger.error(reject + f)
+          bad_rec = copy.deepcopy(r)
+          bad_rec['error'] = f
+          bad_records.append(bad_rec)
           continue
       if not r['source'] in  self.preloaded_sources:
-        f = 'no known source maps to %s. ' + reject
-        self.logger.error(f % r['source'])
+        f = 'no known source with ID %s. ' + r['source']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
+      if r['label'] in grecs_labels:
+        f = 'there is a pre-existing vessel with label %s' % r['label']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
       good_records.append(r)
+      grecs_labels[r['label']] = i
     self.logger.info('done consistency checks')
-    return good_records
+    return good_records, bad_records
 
   def process_chunk(self, otsv, chunk, study, asetup, device):
     aklass = {
@@ -352,8 +382,16 @@ def implementation(logger, host, user, passwd, args):
                      fieldnames=['study', 'label', 'type', 'vid'],
                      delimiter='\t', lineterminator=os.linesep)
   o.writeheader()
-  recorder.record(records, o)
+  report_fnames = copy.deepcopy(f.fieldnames)
+  report_fnames.append('error')
+  report = csv.DictWriter(args.report_file, report_fnames,
+                          delimiter='\t', lineterminator=os.linesep,
+                          extrasaction='ignore')
+  report.writeheader()
+  recorder.record(records, o, report)
+  args.ifile.close()
   args.ofile.close()
+  args.report_file.close()
   recorder.logger.info('done processing file %s' % args.ifile.name)
 
 

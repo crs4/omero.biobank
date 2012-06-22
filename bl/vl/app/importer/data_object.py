@@ -19,7 +19,7 @@ ignored. The same will happen to records that have the same path of a
 previously seen data object.
 """
 
-import os, csv
+import os, csv, copy
 
 from bl.vl.kb.mimetypes import DATA_OBJECT_FILES as SUPPORTED_MIME_TYPES
 import core
@@ -39,7 +39,7 @@ class Recorder(core.Core):
     self.preloaded_data_objects = {}
     self.preloaded_data_samples = {}
 
-  def record(self, records, otsv):
+  def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -51,7 +51,9 @@ class Recorder(core.Core):
     study = self.find_study(records)
     self.preload_data_samples()
     self.preload_data_objects()
-    records = self.do_consistency_checks(records)
+    records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      rtsv.writerow(br)
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(otsv, c, study)
@@ -72,30 +74,48 @@ class Recorder(core.Core):
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
     good_records = []
+    bad_records = []
     mandatory_fields = ['path', 'mimetype', 'size', 'sha1']
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i
       if self.missing_fields(mandatory_fields, r):
+        f = 'missing mandatory field'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['path'] in self.preloaded_data_objects:
-        f = reject + 'there is a pre-existing data_object with path %s.'
-        self.logger.warn(f % r['path'])
+        f = 'there is a pre-existing data_object with path %s' % r['path']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if not r['data_sample'] in self.preloaded_data_samples:
-        f = reject + 'there is no known data_sample with id %s.'
-        self.logger.error(f % r['data_sample'])
+        f = 'there is no known data_sample with ID %s' % r['data_sample']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] =  f
+        bad_records.append(bad_rec)
         continue
       if r['mimetype'] not in SUPPORTED_MIME_TYPES:
-        f = reject + 'unknown mimetype %s.'
-        self.logger.error(f % r['mimetype'])
+        f = 'unknown mimetype %s' % r['mimetype']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if not r['size'].isdigit():
-        f = reject + 'bad size value %s.'
-        self.logger.error(f % r['size'])
+        f = 'bad size value %s' % r['size']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       good_records.append(r)
     self.logger.info('done consistency checks')
-    return good_records
+    return good_records, bad_records
 
   def process_chunk(self, otsv, chunk, study):
     data_objects = []
@@ -139,16 +159,22 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   canonizer = core.RecordCanonizer(['study', 'mimetype'], args)
   canonizer.canonize_list(records)
   o = csv.DictWriter(args.ofile,
-                     #fieldnames=['study', 'path', 'type', 'vid'],
                      fieldnames=['study', 'path', 'type'],
                      delimiter='\t', lineterminator=os.linesep)
   o.writeheader()
-  recorder.record(records, o)
+  report_fnames = copy.deepcopy(f.fieldnames)
+  report_fnames.append('error')
+  report = csv.DictWriter(args.report_file, report_fnames,
+                          delimiter='\t', lineterminator=os.linesep,
+                          extrasactio='ignore')
+  report.writeheader()
+  recorder.record(records, o, report)
+  args.ifile.close()
   args.ofile.close()
+  args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 

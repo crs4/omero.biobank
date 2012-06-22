@@ -41,7 +41,7 @@ For instance::
   V902909092  2            True
   ...
 """
-import os, time, csv, json
+import os, time, csv, json, copy
 
 import core
 from version import version
@@ -57,7 +57,7 @@ class Recorder(core.Core):
     self.action_setup_conf = action_setup_conf
     self.operator = operator
 
-  def record(self, records, otsv):
+  def record(self, records, otsv, rtsv):
     if len(records) == 0:
       self.logger.warn('no records')
       return
@@ -66,7 +66,15 @@ class Recorder(core.Core):
       m[0] for m in self.kb.get_snp_marker_definitions(col_names=["vid"])
       )
     self.logger.info('done preloading marker vids')
-    records = self.do_consistency_checks(records)
+    good_records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      rtsv.writerow(br)
+    if len(good_records) != len(records):
+      msg = 'cannot process an incomplete markers_set definition'
+      self.logger.critical(msg)
+      raise ValueError(msg)
+    else:
+      records = good_records
     study = self.find_study(records)
     action = self.find_action(study)
     label, maker, model, release = self.find_markers_set_label(records)
@@ -106,6 +114,7 @@ class Recorder(core.Core):
 
   def do_consistency_checks(self, records):
     good_records = []
+    bad_records = []
     maker = records[0]['maker']
     model = records[0]['model']
     release = records[0]['release']
@@ -114,31 +123,42 @@ class Recorder(core.Core):
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
       if r['marker_vid'] not in preloaded_marker_vids:
-        f = reject + 'marker_vid %s not found in the KB' % r['marker_vid']
-        self.logger.error(f)
+        f = 'there is no knwon marker with ID %s' % r['marker_vid']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['maker'] != maker:
-        f = reject + 'inconsistent maker'
-        self.logger.error(f)
+        f = 'inconsistent maker'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['model'] != model:
-        f = reject + 'inconsistent model'
-        self.logger.error(f)
+        f = 'inconsistent model'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['release'] != release:
-        f = reject + 'inconsistent release'
-        self.logger.error(f)
+        f = 'inconsistent release'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['study'] != study:
-        f = reject + 'inconsistent study'
-        self.logger.error(f)
+        f = 'inconsistent study'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       good_records.append(r)
-    if len(good_records) != len(records):
-      msg = 'cannot process an incomplete markers_set definition'
-      self.logger.critical(msg)
-      raise ValueError(msg)
-    return good_records
+    return good_records, bad_records
 
 
 class RecordCanonizer(core.RecordCanonizer):
@@ -181,7 +201,6 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   fields_to_canonize = ['study', 'label', 'maker', 'model', 'release']
   canonizer = RecordCanonizer(fields_to_canonize, args)
   canonizer.canonize_list(records)
@@ -190,10 +209,18 @@ def implementation(logger, host, user, passwd, args):
                        fieldnames=['study', 'label', 'type', 'vid'],
                        delimiter='\t', lineterminator=os.linesep)
     o.writeheader()
-    recorder.record(records, o)
+    report_fnames = copy.deepcopy(f.fieldnames)
+    report_fnames.append('error')
+    report = csv.DictWriter(args.report_file, report_fnames,
+                            delimiter='\t', lineterminator=os.linesep,
+                            extrasaction='ignore')
+    report.writeheader()
+    recorder.record(records, o, report)
   else:
     logger.info('empty file')
+  args.ifile.close()
   args.ofile.close()
+  args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 

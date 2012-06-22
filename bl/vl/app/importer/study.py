@@ -16,7 +16,7 @@ in a tsv files with the above information and output the VIDs of the
 newly created study objects.
 """
 
-import os, csv
+import os, csv, copy
 
 import core
 
@@ -26,7 +26,7 @@ DEFAULT_DESCRIPTION = 'No description provided'
 
 class Recorder(core.Core):
   
-  def __init__(self, out_stream=None,
+  def __init__(self, out_stream=None, report_stream=None,
                host=None, user=None, passwd=None, keep_tokens=1,
                batch_size=1000, operator='Alfred E. Neumann', logger=None):
     super(Recorder, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
@@ -34,6 +34,9 @@ class Recorder(core.Core):
     self.out_stream = out_stream
     if self.out_stream:
       self.out_stream.writeheader()
+    self.report_stream = report_stream
+    if self.report_stream:
+      self.report_stream.writeheader()
     self.batch_size = batch_size
     self.operator = operator
 
@@ -47,7 +50,9 @@ class Recorder(core.Core):
       self.logger.warn('no records')
       return
     self.preload_studies()
-    records = self.do_consistency_checks(records)
+    records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      self.report_strema.writerow(br)
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(c)
@@ -66,26 +71,35 @@ class Recorder(core.Core):
     self.logger.info('start consistency checks')
     k_map = {}
     good_records = []
+    bad_records = []
     mandatory_fields = ['label']
     for i, r in enumerate(records):
       reject = ' Rejecting import of record %d: ' % i
       if self.missing_fields(mandatory_fields, r):
-        f = reject + 'missing mandatory field'
-        self.logger.error(f)
+        f = 'missing mandatory field'
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['label'] in self.known_studies:
-        f = reject + 'there is a pre-existing study with label %s'
-        self.logger.warn(f % r['label'])
+        f = 'there is a pre-existing study with label %s' % r['label']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['label'] in k_map:
-        f = (reject +
-             'there is a pre-existing study with label %s (in this batch)')
-        self.logger.error(f % r['label'])
+        f = 'there is a pre-existing study with label %s in this batch' % r['label']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       k_map['label'] = r
       good_records.append(r)
     self.logger.info('done with consistency checks')
-    return good_records
+    return good_records, bad_records
 
   def process_chunk(self, chunk):
     studies = []
@@ -124,7 +138,6 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   if not records:
     logger.info('empty file')
     return
@@ -132,10 +145,17 @@ def implementation(logger, host, user, passwd, args):
   canonizer.canonize_list(records)
   o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
                      delimiter='\t', lineterminator=os.linesep)
-  recorder = Recorder(o, host=host, user=user, passwd=passwd,
+  report_fnames = f.fieldnames
+  report_fnames.append('error')
+  report = csv.DictWriter(args.report_file, report_fnames,
+                          delimiter='\t', lineterminator=os.linesep,
+                          extrasaction='ignore')
+  recorder = Recorder(o, report, host=host, user=user, passwd=passwd,
                       keep_tokens=args.keep_tokens, logger=logger)
   recorder.record(records)
+  args.ifile.close()
   args.ofile.close()
+  args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 

@@ -24,7 +24,7 @@ ignored. It is not legal to use the importer to add items to a
 previously known collection.
 """
 
-import csv, json, time
+import csv, json, time, os, copy
 import itertools as it
 
 from bl.vl.kb.drivers.omero.utils import make_unique_key
@@ -47,7 +47,7 @@ class Recorder(core.Core):
     self.preloaded_data_collections = {}
     self.preloaded_items = {}
 
-  def record(self, records, otsv):
+  def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -84,7 +84,10 @@ class Recorder(core.Core):
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       data_collections[k] = get_data_collection(k, action)
-      sub_records.append(self.do_consistency_checks(data_collections[k], list(g)))
+      good_records, bad_records = self.do_consistency_checks(data_collection[k], list(g))
+      sub_records.append(good_records)
+      for br in bad_records:
+        rtsv.writerow(br)
     records = sum(sub_records, [])
     if len(records) == 0:
       self.logger.warn('no records')
@@ -129,30 +132,36 @@ class Recorder(core.Core):
       data_sample = self.preloaded_data_samples[r['data_sample']]
       return make_unique_key(data_collection.id, data_sample.id)
     preload_data_collection_items()
-    #failures = 0
     good_records = []
+    bad_records = []
     seen = []
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i
       if not r['data_sample'] in self.preloaded_data_samples:
-        f = reject + 'bad data_sample in %s.'
-        self.logger.error( f % r['label'])
-        #failures += 1
+        f = 'unknown data sample with ID %s' % r['data_sample']
+        self.logger.error(reject + f)
+        bad_rec = coyp.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       if r['data_sample'] in seen:
-        f = reject + 'multiple copy of the same data_sample %s in %s.'
-        self.logger.error( f % (r['label'], k))
-        #failures += 1
+        f = 'multiple copy of the same data_sample %s in %s' % (r['data_sample'], k)
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       key = build_key(data_collection, r)
       if key in self.preloaded_items:
-        f = reject + 'there is a pre-existing data collection item with key %s'
-        self.logger.warn(f % key)
+        f = 'data sample %s already in %s' % (r['data_sample'], k)
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
         continue
       seen.append(r['data_sample'])
       good_records.append(r)
     self.logger.info('done consistency checks on %s' % data_collection.label)
-    #return [] if failures else records
     return good_records
 
   def process_chunk(self, otsv, study, dc, chunk):
@@ -199,15 +208,22 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   canonizer = RecordCanonizer(fields_to_canonize, args)
   canonizer.canonize_list(records)
   o = csv.DictWriter(args.ofile,
                      fieldnames=['study', 'label', 'type', 'vid'],
                      delimiter='\t')
   o.writeheader()
-  recorder.record(records, o)
+  report_fnames = copy.deepcopy(f.fieldnames)
+  report_fnames.append('error')
+  report = csv.DictWriter(args.report_file, report_fnames,
+                          delimiter='\t', lineterminator=os.linesep,
+                          extrasaction='ignore')
+  report.writeheader()
+  recorder.record(records, o, report)
+  args.ifile.close()
   args.ofile.close()
+  args.report_file.close()
   logger.info('done processing file %s' % args.ifile.name)
 
 
