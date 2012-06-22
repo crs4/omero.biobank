@@ -54,52 +54,10 @@ class TiterPlate(SlottedContainer):
     return super(TiterPlate, self).__preprocess_conf__(conf)
 
 
-class FlowCell(SlottedContainer):
-
-  OME_TABLE = 'FlowCell'
-  __fields__ = []
-
-
-class Lane(Container):
-  OME_TABLE = 'Lane'
-  __fields__ = [('flowCell', FlowCell, wp.REQUIRED),
-                ('slot', wp.INT, wp.REQUIRED)]
-
-class LaneSlot(wp.OmeroWrapper):
-
-  OME_TABLE = 'LaneSlot'
-  __fields__ = [('vid', wp.VID, wp.REQUIRED),
-                ('lane', Lane, wp.REQUIRED),
-                ('tag', wp.STRING, wp.OPTIONAL),
-                ('laneSlotUK', wp.STRING, wp.OPTIONAL),
-                ('action', Action, wp.REQUIRED),
-                ('lastUpdate', Action, wp.OPTIONAL)]
-
-  def __preprocess_conf__(self, conf):
-    if not 'laneSlotUK' in conf and 'tag' in conf:
-      conf['laneSlotUK'] = make_unique_key(conf['tag'], conf['lane'].label)
-    return assing_vid(conf)
-
-  def __update_constraints__(self):
-    if self.tag:
-      ls_uk = make_unique_key(self.tag, self.lane.label)
-      setattr(self.ome_obj, 'laneSlotUK',
-              self.to_omero(self.__field__['laneSlotUK'][0], ls_uk))
-
-
 class DataCollection(VLCollection):
   
   OME_TABLE = 'DataCollection'
   __fields__ = []
-
-
-class SequencerOutput(DataCollection):
-
-  OME_TABLE = 'SequencerOutput'
-  __fields__ = [('multiplexed', wp.BOOLEAN, wp.REQUIRED),
-                ('read1', DataCollection, wp.REQUIRED),
-                ('read2', DataCollection, wp.OPTIONAL),
-                ('read3', DataCollection, wp.OPTIONAL)]
 
 
 class DataCollectionItem(wp.OmeroWrapper):

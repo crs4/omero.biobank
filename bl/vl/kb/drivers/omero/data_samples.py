@@ -92,9 +92,3 @@ class GenotypeDataSample(DataSample):
         return res['probs'], res['confidence']
     else:
       raise ValueError('DataObject is not a %s' % mimetypes.GDO_TABLE)
-
-
-class SequencingDataSample(DataSample):
-  
-  OME_TABLE = 'SequencingDataSample'
-  __fields__ = [('collectionIndex', wp.INT, wp.REQUIRED)]
