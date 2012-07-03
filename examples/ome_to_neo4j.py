@@ -62,22 +62,9 @@ def make_parser():
     return parser
 
 def graph_node(ome_obj, graph, logger):
-    node = get_from_graph(ome_obj, graph, logger)
-    if not node:
-        logger.debug('No node found for %s:%s, saving into node4j' % (type(ome_obj).__name__,
-                                                                      ome_obj.id))
-        return dump_to_graph_node(ome_obj, graph, logger)
-    else:
-        logger.debug('Node for %s:%s already exists' % (type(ome_obj).__name__,
-                                                        ome_obj.id))
-        return node
-
-def dump_to_graph_node(ome_obj, graph, logger):
-    logger.debug('Dumping %s:%s' % (type(ome_obj).__name__,
-                                    ome_obj.id))
-    node = graph.ome_object.create(obj_class = type(ome_obj).__name__,
-                                   obj_id = ome_obj.id)
-    logger.debug('Dump completed, node ID: %s' % node.eid)
+    node = graph.ome_object.get_or_create('obj_id', ome_obj.id,
+                                          {'obj_id' : ome_obj.id,
+                                           'obj_class' : type(ome_obj).__name__})
     return node
 
 def get_from_graph(ome_obj, graph, logger):
@@ -92,15 +79,22 @@ def get_from_graph(ome_obj, graph, logger):
     return node
                
 def dump_graph_edge(source_node, dest_node, ome_action, graph, logger):
-    logger.debug('Builg edge %s:%s ---> %s:%s (mapping %s:%s)' % (source_node.obj_class,
+    logger.debug('Build edge %s:%s ---> %s:%s (mapping %s:%s)' % (source_node.obj_class,
                                                                   source_node.obj_id,
                                                                   dest_node.obj_class,
                                                                   dest_node.obj_id,
                                                                   type(ome_action).__name__,
                                                                   ome_action.id))
-    graph.produces.create(source_node, dest_node,
-                          act_type = type(ome_action).__name__,
-                          act_id   = ome_action.id)
+    e = list(graph.produces.index.lookup(act_id = ome_action.id))
+    if len(e) > 0:
+        assert len(e) == 1 # ome_action.id must be unique
+        assert e[0].outV() == source_node
+        assert e[0].inV() == dest_node
+        logger.debug('Edge already exists with ID %s' % e[0].eid)
+    else:
+        graph.produces.create(source_node, dest_node,
+                              act_type = type(ome_action).__name__,
+                              act_id = ome_action.id)
   
 
 def main(argv):
@@ -114,7 +108,7 @@ def main(argv):
     try:
         logger.debug('Connecting to graph')
         if args.neo_uri:
-            gconf = Config(neo_uri)
+            gconf = Config(args.neo_uri)
             graph = Graph(gconf)
         else:
             graph = Graph()
@@ -136,7 +130,6 @@ def main(argv):
         logger.info('Loaded %d items' % len(objs))
         logger.info('Dumping to graph')
         for o in objs:
-            pass
             logger.debug('Dumping object %d/%d' % (objs.index(o)+1, 
                                                   len(objs)))
             n = graph_node(o, graph, logger)
