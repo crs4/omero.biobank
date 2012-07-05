@@ -1,86 +1,161 @@
-# BEGIN_COPYRIGHT
-# END_COPYRIGHT
+from bulbs.model import Node, Relationship
+from bulbs.property import String
+from bulbs.neo4jserver import Graph, Config
 
-import logging
+# Used to capture neo4j connection exceptions
+import httplib2
 
-from pygraph.classes.graph import graph
-from pygraph.algorithms.searching import depth_first_search
+import config as vlconf
+from bl.vl.kb.drivers.omero.utils import ome_hash
 
+
+class OME_Object(Node):
+    element_type = 'ome_object'
+    
+    obj_class = String(nullable=False)
+    obj_id = String(nullable=False)
+    obj_hash = String(nullable=False)
+
+    def __hash__(self):
+        return self.eid
+
+
+class OME_Action(Relationship):
+    label = 'produces'
+    act_type = String(nullable=False)
+    act_id = String(nullable=False)
+    act_hash = String(nullable=False)
+
+    def __hash__(self):
+        return self.eid
+
+
+class DependencyTreeError(Exception):
+    pass
+    
 
 class DependencyTree(object):
-  """
-  FIXME This is NOT a scalable solution. And it is hardwired to omero.
-  """
-  def __init__(self, kb, logger=logging.getLogger()):
-    obj_klasses = [kb.Individual, kb.Vessel, kb.DataSample, kb.VLCollection,
-                   kb.DataCollectionItem, kb.LaneSlot]
-    relationship = {kb.DataCollectionItem: 'dataSample'}
-    def base_ome_class(klass):
-      "FIXME hardwired to Omero"
-      kbase = klass.__bases__[0]
-      if not kbase.OME_TABLE:
-        return klass.OME_TABLE
-      else:
-        return base_ome_class(kbase)
 
-    def okey(o):
-      return (base_ome_class(o.__class__), o.omero_id)
-    self.kb = kb
-    self.logger = logger
-    self.logger.info('start pre-fetching graph data')
-    self.logger.info('-- start pre-fetching action data')
-    actions = kb.get_objects(self.kb.Action)
-    self.logger.debug('-- fetched %d actions' % len(actions))
-    action_by_oid = {}
-    for a in actions:
-      assert a.omero_id not in action_by_oid
-      action_by_oid[a.omero_id] = a
-    self.logger.info('-- done pre-fetching action data')
-    objs = []
-    self.logger.info('-- start pre-fetching objs data')
-    for k in obj_klasses:
-      old_len = len(objs)
-      objs.extend(kb.get_objects(k))
-      self.logger.info('-- -- done pre-fetching %s' % k)
-      self.logger.debug('-- -- fetched %d objects' % (len(objs) - old_len))
-    self.logger.info('-- done pre-fetching objs data')
-    nodes, edges = [], []
-    obj_by_oid = {}
-    obj_by_id = {}
-    for o in objs:
-      obj_by_id[o.id] = o
-      obj_by_oid[okey(o)] = o
-    self.logger.info('done mapping objs nodes')
-    action_oid_to_object = {}
-    for a in actions:
-      # there could be dangling actions
-      if hasattr(a, 'target') and a.target.omero_id in obj_by_oid:
-        k = a.omero_id
-        action_oid_to_object[k] = obj_by_oid[okey(a.target)]
-    for o in objs:
-      nodes.append(o.id)
-      try:
-        a = action_by_oid[o.action.omero_id]
-        if hasattr(a, 'target'):
-          x, y = o, obj_by_oid[okey(a.target)]
-          if type(y) in relationship:
-            y = getattr(y, relationship[type(y)])
-          edges.append((x.id, y.id))
-      except AttributeError, ae:
-        #self.logger.debug(ae)
-        pass
-    gr = graph()
-    gr.add_nodes(nodes)
-    for e in edges:
-      gr.add_edge(e)
-    self.gr = gr
-    self.obj_by_id = obj_by_id
-    self.logger.info('done pre-fetching graph data')
+    DIRECTION_INCOMING = 1
+    DIRECTION_OUTGOING = 2
+    DIRECTION_BOTH     = 3
 
-  def get_connected(self, obj, aklass=None):
-    st, pre, post = depth_first_search(self.gr, root=obj.id)
-    if aklass:
-      return [self.obj_by_id[k] for k in st.keys()
-              if self.obj_by_id[k].__class__ == aklass]
-    else:
-      return [self.obj_by_id[k] for k in st.keys()]
+    def __init__(self, kb):
+        self.kb = kb
+        gconf = Config(vlconf.NEO4J_URI)
+        try:
+            self.graph = Graph(gconf)
+        except httplib2.ServerNotFoundError:
+            raise DependencyTreeError('Unable to find Node4J server at %s' % 
+                                      vlconf.NEO4J_URI)
+        except httplib2.socket.error:
+            raise DependencyTreeError('Connection refused by Node4J server')
+        self.graph.add_proxy('ome_objects', OME_Object)
+        self.graph.add_proxy('produces', OME_Action)
+        if not self.do_consistency_check():
+            raise DependencyTreeError('Graph out-of-sync!')
+
+
+    # TODO: do a consistency check against OMERO in order to check that
+    # everything inside the Graph is in sync
+    def do_consistency_check(self):
+        return True
+
+    def dump_node(self, obj):
+        self.graph.ome_objects.get_or_create('obj_hash', ome_hash(obj),
+                                             {'obj_class' : type(obj).__name__,
+                                              'obj_id' : obj.id,
+                                              'obj_hash' : ome_hash(obj.ome_obj)})
+
+    def dump_edge(self, source, dest, act):
+        edges = list(self.graph.produces.index.lookup(act_hash = ome_hash(act)))
+        if len(edges) == 1:
+            pass
+        elif len(edges) == 0:
+            src_node = self.__get_node(source)
+            dest_node = self.__get_node(dest)
+            for x in [src_node, dest_node]:
+                if not x:
+                    raise DependencyTreeError('%s:%s not mapped' % (type(x).__name__,
+                                                                    x.id))
+            else:
+                self.graph.produces.create(src_node, dest_node,
+                                           act_type = type(act).__name__,
+                                           act_id = act.id,
+                                           act_hash = ome_hash(act))
+        else:
+            raise DependencyTreeError('Multiple edges with act_hash = %s' %
+                                      ome_hash(act.ome_obj))
+
+    def __get_node(self, obj):
+        nodes = list(self.graph.ome_objects.index.lookup(obj_hash = ome_hash(obj.ome_obj)))
+        if len(nodes) == 1:
+            return nodes[0]
+        elif len(nodes) == 0:
+            return None
+        else:
+            raise DependencyTreeError('Multiple nodes with obj_hash = %s' % ome_hash(obj))
+
+    def __get_ome_obj(self, node):
+        try:
+            return self.kb._CACHE(node.obj_hash)
+        except KeyError, ke:
+            return self.kb.get_by_vid(getattr(self.kb, node.obj_class),
+                                      str(node.obj_id))
+
+    def __get_ome_action(self, edge):
+        try:
+            return self.kb._CACHE(edge.act_hash)
+        except KeyError, ke:
+            return self.kb.get_by_vid(edge.act_class, edge.act_hash)
+
+    def __get_connected_nodes(self, node, direction, depth,
+                              visited_nodes = None):
+        if not visited_nodes:
+            visited_nodes = set()
+        if direction not in (self.DIRECTION_INCOMING,
+                             self.DIRECTION_OUTGOING,
+                             self.DIRECTION_BOTH):
+            raise DependencyTreeError('Not a valid direction for graph traversal')
+        print 'Retrieving connected nodes for %s:%s' % (node.obj_class, node.obj_id)
+        if depth == 0:
+            visited_nodes.add(node)
+            print 'Exit: returning %r' % visited_nodes
+            return visited_nodes
+        if direction == self.DIRECTION_INCOMING:
+            connected = list(node.inV('produces'))
+        elif direction == self.DIRECTION_OUTGOING:
+            connected = list(node.outV('produces'))
+        elif direction == self.DIRECTION_BOTH:
+            connected = list(node.bothV('produces'))
+        visited_nodes.add(node)
+        print 'Known nodes are %d' % len(visited_nodes)
+        connected = set(connected) - visited_nodes
+        print 'Connected nodes are %r' % connected
+        if len(connected) == 0:
+            print 'Exit: returning %r' % visited_nodes
+            return visited_nodes
+        else:
+            if not depth is None:
+                depth = depth - 1
+            print 'Loading data for %r' % connected
+            return set.union(*[self.__get_connected_nodes(cn, direction, depth, visited_nodes)
+                               for cn in connected])
+
+    def get_connected(self, ome_obj, aklass=None,
+                      direction = DIRECTION_BOTH, query_depth = None):
+        obj_node = self.__get_node(ome_obj)
+        if not obj_node:
+            raise DependencyTreeError('Unable to lookup object %s:%s into the graph' % 
+                                      (type(ome_obj).__name__, ome_obj.id))
+        try:
+            connected_nodes = self.__get_connected_nodes(obj_node, direction, query_depth)
+        except RuntimeError, re:
+            raise DependencyTreeError(re) 
+        # Remove the first node, we don't need it
+        connected_nodes.remove(obj_node)
+        if aklass:
+            return [self.__get_ome_obj(cn) for cn in connected_nodes
+                    if cn.obj_class == aklass]
+        else:
+            return [self.__get_ome_obj(cn) for cn in connected_nodes]
