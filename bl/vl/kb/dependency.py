@@ -117,10 +117,8 @@ class DependencyTree(object):
                              self.DIRECTION_OUTGOING,
                              self.DIRECTION_BOTH):
             raise DependencyTreeError('Not a valid direction for graph traversal')
-        print 'Retrieving connected nodes for %s:%s' % (node.obj_class, node.obj_id)
         if depth == 0:
             visited_nodes.add(node)
-            print 'Exit: returning %r' % visited_nodes
             return visited_nodes
         if direction == self.DIRECTION_INCOMING:
             connected = list(node.inV('produces'))
@@ -129,16 +127,12 @@ class DependencyTree(object):
         elif direction == self.DIRECTION_BOTH:
             connected = list(node.bothV('produces'))
         visited_nodes.add(node)
-        print 'Known nodes are %d' % len(visited_nodes)
         connected = set(connected) - visited_nodes
-        print 'Connected nodes are %r' % connected
         if len(connected) == 0:
-            print 'Exit: returning %r' % visited_nodes
             return visited_nodes
         else:
             if not depth is None:
                 depth = depth - 1
-            print 'Loading data for %r' % connected
             return set.union(*[self.__get_connected_nodes(cn, direction, depth, visited_nodes)
                                for cn in connected])
 
