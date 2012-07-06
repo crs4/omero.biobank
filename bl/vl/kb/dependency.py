@@ -62,33 +62,41 @@ class DependencyTree(object):
         return True
 
     def dump_node(self, obj):
-        self.graph.ome_objects.get_or_create('obj_hash', ome_hash(obj),
-                                             {'obj_class' : type(obj).__name__,
-                                              'obj_id' : obj.id,
-                                              'obj_hash' : ome_hash(obj.ome_obj)})
+        self._save_node({'obj_class' : type(obj).__name__,
+                         'obj_id' : obj.id,
+                         'obj_hash' : ome_hash(obj.ome_obj)})
 
     def dump_edge(self, source, dest, act):
-        edges = list(self.graph.produces.index.lookup(act_hash = ome_hash(act)))
+        self._save_edge({'act_type' : type(act).__name__,
+                         'act_id' : act.id,
+                         'act_hash' : ome_hash(act.ome_obj)},
+                        ome_hash(source.ome_obj),
+                        ome_hash(dest.ome_obj))
+
+    def _save_node(self, node_conf):
+        self.graph.ome_objects.get_or_create('obj_hash', node_conf['obj_hash'],
+                                             node_conf)
+
+    def _save_edge(self, edge_conf, src_hash, dest_hash):
+        edges = list(self.graph.produces.index.lookup(act_hash = edge_conf['act_hash']))
         if len(edges) == 1:
-            pass
+            return
         elif len(edges) == 0:
-            src_node = self.__get_node(source)
-            dest_node = self.__get_node(dest)
-            for x in [src_node, dest_node]:
-                if not x:
-                    raise DependencyTreeError('%s:%s not mapped' % (type(x).__name__,
-                                                                    x.id))
-            else:
-                self.graph.produces.create(src_node, dest_node,
-                                           act_type = type(act).__name__,
-                                           act_id = act.id,
-                                           act_hash = ome_hash(act))
+            src_node = self.__get_node_by_hash(src_hash)
+            if not src_note:
+                raise DependencyTreeError('Unmapped source node, unable to create the edge')
+            dest_node = self.__get_node_by_hash(dest_hash)
+            if not dest_node:
+                raise DependencyTreeError('Unmapped destinantion node, unable to create the edge')
+            self.graph.produces.create(src_node, dest_node, **edge_conf)
         else:
-            raise DependencyTreeError('Multiple edges with act_hash = %s' %
-                                      ome_hash(act.ome_obj))
+            raise DependencyTreeError('Multiple edges with act_hash %s' % edge_conf['act_hash'])
 
     def __get_node(self, obj):
-        nodes = list(self.graph.ome_objects.index.lookup(obj_hash = ome_hash(obj.ome_obj)))
+        return self.__get_node_by_hash(ome_hash(obj.ome_obj))
+
+    def __get_node_by_hash(self, node_hash):
+        nodes = list(self.graph.ome_objects.index.lookup(obj_hash = node_hash))
         if len(nodes) == 1:
             return nodes[0]
         elif len(nodes) == 0:
