@@ -59,7 +59,7 @@ def dump_node(obj, ofile):
                     'obj_hash' : ome_hash(obj.ome_obj)})
 
 def dump_edge(source, dest, act, ofile):
-    ofile.writerow({'act_class' : type(act).__name__,
+    ofile.writerow({'act_type' : type(act).__name__,
                     'act_id' : act.id,
                     'act_hash' : ome_hash(act.ome_obj),
                     'source' : ome_hash(source.ome_obj),
@@ -94,7 +94,7 @@ def main(argv):
     logger.debug('Loaded %d objects' % len(dcobjs))
 
     with open(args.edges_file, 'w') as ofile:
-        writer = csv.DictWriter(ofile, ['act_class', 'act_id', 'act_hash', 'source', 'dest'],
+        writer = csv.DictWriter(ofile, ['act_type', 'act_id', 'act_hash', 'source', 'dest'],
                                 delimiter='\t')
         writer.writeheader()
         logger.info('Start dumping edges to file %s' % args.edges_file)
