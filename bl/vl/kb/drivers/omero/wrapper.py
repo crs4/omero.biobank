@@ -294,6 +294,15 @@ class OmeroWrapper(CoreOmeroWrapper):
   def __update_constraints__(self):
     pass
 
+  def __dump_to_graph__(self):
+    if hasattr(self, 'action'):
+      if not self.proxy.dt:
+        self.proxy.update_dependency_tree()
+      self.proxy.dt.dump_node(self)
+      if hasattr(self.action, 'target'):
+        self.proxy.dt.dump_edge(self.action.taget, self,
+                                self.action)
+
   def __cleanup__(self):
     pass
 

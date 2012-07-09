@@ -207,6 +207,7 @@ class ProxyCore(object):
       raise kb.KBError(msg)
     obj.ome_obj = result
     self.store_to_cache(obj)
+    obj.__dump_to_graph__()
     return obj
 
   def save_array(self, array):
@@ -225,6 +226,7 @@ class ProxyCore(object):
     for o, v in it.izip(array, result):
       o.ome_obj = v
       self.store_to_cache(o)
+      o.__dump_to_graph__()
     return array
 
   def delete(self, kb_obj):
