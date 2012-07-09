@@ -83,7 +83,7 @@ class DependencyTree(object):
             return
         elif len(edges) == 0:
             src_node = self.__get_node_by_hash(src_hash)
-            if not src_note:
+            if not src_node:
                 raise DependencyTreeError('Unmapped source node, unable to create the edge')
             dest_node = self.__get_node_by_hash(dest_hash)
             if not dest_node:
