@@ -124,7 +124,7 @@ class DependencyTree(object):
 
     def __get_ome_obj__(self, node):
         try:
-            return self.kb._CACHE(node.obj_hash)
+            return self.kb._CACHE[node.obj_hash]
         except KeyError, ke:
             return self.kb.get_by_vid(getattr(self.kb, node.obj_class),
                                       str(node.obj_id))
