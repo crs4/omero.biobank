@@ -69,7 +69,6 @@ def main(argv):
     logger.info('Retrieved %d OMNIEXPRESS related plates' % len(plates))
 
     logger.info('Calculating dependency tree')
-    kb.update_dependency_tree()
     logger.info('Dependency tree loaded')
 
     with open(args.ofile, 'w') as ofile:

@@ -81,7 +81,6 @@ def main(argv):
   logger.info("found %d data samples for marker set %s" %
               (len(gds), args.marker_set))
   logger.info("updating dep tree")
-  kb.update_dependency_tree()
   individuals = [get_individual(kb, ds) for ds in gds]
   ds_by_ind_id = dict((i.id, ds) for i, ds in zip(individuals, gds))
   logger.info("getting families")

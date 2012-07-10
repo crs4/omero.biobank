@@ -296,8 +296,6 @@ class OmeroWrapper(CoreOmeroWrapper):
 
   def __dump_to_graph__(self):
     if hasattr(self, 'action'):
-      if not self.proxy.dt:
-        self.proxy.update_dependency_tree()
       self.proxy.dt.dump_node(self)
       self.action.reload()
       if hasattr(self.action, 'target'):
@@ -305,8 +303,6 @@ class OmeroWrapper(CoreOmeroWrapper):
                                 self.action)
 
   def __cleanup__(self):
-    if not self.proxy.dt:
-      self.proxy.update_dependency_tree()
     self.proxy.dt.drop_node(self)
 
   def configure(self, conf):

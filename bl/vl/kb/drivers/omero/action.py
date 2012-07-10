@@ -112,6 +112,4 @@ class Action(wp.OmeroWrapper):
     return assign_vid_and_timestamp(conf, time_stamp_field='beginTime')
 
   def __cleanup__(self):
-    if not self.proxy.dt:
-      self.proxy.update_dependency_tree()
     self.proxy.dt.drop_edge(self)

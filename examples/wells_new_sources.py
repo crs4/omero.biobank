@@ -43,10 +43,6 @@ def main(argv):
         
     kb = KB(driver='omero')(host, user, passwd)
 
-    logger.info('Start preloading dependency tree')
-    kb.update_dependency_tree()
-    logger.info('Dependency tree loaded')
-
     with open(args.out_file, 'w') as ofile:
         writer = csv.DictWriter(ofile, ['target', 'new_source_type', 
                                         'new_source', 'old_source'],

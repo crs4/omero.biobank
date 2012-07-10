@@ -49,7 +49,6 @@ def main(argv):
     logger = make_logger(args.loglevel, args.logfile)
 
     kb = KB(driver='omero')(args.host, args.user, args.passwd)
-    kb.update_dependency_tree()
 
     with open(args.nodes_file) as f:
         reader = csv.DictReader(f, delimiter='\t')

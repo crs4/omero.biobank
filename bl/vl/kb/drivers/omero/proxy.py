@@ -81,9 +81,6 @@ class Proxy(ProxyCore):
       raise ValueError("%d kb objects map to %s" % (len(res), vid))
     return res[0]
 
-  def update_dependency_tree(self):
-    self.dt = DependencyTree(self)
-
   def create_global_tables(self, destructive=False):
     self.eadpt.create_ehr_table(destructive=destructive)
 
