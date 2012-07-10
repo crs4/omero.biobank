@@ -153,7 +153,7 @@ class Recorder(core.Core):
     bad_records = []
     study_label = records[0]['study']
     seen = {}
-    mandatory_fields = ['study', 'gender', 'father', 'mother']
+    mandatory_fields = ['study', 'label', 'gender', 'father', 'mother']
     for i, r in enumerate(records):
       reject = 'Rejecting record %d:' % i
       if self.missing_fields(mandatory_fields, r):
@@ -165,6 +165,13 @@ class Recorder(core.Core):
         continue
       if r['study'] != study_label:
         msg = 'non uniform study label'
+        self.logger.error(reject + msg)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = msg
+        bad_records.append(bad_rec)
+        continue
+      if r['label'] in self.known_enrollments:
+        msg = 'label %s already used in study %s' % (r['label'], study_label)
         self.logger.error(reject + msg)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = msg
