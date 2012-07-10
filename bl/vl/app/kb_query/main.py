@@ -29,6 +29,8 @@ SUBMOD_NAMES = [
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 
+LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
+LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 class App(object):
@@ -65,35 +67,18 @@ class App(object):
     self.parser = parser
     return parser
 
-def make_logger(level_str='INFO', filename=None):
-    formatter = logging.Formatter(
-        fmt = '%(asctime)s|%(levelname)-8s|%(message)s',
-        datefmt = '%Y-%m-%d %H:%M:%S'
-        )
-    logger = logging.getLogger(__name__)
-    for h in logger.handlers:
-        logger.removeHandler(h)
-    if filename:
-        handler = logging.FileHandler(filename, 'w')
-    else:
-        handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(getattr(logging, level_str))
-    return logger
-
 def main(argv=None):
   app = App()
   parser = app.make_parser()
   args = parser.parse_args(argv)
-  # loglevel  = getattr(logging, args.loglevel)
-  # kwargs = {'format'  : LOG_FORMAT,
-  #           'datefmt' : LOG_DATEFMT,
-  #           'level'   : loglevel}
-  # if args.logfile:
-  #   kwargs['filename'] = args.logfile
-  # logging.basicConfig(**kwargs)
-  logger = make_logger(args.loglevel, args.logfile)
+  loglevel  = getattr(logging, args.loglevel)
+  kwargs = {'format'  : LOG_FORMAT,
+            'datefmt' : LOG_DATEFMT,
+            'level'   : loglevel}
+  if args.logfile:
+    kwargs['filename'] = args.logfile
+  logging.basicConfig(**kwargs)
+  logger = logging.getLogger()
   try:
     host = args.host or vlu.ome_host()
     user = args.user or vlu.ome_user()
