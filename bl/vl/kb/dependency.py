@@ -62,63 +62,81 @@ class DependencyTree(object):
         return True
 
     def dump_node(self, obj):
-        self._save_node({'obj_class' : type(obj).__name__,
-                         'obj_id' : obj.id,
-                         'obj_hash' : ome_hash(obj.ome_obj)})
+        self.__save_node__({'obj_class' : type(obj).__name__,
+                            'obj_id' : obj.id,
+                            'obj_hash' : ome_hash(obj.ome_obj)})
 
     def dump_edge(self, source, dest, act):
-        self._save_edge({'act_type' : type(act).__name__,
-                         'act_id' : act.id,
-                         'act_hash' : ome_hash(act.ome_obj)},
-                        ome_hash(source.ome_obj),
-                        ome_hash(dest.ome_obj))
+        self.__save_edge__({'act_type' : type(act).__name__,
+                            'act_id' : act.id,
+                            'act_hash' : ome_hash(act.ome_obj)},
+                           ome_hash(source.ome_obj),
+                           ome_hash(dest.ome_obj))
 
-    def _save_node(self, node_conf):
+    def drop_node(self, obj):
+        node = self.__get_node__(obj)
+        if node:
+            self.graph.vertices.delete(node.eid)
+
+    def drop_edge(self, act):
+        edge = self.__get_edge__(act)
+        if edge:
+            self.graph.edges.delete(edge.eid)
+
+    def __save_node__(self, node_conf):
         self.graph.ome_objects.get_or_create('obj_hash', node_conf['obj_hash'],
                                              node_conf)
 
-    def _save_edge(self, edge_conf, src_hash, dest_hash):
-        edges = list(self.graph.produces.index.lookup(act_hash = edge_conf['act_hash']))
-        if len(edges) == 1:
-            return
-        elif len(edges) == 0:
-            src_node = self.__get_node_by_hash(src_hash)
+    def __save_edge__(self, edge_conf, src_hash, dest_hash):
+        edge = self.get_edge_by_hash__(edge_conf['act_hash'])
+        if not edge:
+            src_node = self.__get_node_by_hash__(src_hash)
             if not src_node:
                 raise DependencyTreeError('Unmapped source node, unable to create the edge')
-            dest_node = self.__get_node_by_hash(dest_hash)
+            dest_node = self.__get_node_by_hash__(dest_hash)
             if not dest_node:
                 raise DependencyTreeError('Unmapped destinantion node, unable to create the edge')
             self.graph.produces.create(src_node, dest_node, **edge_conf)
-        else:
-            raise DependencyTreeError('Multiple edges with act_hash %s' % edge_conf['act_hash'])
 
-    def __get_node(self, obj):
-        return self.__get_node_by_hash(ome_hash(obj.ome_obj))
+    def __get_node__(self, obj):
+        return self.__get_node_by_hash__(ome_hash(obj.ome_obj))
 
-    def __get_node_by_hash(self, node_hash):
+    def __get_edge__(self, act):
+        return self.__get_edge_by_hash__(ome_hash(act.ome_obj))
+
+    def __get_node_by_hash__(self, node_hash):
         nodes = list(self.graph.ome_objects.index.lookup(obj_hash = node_hash))
         if len(nodes) == 1:
             return nodes[0]
         elif len(nodes) == 0:
             return None
         else:
-            raise DependencyTreeError('Multiple nodes with obj_hash = %s' % ome_hash(obj))
+            raise DependencyTreeError('Multiple nodes with obj_hash = %s' % node_hash)
 
-    def __get_ome_obj(self, node):
+    def __get_edge_by_hash__(self, edge_hash):
+        edges = list(self.graph.produces.index.lookup(act_hash = edge_hash))
+        if len(edges) == 1:
+            return edges[0]
+        elif len(edges) == 0:
+            return None
+        else:
+            raise DependencyTreeError('Multiple edges with edge_hash = %s' % edge_hash)
+
+    def __get_ome_obj__(self, node):
         try:
             return self.kb._CACHE(node.obj_hash)
         except KeyError, ke:
             return self.kb.get_by_vid(getattr(self.kb, node.obj_class),
                                       str(node.obj_id))
 
-    def __get_ome_action(self, edge):
+    def __get_ome_action__(self, edge):
         try:
             return self.kb._CACHE(edge.act_hash)
         except KeyError, ke:
             return self.kb.get_by_vid(edge.act_class, edge.act_hash)
 
-    def __get_connected_nodes(self, node, direction, depth,
-                              visited_nodes = None):
+    def __get_connected_nodes__(self, node, direction, depth,
+                                visited_nodes = None):
         if not visited_nodes:
             visited_nodes = set()
         if direction not in (self.DIRECTION_INCOMING,
@@ -141,23 +159,23 @@ class DependencyTree(object):
         else:
             if not depth is None:
                 depth = depth - 1
-            return set.union(*[self.__get_connected_nodes(cn, direction, depth, visited_nodes)
+            return set.union(*[self.__get_connected_nodes__(cn, direction, depth, visited_nodes)
                                for cn in connected])
 
     def get_connected(self, ome_obj, aklass=None,
                       direction = DIRECTION_BOTH, query_depth = None):
-        obj_node = self.__get_node(ome_obj)
+        obj_node = self.__get_node__(ome_obj)
         if not obj_node:
             raise DependencyTreeError('Unable to lookup object %s:%s into the graph' % 
                                       (type(ome_obj).__name__, ome_obj.id))
         try:
-            connected_nodes = self.__get_connected_nodes(obj_node, direction, query_depth)
+            connected_nodes = self.__get_connected_nodes__(obj_node, direction, query_depth)
         except RuntimeError, re:
             raise DependencyTreeError(re) 
         # Remove the first node, we don't need it
         connected_nodes.remove(obj_node)
         if aklass:
-            return [self.__get_ome_obj(cn) for cn in connected_nodes
+            return [self.__get_ome_obj__(cn) for cn in connected_nodes
                     if cn.obj_class == aklass]
         else:
-            return [self.__get_ome_obj(cn) for cn in connected_nodes]
+            return [self.__get_ome_obj__(cn) for cn in connected_nodes]

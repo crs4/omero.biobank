@@ -299,12 +299,15 @@ class OmeroWrapper(CoreOmeroWrapper):
       if not self.proxy.dt:
         self.proxy.update_dependency_tree()
       self.proxy.dt.dump_node(self)
+      self.action.reload()
       if hasattr(self.action, 'target'):
-        self.proxy.dt.dump_edge(self.action.taget, self,
+        self.proxy.dt.dump_edge(self.action.target, self,
                                 self.action)
 
   def __cleanup__(self):
-    pass
+    if not self.proxy.dt:
+      self.proxy.update_dependency_tree()
+    self.proxy.dt.drop_node(self)
 
   def configure(self, conf):
     self.__config__(self.ome_obj, conf)
