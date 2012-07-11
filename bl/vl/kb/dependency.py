@@ -1,6 +1,7 @@
 from bulbs.model import Node, Relationship
 from bulbs.property import String
 from bulbs.neo4jserver import Graph, Config
+from bulbs.config import log as bulbs_log
 
 # Used to capture neo4j connection exceptions
 import httplib2
@@ -45,6 +46,9 @@ class DependencyTree(object):
         gconf = Config(vlconf.NEO4J_URI)
         try:
             self.graph = Graph(gconf)
+            # Resolve the logger issue
+            for h in bulbs_log.root.handlers:
+                bulbs_log.root.removeHandler(h)
         except httplib2.ServerNotFoundError:
             raise DependencyTreeError('Unable to find Node4J server at %s' % 
                                       vlconf.NEO4J_URI)

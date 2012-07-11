@@ -1,8 +1,9 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import logging
-logger = logging.getLogger("proxy_core")
+from bl.vl.utils import get_logger
+
+import time
 import itertools as it
 import numpy as np
 
@@ -97,14 +98,16 @@ class ProxyCore(object):
     self.__class__._CACHE.clear()
 
   def __init__(self, host, user, passwd, group=None, session_keep_tokens=1):
+    self.logger = get_logger('bl.vl.kb.drivers.omero.proxy_core')
     self.user = user
     self.passwd = passwd
     self.group_name = group
     self.client = omero.client(host)
+    for h in self.logger.root.handlers:
+      self.logger.root.removeHandler(h)
     self.session_keep_tokens = session_keep_tokens
     self.transaction_tokens = 0
     self.current_session = None
-    self.logger = logger
 
   def __del__(self):
     if self.current_session:
