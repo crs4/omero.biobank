@@ -18,7 +18,6 @@ SUBMOD_NAMES = [
   "query",
   "extract_genotypes",
   "build_gstudio_datasheet",
-  "build_gstudio_datasheet_neo4j",
   "plates_data_samples",
   "vessels_by_individual",
   "map_to_collection",
