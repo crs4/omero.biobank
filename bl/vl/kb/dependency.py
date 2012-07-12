@@ -133,6 +133,13 @@ class DependencyTree(object):
             return self.kb.get_by_vid(getattr(self.kb, node.obj_class),
                                       str(node.obj_id))
 
+    def __get_ome_obj_by_info__(self, obj_info):
+        try:
+            return self.kb._CACHE[obj_info['object_hash']]
+        except KeyError, ke:
+            return self.kb.get_by_vid(getattr(self.kb, obj_info['object_type']),
+                                      obj_info['object_id'])
+
     def __get_ome_action__(self, edge):
         try:
             return self.kb._CACHE(edge.act_hash)
@@ -166,20 +173,28 @@ class DependencyTree(object):
             return set.union(*[self.__get_connected_nodes__(cn, direction, depth, visited_nodes)
                                for cn in connected])
 
-    def get_connected(self, ome_obj, aklass=None,
-                      direction = DIRECTION_BOTH, query_depth = None):
+    def get_connected_infos(self, ome_obj, aklass=None,
+                            direction = DIRECTION_BOTH, query_depth = None):
         obj_node = self.__get_node__(ome_obj)
         if not obj_node:
-            raise DependencyTreeError('Unable to lookup object %s:%s into the graph' % 
+            raise DependencyTreeError('Unable to find object %s:%s into the graph' %
                                       (type(ome_obj).__name__, ome_obj.id))
         try:
             connected_nodes = self.__get_connected_nodes__(obj_node, direction, query_depth)
         except RuntimeError, re:
-            raise DependencyTreeError(re) 
-        # Remove the first node, we don't need it
-        connected_nodes.remove(obj_node)
+            raise DependencyTreeError(re)
         if aklass:
-            return [self.__get_ome_obj__(cn) for cn in connected_nodes
+            return [{'object_type' : str(cn.obj_class),
+                     'object_id'   : str(cn.obj_id),
+                     'object_hash' : str(cn.obj_hash)} for cn in connected_nodes
                     if cn.obj_class == aklass]
         else:
-            return [self.__get_ome_obj__(cn) for cn in connected_nodes]
+            return[{'object_type' : str(cn.obj_class),
+                    'object_id'   : str(cn.obj_id),
+                    'object_hash' : str(cn.obj_hash)} for cn in connected_nodes]
+
+    def get_connected(self, ome_obj, aklass=None,
+                      direction = DIRECTION_BOTH, query_depth = None):
+        connected_nodes_infos = self.get_connected_infos(ome_obj, aklass, direction,
+                                                         query_depth)
+        return [self.__get_ome_obj_by_info__(cni) for cni in connected_nodes_infos]
