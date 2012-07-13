@@ -12,6 +12,8 @@
     <properties>
       <required name="flowCell" type="ome.model.vl.FlowCell"/>
       <required name="slot" type="int"/>
+      <!-- flowCell.lane_slot -->
+      <required name="laneUK" type="string" unique="true"/>
     </properties>
   </type>
 
