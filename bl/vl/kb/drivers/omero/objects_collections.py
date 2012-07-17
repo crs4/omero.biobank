@@ -63,11 +63,13 @@ class FlowCell(SlottedContainer):
 class Lane(Container):
   OME_TABLE = 'Lane'
   __fields__ = [('flowCell', FlowCell, wp.REQUIRED),
-                ('slot', wp.INT, wp.REQUIRED)]
+                ('slot', wp.INT, wp.REQUIRED),
+                ('laneUK', wp.STRING, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
     if not 'laneUK' in conf:
       conf['laneUK'] = make_unique_key(conf['flowCell'].label, conf['slot'])
+    return super(Lane, self).__preprocess_conf__(conf)
 
 class LaneSlot(wp.OmeroWrapper):
 
