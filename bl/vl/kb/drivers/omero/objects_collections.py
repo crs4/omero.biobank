@@ -71,6 +71,11 @@ class Lane(Container):
       conf['laneUK'] = make_unique_key(conf['flowCell'].label, conf['slot'])
     return super(Lane, self).__preprocess_conf__(conf)
 
+  def __update_constraints__(self):
+    l_uk = make_unique_key(self.flowCell.label, self.slot)
+    setattr(self.ome_obj, 'laneUK',
+            self.to_omero(self.__field__['laneUK'][0], l_uk))
+
 class LaneSlot(wp.OmeroWrapper):
 
   OME_TABLE = 'LaneSlot'
