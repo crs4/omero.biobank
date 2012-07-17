@@ -14,6 +14,7 @@ import itertools as it
 from datetime import datetime
 
 from bl.vl.kb.drivers.omero.objects_collections import ContainerStatus
+from bl.vl.kb.drivers.omero.utils import make_unique_key
 
 import core
 from version import version
@@ -34,6 +35,7 @@ class Recorder(core.Core):
     self.operator = operator
     self.action_setup_conf = action_setup_conf
     self.preloaded_flowcells = {}
+    self.preloaded_lanes = {}
 
   def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
@@ -207,9 +209,21 @@ class Recorder(core.Core):
     return good_records, bad_records
 
   def do_consistency_checks_lane(self, records):
+    def build_key(r):
+      flow_cell = self.preloaded_flowcells[r['flow_cell']]
+      return make_unique_key(flow_cell.label, r['slot'])
+    def preload_lanes():
+      self.logger.info('start preloading lanes')
+      lanes = self.kb.get_objects(self.kb.Lane)
+      for l in lanes:
+        assert not l.laneUK in self.preloaded_lanes
+        self.preloaded_lanes[l.laneUK] = l
+      self.logger.info('done preloading lanes')
     good_records = []
     bad_records = []
+    good_slots = {}
     mandatory_fields = ['flow_cell', 'slot']
+    preload_lanes()
     for i, r in enumerate(records):
       reject = 'Rejecting import of line %d.' % i
       if self.missing_fields(mandatory_fields, r):
@@ -226,28 +240,48 @@ class Recorder(core.Core):
         bad_rec['error'] = m
         bad_records.append(bad_rec)
         continue
+      if r['flow_cell'] not in self.preloaded_flowcells:
+        m = '%s is not a know flow cell.' % r['flow_cell']
+        self.logger.warning(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
+        continue
+      key = build_key(r)
+      if key in self.preloaded_lanes:
+        m = 'slot %s already assigned to flow cell %s.' % (r['slot'], r['flow_cell'])
+        self.logger.warning(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
+        continue
+      if key in good_slots:
+        m = 'slot %s assigned to another lane in this file.' % r['slot']
+        self.logger.warning(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
+        continue
+      good_slots[key] = r
       good_records.append(r)
     return good_records, bad_records
 
   def process_chunk(self, otsv, chunk, study, asetup, device, category):
-    actions = []
-    for r in chunk:
-      acat = self.kb.ActionCategory.IMPORT
-      conf = {
-        'setup': asetup,
-        'device': device,
-        'actionCategory': acat,
-        'operator': self.operator,
-        'context': study,
-        }
-      actions.append(self.kb.factory.create(self.kb.Action, conf))
-    self.kb.save_array(actions)
+    acat = self.kb.ActionCategory.IMPORT
+    aconf = {
+      'setup': asetup,
+      'device': device,
+      'actionCategory': acat,
+      'operator': self.operator,
+      'context': study,
+      }
+    action = self.kb.save(self.kb.factory.create(self.kb.Action, aconf))
+    action.unload()
     containers = []
-    for a, r in it.izip(actions, chunk):
-      a.unload()  # we need to do this, or the next save will choke
+    for r in chunk:
       conf = {
         'label': r['label'],
-        'action': a,
+        'action': action,
         'status': getattr(ContainerStatus, r['container_status'].upper()),
         }
       for k in 'rows', 'columns', 'slot':
@@ -255,11 +289,11 @@ class Recorder(core.Core):
           conf[k] = int(r[k])
       if 'flow_cell' in r and r['flow_cell']:
         conf['flowCell'] = self.preloaded_flowcells[r['flow_cell']]
-      if 'number_of_slots' in r and r['number_of_slots'] != '':
+      if 'number_of_slots' in r and r['number_of_slots']:
         conf['numberOfSlots'] = int(r['number_of_slots'])
       if 'barcode' in r and r['barcode']:
         conf['barcode'] = r['barcode']
-      if 'creation_date' in r and r['creation_date'] != '':
+      if 'creation_date' in r and r['creation_date']:
         conf['creationDate'] = time.mktime(datetime.strptime(r['creation_date'], '%d/%m/%Y').timetuple())
       containers.append(self.kb.factory.create(self.container_klass, conf))
     self.kb.save_array(containers)
