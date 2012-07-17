@@ -262,6 +262,13 @@ class Recorder(core.Core):
         bad_rec['error'] = m
         bad_records.append(bad_rec)
         continue
+      if int(r['slot']) <= 0 or int(r['slot']) > self.preloaded_flowcells[r['flow_cell']].numberOfSlots:
+        m = 'value for the slot column is out of range.'
+        self.logger.warning(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
+        continue
       good_slots[key] = r
       good_records.append(r)
     return good_records, bad_records
