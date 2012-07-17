@@ -7,14 +7,13 @@ import omero.rtypes as ort
 import wrapper as wp
 from action import Action
 from utils import assign_vid_and_timestamp, make_unique_key, assign_vid
-from objects_collections import VLCollection
-from objects_collections import TiterPlate
+from objects_collections import VLCollection, Lane, TiterPlate
 
 
 class VesselContent(wp.OmeroWrapper):
   
   OME_TABLE = 'VesselContent'
-  __enums__ = ["EMPTY", "BLOOD", "SERUM", "DNA"]
+  __enums__ = ["EMPTY", "BLOOD", "SERUM", "DNA", "RNA"]
 
 
 class VesselStatus(wp.OmeroWrapper):
@@ -108,3 +107,26 @@ class VesselsCollectionItem(wp.OmeroWrapper):
     vci_uk = make_unique_key(self.vesselsCollection.id, self.vessel.id)
     setattr(self.ome_obj, 'vesselsCollectionItemUK',
             self.to_omero(self.__fields__['vesselsCollectionItemUK'][0], vci_uk))
+
+
+class LaneSlot(wp.OmeroWrapper):
+
+  OME_TABLE = 'LaneSlot'
+  __fields__ = [('vid', wp.VID, wp.REQUIRED),
+                ('lane', Lane, wp.REQUIRED),
+                ('tag', wp.STRING, wp.OPTIONAL),
+                ('content', VesselContent, wp.REQUIRED),
+                ('laneSlotUK', wp.STRING, wp.OPTIONAL),
+                ('action', Action, wp.REQUIRED),
+                ('lastUpdate', Action, wp.OPTIONAL)]
+
+  def __preprocess_conf__(self, conf):
+    if not 'laneSlotUK' in conf and 'tag' in conf:
+      conf['laneSlotUK'] = make_unique_key(conf['tag'], conf['lane'].label)
+    return assing_vid(conf)
+
+  def __update_constraints__(self):
+    if self.tag:
+      ls_uk = make_unique_key(self.tag, self.lane.label)
+      setattr(self.ome_obj, 'laneSlotUK',
+              self.to_omero(self.__field__['laneSlotUK'][0], ls_uk))

@@ -22,6 +22,7 @@ the amount and type of fluid they contain and of its usability.
     <entry name="BLOOD"/>
     <entry name="SERUM"/>
     <entry name="DNA"/>
+    <entry name="RNA"/>
   </enum>
 
   <enum id="ome.model.vl.VesselStatus">

@@ -76,27 +76,6 @@ class Lane(Container):
     setattr(self.ome_obj, 'laneUK',
             self.to_omero(self.__field__['laneUK'][0], l_uk))
 
-class LaneSlot(wp.OmeroWrapper):
-
-  OME_TABLE = 'LaneSlot'
-  __fields__ = [('vid', wp.VID, wp.REQUIRED),
-                ('lane', Lane, wp.REQUIRED),
-                ('tag', wp.STRING, wp.OPTIONAL),
-                ('laneSlotUK', wp.STRING, wp.OPTIONAL),
-                ('action', Action, wp.REQUIRED),
-                ('lastUpdate', Action, wp.OPTIONAL)]
-
-  def __preprocess_conf__(self, conf):
-    if not 'laneSlotUK' in conf and 'tag' in conf:
-      conf['laneSlotUK'] = make_unique_key(conf['tag'], conf['lane'].label)
-    return assing_vid(conf)
-
-  def __update_constraints__(self):
-    if self.tag:
-      ls_uk = make_unique_key(self.tag, self.lane.label)
-      setattr(self.ome_obj, 'laneSlotUK',
-              self.to_omero(self.__field__['laneSlotUK'][0], ls_uk))
-
 
 class DataCollection(VLCollection):
   
