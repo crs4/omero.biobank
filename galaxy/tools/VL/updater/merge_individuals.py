@@ -43,8 +43,7 @@ def make_parser():
                         default='localhost')
     parser.add_argument('-U', '--user', type=str, help='omero user',
                         default='root')
-    parser.add_argument('-P', '--passwd', type=str, required = True,
-                        help='omero password')
+    parser.add_argument('-P', '--passwd', type=str, help='omero password')
     parser.add_argument('-O', '--operator', type=str, help='operator',
                         required=True)
     parser.add_argument('--in_file', type=str, required = True,
