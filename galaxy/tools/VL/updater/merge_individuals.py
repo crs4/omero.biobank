@@ -39,10 +39,8 @@ def make_parser():
     parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
     parser.add_argument('--loglevel', type=str, choices = LOG_LEVELS,
                         help='logging level (default=INFO)', default='INFO')
-    parser.add_argument('-H', '--host', type=str, help='omero hostname',
-                        default='localhost')
-    parser.add_argument('-U', '--user', type=str, help='omero user',
-                        default='root')
+    parser.add_argument('-H', '--host', type=str, help='omero hostname')
+    parser.add_argument('-U', '--user', type=str, help='omero user')
     parser.add_argument('-P', '--passwd', type=str, help='omero password')
     parser.add_argument('-O', '--operator', type=str, help='operator',
                         required=True)
