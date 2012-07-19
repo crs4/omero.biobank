@@ -67,6 +67,8 @@ class Lane(Container):
                 ('laneUK', wp.STRING, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
+    if not 'label' in conf:
+      conf['label'] = '%s:%s' % (conf['flowCell'].label, conf['slot'])
     if not 'laneUK' in conf:
       conf['laneUK'] = make_unique_key(conf['flowCell'].label, conf['slot'])
     return super(Lane, self).__preprocess_conf__(conf)

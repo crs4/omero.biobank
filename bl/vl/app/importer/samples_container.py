@@ -104,7 +104,9 @@ class Recorder(core.Core):
     bad_records = []
     grecs_barcodes = {}
     grecs_labels = {}
-    mandatory_fields = ['label', 'container_status']
+    mandatory_fields = ['container_status']
+    if self.container_klass != self.kb.Lane:
+      mandatory_fields.add('label')
     for i, r in enumerate(records):
       reject = 'Rejecting import of line %d.' % i
       if self.missing_fields(mandatory_fields, r):
@@ -114,7 +116,7 @@ class Recorder(core.Core):
         bad_rec['error'] = m
         bad_records.append(bad_rec)
         continue
-      if r['label'] in grecs_labels:
+      if 'label' in r and r['label'] in grecs_labels:
         m = 'label %s already used in record %d. ' % (r['label'],
                                                       grecs_labels[r['label']])
         self.logger.warning(m + reject)
@@ -137,7 +139,7 @@ class Recorder(core.Core):
         bad_rec['error'] = m
         bad_records.append(bad_rec)
         continue
-      if self.known_containers.has_key(r['label']):
+      if 'label' in r and self.known_containers.has_key(r['label']):
         m = 'there is a pre-existing object with label %s. ' % r['label']
         self.logger.warn(m + reject)
         bad_rec = copy.deepcopy(r)
@@ -156,7 +158,8 @@ class Recorder(core.Core):
           continue
       if r['barcode'] != '':
         grecs_barcodes[r['barcode']] = i
-      grecs_labels[r['label']] = i
+      if 'label' in r:
+        grecs_labels[r['label']] = i
       good_records.append(r)
     return good_records, bad_records
 
@@ -287,11 +290,10 @@ class Recorder(core.Core):
     containers = []
     for r in chunk:
       conf = {
-        'label': r['label'],
         'action': action,
         'status': getattr(ContainerStatus, r['container_status'].upper()),
         }
-      for k in 'rows', 'columns', 'slot':
+      for k in 'rows', 'columns', 'slot', 'label':
         if k in r and r[k]:
           conf[k] = int(r[k])
       if 'flow_cell' in r and r['flow_cell']:
