@@ -30,20 +30,19 @@
     </properties>
   </type>
 
-  <type id="ome.model.vl.SequencingDataSample"
+  <type id="ome.model.vl.RawSeqDataSample"
 	superclass="ome.model.vl.DataSample">
     <properties>
-      <required name="collectionIndex" type="int"/>
+      <required name="read" type="int"/>
+      <required name="lane" type="ome.model.vl.Lane"/>
     </properties>
   </type>
 
-  <type id="ome.model.vl.SequencerOutput"
-	superclass="ome.model.vl.DataCollection">
+  <type id="ome.model.vl.SeqDataSample"
+	superclass="ome.model.vl.DataSample">
     <properties>
-      <required name="multiplexed" type="boolean"/>
-      <required name="read1" type="ome.model.vl.DataCollection"/>
-      <optional name="read2" type="ome.model.vl.DataCollection"/>
-      <optional name="read3" type="ome.model.vl.DataCollection"/>
+      <optional name="sample" type="ome.model.vl.Vessel"/>
     </properties>
   </type>
+
 </types>
