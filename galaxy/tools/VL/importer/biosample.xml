@@ -124,6 +124,15 @@
     </conditional>
 
     <!-- ************************************************** -->
+    <conditional name="wait_for_trigger">
+      <param name="enable_trigger" type="boolean" checked="false"
+	     label="Wait for another tool to end before running this tool"/>
+      <when value="true">
+	<param format="txt" name="trigger_file" type="data"
+	       label="Select the LOG file that will be used as trigger"/>
+      </when>
+    </conditional>
+
     <conditional name="advanced_configuration">
       <param name="configuration_level" type="select" 
 	     label="Configuration level">
