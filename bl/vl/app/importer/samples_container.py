@@ -106,7 +106,7 @@ class Recorder(core.Core):
     grecs_labels = {}
     mandatory_fields = ['container_status']
     if self.container_klass != self.kb.Lane:
-      mandatory_fields.add('label')
+      mandatory_fields.append('label')
     for i, r in enumerate(records):
       reject = 'Rejecting import of line %d.' % i
       if self.missing_fields(mandatory_fields, r):
@@ -293,9 +293,11 @@ class Recorder(core.Core):
         'action': action,
         'status': getattr(ContainerStatus, r['container_status'].upper()),
         }
-      for k in 'rows', 'columns', 'slot', 'label':
+      for k in 'rows', 'columns', 'slot':
         if k in r and r[k]:
           conf[k] = int(r[k])
+      if 'label' in r:
+        conf['label'] = r['label']
       if 'flow_cell' in r and r['flow_cell']:
         conf['flowCell'] = self.preloaded_flowcells[r['flow_cell']]
       if 'number_of_slots' in r and r['number_of_slots']:
