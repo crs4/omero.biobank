@@ -85,15 +85,6 @@ class DataCollection(VLCollection):
   __fields__ = []
 
 
-class SequencerOutput(DataCollection):
-
-  OME_TABLE = 'SequencerOutput'
-  __fields__ = [('multiplexed', wp.BOOLEAN, wp.REQUIRED),
-                ('read1', DataCollection, wp.REQUIRED),
-                ('read2', DataCollection, wp.OPTIONAL),
-                ('read3', DataCollection, wp.OPTIONAL)]
-
-
 class DataCollectionItem(wp.OmeroWrapper):
   
   OME_TABLE = 'DataCollectionItem'
@@ -113,3 +104,4 @@ class DataCollectionItem(wp.OmeroWrapper):
     dci_uk = make_unique_key(self.dataCollection.id, self.dataSample.id)
     setattr(self.ome_obj, 'dataCollectionItemUK',
             self.to_omero(self.__fields__['dataCollectionItemUK'][0], dci_uk))
+
