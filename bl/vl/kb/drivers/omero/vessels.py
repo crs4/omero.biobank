@@ -123,7 +123,7 @@ class LaneSlot(wp.OmeroWrapper):
   def __preprocess_conf__(self, conf):
     if not 'laneSlotUK' in conf and 'tag' in conf:
       conf['laneSlotUK'] = make_unique_key(conf['tag'], conf['lane'].label)
-    return assing_vid(conf)
+    return assign_vid(conf)
 
   def __update_constraints__(self):
     if self.tag:

@@ -154,12 +154,13 @@ class Recorder(core.Core):
             content = getattr(self.kb.VesselContent, r['content'])
             conf = {
                 'lane': lane,
-                'content': content
+                'content': content,
+                'action': a
                 }
             if 'tag' in r:
                 conf['tag'] = r['tag']
             laneslots.append(self.kb.factory.create(self.kb.LaneSlot, conf))
-        assert len(laneslots) == lane(chunk)
+        assert len(laneslots) == len(chunk)
         self.kb.save_array(laneslots)
         for ls in laneslots:
             otsv.writerow({
@@ -189,7 +190,7 @@ def implementation(logger, host, user, passwd, args):
     action_setup_conf = Recorder.find_action_setup_conf(args)
     recorder = Recorder(host=host, user=user, passwd=passwd,
                         keep_tokens=args.keep_tokens,
-                        batch_size=args.batch_size, operator=args.operator,
+                        operator=args.operator,
                         action_setup_conf=action_setup_conf, logger=logger)
     recorder.logger.info('start processing file %s' % args.ifile.name)
     f = csv.DictReader(args.ifile, delimiter='\t')
@@ -198,7 +199,7 @@ def implementation(logger, host, user, passwd, args):
     canonizer.canonize_list(records)
     if len(records) > 0:
         o = csv.DictWriter(args.ofile,
-                           fieldnames = ['study', 'label', 'type', 'vid'],
+                           fieldnames = ['study', 'lane', 'tag', 'vid'],
                            delimiter='\t', lineterminator = os.linesep)
         o.writeheader()
         report_fnames = copy.deepcopy(f.fieldnames)

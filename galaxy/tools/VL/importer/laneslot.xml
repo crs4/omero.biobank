@@ -15,13 +15,13 @@
     --logfile=${log_file}
     laneslot
     #if str($study) != 'use_provided'
-      --study ${study}
+      --study=${study}
     #end if
     #if str($source_type) != 'use_provided'
-      --source_type ${source_type)
+      --source_type=${source_type}
     #end if
     #if str($content) != 'use_provided'
-      --content ${content}
+      --content=${content}
     #end if
   </command>
   <inputs>
@@ -56,7 +56,7 @@
     <param name="content" type="select"
 	   label="Type of content"
 	   help="Choose from the legal types. See below.">
-      <option value="use_provided" selected="true>
+      <option value="use_provided" selected="true">
 	Records provide content type
       </option>
       <option value="DNA">DNA</option>
