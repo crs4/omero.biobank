@@ -1,4 +1,5 @@
 import sys, csv, argparse, logging, os
+from collections import Counter
 
 from bl.vl.kb import KnowledgeBase as KB
 import bl.vl.kb.drivers.omero.utils as vlu
@@ -89,12 +90,30 @@ def main(argv):
 
     with open(args.in_file) as infile, open(args.out_file, 'w') as outfile:
         reader = csv.DictReader(infile, delimiter='\t')
+        records = list(reader)
+        logger.info('Check for duplicated in \'individual\' column')
+        recs_by_ind = {}
+        for rec in records:
+            recs_by_ind.setdefault(rec['individual'], []).append(rec)
+        ct = Counter()
+        duplicated = []
+        for k,v in recs_by_ind.iteritems():
+            if len(v) > 1:
+                duplicated.append(k)
+        for dupl in duplicated:
+            logger.info('Individual %s is a duplicated' % dupl)
+            for r in recs_by_ind.pop(dupl):
+                logger.info('Removing record %r' % r)
+        good_records = sum(recs_by_ind.itervalues(), [])
+        logger.info('Duplicated check completed')
         writer = csv.DictWriter(outfile, reader.fieldnames, delimiter='\t')
         writer.writeheader()
-        for row in reader:
+        logger.info('Checking records')
+        for row in good_records:
             if check_row(row, inds_lookup, kb):
                 writer.writerow(row)
                 logger.debug('Record %r written in output file' % row)
+        logger.info('Records check completed')
 
 if __name__ == '__main__':
     main(sys.argv[1:])
