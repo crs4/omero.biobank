@@ -7,6 +7,10 @@ from vessels import Vessel
 from objects_collections import Lane
 
 
+class SequencerOutput(DataSample):
+  OME_TABLE = 'SequencerOutput'
+  __fields__ = []
+
 class RawSeqDataSample(DataSample):
   
   OME_TABLE = 'RawSeqDataSample'

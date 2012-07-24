@@ -30,6 +30,12 @@
     </properties>
   </type>
 
+  <type id="ome.model.vl.SequencerOutput"
+	superclass="ome.model.vl.DataSample">
+    <properties>
+    </properties>
+  </type>
+
   <type id="ome.model.vl.RawSeqDataSample"
 	superclass="ome.model.vl.DataSample">
     <properties>
