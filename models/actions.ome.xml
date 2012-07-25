@@ -138,10 +138,4 @@ END_COPYRIGHT
     </properties>
   </type>
   
-  <type id="ome.model.vl.ActionOnCollection"
-	superclass="ome.model.vl.Action">
-    <properties>
-      <required name="target" type="ome.model.vl.VLCollection"/>
-    </properties>
-  </type>
 </types>

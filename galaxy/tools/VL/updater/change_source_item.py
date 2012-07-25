@@ -140,8 +140,8 @@ def retrieve_action_type(target, kb):
         return kb.ActionOnDataCollectionItem
     elif tklass == 'Action':
         return kb.ActionOnAction
-    elif tklass == 'VLCollection':
-        return kb.ActionOnCollection
+    # elif tklass == 'VLCollection':
+    #     return kb.ActionOnCollection
     else:
         raise ValueError('No Action related to %s klass' % tklass)
             
