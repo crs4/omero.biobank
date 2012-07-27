@@ -98,6 +98,17 @@
   </outputs>
 
   <help>
-    TODO: write help!
+A lane slot record will have the following fields::
+
+  lane     tag     content    source
+  V123411  ATCACG  DNA        V4512415
+  V123411  CGATGT  DNA        V1415512
+  V412511          DNA        V1909012
+  V661251  TGACCA  DNA        V1123111
+  V661251  CTTGTA  DNA        V1211141
+  ....
+
+the content column can be option if passed as script's input value,
+tag column is optional too.
   </help>
 </tool>
