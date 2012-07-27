@@ -135,12 +135,56 @@
     <data format="txt" name="logfile" label="${tool.name}.logfile"/>
   </outputs>
   <help>
-Will read in a csv file with the following columns::
+A container record will have the following fields::
 
-  study  label   barcode rows columns maker model
-  ASTUDY p090    2399389 32   48      xxxx  yyy
+  label         container_status  creation_date
+  A_CONTAINER   USABLE            13/02/2012
+  B_CONTAINER   INSTOCK           12/01/2001
+  C_CONTAINER   USABLE            25/04/2012
+  ....
 
-The maker and model columns are optional, as well as the barcode one.
-Default plate dimensions can be provided via a flag.
+the creation_date column is optional, if not specified current date
+will be set as the object's creation date, also the container_status
+column can be optional if this values is passed as input parameter.
+
+
+When importing new containers, special fields can be included in the
+CSV file depending on the type of the objects that you want to
+import.
+
+For TITER PLATES objects the syntax can be the following::
+
+  label         barcode    container_status  rows  columns
+  A_TITERPLATE  XXYYZZ111  INSTOCK           8     12
+  B_TITERPLATE  XXYYZZ112  INSTOCK           8     12
+  C_TITERPLATE  XXYYZZ113  READY             8     12
+  ....
+
+rows and columns values can be optional if these values are passed as
+input parameters, barcode column is optional.
+
+For FLOW CELL objects the syntax can be the following::
+
+  label       barcode     container_status  number_of_slots
+  A_FLOWCELL  XXYYZZ221   INSTOCK           8
+  B_FLOWCELL  XXYYZZ222   INSTOCK           8
+  C_FLOWCELL  XXYYZZ223   INSTOCK           8
+  ....
+
+number_of_slots column can be optional if this value is passed as
+input paramter, barcode column is optional.
+
+For LANE objects the syntax can be the following::
+
+  flow_cell   slot  container_status
+  V112441441  1     INSTOCK
+  V112441441  2     INSTOCK
+  V112441441  3     INSTOCK
+  V351145519  1     INSTOCK
+  V351145519  2     INSTOCK
+  ....
+
+for Lane objects, no label column has to be provided, the importer
+will automatically calculate the labels for each imported object.
   </help>
 </tool>
