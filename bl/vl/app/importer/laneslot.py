@@ -2,7 +2,19 @@
 Import laneslot
 ===============
 
-TODO: add documentation
+A lane slot record will have the following fields::
+
+  lane     tag     content    source
+  V123411  ATCACG  DNA        V4512415
+  V123411  CGATGT  DNA        V1415512
+  V412511          DNA        V1909012
+  V661251  TGACCA  DNA        V1123111
+  V661251  CTTGTA  DNA        V1211141
+  ....
+
+the content column can be option if passed as script's input value,
+tag column is optional too.
+
 """
 
 import os, csv, json, time, re, copy
@@ -78,7 +90,10 @@ class Recorder(core.Core):
     def do_consistency_checks(self, records):
         def build_key(r):
             lane = self.preloaded_lanes[r['lane']]
-            return make_unique_key(r['tag'], lane.label)
+            if r['tag']:
+                return make_unique_key(r['tag'], lane.label)
+            else:
+                return make_unique_key(lane.label)
         good_records = []
         bad_records = []
         grecs_keys = {}
@@ -107,16 +122,22 @@ class Recorder(core.Core):
                 bad_records.append(bad_rec)
                 continue
             key = build_key(r)
-            if 'tag' in r and r['tag'] and key in self.preloaded_laneslots:
-                m = 'tag %s alredy used in lane %s' % (r['tag'], r['lane'])
+            if key in self.preloaded_laneslots:
+                if 'tag' in r and r['tag']:
+                    m = 'tag %s alredy used in lane %s' % (r['tag'], r['lane'])
+                else:
+                    m = 'lane %s already contains an untagged sample' % r['lane']
                 self.logger.warning(reject + m)
                 bad_rec = copy.deepcopy(r)
                 bad_rec['error'] = m
                 bad_records.append(bad_rec)
                 continue
-            if 'tag' in r and r['tag'] and key in grecs_keys:
-                m = 'another record uses tag %s in lane %s' % (r['tag'],
-                                                               r['lane'])
+            if key in grecs_keys:
+                if 'tag' in r and r['tag']:
+                    m = 'another record uses tag %s in lane %s' % (r['tag'],
+                                                                   r['lane'])
+                else:
+                    m = 'another record is going to assing an untagged sample to lane %s' % r['lane']
                 self.logger.warning(reject + m)
                 bad_rec = copy.deepcopy(r)
                 bad_rec['error'] = m

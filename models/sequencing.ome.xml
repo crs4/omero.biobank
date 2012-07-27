@@ -23,8 +23,10 @@
       <required name="lane" type="ome.model.vl.Lane"/>
       <optional name="tag" type="string"/>
       <required name="content" type="ome.model.vl.VesselContent"/>
-      <!-- tag_lane.label -->
-      <optional name="laneSlotUK" type="string" unique="true"/>
+      <!-- tag_lane.label if tag is defined else lane.label,
+       this means that a non-tagged sample can appear into a lane only once
+       (the sample is the target of the action field)-->
+      <required name="laneSlotUK" type="string" unique="true"/>
       <required name="action" type="ome.model.vl.Action"/>
       <optional name="lastUpdate" type="ome.model.vl.Action"/>
     </properties>

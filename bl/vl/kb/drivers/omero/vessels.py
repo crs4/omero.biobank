@@ -116,13 +116,16 @@ class LaneSlot(wp.OmeroWrapper):
                 ('lane', Lane, wp.REQUIRED),
                 ('tag', wp.STRING, wp.OPTIONAL),
                 ('content', VesselContent, wp.REQUIRED),
-                ('laneSlotUK', wp.STRING, wp.OPTIONAL),
+                ('laneSlotUK', wp.STRING, wp.REQUIRED),
                 ('action', Action, wp.REQUIRED),
                 ('lastUpdate', Action, wp.OPTIONAL)]
 
   def __preprocess_conf__(self, conf):
-    if not 'laneSlotUK' in conf and 'tag' in conf:
-      conf['laneSlotUK'] = make_unique_key(conf['tag'], conf['lane'].label)
+    if not 'laneSlotUK' in conf:
+      if 'tag' in conf:
+        conf['laneSlotUK'] = make_unique_key(conf['tag'], conf['lane'].label)
+      else:
+        conf['laneSlotUK'] = make_unique_key(conf['lane'].label)
     return assign_vid(conf)
 
   def __update_constraints__(self):
@@ -130,4 +133,8 @@ class LaneSlot(wp.OmeroWrapper):
       ls_uk = make_unique_key(self.tag, self.lane.label)
       setattr(self.ome_obj, 'laneSlotUK',
               self.to_omero(self.__field__['laneSlotUK'][0], ls_uk))
+    else:
+      ls_uk = make_unique_key(self.lane.label)
+      setattr(self.ome_obj, 'laneSlotUK',
+              selt.to_omero(self.__field__['laneSlotUK'][0], ls_uk))
 
