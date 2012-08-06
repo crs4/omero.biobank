@@ -22,14 +22,14 @@ from bl.vl.app.importer.core import Core
 from bl.vl.genotype.algo import project_to_discrete_genotype
 
 
-class KinshipWriter(object):
+class Writer(object):
 
     def __init__(self, mset, genotypes_out_file, samples_list_out_file,
                  transpose_output=False, ignore_duplicated=False):
         self.mset = mset
-        self.out_k_file = genotypes_out_file
+        self.out_gt_file = genotypes_out_file
         self.out_ds_file = samples_list_out_file
-        self.out_k_csvw = csv.writer(self.out_k_file, delimiter='\t')
+        self.out_gt_csvw = csv.writer(self.out_gt_file, delimiter='\t')
         self.out_ds_csvw = csv.writer(self.out_ds_file, delimiter='\t')
         self.tro = transpose_output
         self.igd = ignore_duplicated
@@ -52,7 +52,7 @@ class KinshipWriter(object):
                     disc_probs = [allele_patterns[x]
                                   for x in project_to_discrete_genotype(probs)]
                     if self.tro:
-                        self.out_k_csvw.writerow(disc_probs)
+                        self.out_gt_csvw.writerow(disc_probs)
                     else:
                         self.out_data.append(disc_probs)
 
@@ -60,8 +60,8 @@ class KinshipWriter(object):
         if len(self.out_data) > 0:
             self.out_data = np.array(self.out_data).transpose()
             for d in self.out_data:
-                self.out_k_csvw.writerow(d)
-        self.out_k_file.close()
+                self.out_gt_csvw.writerow(d)
+        self.out_gt_file.close()
         self.out_ds_file.close()
 
 
@@ -107,16 +107,16 @@ class App(Core):
             'genotypes_out_file': genotypes_out_file,
             'samples_list_out_file': samples_list_out_file
             }
-        kinship_writer = KinshipWriter(**kw_args)
+        writer = Writer(**kw_args)
         self.logger.info('Writing records')
         for ind in inds:
             self.logger.debug(
                 'Writing record for individual %s (%d/%d)' % (
                     ind.id, inds.index(ind) + 1, len(inds)
                     ))
-            kinship_writer.write_record(ind, dc_samples)
+            writer.write_record(ind, dc_samples)
         self.logger.info('Closing writer')
-        kinship_writer.close()
+        writer.close()
         self.logger.info('Job complete')
 
 
@@ -150,5 +150,5 @@ def implementation(logger, host, user, passwd, args):
 
 def do_register(registration_list):
     help_doc = "Extract genotype data in tabular format"
-    registration_list.append(('kinship_input', help_doc, make_parser,
+    registration_list.append(('extract_gt', help_doc, make_parser,
                               implementation))

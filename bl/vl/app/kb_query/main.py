@@ -16,7 +16,7 @@ SUBMOD_NAMES = [
   "global_stats",
   "selector",
   "query",
-  "build_kinship_input",
+  "extract_genotypes",
   "build_gstudio_datasheet",
   "plates_data_samples",
   "vessels_by_individual",
