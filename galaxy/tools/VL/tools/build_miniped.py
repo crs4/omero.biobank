@@ -5,8 +5,6 @@
 A rough example of basic pedigree info generation.
 """
 
-# HARDWIRED TO IMMUNO DATA
-
 import logging, csv, argparse, sys, os
 
 from bl.vl.kb import KnowledgeBase as KB
@@ -42,7 +40,7 @@ def make_parser():
   parser.add_argument('-U', '--user', type=str, help='omero user')
   parser.add_argument('-P', '--passwd', type=str, help='omero password')
   parser.add_argument('-S', '--study', type=str, required=True,
-                      help='study used to retrieve individuals that will be written to ped file')
+                      help='a list of comma separated studies used to retrieve individuals that will be written to ped file')
   parser.add_argument('--ofile', type=str, help='output file path',
                       required=True)
   return parser
@@ -85,21 +83,34 @@ def main(argv):
     sys.exit(ve)
 
   kb = KB(driver='omero')(host, user, passwd)
-  logging.debug('Loading all individuals from omero')
+  logger.debug('Loading all individuals from omero')
   all_inds = kb.get_objects(kb.Individual)  # store all inds to cache
-  logging.debug('%d individuals loaded' % len(all_inds))
-  study = kb.get_study(args.study)
-  if study is None:
-    logger.error('Study %s does not exist, stopping program' % args.study)
+  logger.debug('%d individuals loaded' % len(all_inds))
+  studies = [kb.get_study(s) for s in args.study.split(',')]
+  # Removing None values
+  studies = set(studies)
+  try:
+    studies.remove(None)
+  except KeyError:
+    pass
+  studies = list(studies)
+  if len(studies) == 0:
+    logger.error('No matches found for labels %s, stopping program' % args.study)
     sys.exit(2)
-  logging.debug('Loading enrolled individuals for study %s' % study.label)
-  enrolled = kb.get_enrolled(study)
-  logging.debug('%d individuals loaded' % len(enrolled))
-  enrolled_map = dict((e.individual.id, (e.studyCode, e.individual))
-                      for e in enrolled)
-  logging.debug('Loading EHR records')
+  enrolled_map = {}
+  for study in studies:
+    logger.info('Loading enrolled individuals for study %s' % study.label)
+    enrolled = kb.get_enrolled(study)
+    logger.debug('%d individuals loaded' % len(enrolled))
+    for en in enrolled:
+      if en.individual.id not in enrolled_map:
+        enrolled_map[en.individual.id] = ('%s:%s' % (en.study.label, en.studyCode),
+                                          en.individual)
+      else:
+        logger.debug('Individual %s already mapped' % en.individual.id)
+  logger.debug('Loading EHR records')
   ehr_records = kb.get_ehr_records()
-  logging.debug('%s EHR records loaded' % len(ehr_records))
+  logger.debug('%s EHR records loaded' % len(ehr_records))
   ehr_records_map = {}
   for r in ehr_records:
     ehr_records_map.setdefault(r['i_id'], []).append(r)
