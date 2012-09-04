@@ -429,7 +429,7 @@ def implementation(logger, host, user, passwd, args):
                        fieldnames=['study', 'label', 'type', 'vid'],
                        delimiter='\t', lineterminator=os.linesep)
     o.writeheader()
-    report.fnames = copy.deepcopy(f.fieldnames)
+    report_fnames = copy.deepcopy(f.fieldnames)
     report_fnames.append('error')
     report = csv.DictWriter(args.report_file, report_fnames,
                             delimiter='\t', lineterminator=os.linesep,
