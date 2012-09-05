@@ -162,7 +162,7 @@ class Recorder(core.Core):
       seen.append(r['data_sample'])
       good_records.append(r)
     self.logger.info('done consistency checks on %s' % data_collection.label)
-    return good_records
+    return good_records, bad_records
 
   def process_chunk(self, otsv, study, dc, chunk):
     items = []
