@@ -20,7 +20,7 @@
       --study ${study}
     #end if 
     #if str($data_sample_type) != 'use_provided'
-      --data_sample-shape=${data_sample_type}
+      --data_sample-type=${data_sample_type}
     #end if
     #if str($label)
       --label=${label}
