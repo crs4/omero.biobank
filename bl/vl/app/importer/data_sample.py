@@ -158,7 +158,7 @@ class Recorder(core.Core):
     self.preload_markers_sets()
     self.preload_data_samples()
     records, bad_records = self.do_consistency_checks(records)
-    for bd in bad_records:
+    for br in bad_records:
       rtsv.writerow(br)
     if not records:
       self.logger.warn('no records')
