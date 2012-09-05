@@ -84,7 +84,7 @@ class Recorder(core.Core):
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       data_collections[k] = get_data_collection(k, action)
-      good_records, bad_records = self.do_consistency_checks(data_collection[k], list(g))
+      good_records, bad_records = self.do_consistency_checks(data_collections[k], list(g))
       sub_records.append(good_records)
       for br in bad_records:
         rtsv.writerow(br)
@@ -140,12 +140,12 @@ class Recorder(core.Core):
       if not r['data_sample'] in self.preloaded_data_samples:
         f = 'unknown data sample with ID %s' % r['data_sample']
         self.logger.error(reject + f)
-        bad_rec = coyp.deepcopy(r)
+        bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
       if r['data_sample'] in seen:
-        f = 'multiple copy of the same data_sample %s in %s' % (r['data_sample'], k)
+        f = 'multiple copy of data_sample %s in this batch' % (r['data_sample'])
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
@@ -153,7 +153,7 @@ class Recorder(core.Core):
         continue
       key = build_key(data_collection, r)
       if key in self.preloaded_items:
-        f = 'data sample %s already in %s' % (r['data_sample'], k)
+        f = 'data sample %s already in collection %s' % (r['data_sample'], data_collection.label)
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
