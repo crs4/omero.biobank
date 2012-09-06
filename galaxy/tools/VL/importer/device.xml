@@ -57,6 +57,8 @@
       Use record provided</option>
       <option value="Chip">Chip</option>
       <option value="Scanner">Scanner</option>
+      <option value="SoftwareProgram">SoftwareProgram</option>
+      <option value="GenotypingProgram">GenotypingProgram</option>
     </param>
 
     <param name="maker" size="40" type="text" value=""  label="Device maker"/>
