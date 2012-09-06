@@ -169,7 +169,7 @@ def implementation(logger, host, user, passwd, args):
   report_fnames.append('error')
   report = csv.DictWriter(args.report_file, report_fnames,
                           delimiter='\t', lineterminator=os.linesep,
-                          extrasactio='ignore')
+                          extrasaction='ignore')
   report.writeheader()
   recorder.record(records, o, report)
   args.ifile.close()
