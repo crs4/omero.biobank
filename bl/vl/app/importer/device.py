@@ -229,7 +229,7 @@ def implementation(logger, host, user, passwd, args):
   o.writeheader()
   report_fnames = copy.deepcopy(f.fieldnames)
   report_fnames.append('error')
-  report = csv.DictWriter(args.report_file, record_fnames,
+  report = csv.DictWriter(args.report_file, report_fnames,
                           delimiter='\t', lineterminator=os.linesep,
                           extrasaction='ignore')
   report.writeheader()
