@@ -16,6 +16,7 @@ that does not already have one.
 import sys, argparse, logging
 
 from bl.vl.kb import KBError, mimetypes, KnowledgeBase as KB
+import bl.vl.kb.drivers.omero.utils as vlu
 from bl.vl.genotype.io import read_ssc
 
 
@@ -27,12 +28,9 @@ LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 def make_parser():
   desc="Add missing GDOs for a given marker set"
   parser = argparse.ArgumentParser(description=desc)
-  parser.add_argument('-H', '--host', type=str, help='omero hostname',
-                      default='localhost')
-  parser.add_argument('-U', '--user', type=str, help='omero user',
-                      default='root')
-  parser.add_argument('-P', '--passwd', type=str, help='omero password',
-                      required=True)
+  parser.add_argument('-H', '--host', type=str, help='omero hostname')
+  parser.add_argument('-U', '--user', type=str, help='omero user')
+  parser.add_argument('-P', '--passwd', type=str, help='omero password')
   parser.add_argument('-m', '--markers-set-label', required=True,
                       help='markers set label')
   parser.add_argument('-s', '--study-label', required=True, help='study label')
@@ -58,7 +56,15 @@ def main(argv):
   logging.basicConfig(**kwargs)
   logger = logging.getLogger()  
   
-  kb = KB(driver="omero")(args.host, args.user, args.passwd)
+  try:
+    host = args.host or vlu.ome_host()
+    user = args.user or vlu.ome_user()
+    passwd = args.passwd or vlu.ome_passwd()
+  except ValueError, ve:
+    logger.critical(ve)
+    sys.exit(ve)
+
+  kb = KB(driver="omero")(host, user, passwd)
   study = kb.get_study(label=args.study_label)
   if study is None:
     critical(logger, "no study in db with label %s" % args.study_label)
