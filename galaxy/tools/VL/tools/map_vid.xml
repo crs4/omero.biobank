@@ -36,19 +36,6 @@
 	   type="text" size="40" value="source" />
     
     <conditional name="source_type">
-      <!-- the fancy thing below will not work because there is no
-           default clause in conditional -->
-      <!-- param name="source_type" type="select" label="Select source type" 
-	     help="Choose from the possible source types. See below.">    
-	<options from_parameter="tool.app.known_map_vid_source_types" 
-		 transform_lines="[ &quot;%s%s%s&quot; 
-                                  % ( l, self.separator, l) 
-                                  for l in obj ]">
-	  <column name="value" index="0"/>
-	  <column name="name" index="1"/>
-	  <filter type="sort_by" column="0"/>
-	</options>
-      </param -->
       <param name="source_type" type="select" label="Select source type"
 	     help="Choose from the possible source types. See below."> 
 	<option value="Tube">Tube</option>
@@ -116,6 +103,10 @@
 The tool resolves VIDs for the given column and rename the column
 iteself with a new label. Usually to map the items' VIDs the simple
 item label is necessary but in some cases a special syntax is needed:
+
+* for Individual items, if no default study is provided, the pattern
+  to be used is **STUDY:STUDY_LABEL**. If a default study is provided,
+  the column must contain only the STUDY_LABEL
 
 * for PlateWell items the pattern is **PLATE_LABEL:WELL_LABEL**
 
