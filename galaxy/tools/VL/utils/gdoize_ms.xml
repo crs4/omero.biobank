@@ -2,6 +2,9 @@
   <description>
     Build missing GDOs for the selected markers set
   </description>
+  <requirements>
+    <requirement type="package">py_protobuff_cpp</requirement>
+  </requirements>
   <command interpreter="python">
     gdoize_ms
     --loglevel=$__app__.config.vl_loglevel
