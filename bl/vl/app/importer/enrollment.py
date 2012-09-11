@@ -84,11 +84,15 @@ class Recorder(core.Core):
                      len(self.preloaded_enrollments))
 
   def do_consistency_checks(self, records):
+    def check_illegal_values(label, values):
+      matched_values = [v for v in values if v in label]
+      return matched_values
     self.logger.info('starting consistency checks')
     k_map = {}
     good_records = []
     bad_records = []
     mandatory_fields = ['label', 'study', 'source']
+    illegal_values = [':']
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
       if self.missing_fields(mandatory_fields, r):
@@ -96,6 +100,15 @@ class Recorder(core.Core):
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
+        bad_records.append(bad_rec)
+        continue
+      matched_illegal_values = check_illegal_values(r['label'], illegal_values)
+      if len(matched_illegal_values):
+        msg = 'found illegal value(s) %r in label %s' % (matched_illegal_values,
+                                                         r['label'])
+        self.logger.error(reject + msg)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = msg
         bad_records.append(bad_rec)
         continue
       if r['label'] in self.preloaded_enrollments:

@@ -149,11 +149,16 @@ class Recorder(core.Core):
     return i
 
   def do_consistency_checks(self, records):
+    def check_illegal_values(label, values):
+      matched_values = [v for v in values if v in label]
+      return matched_values
+    self.logger.info('starting consistency checks')
     good_records = []
     bad_records = []
     study_label = records[0]['study']
     seen = {}
     mandatory_fields = ['study', 'label', 'gender', 'father', 'mother']
+    illegal_values = [':']
     for i, r in enumerate(records):
       reject = 'Rejecting record %d:' % i
       if self.missing_fields(mandatory_fields, r):
@@ -165,6 +170,15 @@ class Recorder(core.Core):
         continue
       if r['study'] != study_label:
         msg = 'non uniform study label'
+        self.logger.error(reject + msg)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = msg
+        bad_records.append(bad_rec)
+        continue
+      matched_illegal_values = check_illegal_values(r['label'], illegal_values)
+      if len(matched_illegal_values) > 0:
+        msg = 'found illegal value(s) %r in label %s' % (matched_illegal_values,
+                                                         r['label'])
         self.logger.error(reject + msg)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = msg
