@@ -404,6 +404,16 @@ class Proxy(ProxyCore):
     action.unload()
     return action
 
+  def create_device(self, label, maker, model, release):
+    conf = {
+      'maker' : maker,
+      'model' : model,
+      'release' : release,
+      'label' : label,
+      }
+    device = self.factory.create(self.Device, conf).save()
+    return device
+
   def create_markers(self, source, context, release,
                      ref_rs_genome, dbsnp_build, stream, action):
     """

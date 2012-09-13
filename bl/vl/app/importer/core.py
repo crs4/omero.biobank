@@ -38,13 +38,7 @@ class Core(object):
     device = self.kb.get_device(label)
     if not device:
       self.logger.debug('creating a device')
-      conf = {
-        'maker': maker,
-        'model': model,
-        'release': release,
-        'label': label,
-        }
-      device = self.kb.factory.create(self.kb.Device, conf).save()
+      device = self.kb.create_device(label, maker, model, release)
     return device
 
   def get_action_setup(self, label, conf):
