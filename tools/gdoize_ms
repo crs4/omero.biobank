@@ -18,7 +18,7 @@ import sys, argparse, logging
 from bl.vl.kb import KBError, mimetypes, KnowledgeBase as KB
 import bl.vl.kb.drivers.omero.utils as vlu
 from bl.vl.genotype.io import read_ssc
-
+from bl.vl.version import version
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
@@ -80,8 +80,16 @@ def main(argv):
   gds = kb.find_all_by_query(query, params)
   logger.info("found %d genotype data samples related to %s"
               % (len(gds), args.markers_set_label))
-  action = kb.create_an_action(study)  # FIXME: create a device for this script
-  
+  dev_label = 'gdoize_ms-%s' % version
+  dev_maker = 'CRS4'
+  dev_model = 'IMPORT'
+  dev_release = version
+  dev = kb.get_device(dev_label)
+  if not dev:
+    dev = kb.create_device(dev_label, dev_maker, dev_model,
+                           dev_release)
+  action = kb.create_an_action(study, device = dev)
+
   n_created_gdos = 0
   for g in gds:
     assert ms == g.snpMarkersSet
@@ -103,6 +111,7 @@ def main(argv):
         n_created_gdos += 1
   if n_created_gdos == 0:
     kb.delete(action)
+    kb.delete(dev)
   logger.info("created %d gdos" % n_created_gdos)
 
 
