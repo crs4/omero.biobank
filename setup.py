@@ -10,7 +10,8 @@ biomedical studies.
 """
 
 import os, datetime
-from distutils.core import setup
+#from distutils.core import setup
+from setuptools import setup
 from distutils.errors import DistutilsSetupError
 from distutils.command.build_py import build_py as du_build_py
 from distutils.command.sdist import sdist as du_sdist
