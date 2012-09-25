@@ -27,8 +27,8 @@ PLINK_MISSING = -9
 PLINK_UNAFFECTED = 1
 PLINK_AFFECTED = 2
 
-FIELDS = ["fam_label", "ind_label", "fat_label", "mot_label", "gender",
-          "t1d_status", "ms_status", "nefro_status"]
+FIELDS = ["fam_label", "ind_label", "fat_label", "mot_label", "gender",]
+         # "t1d_status", "ms_status", "nefro_status"]
 
 
 def make_parser():
@@ -47,10 +47,10 @@ def make_parser():
 
 def build_families(individuals, logger):
   # Individuals with only one parent will be considered like founders
-  for i in individuals:
-    if ((i.mother is None) or (i.father is None)):
-      i.ome_obj.mother = None
-      i.ome_obj.father = None
+  # for i in individuals:
+  #   if ((i.mother is None) or (i.father is None)):
+  #     i.mother = None
+  #     i.father = None
   logger.info("individuals: %d" % len(individuals))
   #logger.info("individuals: with 0 or 2 parents: %d" % len(not_one_parent))
   logger.info("analyzing pedigree")
@@ -108,23 +108,23 @@ def main(argv):
                                           en.individual)
       else:
         logger.debug('Individual %s already mapped' % en.individual.id)
-  logger.debug('Loading EHR records')
-  ehr_records = kb.get_ehr_records()
-  logger.debug('%s EHR records loaded' % len(ehr_records))
-  ehr_records_map = {}
-  for r in ehr_records:
-    ehr_records_map.setdefault(r['i_id'], []).append(r)
-  affection_map = {}
-  for ind_id, ehr_recs in ehr_records_map.iteritems():
-    affection_map[ind_id] = dict(t1d=PLINK_UNAFFECTED, ms=PLINK_UNAFFECTED,
-                                 nefro=PLINK_UNAFFECTED)
-    ehr = EHR(ehr_recs)
-    if ehr.matches(DIAGNOSIS_ARCH, DIAGNOSIS_FIELD, T1D_ICD10):
-      affection_map[ind_id]['t1d'] = PLINK_AFFECTED
-    if ehr.matches(DIAGNOSIS_ARCH, DIAGNOSIS_FIELD, MS_ICD10):
-      affection_map[ind_id]['ms'] = PLINK_AFFECTED
-    if ehr.matches(DIAGNOSIS_ARCH, DIAGNOSIS_FIELD, NEFRO_ICD10):
-      affection_map[ind_id]['nefro'] = PLINK_AFFECTED
+  # logger.debug('Loading EHR records')
+  # ehr_records = kb.get_ehr_records()
+  # logger.debug('%s EHR records loaded' % len(ehr_records))
+  # ehr_records_map = {}
+  # for r in ehr_records:
+  #   ehr_records_map.setdefault(r['i_id'], []).append(r)
+  # affection_map = {}
+  # for ind_id, ehr_recs in ehr_records_map.iteritems():
+  #   affection_map[ind_id] = dict(t1d=PLINK_UNAFFECTED, ms=PLINK_UNAFFECTED,
+  #                                nefro=PLINK_UNAFFECTED)
+  #   ehr = EHR(ehr_recs)
+  #   if ehr.matches(DIAGNOSIS_ARCH, DIAGNOSIS_FIELD, T1D_ICD10):
+  #     affection_map[ind_id]['t1d'] = PLINK_AFFECTED
+  #   if ehr.matches(DIAGNOSIS_ARCH, DIAGNOSIS_FIELD, MS_ICD10):
+  #     affection_map[ind_id]['ms'] = PLINK_AFFECTED
+  #   if ehr.matches(DIAGNOSIS_ARCH, DIAGNOSIS_FIELD, NEFRO_ICD10):
+  #     affection_map[ind_id]['nefro'] = PLINK_AFFECTED
 
   immuno_inds = [i for (ind_id, (st_code, i)) in enrolled_map.iteritems()]
   families = build_families(immuno_inds, logger)
@@ -136,12 +136,12 @@ def main(argv):
     except KeyError:
       return i.id
 
-  def resolve_pheno(i):
-    try:
-      immuno_affection = affection_map[i.id]
-    except KeyError:
-      return PLINK_MISSING, PLINK_MISSING, PLINK_MISSING
-    return immuno_affection["t1d"], immuno_affection["ms"], immuno_affection["nefro"]
+  # def resolve_pheno(i):
+  #   try:
+  #     immuno_affection = affection_map[i.id]
+  #   except KeyError:
+  #     return PLINK_MISSING, PLINK_MISSING, PLINK_MISSING
+  #   return immuno_affection["t1d"], immuno_affection["ms"], immuno_affection["nefro"]
 
   kb.Gender.map_enums_values(kb)
   gender_map = lambda x: 2 if x == kb.Gender.FEMALE else 1
@@ -155,10 +155,10 @@ def main(argv):
         r = {}
         r["fam_label"] = fam_label
         r["ind_label"] = resolve_label(i)
-        r["fat_label"] = 0 if i.father is None else resolve_label(i.father)
-        r["mot_label"] = 0 if i.mother is None else resolve_label(i.mother)
+        r["fat_label"] = 0 if (i.father is None or i.father not in fam) else resolve_label(i.father)
+        r["mot_label"] = 0 if (i.mother is None or i.mother not in fam) else resolve_label(i.mother)
         r["gender"] = gender_map(i.gender)
-        r["t1d_status"], r["ms_status"], r["nefro_status"] = resolve_pheno(i)
+        #r["t1d_status"], r["ms_status"], r["nefro_status"] = resolve_pheno(i)
         writer.writerow(r)
 
 
