@@ -112,19 +112,24 @@ def analyze(family):
   """ % INDIVIDUAL_DEFINITION_DOC
   if len(family) == 0:
     return ([], [], [], [], {})
+  family = set(family)
   founders     = []
   non_founders = []
   children = {}
   couples = set()
   for i in family:
-    if i.father is None and i.mother is None:
+    if (i.father is None or i.father not in family) and \
+          (i.mother is None or i.mother not in family):
       founders.append(i)
     else:
       non_founders.append(i)
-      couples.add((i.father, i.mother))
-      if i.father is not None:
+      c_father = i.father if i.father in family else None
+      c_mother = i.mother if i.mother in family else None
+      if c_father or c_mother:
+        couples.add((c_father, c_mother))
+      if i.father is not None and i.father in family:
         children.setdefault(i.father, set()).add(i)
-      if i.mother is not None:
+      if i.mother is not None and i.mother in family:
         children.setdefault(i.mother, set()).add(i)
   if len(children) > 0:
     insiders = set(founders + non_founders)
