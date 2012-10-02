@@ -13,7 +13,7 @@
     --loglevel=$__app__.config.vl_loglevel
     --logfile=${logfile}
     --ofile=${output_gen}
-    kinship_input
+    extract_gt
     --study=${study}
     --out_samples_list=${output_sl}
     --marker_set=${mset}
