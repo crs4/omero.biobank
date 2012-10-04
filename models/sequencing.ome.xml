@@ -41,15 +41,14 @@
   <type id="ome.model.vl.RawSeqDataSample"
 	superclass="ome.model.vl.DataSample">
     <properties>
-      <required name="read" type="int"/>
-      <required name="lane" type="ome.model.vl.Lane"/>
+      <optional name="lane" type="ome.model.vl.Lane"/>
     </properties>
   </type>
 
   <type id="ome.model.vl.SeqDataSample"
 	superclass="ome.model.vl.DataSample">
     <properties>
-      <optional name="sample" type="ome.model.vl.Vessel"/>
+      <optional name="sample" type="ome.model.vl.Tube"/>
     </properties>
   </type>
 
