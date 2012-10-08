@@ -50,8 +50,9 @@
     <param name="source_type" type="select"
 	   label="Type of the source"
 	   help="Choose from the following. See below.">
-      <option value="use_provided"       selected="true">
-      Use record provided</option>
+      <option value="use_provided" selected="true">
+	Use record provided
+      </option>
       <option value="Individual">Individual</option>
       <option value="Tube">Tube</option>
       <option value="PlateWell">PlateWell</option>
