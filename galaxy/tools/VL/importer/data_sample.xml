@@ -105,7 +105,7 @@
 
   <outputs>
     <data format="tabular" name="output" label="${tool.name}.mapping"/>
-    <data format="tabuler" name="report" label="${tool.name}.report"/>
+    <data format="tabular" name="report" label="${tool.name}.report"/>
     <data format="txt" name="logfile" label="${tool.name}.logfile"/>
   </outputs>
   <help>
