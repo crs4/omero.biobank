@@ -50,6 +50,7 @@
 	<option value="DataCollectionItem">DataCollectionItem</option>
 	<option value="FlowCell">FlowCell</option>
 	<option value="Lane">Lane</option>
+	<option value="SequencerOutput">SequencerOutput</option>
       </param>
       <!-- <when value="Tube"/> -->
       <!-- <when value="TiterPlate"/> -->
