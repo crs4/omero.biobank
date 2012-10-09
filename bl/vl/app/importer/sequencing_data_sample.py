@@ -42,11 +42,23 @@ class Recorder(core.Core):
         self.status_map = dict((st.enum_label(), st) for st in
                                self.kb.get_objects(self.kb.DataSampleStatus))
 
+    def __get_options(self, record):
+        options = {}
+        self.logger.debug(record)
+        if 'options' in record and record['options']:
+            kvs = record['options'].split(',')
+            for kv in kvs:
+                k,v = kv.split('=')
+                options[k] = v
+            return json.dumps(options)
+        else:
+            return 'NONE'
+
     def record(self, records, otsv, rtsv):
         def records_by_chunk(batch_size, records):
             offset = 0
             while len(records[offset:]) > 0:
-                yield records[offset:offset+batch_size]
+                yield records[offset : offset + batch_size]
                 offset += batch_size
         if len(records) == 0:
             self.logger.warn('no records')
@@ -66,13 +78,44 @@ class Recorder(core.Core):
         if len(records) == 0:
             self.logger.warning('No records')
             return
-        # device = self.get_device('importer-%s.seq_data_sample' % version,
-        #                          'CRS4', 'IMPORT', version)
-        # asetup = self.get_action_setup('import-prog-%f' % time.time(),
-        #                                json.dumps(self.action_setup_conf))
+        act_setups = set((r['source'], r.get('device', None),
+                          self.__get_options(r)) for r in records)
+        self.logger.debug('Action setups:\n%r' % act_setups)
+        actions = {}
+        for acts in act_setups:
+            # TODO: if a history has been passed, add this to the options
+            act_label = 'importer.seq_data_sample.%f' % time.time()
+            act_setup_conf = {'label' : act_label,
+                              'conf' : acts[2]}
+            act_setup = self.kb.save(self.kb.factory.create(self.kb.ActionSetup, 
+                                                            act_setup_conf))
+            if issubclass(self.source_klass, self.kb.FlowCell):
+                act_klass = self.kb.ActionOnCollection
+                act_category = self.kb.ActionCategory.MEASUREMENT
+            elif issubclass(self.source_klass, self.kb.DataSample):
+                act_klass = self.kb.ActionOnDataSample
+                act_category = self.kb.ActionCategory.PROCESSING
+            else:
+                self.logger.error('Unmanaged source type %r' % self.source_klass)
+                sys.exit('Unmanaged source type %r' % self.source_klass)
+            act_conf = {'setup' : act_setup,
+                        'actionCategory' : act_category,
+                        'operator' : self.operator,
+                        'context' : study,
+                        'target' : self.preloaded_sources[acts[0]]}
+            if acts[1]:
+                act_conf['device'] = acts[1]
+            action = self.kb.factory.create(act_klass, act_conf)
+            action = self.kb.save(action)
+            # Unload the action object or it will cause a bug when
+            # saving objects that references to ActionOnDataSample
+            # records, too many inheritance steps
+            action.ome_obj.unload()
+            actions[acts] = action
+        self.logger.debug('Actions are:\n%r' % actions)
         for i,c in enumerate(records_by_chunk(self.batch_size, records)):
             self.logger.info('start processing chunk %d' % i)
-            self.process_chunk(otsv, c, study)
+            self.process_chunk(otsv, c, actions, study)
             self.logger.info('done processing chunk %d' % i)
 
     def find_source_klass(self, records):
@@ -100,9 +143,6 @@ class Recorder(core.Core):
     def do_consistency_checks(self, records):
         self.logger.info('start consistency checks')
         good_recs, bad_recs = self.do_consistency_checks_common_fields(records)
-        # if self.seq_sample_klass == self.kb.SequencerOutput:
-        #     good_recs, brecs = self.do_consistency_checks_sequencer_output(good_recs)
-        #     bad_recs.extend(brecs)
         if self.seq_sample_klass == self.kb.RawSeqDataSample:
             good_recs, brecs = self.do_consistency_checks_raw_seq_data_sample(good_recs)
             bad_recs.extend(brecs)
@@ -194,56 +234,22 @@ class Recorder(core.Core):
         self.logger.info('done SeqDataSample specific consistency checks')
         return good_records, bad_records
 
-    def process_chunk(self, otsv, chunk, study):
-        # Find a SMART way to retrieve options...
-        def get_options(r):
-            options = {}
-            if 'options' in r and r['options']:
-                kvs = r['options'].split(',')
-                for kv in kvs:
-                    k,v = kv.split('=')
-                    options[k] = v
-                return options
-        act_setups = set((r['source'], r.get('device', None),
-                          json.dumps(get_options(r))) for r in chunk)
-        actions = {}
-        for acts in act_setups:
-            # TODO: If a history has been passed, add this to the options
-            act_label = 'importer.seq_data_sample.%f' % time.time() # Check if a run ID can be retrieved
-            act_setup = self.kb.factory.create(self.kb.ActionSetup,
-                                               {'label' : act_label,
-                                                'conf' : acts[2]})
-            if issubclass(self.source_klass, self.kb.FlowCell):
-                act_klass = self.kb.ActionOnCollection
-                act_category = self.kb.ActionCategory.MEASUREMENT
-            elif issubclass(self.source_klass, self.kb.DataSample):
-                act_klass = self.kb.ActionOnDataSample
-                act_category = self.kb.ActionCategory.PROCESSING
-            else:
-                self.logger.error('Unmanaged source type %r' % self.source_klass)
-                sys.exit('Unmanaged source type %r' % self.source_klass)
-            act_conf = {'setup' : act_setup,
-                        'actionCategory' : act_category,
-                        'operator' : self.operator,
-                        'context' : study,
-                        'target' : self.preloaded_sources[acts[0]]}
-            if acts[1]:
-                act_conf['device'] = acts[1]
-            action = self.kb.factory.create(act_klass, act_conf)
-            action = self.kb.save(action)
-            actions[acts] = action
+    def process_chunk(self, otsv, chunk, actions, study):
         seq_data_samples = []
         for r in chunk:
             a = actions[(r['source'], r.get('device', None),
-                         json.dumps(get_options(r)))]
+                         self.__get_options(r))]
             if self.seq_sample_klass == self.kb.SequencerOutput:
                 seq_data_samples.append(self.conf_sequencer_output_data_sample(r, a))
-            if self.seq_sample_klass == self.kb.RawSeqDataSample:
+            elif self.seq_sample_klass == self.kb.RawSeqDataSample:
                 seq_data_samples.append(self.conf_raw_seq_data_sample(r, a))
-            if self.seq_sample_klass == self.kb.SeqDataSample:
+            elif self.seq_sample_klass == self.kb.SeqDataSample:
                 seq_data_samples.append(self.conf_seq_data_sample(r, a))
+            else:
+                self.logger.error('Unmanaged data sample type %r' % self.seq_sample_klass)
+                sys.exit('Unmanaged data sample type %r' % self.seq_sample_klass)
         assert len(seq_data_samples) == len(chunk)
-        self.kb.save_arrat(seq_data_samples)
+        self.kb.save_array(seq_data_samples)
         for d in seq_data_samples:
             otsv.writerow({'study' : study.label,
                            'label' : d.label,
@@ -292,7 +298,7 @@ def make_parser(parser):
     parser.add_argument('--seq-dsample-type', metavar='STRING',
                         choices = SUPPORTED_DATA_SAMPLE_TYPES,
                         help='overrides the seq_dsample_type column')
-    parser.add_argument('--dsample-status', metavar='STRING',
+    parser.add_argument('--status', metavar='STRING',
                         choices = ['UNKNOWN', 'DESTROYED', 'CORRUPTED', 'USABLE'],
                         help='overrides the status column')
     parser.add_argument('--device', metavar='STRING',
@@ -303,7 +309,7 @@ def implementation(logger, host, user, passwd, args):
         'study',
         'source_type',
         'seq_dsample_type',
-        'dsample_status',
+        'status',
         'device'
         ]
     action_setup_conf = Recorder.find_action_setup_conf(args)
