@@ -9,7 +9,7 @@ Reads an input tsv file, replaces labels with VIDs for the specified
 columns and outputs a new tsv files with the VIDs.
 """
 
-import csv, argparse
+import csv, argparse, copy
 import itertools as it
 
 from bl.vl.app.importer.core import Core
@@ -152,8 +152,11 @@ class MapVIDApp(Core):
     mapping = self.resolve_mapping(source_type, labels)
     self.logger.debug('mapped %d records' % len(mapping))
     self.logger.info('start writing %s' % ofile.name)
-    fieldnames = [k for k in records[0].keys() if k != column_label]
-    fieldnames.append(transformed_column_label)
+    # Preserve input file fields order
+    fieldnames = copy.deepcopy(f.fieldnames)
+    to_be_replaced_index = fieldnames.index(column_label)
+    fieldnames.remove(column_label)
+    fieldnames.insert(to_be_replaced_index, transformed_column_label)
     o = csv.DictWriter(ofile, fieldnames=fieldnames, delimiter='\t',
                        extrasaction = 'ignore')
     o.writeheader()
