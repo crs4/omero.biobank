@@ -1,9 +1,10 @@
 <tool id="vl_import_biosample" name="VLI.biosample">
   <description>import BioSample definitions within omero/vl</description>
   <command interpreter="python">
-    #if $__app__.config.vl_import_enabled_users.split(',').count($__user_email__)==1 #importer.py
-    #else #unauthorized_access.py
-    #end if
+    <!-- #if $__app__.config.vl_import_enabled_users.split(',').count($__user_email__)==1 #importer.py -->
+    <!-- #else #unauthorized_access.py -->
+    <!-- #end if -->
+    importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user
@@ -58,6 +59,7 @@
       <option value="Tube">Tube</option>
       <option value="PlateWell">PlateWell</option>
       <option value="Individual">Individual</option>
+      <option value="NO_SOURCE">No source provided</option>
     </param>
 
     <param name="vessel_type" type="select"
