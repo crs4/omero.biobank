@@ -1,5 +1,5 @@
 <tool id="vl_import_laneslot" name="VLI.laneslot">
-  <description>import LaneSlot definitions withini omero.biobank</description>
+  <description>import LaneSlot definitions within omero.biobank</description>
   <command interpreter="python">
     importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
