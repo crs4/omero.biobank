@@ -52,7 +52,7 @@ class Recorder(core.Core):
                 options[k] = v
             return json.dumps(options)
         else:
-            return 'NONE'
+            return json.dumps(None)
 
     def record(self, records, otsv, rtsv):
         def records_by_chunk(batch_size, records):
@@ -110,7 +110,7 @@ class Recorder(core.Core):
             # Unload the action object or it will cause a bug when
             # saving objects that references to ActionOnDataSample
             # records, too many inheritance steps
-            action.ome_obj.unload()
+            action.unload()
             actions[acts] = action
         self.logger.debug('Actions are:\n%r' % actions)
         for i,c in enumerate(records_by_chunk(self.batch_size, records)):
