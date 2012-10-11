@@ -1,0 +1,45 @@
+<tool id="vl_prepare_seq_dsample_inputs" 
+      name="VLUTIL.prepare_seq_dsample_inputs">
+  <description>
+    Extract OMERO.biobank objects from a sequencing samplesheet
+  </description>
+
+  <command interpreter="python">
+    prepare_seq_dsample_inputs.py
+    --in-file=${infile}
+    --loglevel=$__app__.config.vl_loglevel
+    --logfile=${log_file}
+    --tubes-out-file=${tubes_ofile}
+    --flowcells-out-file=${flowcells_ofile}
+    --lanes-out-file=${lanes_ofile}
+    --laneslots-out-file=${laneslots_ofile}
+    --study-label=${study_label}
+    --study-output-file=${study_ofile}
+  </command>
+
+  <inputs>
+    <param format="tabular" name="infile" type="data"
+	   label="Sampelsheet (in TAB-separated format)"/>
+    <param name="study_label" type="text" size="40"
+	   label="Study label" optional="false"/>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="tubes_ofile"
+	  label="${tool.name}_tubes.tsv"/>
+    <data format="tabular" name="flowcells_ofile"
+	  label="${tool.name}_flowcells.tsv"/>
+    <data format="tabular" name="lanes_ofile"
+	  label="${tool.name}_lanes.tsv"/>
+    <data format="tabular" name="laneslots_ofile"
+	  label="${tool.name}_laneslots.tsv"/>
+    <data format="tabular" name="study_ofile"
+	  label="${tool.name}_study.tsv"/>
+    <data format="txt" name="log_file"
+	  label="${tool.name}.log"/>
+  </outputs>
+
+  <help>
+    TODO: write something here...
+  </help>
+</tool>

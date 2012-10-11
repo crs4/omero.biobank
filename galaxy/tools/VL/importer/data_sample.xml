@@ -50,8 +50,9 @@
     <param name="source_type" type="select"
 	   label="Type of the source"
 	   help="Choose from the following. See below.">
-      <option value="use_provided"       selected="true">
-      Use record provided</option>
+      <option value="use_provided" selected="true">
+	Use record provided
+      </option>
       <option value="Individual">Individual</option>
       <option value="Tube">Tube</option>
       <option value="PlateWell">PlateWell</option>
@@ -104,7 +105,7 @@
 
   <outputs>
     <data format="tabular" name="output" label="${tool.name}.mapping"/>
-    <data format="tabuler" name="report" label="${tool.name}.report"/>
+    <data format="tabular" name="report" label="${tool.name}.report"/>
     <data format="txt" name="logfile" label="${tool.name}.logfile"/>
   </outputs>
   <help>

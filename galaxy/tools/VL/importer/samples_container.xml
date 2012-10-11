@@ -1,0 +1,190 @@
+<tool id="vl_import_samples_container" name="VLI.samples_container">
+  <description>import samples container definitions within omero/vl</description>
+  <command interpreter="python">
+    <!-- #if $__app__.config.vl_import_enabled_users.split(',').count($__user_email__)==1 #importer.py -->
+    <!-- #else #unauthorized_access.py -->
+    <!-- #end if -->
+    importer.py
+    #if $advanced_configuration.configuration_level == 'advanced'
+      --host=$advanced_configuration.vl_host
+      --user=$advanced_configuration.vl_user
+      --passwd=$advanced_configuration.vl_passwd
+    #end if
+    --operator=galaxy
+    --ifile=$input
+    --ofile=$output
+    --report_file=$report
+    --loglevel=$__app__.config.vl_loglevel
+    --logfile=${logfile}
+    samples_container
+    #if str($study) != 'use_provided'
+      --study=${study}
+    #end if
+    #if str($container_type_selector.container_type) != 'use_provided'
+      --container-type=${container_type_selector.container_type}
+      #if str($container_type_selector.container_type) == 'TiterPlate'
+        #if str($container_type_selector.plate_shape) != 'use_provided'
+	  --plate-shape=${container_type_selector.plate_shape}
+	#end if
+      #elif str($container_type_selector.container_type) == 'FlowCell'
+        #if str($container_type_selector.flow_cell_slots) != 'use_provided'
+	  --number-of-slots=${container_type_selector.flow_cell_slots}
+	#end if
+      #end if
+    #end if
+    #if str($container_status) != 'use_provided'
+      --container-status=${container_status}
+    #end if
+  </command>  
+  <inputs>
+    <param format="tabular" name="input" type="data"
+	   label="A tabular dataset with the following columns ..."/>
+
+    <param name="study" type="select" label="Context study" 
+	   help="Choose from the already defined studies. See below.">    
+      <options from_parameter="tool.app.known_studies" 
+	       transform_lines="[ &quot;%s%s%s:%s&quot; 
+                                  % ( l[0], self.separator, l[0], l[1][:40] ) 
+                                  for l in obj ]">
+        <column name="value" index="0"/>
+        <column name="name" index="1"/>
+        <filter type="sort_by" column="0"/>
+        <filter type="add_value" name="Records provide study labels" 
+                value="use_provided" index="0"/>
+      </options>
+    </param>
+
+    <conditional name="container_type_selector">
+      <param name="container_type" type="select" label="Container type"
+	     help="Choose from the following container types">
+	<option value="use_provided" selected="true">
+	  Use record provided
+	</option>
+	<option value="TiterPlate">TiterPlate</option>
+	<option value="FlowCell">Flow Cell</option>
+	<option value="Lane">Lane</option>
+      </param>
+      <when value="TiterPlate">
+	<param name="plate_shape" type="select" label="Titer Plate's shape"
+	       help="Choose from the following shapes">
+	  <option value="use_provided" selected="true">
+	    Use record provided
+	  </option>
+	  <option value="8x12">8 rows x 12 columns</option>
+	  <option value="32x48">32 rows x 48 columns</option>
+	</param>
+      </when>
+      <when value="FlowCell">
+	<param name="flow_cell_slots" type="select" label="Flow Cell slots"
+	       help="Choose from the following list">
+	  <option value="use_provided" selected="true">
+	    Use record provided
+	  </option>
+	  <option value="8">8</option>
+	</param>
+      </when>
+    </conditional>
+
+    <param name="container_status" type="select" label="Container status" 
+	   help="Choose from one of the available values. See below.">    
+      <options from_parameter="tool.app.kb.ContainerStatus.__enums__" 
+	       transform_lines="[ &quot;%s%s%s&quot; 
+                                  % (e.enum_label(),
+                                     self.separator,
+                                     e.enum_label()) 
+                                  for e in obj ]">
+        <column name="value" index="0"/>
+        <column name="name" index="1"/>
+        <filter type="sort_by" column="0"/>
+        <filter type="add_value" name="Records provide plate status" 
+                value="use_provided" index="0"/>
+      </options>
+    </param>
+
+    <!-- ************************************************** -->
+     <conditional name="wait_for_trigger">
+      <param name="enable_trigger" type="boolean" checked="false"
+	     label="Wait for another tool to end before running this tool"/>
+      <when value="true">
+	<param format="txt" name="trigger_file" type="data"
+	       label="Select the LOG file that will be used as trigger"/>
+      </when>
+    </conditional>
+
+    <conditional name="advanced_configuration">
+      <param name="configuration_level" type="select" 
+	     label="Configuration level">
+	<option value="default" selected="true">Default configuration</option>	
+	<option value="advanced">Advanced configuration</option>
+      </param>
+      <when value="default"/>
+      <when value="advanced">
+	<param name="vl_host" size="40" type="text" value="localhost" 
+	       label="Omero/VL host"/>
+	<param name="vl_user" size="20" type="text" value="root" 
+	       label="Omero/VL user"/>
+	<param name="vl_passwd" size="20" type="text" value="What?Me worry?" 
+	       label="Omero/VL passwd"/>
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="output" label="${tool.name}.mapping"/>
+    <data format="tabular" name="report" label="${tool.name}.report"/>
+    <data format="txt" name="logfile" label="${tool.name}.logfile"/>
+  </outputs>
+  <help>
+A container record will have the following fields::
+
+  label         container_status  creation_date
+  A_CONTAINER   USABLE            13/02/2012
+  B_CONTAINER   INSTOCK           12/01/2001
+  C_CONTAINER   USABLE            25/04/2012
+  ....
+
+the creation_date column is optional, if not specified current date
+will be set as the object's creation date, also the container_status
+column can be optional if this values is passed as input parameter.
+
+
+When importing new containers, special fields can be included in the
+CSV file depending on the type of the objects that you want to
+import.
+
+For TITER PLATES objects the syntax can be the following::
+
+  label         barcode    container_status  rows  columns
+  A_TITERPLATE  XXYYZZ111  INSTOCK           8     12
+  B_TITERPLATE  XXYYZZ112  INSTOCK           8     12
+  C_TITERPLATE  XXYYZZ113  READY             8     12
+  ....
+
+rows and columns values can be optional if these values are passed as
+input parameters, barcode column is optional.
+
+For FLOW CELL objects the syntax can be the following::
+
+  label       barcode     container_status  number_of_slots
+  A_FLOWCELL  XXYYZZ221   INSTOCK           8
+  B_FLOWCELL  XXYYZZ222   INSTOCK           8
+  C_FLOWCELL  XXYYZZ223   INSTOCK           8
+  ....
+
+number_of_slots column can be optional if this value is passed as
+input paramter, barcode column is optional.
+
+For LANE objects the syntax can be the following::
+
+  flow_cell   slot  container_status
+  V112441441  1     INSTOCK
+  V112441441  2     INSTOCK
+  V112441441  3     INSTOCK
+  V351145519  1     INSTOCK
+  V351145519  2     INSTOCK
+  ....
+
+for Lane objects, no label column has to be provided, the importer
+will automatically calculate the labels for each imported object.
+  </help>
+</tool>

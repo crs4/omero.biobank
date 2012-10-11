@@ -84,3 +84,35 @@ class UniverseApplication(OrigUniverseApplication):
       return [(v.omero_id, v.enum_label()) for v in vstatus]
     else:
       return []
+
+  @property
+  def known_data_sample_status(self):
+    dsstatus = self.kb.get_objects(self.kb.DataSampleStatus)
+    if dsstatus:
+      return [(ds.omero_id, ds.enum_label()) for ds in dsstatus]
+    else:
+      return []
+
+  @property
+  def known_hardware_devices(self):
+    hdev = self.kb.get_objects(self.kb.HardwareDevice)
+    if hdev:
+      return [(h.id, h.label) for h in hdev]
+    else:
+      return []
+
+  @property
+  def known_software_devices(self):
+    sdev = self.kb.get_objects(self.kb.SoftwareDevice)
+    if sdev:
+      return [(s.id, s.label) for s in sdev]
+    else:
+      return []
+
+  @property
+  def known_devices(self):
+    dev = self.kb.get_objects(self.kb.Device)
+    if dev:
+      return [(d.id, d.label) for d in dev]
+    else:
+      return []

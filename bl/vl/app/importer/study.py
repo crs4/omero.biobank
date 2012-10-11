@@ -52,7 +52,7 @@ class Recorder(core.Core):
     self.preload_studies()
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
-      self.report_strema.writerow(br)
+      self.report_stream.writerow(br)
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(c)

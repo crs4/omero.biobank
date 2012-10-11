@@ -10,9 +10,12 @@ A biosample record will have, at least, the following fields::
   label     source
   I001-bs-2 V932814892
   I002-bs-2 V932814892
+  I003-bs-2 None
 
-Where label is the label of the biosample container. Another example,
-this time involving DNA samples::
+Where label is the label of the biosample container. If a 'None' value
+has been passed in the source column, the biosample will be imported
+as a new unlinked object into the biobanks. Another example, this time
+involving DNA samples::
 
   label    source     used_volume current_volume activation_date
   I001-dna V932814899 0.3         0.2            17/03/2007
@@ -56,7 +59,7 @@ from version import version
 class Recorder(core.Core):
 
   VESSEL_TYPE_CHOICES=['Tube', 'PlateWell']
-  SOURCE_TYPE_CHOICES=['Tube', 'Individual', 'PlateWell']
+  SOURCE_TYPE_CHOICES=['Tube', 'Individual', 'PlateWell', 'NO_SOURCE']
   VESSEL_CONTENT_CHOICES=[x.enum_label() for x in VesselContent.__enums__]
   VESSEL_STATUS_CHOICES=[x.enum_label() for x in VesselStatus.__enums__]
 
@@ -100,13 +103,17 @@ class Recorder(core.Core):
       self.logger.info('done processing chunk %d' % i)
 
   def find_source_klass(self, records):
-    return self.find_klass('source_type', records)
+    try:
+      return self.find_klass('source_type', records)
+    except AttributeError:
+      return None
 
   def find_vessel_klass(self, records):
     return self.find_klass('vessel_type', records)
 
   def preload_sources(self):
-    self.preload_by_type('sources', self.source_klass, self.preloaded_sources)
+    if self.source_klass:
+      self.preload_by_type('sources', self.source_klass, self.preloaded_sources)
 
   def preload_plates(self):
     self.preload_by_type('plates', self.kb.TiterPlate, self.preloaded_plates)
@@ -219,7 +226,7 @@ class Recorder(core.Core):
           bad_rec['error'] = f
           bad_records.append(bad_rec)
           continue
-      if not r['source'] in  self.preloaded_sources:
+      if r['source'] and r['source'] not in self.preloaded_sources:
         f = 'no known source with ID %s. ' + r['source']
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
@@ -242,25 +249,35 @@ class Recorder(core.Core):
       self.kb.Individual: self.kb.ActionOnIndividual,
       self.kb.Tube: self.kb.ActionOnVessel,
       self.kb.PlateWell: self.kb.ActionOnVessel,
+      type(None) : self.kb.Action,
       }
     actions = []
     target_content = []
     for r in chunk:
-      target = self.preloaded_sources[r['source']]
-      target_content.append(getattr(target, 'content', None))
+      # if r['source']:
+      #   target = self.preloaded_sources[r['source']]
+      #   target_content.append(getattr(target, 'content', None))
       conf = {
         'setup': asetup,
         'device': device,
         'actionCategory': getattr(self.kb.ActionCategory, r['action_category']),
         'operator': self.operator,
         'context': study,
-        'target': target
+        # 'target': target
         }
+      if r['source']:
+        target = self.preloaded_sources[r['source']]
+        conf['target'] = target
+      # target_content.append(getattr(target, 'content', None))
+      else:
+        target = None
+      target_content.append(getattr(target, 'content', None))
       actions.append(self.kb.factory.create(aklass[target.__class__], conf))
     assert len(actions) == len(chunk)
     self.kb.save_array(actions)
     vessels = []
     for a, r, c in it.izip(actions, chunk, target_content):
+      self.logger.debug(r)
       a.unload()
       current_volume = float(r['current_volume'])
       initial_volume = current_volume
@@ -275,7 +292,8 @@ class Recorder(core.Core):
         'action': a,
         }
       if 'activation_date' in r:
-        conf['activationDate'] = time.mktime(datetime.strptime(r['activation_date'], '%d/%m/%Y').timetuple())
+        conf['activationDate'] = time.mktime(datetime.strptime(r['activation_date'],
+                                                               '%d/%m/%Y').timetuple())
       if self.vessel_klass == self.kb.PlateWell:
         plate = self.preloaded_plates[r['plate']]
         row, column = r['row'], r['column']
@@ -283,6 +301,7 @@ class Recorder(core.Core):
         conf['slot'] = (row - 1) * plate.columns + column
       elif 'barcode' in r:
         conf['barcode'] = r['barcode']
+      self.logger.debug(conf)
       vessels.append(self.kb.factory.create(self.vessel_klass, conf))
     assert len(vessels) == len(chunk)
     self.kb.save_array(vessels)
@@ -321,6 +340,8 @@ class RecordCanonizer(core.RecordCanonizer):
     r.setdefault('action_category', 'IMPORT')
     for k in 'current_volume', 'used_volume':
       r.setdefault(k, 0.0)
+    if r['source'] == 'None':
+      r['source'] = None
     if r['vessel_type'] == 'PlateWell':
       if 'row' in r and 'column' in r:
         r['row'], r['column'] = map(int, [r['row'], r['column']])        
@@ -375,7 +396,6 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   recorder.logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   canonizer = RecordCanonizer(fields_to_canonize, args)
   canonizer.canonize_list(records)
   o = csv.DictWriter(args.ofile,

@@ -33,6 +33,7 @@ SUBMOD_NAMES = [
   "individual",
   "biosample",
   "titer_plate",
+  "samples_container",
   "device",
   "data_sample",
   "data_object",
@@ -45,6 +46,8 @@ SUBMOD_NAMES = [
   "diagnosis",
   "enrollment",
   "birth_data",
+  "laneslot",
+  "sequencing_data_sample",
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 

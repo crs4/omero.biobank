@@ -9,7 +9,11 @@ Reads an input tsv file, replaces labels with VIDs for the specified
 columns and outputs a new tsv files with the VIDs.
 """
 
+<<<<<<< HEAD
+import csv, argparse, sys
+=======
 import csv, argparse, copy
+>>>>>>> seq
 import itertools as it
 
 from bl.vl.app.importer.core import Core

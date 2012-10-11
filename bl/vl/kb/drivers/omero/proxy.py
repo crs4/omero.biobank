@@ -23,6 +23,7 @@ import actions_on_target
 import individual
 import location
 import demographic
+import sequencing
 from genotyping import GenotypingAdapter
 from modeling import ModelingAdapter
 from eav import EAVAdapter

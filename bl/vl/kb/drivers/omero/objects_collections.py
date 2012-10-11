@@ -54,6 +54,31 @@ class TiterPlate(SlottedContainer):
     return super(TiterPlate, self).__preprocess_conf__(conf)
 
 
+class FlowCell(SlottedContainer):
+
+  OME_TABLE = 'FlowCell'
+  __fields__ = []
+
+
+class Lane(Container):
+  OME_TABLE = 'Lane'
+  __fields__ = [('flowCell', FlowCell, wp.REQUIRED),
+                ('slot', wp.INT, wp.REQUIRED),
+                ('laneUK', wp.STRING, wp.REQUIRED)]
+
+  def __preprocess_conf__(self, conf):
+    if not 'label' in conf:
+      conf['label'] = '%s:%s' % (conf['flowCell'].label, conf['slot'])
+    if not 'laneUK' in conf:
+      conf['laneUK'] = make_unique_key(conf['flowCell'].label, conf['slot'])
+    return super(Lane, self).__preprocess_conf__(conf)
+
+  def __update_constraints__(self):
+    l_uk = make_unique_key(self.flowCell.label, self.slot)
+    setattr(self.ome_obj, 'laneUK',
+            self.to_omero(self.__field__['laneUK'][0], l_uk))
+
+
 class DataCollection(VLCollection):
   
   OME_TABLE = 'DataCollection'
@@ -79,3 +104,4 @@ class DataCollectionItem(wp.OmeroWrapper):
     dci_uk = make_unique_key(self.dataCollection.id, self.dataSample.id)
     setattr(self.ome_obj, 'dataCollectionItemUK',
             self.to_omero(self.__fields__['dataCollectionItemUK'][0], dci_uk))
+

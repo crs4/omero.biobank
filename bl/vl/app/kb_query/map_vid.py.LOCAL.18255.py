@@ -9,7 +9,7 @@ Reads an input tsv file, replaces labels with VIDs for the specified
 columns and outputs a new tsv files with the VIDs.
 """
 
-import csv, argparse, copy
+import csv, argparse, sys
 import itertools as it
 
 from bl.vl.app.importer.core import Core
@@ -20,8 +20,7 @@ class MapVIDApp(Core):
 
   SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
                             'Chip', 'DataSample', 'Marker', 'Scanner',
-                            'SoftwareProgram', 'SNPMarkersSet', 'DataCollectionItem',
-                            'FlowCell', 'Lane', 'SequencerOutput']
+                            'SoftwareProgram', 'SNPMarkersSet', 'DataCollectionItem']
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None, operator='Alfred E. Neumann', logger=None):
@@ -154,11 +153,8 @@ class MapVIDApp(Core):
     mapping = self.resolve_mapping(source_type, labels)
     self.logger.debug('mapped %d records' % len(mapping))
     self.logger.info('start writing %s' % ofile.name)
-    # Preserve input file fields order
-    fieldnames = copy.deepcopy(f.fieldnames)
-    to_be_replaced_index = fieldnames.index(column_label)
-    fieldnames.remove(column_label)
-    fieldnames.insert(to_be_replaced_index, transformed_column_label)
+    fieldnames = [k for k in records[0].keys() if k != column_label]
+    fieldnames.append(transformed_column_label)
     o = csv.DictWriter(ofile, fieldnames=fieldnames, delimiter='\t',
                        extrasaction = 'ignore')
     o.writeheader()

@@ -1,9 +1,10 @@
 <tool id="vl_import_biosample" name="VLI.biosample">
   <description>import BioSample definitions within omero/vl</description>
   <command interpreter="python">
-    #if $__app__.config.vl_import_enabled_users.split(',').count($__user_email__)==1 #importer.py
-    #else #unauthorized_access.py
-    #end if
+    <!-- #if $__app__.config.vl_import_enabled_users.split(',').count($__user_email__)==1 #importer.py -->
+    <!-- #else #unauthorized_access.py -->
+    <!-- #end if -->
+    importer.py
     #if $advanced_configuration.configuration_level == 'advanced'
       --host=$advanced_configuration.vl_host
       --user=$advanced_configuration.vl_user
@@ -53,11 +54,12 @@
     <param name="source_type" type="select"
 	   label="type of the source object"
 	   help="Choose from the legal types. See below.">
-      <option value="use_provided"       selected="true">
+      <option value="use_provided" selected="true">
       Use what provided by record</option>
-      <option value="Tube"       selected="true">Tube</option>
+      <option value="Tube">Tube</option>
       <option value="PlateWell">PlateWell</option>
       <option value="Individual">Individual</option>
+      <option value="NO_SOURCE">No source provided</option>
     </param>
 
     <param name="vessel_type" type="select"
@@ -124,6 +126,15 @@
     </conditional>
 
     <!-- ************************************************** -->
+    <conditional name="wait_for_trigger">
+      <param name="enable_trigger" type="boolean" checked="false"
+	     label="Wait for another tool to end before running this tool"/>
+      <when value="true">
+	<param format="txt" name="trigger_file" type="data"
+	       label="Select the LOG file that will be used as trigger"/>
+      </when>
+    </conditional>
+
     <conditional name="advanced_configuration">
       <param name="configuration_level" type="select" 
 	     label="Configuration level">
@@ -144,7 +155,7 @@
 
   <outputs>
     <data format="tabular" name="output" label="${tool.name}.mapping"/>
-    <data format="tabuler" name="report" label="${tool.name}.report"/>
+    <data format="tabular" name="report" label="${tool.name}.report"/>
     <data format="txt" name="logfile" label="${tool.name}.logfile"/>
   </outputs>
   <help>
@@ -153,18 +164,20 @@ A biosample record will have, at least, the following fields::
   label     source
   I001-bs-2 V932814892
   I002-bs-2 V932814892
+  I003-bs-2 None
 
-Another example, this time dna samples::
+Where label is the label of the biosample container. If a 'None' value
+has been passed in the source column, the biosample will be imported
+as a new unlinked object into the biobanks. Another example, this time
+involving DNA samples::
 
-  label    source     used_volume current_volume
-  I001-dna V932814899 0.3         0.2
-  I002-dna V932814900 0.22        0.2
+  label    source     used_volume current_volume activation_date
+  I001-dna V932814899 0.3         0.2            17/03/2007
+  I002-dna V932814900 0.22        0.2            21/01/2004
 
-where '''used_volume''' and '''current_volume''' are measured in FIXME UNIT.
-
-A special case is when the records refer to biosamples contained in
-plate wells. Together with the minimal columns above, there should be
-a column with the vid of the relevant TiterPlate. For instance::
+A special case is when records refer to biosamples contained in plate
+wells. In this case, an additional column must be present with the VID
+of the corresponding TiterPlate object. For instance::
 
   plate  label source
   V39030 A01   V932814892
@@ -173,16 +186,16 @@ a column with the vid of the relevant TiterPlate. For instance::
 
 where the label column is now the label of the well position.
 
-If row and column (optional) are provided, it will use that
-location. If they are not, it will deduce them from label (e.g., J01
--> row=10, column=1). Missing labels will be generated as::
+If row and column (optional) are provided, the program will use them;
+if they are not provided, it will infer them from label (e.g., J01 ->
+row=10, column=1). Missing labels will be generated as::
 
-       '%s%03d' % (chr(row + ord('A') - 1), column)
+  '%s%03d' % (chr(row+ord('A')-1), column)
 
-Badly formed labels will result in the rejection of the record. The same
-will happen if label, row and column are inconsistent.  The well will
-be filled by current_volume material produced by removing used_volume
-material taken from the bio material contained in the vessel
-identified by source. Row and Column are base 1.
+A badly formed label will result in the rejection of the record; the
+same will happen if label, row and column are inconsistent. The well
+will be filled by current_volume material produced by removing
+used_volume material taken from the bio material contained in the
+vessel identified by source. row and column are base 1.
   </help>
 </tool>

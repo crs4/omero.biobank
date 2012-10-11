@@ -31,19 +31,8 @@ class MapVIDApp(Core):
       self.default_study = None
 
   def resolve_mapping_individual(self, labels):
-    def check_labels(labels):
-      good_labels = []
-      for l in labels:
-        if ':' not in l:
-          self.logger.error('Invalid syntax for label %s, cannot map' % l)
-          continue
-        good_labels.append(l)
-      return good_labels
     mapping = {}
     self.logger.info('start selecting enrolled individuals')
-    labels = check_labels(labels)
-    if len(labels) == 0:
-      return mapping
     known_studies = set([lab.split(':')[0] for lab in labels])
     known_enrollments = []
     for kst in known_studies:
@@ -146,9 +135,18 @@ class MapVIDApp(Core):
     if len(records) == 0:
       self.logger.info('file %s is empty.' % ifile.name)
       return
-    if source_type == self.kb.Individual and self.default_study:
-      labels = ['%s:%s' % (self.default_study.label, r[column_label])
-                for r in records]
+    if source_type == self.kb.Individual:
+      if self.default_study:
+        labels = ['%s:%s' % (self.default_study.label, r[column_label])
+                  for r in records]
+      else:
+        try:
+          labels = ['%s:%s' % (r['study'], r[column_label])
+                    for r in records]
+        except KeyError, ke:
+          msg = 'No %s column and no default study provided' % ke
+          self.logger.critical(msg)
+          sys.exit(msg)
     else:
       labels = [r[column_label] for r in records]
     mapping = self.resolve_mapping(source_type, labels)
@@ -163,12 +161,17 @@ class MapVIDApp(Core):
                        extrasaction = 'ignore')
     o.writeheader()
     for r in records:
-      if source_type == self.kb.Individual and self.default_study:
-        field = '%s:%s' % (self.default_study.label, r[column_label])
+      if source_type == self.kb.Individual:
+        if self.default_study:
+          field = '%s:%s' % (self.default_study.label, r[column_label])
+        else:
+          field = '%s:%s' % (r['study'], r[column_label])
       else:
         field = r[column_label]
       if field in mapping:
         r[transformed_column_label] = mapping[field]
+        # if column_label != transformed_column_label:
+        #   r.pop(column_label)
         o.writerow(r)
     ofile.close()
     self.logger.info('done writing %s' % ofile.name)
