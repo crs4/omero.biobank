@@ -51,7 +51,7 @@ def get_samplesheet_translator(samplesheet_type='default'):
 
 def write_tubes_file(records, study_label, translator, ofile, logger=None):
     ofile_fields = ['study', 'label', 'vessel_type', 'vessel_content',
-                    'vessel_status', 'source']
+                    'vessel_status', 'source', 'source_type']
     with open(ofile, 'w') as out_file:
         writer = csv.DictWriter(out_file, ofile_fields, delimiter='\t')
         writer.writeheader()
@@ -62,7 +62,8 @@ def write_tubes_file(records, study_label, translator, ofile, logger=None):
                              'vessel_type'    : 'Tube',
                              'vessel_content' : 'DNA',
                              'vessel_status'  : 'UNKNOWN',
-                             'source'         : 'None'})
+                             'source'         : 'None',
+                             'source_type'    : 'NO_SOURCE'})
 
 def write_flowcells_file(records, study_label, translator, ofile, logger=None):
     ofile_fields = ['study', 'label', 'container_status', 'number_of_slots']
