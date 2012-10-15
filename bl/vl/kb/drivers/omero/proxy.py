@@ -516,6 +516,41 @@ class Proxy(ProxyCore):
     wells = self.find_all_by_query(query, {'pl_vid' : plate.vid})
     return (w for w in wells)
 
+  def get_lanes_by_flowcell(self, flowcell):
+    """
+    Syntactic sugar to simplify Lane retrival using a known FlowCell
+
+    :param flowcell: a known FlowCell
+    :type flowcell: FlowCell
+
+    :type return: generator of a sequence of Lane objects
+    """
+    query = '''
+    SELECT l FROM Lane l
+    JOIN l.flowCell AS fc
+    WHERE fc.vid = :fc_vid
+    '''
+    lanes = self.find_all_by_query(query, {'fc_vid' : flowcell.vid})
+    return (l for l in lanes)
+
+  def get_laneslots_by_lane(self, lane):
+    """
+    Syntactic sugar to simplify LaneSlot retrival using a known Lane
+
+    :param lane: a known Lane
+    :type lane: Lane
+
+    :type return: generator of a sequence of LaneSlot objects
+    """
+    query = '''
+    SELECT ls FROM LaneSlot ls
+    JOIN ls.lane AS l
+    WHERE l.vid = :l_vid
+    '''
+    laneslots = self.find_all_by_query(query, {'l_vid' : lane.vid})
+    return (ls for ls in laneslots)
+
+
   # EVA-related utility functions
   # =============================
 
