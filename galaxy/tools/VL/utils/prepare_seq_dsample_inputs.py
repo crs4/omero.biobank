@@ -66,7 +66,8 @@ def write_tubes_file(records, study_label, translator, ofile, logger=None):
                              'source_type'    : 'NO_SOURCE'})
 
 def write_flowcells_file(records, study_label, translator, ofile, logger=None):
-    ofile_fields = ['study', 'label', 'container_status', 'number_of_slots']
+    ofile_fields = ['study', 'label', 'barcode', 'container_status',
+                    'number_of_slots', 'options']
     with open(ofile, 'w') as out_file:
         writer = csv.DictWriter(out_file, ofile_fields, delimiter='\t')
         writer.writeheader()
@@ -74,12 +75,16 @@ def write_flowcells_file(records, study_label, translator, ofile, logger=None):
         for x in flowcells_def:
             writer.writerow({'study'            : study_label,
                              'label'            : x,
+                             'barcode'          : x,
                              'container_status' : 'INSTOCK',
-                             'number_of_slots'  : '8'})
+                             'number_of_slots'  : '8',
+                             'options'          : 'protocol=%s,operator=%s' % (r[translator['protocol']],
+                                                                               r[translator['operator']])})
 
 
 def write_lanes_file(records, study_label, translator, ofile, logger=None):
-    ofile_fields = ['study', 'flow_cell', 'slot', 'container_status']
+    ofile_fields = ['study', 'flow_cell', 'slot', 'container_status',
+                    'options']
     with open(ofile, 'w') as out_file:
         writer = csv.DictWriter(out_file, ofile_fields, delimiter='\t')
         writer.writeheader()
@@ -90,11 +95,14 @@ def write_lanes_file(records, study_label, translator, ofile, logger=None):
             writer.writerow({'study'            : study_label,
                              'flow_cell'        : x[0],
                              'slot'             : x[1],
-                             'container_status' : 'INSTOCK'})
+                             'container_status' : 'INSTOCK',
+                             'options'          : 'protocol=%s,operator=%s' % (r[translator['protocol']],
+                                                                               r[translator['operator']])})
         
 
 def write_laneslots_file(records, study_label, translator, ofile, logger=None):
-    ofile_fields = ['study', 'lane', 'tag', 'content', 'source', 'source_type']
+    ofile_fields = ['study', 'lane', 'tag', 'content', 'source',
+                    'source_type', 'options']
     with open(ofile, 'w') as out_file:
         writer = csv.DictWriter(out_file, ofile_fields, delimiter='\t')
         writer.writeheader()
@@ -108,7 +116,9 @@ def write_laneslots_file(records, study_label, translator, ofile, logger=None):
                              'tag'         : x[1],
                              'content'     : 'DNA',
                              'source'      : x[2],
-                             'source_type' : 'Tube'})
+                             'source_type' : 'Tube',
+                             'options'     : 'protocol=%s,operator=%s' % (r[translator['protocol']],
+                                                                          r[translator['operator']])})
 
 def write_study_file(study_label, ofile, logger=None):
     ofile_fields = ['label']
