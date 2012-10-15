@@ -60,7 +60,6 @@ will automatically calculate the labels for each imported object.
 """
 
 import os, csv, json, copy, time
-import itertools as it
 from datetime import datetime
 
 from bl.vl.kb.drivers.omero.objects_collections import ContainerStatus
@@ -87,6 +86,17 @@ class Recorder(core.Core):
     self.preloaded_flowcells = {}
     self.preloaded_lanes = {}
 
+  def __get_options(self, record):
+    options = {}
+    self.logger.debug(record)
+    if 'options' in record and record['options']:
+      kvs = record['options'].split(',')
+      for kv in kvs:
+        k,v = kv.split('=')
+        options[k] = v
+    options['importer_setup'] = self.action_setup_conf
+    return json.dumps(options)
+
   def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
@@ -108,12 +118,28 @@ class Recorder(core.Core):
     study = self.find_study(records)
     device = self.get_device(label='importer-%s.titer_plate' % version,
                              maker='CRS4', model='importer', release=version)
-    asetup = self.get_action_setup('importer.dna_sample',
-                                   json.dumps(self.action_setup_conf))
-    acat = self.kb.ActionCategory.IMPORT
+    act_setups = set(self.__get_options(r) for r in records)
+    self.logger.debug('Action setups:\n%r' % act_setups)
+    actions = {}
+    for acts in act_setups:
+      acts_label = 'import-prog-%f' % time.time()
+      act_setup_conf = {'label' : acts_label,
+                        'conf' : acts}
+      act_setup = self.kb.save(self.kb.factory.create(self.kb.ActionSetup,
+                                                      act_setup_conf))
+      acat = self.kb.ActionCategory.IMPORT
+      act_conf = {'setup'          : act_setup,
+                  'device'         : device,
+                  'actionCategory' : acat,
+                  'operator'       : self.operator,
+                  'context'        : study,
+                  }
+      act = self.kb.save(self.kb.factory.create(self.kb.Action, act_conf))
+      act.unload()
+      actions[acts] = act
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
-      self.process_chunk(otsv, c, study, asetup, device, acat)
+      self.process_chunk(otsv, c, study, actions)
       self.logger.info('done processing chunk %d' % i)
 
   def find_container_klass(self, records):
@@ -326,19 +352,10 @@ class Recorder(core.Core):
       good_records.append(r)
     return good_records, bad_records
 
-  def process_chunk(self, otsv, chunk, study, asetup, device, category):
-    acat = self.kb.ActionCategory.IMPORT
-    aconf = {
-      'setup': asetup,
-      'device': device,
-      'actionCategory': acat,
-      'operator': self.operator,
-      'context': study,
-      }
-    action = self.kb.save(self.kb.factory.create(self.kb.Action, aconf))
-    action.unload()
+  def process_chunk(self, otsv, chunk, study, actions):
     containers = []
     for r in chunk:
+      action = actions[self.__get_options(r)]
       conf = {
         'action': action,
         'status': getattr(ContainerStatus, r['container_status'].upper()),

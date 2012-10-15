@@ -47,6 +47,16 @@ class Recorder(core.Core):
         self.preloaded_laneslots = {}
         self.preloaded_lanes = {}
 
+    def __get_options(self, record):
+        options = {}
+        if 'options' in record and record['options']:
+            kvs = record['options'].split(',')
+            for kv in kvs:
+                k,v = kv.split('=')
+                options[k] = v
+        options['importer_setup'] = self.action_setup_conf
+        return json.dumps(options)
+
     def record(self, records, otsv, rtsv):
         def records_by_chunk(batch_size, records):
             offset = 0
@@ -66,8 +76,14 @@ class Recorder(core.Core):
             rtsv.writerow(br)
         device = self.get_device('importer-%s.laneslot' % version,
                                  'CRS4', 'IMPORT', version)
-        asetup = self.get_action_setup('import-prog-%f' % time.time(),
-                                       json.dumps(self.action_setup_conf))
+        act_setups = set(self.__get_options(r) for r in records)
+        asetup = {}
+        for acts in act_setups:
+            setup_conf = {'label' : 'import-prog-%f' % time.time(),
+                          'conf'  : acts}
+            setup = self.kb.factory.create(self.kb.ActionSetup,
+                                           setup_conf)
+            asetup[acts] = self.kb.save(setup)
         for i, c in enumerate(records_by_chunk(self.batch_size, records)):
             self.logger.info('start processing chunk %d' % i)
             self.process_chunk(otsv, c, study, asetup, device)
@@ -158,7 +174,7 @@ class Recorder(core.Core):
         for r in chunk:
             target = self.preloaded_sources[r['source']]
             conf = {
-                'setup': asetup,
+                'setup': asetup[self.__get_options(r)],
                 'device': device,
                 'actionCategory': self.kb.ActionCategory.IMPORT,
                 'operator': self.operator,
