@@ -26,6 +26,9 @@
     #if str($device) != 'use_provided'
       --device=${device}
     #end if
+    #if str($history) != 'None'
+      --history=${history}
+    #end if
   </command>
   <inputs>
     <param format="tabular" name="input" type="data"
@@ -108,6 +111,10 @@
 		value="use_provided" index="0"/>
       </options>
     </param>
+
+    <param format="txt" name="history" type="data" optional="true"
+	   label="Objects history"
+	   help="Galaxy history in JSON format, history will be shared among all objects"/>
 
     <!-- ************************************************** -->
     <conditional name="wait_for_trigger">
