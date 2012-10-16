@@ -17,7 +17,7 @@ tag column is optional too.
 
 """
 
-import os, csv, json, time, re, copy
+import os, csv, time, re, copy
 import itertools as it
 
 from bl.vl.kb.drivers.omero.utils import make_unique_key
@@ -47,16 +47,6 @@ class Recorder(core.Core):
         self.preloaded_laneslots = {}
         self.preloaded_lanes = {}
 
-    def __get_options(self, record):
-        options = {}
-        if 'options' in record and record['options']:
-            kvs = record['options'].split(',')
-            for kv in kvs:
-                k,v = kv.split('=')
-                options[k] = v
-        options['importer_setup'] = self.action_setup_conf
-        return json.dumps(options)
-
     def record(self, records, otsv, rtsv):
         def records_by_chunk(batch_size, records):
             offset = 0
@@ -76,7 +66,8 @@ class Recorder(core.Core):
             rtsv.writerow(br)
         device = self.get_device('importer-%s.laneslot' % version,
                                  'CRS4', 'IMPORT', version)
-        act_setups = set(self.__get_options(r) for r in records)
+        act_setups = set(Recorder.get_action_setup_options(r, self.action_setup_conf)
+                         for r in records)
         asetup = {}
         for acts in act_setups:
             setup_conf = {'label' : 'import-prog-%f' % time.time(),
@@ -174,7 +165,7 @@ class Recorder(core.Core):
         for r in chunk:
             target = self.preloaded_sources[r['source']]
             conf = {
-                'setup': asetup[self.__get_options(r)],
+                'setup': asetup[Recorder.get_action_setup_options(r, self.action_setup_conf)],
                 'device': device,
                 'actionCategory': self.kb.ActionCategory.IMPORT,
                 'operator': self.operator,

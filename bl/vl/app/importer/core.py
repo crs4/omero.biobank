@@ -34,6 +34,21 @@ class Core(object):
     action_setup_conf['report_file'] = action_setup_conf['report_file'].name
     return action_setup_conf
 
+  @classmethod
+  def get_action_setup_options(klass, record, action_setup_conf = None,
+                               object_history = None):
+    options = {}
+    if 'options' in record and record['options']:
+      kvs = record['options'].split(',')
+      for kv in kvs:
+        k, v = kv.split('=')
+        options[k] = v
+    if action_setup_conf:
+      options['importer_setup'] = action_setup_conf
+    if object_history:
+      options['object_history'] = object_history
+    return json.dumps(options)
+
   def get_device(self, label, maker, model, release):
     device = self.kb.get_device(label)
     if not device:

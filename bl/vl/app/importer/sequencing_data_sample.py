@@ -28,7 +28,8 @@ class Recorder(core.Core):
                  host = None, user = None, passwd = None,
                  keep_tokens = 1, batch_size = 1000,
                  operator = 'Alfred E. Neumann',
-                 action_setup_conf = None, logger = None):
+                 action_setup_conf = None, 
+                 history = None, logger = None):
         super(Recorder, self).__init__(host, user, passwd, keep_tokens = keep_tokens,
                                        study_label = study_label, logger = logger)
         self.batch_size = batch_size
@@ -39,20 +40,9 @@ class Recorder(core.Core):
         self.preloaded_data_samples = {}
         self.preloaded_lanes = {}
         self.preloaded_tubes = {}
+        self.history = history
         self.status_map = dict((st.enum_label(), st) for st in
                                self.kb.get_objects(self.kb.DataSampleStatus))
-
-    def __get_options(self, record):
-        options = {}
-        self.logger.debug(record)
-        if 'options' in record and record['options']:
-            kvs = record['options'].split(',')
-            for kv in kvs:
-                k,v = kv.split('=')
-                options[k] = v
-            return json.dumps(options)
-        else:
-            return json.dumps(None)
 
     def record(self, records, otsv, rtsv):
         def records_by_chunk(batch_size, records):
@@ -79,7 +69,9 @@ class Recorder(core.Core):
             self.logger.warning('No records')
             return
         act_setups = set((r['source'], r.get('device', None),
-                          self.__get_options(r)) for r in records)
+                          Recorder.get_action_setup_options(r, self.action_setup_conf,
+                                                            self.history))
+                         for r in records)
         self.logger.debug('Action setups:\n%r' % act_setups)
         actions = {}
         for acts in act_setups:
@@ -238,7 +230,8 @@ class Recorder(core.Core):
         seq_data_samples = []
         for r in chunk:
             a = actions[(r['source'], r.get('device', None),
-                         self.__get_options(r))]
+                         Recorder.get_action_setup_options(r, self.action_setup_conf,
+                                                           self.history))]
             if self.seq_sample_klass == self.kb.SequencerOutput:
                 seq_data_samples.append(self.conf_sequencer_output_data_sample(r, a))
             elif self.seq_sample_klass == self.kb.RawSeqDataSample:
@@ -303,6 +296,8 @@ def make_parser(parser):
                         help='overrides the status column')
     parser.add_argument('--device', metavar='STRING',
                         help='overrides the device column')
+    parser.add_argument('--history', metavar='STRING',
+                        help='galaxy history in JSON format, all the objects in the input file will share this history')
 
 def implementation(logger, host, user, passwd, args):
     fields_to_canonize = [
@@ -312,11 +307,16 @@ def implementation(logger, host, user, passwd, args):
         'status',
         'device'
         ]
+    if args.history:
+        with open(args.history) as hf:
+            history = json.loads(hf.read().strip())
+    else:
+        history = None
     action_setup_conf = Recorder.find_action_setup_conf(args)
     recorder = Recorder(args.study, host = host, user = user,
                         passwd = passwd, operator = args.operator,
                         action_setup_conf = action_setup_conf,
-                        logger = logger)
+                        history = history, logger = logger)
     f = csv.DictReader(args.ifile, delimiter='\t')
     logger.info('start processing file %s' % args.ifile.name)
     records = [r for r in f]

@@ -59,7 +59,7 @@ will automatically calculate the labels for each imported object.
 
 """
 
-import os, csv, json, copy, time
+import os, csv, copy, time
 from datetime import datetime
 
 from bl.vl.kb.drivers.omero.objects_collections import ContainerStatus
@@ -86,17 +86,6 @@ class Recorder(core.Core):
     self.preloaded_flowcells = {}
     self.preloaded_lanes = {}
 
-  def __get_options(self, record):
-    options = {}
-    self.logger.debug(record)
-    if 'options' in record and record['options']:
-      kvs = record['options'].split(',')
-      for kv in kvs:
-        k,v = kv.split('=')
-        options[k] = v
-    options['importer_setup'] = self.action_setup_conf
-    return json.dumps(options)
-
   def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
       offset = 0
@@ -118,7 +107,8 @@ class Recorder(core.Core):
     study = self.find_study(records)
     device = self.get_device(label='importer-%s.titer_plate' % version,
                              maker='CRS4', model='importer', release=version)
-    act_setups = set(self.__get_options(r) for r in records)
+    act_setups = set(Recorder.get_action_setup_options(r, self.action_setup_conf)
+                     for r in records)
     self.logger.debug('Action setups:\n%r' % act_setups)
     actions = {}
     for acts in act_setups:
@@ -355,7 +345,7 @@ class Recorder(core.Core):
   def process_chunk(self, otsv, chunk, study, actions):
     containers = []
     for r in chunk:
-      action = actions[self.__get_options(r)]
+      action = actions[Recorder.get_action_setup_options(r, self.action_setup_conf)]
       conf = {
         'action': action,
         'status': getattr(ContainerStatus, r['container_status'].upper()),
