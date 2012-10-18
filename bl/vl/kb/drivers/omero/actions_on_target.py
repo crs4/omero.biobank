@@ -4,7 +4,7 @@
 from action import Action
 from vessels import Vessel
 from data_samples import DataSample
-from objects_collections import DataCollectionItem
+from objects_collections import VLCollection, DataCollectionItem
 
 
 class ActionOnVessel(Action):
@@ -29,3 +29,9 @@ class ActionOnAction(Action):
   
   OME_TABLE = 'ActionOnAction'
   __fields__ = [('target', Action, 'required')]
+
+
+class ActionOnCollection(Action):
+
+  OME_TABLE = 'ActionOnCollection'
+  __fields__ = [('target', VLCollection, 'required')]
