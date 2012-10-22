@@ -462,7 +462,7 @@ class Proxy(ProxyCore):
     to an individual.
 
     :param individual: the root individual object
-    :type group: Individual
+    :type individual: Individual
 
     :param data_sample_klass_name: the name of the selected data_sample
       class, e.g. 'AffymetrixCel' or 'GenotypeDataSample'
