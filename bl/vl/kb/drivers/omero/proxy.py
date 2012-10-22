@@ -478,6 +478,22 @@ class Proxy(ProxyCore):
     klass = getattr(self, data_sample_klass_name)
     return (d for d in self.dt.get_connected(individual, aklass=klass))
 
+  def get_genotype_data_samples(self, individual, markers_set):
+    """
+    Syntactic sugar to simplify the looping on GenotypeDataSample(s) related to a 
+    specific technology (or markers set) connected to an individual.
+
+    :param individual: the root individual object
+    :type individual: Individual
+
+    :param markers_set: reference SNP markers set
+    :param markers_set: SNPMarkersSet
+
+    :type return: generator of a sequence of GenotypeDataSample objects
+    """
+    return (d for d in self.get_data_samples(individual, 'GenotypeDataSample')
+            if d.snpMarkersSet == markers_set)
+
   def get_vessels_by_individual(self, individual, vessel_klass_name='Vessel'):
     """
     Syntactic sugar to simplify the looping in Vessels connected to an
