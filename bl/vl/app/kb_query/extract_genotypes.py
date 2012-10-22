@@ -15,8 +15,9 @@ where colums represent data samples and rows represent SNPs.
 the script will only require enough memory to store a single sample.
 """
 
-import os, argparse, csv, bz2
+import os, argparse, csv, bz2, time
 import numpy as np
+from collections import Counter
 
 from bl.vl.app.importer.core import Core
 from bl.vl.genotype.algo import project_to_discrete_genotype
@@ -24,9 +25,9 @@ from bl.vl.genotype.algo import project_to_discrete_genotype
 
 class Writer(object):
 
-    def __init__(self, mset, genotypes_out_file, samples_list_out_file,
-                 transpose_output=False, ignore_duplicated=False):
-        self.mset = mset
+    def __init__(self, genotypes_out_file, samples_list_out_file,
+                 transpose_output=False, ignore_duplicated=False,
+                 logger = None):
         self.out_gt_file = genotypes_out_file
         self.out_ds_file = samples_list_out_file
         self.out_gt_csvw = csv.writer(self.out_gt_file, delimiter='\t')
@@ -34,19 +35,30 @@ class Writer(object):
         self.tro = transpose_output
         self.igd = ignore_duplicated
         self.out_data = []
-        self.kb = self.mset.proxy
+        self.logger = logger
+        self.counter = Counter()
 
-    def write_record(self, individual, data_collection_samples=None):
+    def write_record(self, individual, data_samples,
+                     data_collection_samples=None):
         allele_patterns = {0: 'AA', 1: 'BB', 2:'AB', 3: 'NN'}
-        dsamples = self.kb.get_data_samples(individual, 'GenotypeDataSample')
-        dsamples = [d for d in dsamples if d.snpMarkersSet == self.mset]
         if data_collection_samples:
-            dsamples = [d for d in dsamples if d in data_collection_samples]
+            dsamples = [d for d in data_samples if d in data_collection_samples]
+        else:
+            dsamples = data_samples
         if len(dsamples) > 0:
             if self.igd:
                 dsamples = dsamples[:1]
             for ds in dsamples:
+                start = time.time()
                 probs, _ = ds.resolve_to_data()
+                end = time.time() - start
+                self.counter['total_fetch_time'] += end
+                if end < self.counter['faster_fetch'] or 'faster_fetch' not in self.counter:
+                    self.counter['faster_fetch'] = end
+                if end > self.counter['slower_fetch']:
+                    self.counter['slower_fetch'] = end
+                self.logger.debug('Retrieved data for %s in %f seconds' %
+                                  (ds.label, end))
                 if probs is not None:
                     self.out_ds_csvw.writerow([ds.id])
                     disc_probs = [allele_patterns[x]
@@ -63,6 +75,11 @@ class Writer(object):
                 self.out_gt_csvw.writerow(d)
         self.out_gt_file.close()
         self.out_ds_file.close()
+        self.logger.debug('########## Samples fetching statistics ##########')
+        self.logger.debug('Samples fetch time: %f seconds' % self.counter['total_fetch_time'])
+        self.logger.debug('Faster fetch: %f seconds' % self.counter['faster_fetch'])
+        self.logger.debug('Slower fetch: %f seconds' % self.counter['slower_fetch'])
+        self.logger.debug('#################################################')
 
 
 class App(Core):
@@ -71,6 +88,12 @@ class App(Core):
                  logger=None, study_label=None, operator='Alfred E. Neumann'):
         super(App, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
                                   study_label=study_label, logger=logger)
+
+    def get_data_samples_map(self, individuals, markers_set):
+        ds_map = {}
+        for i in individuals:
+            ds_map[i] = list(self.kb.get_genotype_data_samples(i, markers_set))
+        return ds_map
 
     def dump(self, genotypes_out_file, samples_list_out_file, marker_set_label,
              data_collection_label=None, transpose_output=False,
@@ -93,6 +116,7 @@ class App(Core):
             self.logger.info('Loaded %d elements' % len(dc_samples))
         else:
             dc_samples = None
+        data_samples_map = self.get_data_samples_map(inds, mset)
         self.logger.info('Initializing writer')
         if enable_compression:
             genotypes_out_file.close()
@@ -101,20 +125,22 @@ class App(Core):
                 'w', compression_level
                 )
         kw_args = {
-            'mset': mset,
             'transpose_output': transpose_output,
             'ignore_duplicated': ignore_duplicated,
             'genotypes_out_file': genotypes_out_file,
-            'samples_list_out_file': samples_list_out_file
+            'samples_list_out_file': samples_list_out_file,
+            'logger' : self.logger
             }
         writer = Writer(**kw_args)
         self.logger.info('Writing records')
-        for ind in inds:
+        for ind, dsamples in data_samples_map.iteritems():
             self.logger.debug(
                 'Writing record for individual %s (%d/%d)' % (
-                    ind.id, inds.index(ind) + 1, len(inds)
+                    ind.id,
+                    data_samples_map.keys().index(ind) + 1, 
+                    len(inds)
                     ))
-            writer.write_record(ind, dc_samples)
+            writer.write_record(ind, dsamples, dc_samples)
         self.logger.info('Closing writer')
         writer.close()
         self.logger.info('Job complete')
