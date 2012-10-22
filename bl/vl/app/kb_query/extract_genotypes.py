@@ -60,6 +60,7 @@ class Writer(object):
                 self.logger.debug('Retrieved data for %s in %f seconds' %
                                   (ds.label, end))
                 if probs is not None:
+                    self.counter['fetched_samples'] += 1
                     self.out_ds_csvw.writerow([ds.id])
                     disc_probs = [allele_patterns[x]
                                   for x in project_to_discrete_genotype(probs)]
@@ -76,7 +77,10 @@ class Writer(object):
         self.out_gt_file.close()
         self.out_ds_file.close()
         self.logger.debug('########## Samples fetching statistics ##########')
-        self.logger.debug('Samples fetch time: %f seconds' % self.counter['total_fetch_time'])
+        self.logger.debug('%d samples fetched in %f seconds' % (self.counter['fetched_samples'],
+                                                                 self.counter['total_fetch_time']))
+        self.logger.debug('Average sample fetch time: %f seconds' % 
+                          (self.counter['total_fetch_time'] / self.counter['fetched_samples']))
         self.logger.debug('Faster fetch: %f seconds' % self.counter['faster_fetch'])
         self.logger.debug('Slower fetch: %f seconds' % self.counter['slower_fetch'])
         self.logger.debug('#################################################')
