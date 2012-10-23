@@ -18,7 +18,7 @@ class Admin(object):
     ouser = a.lookupExperimenter(user)
     ogroup = a.lookupGroup(group)
     a.setGroupOwner(ogroup, ouser)
-    self.kb.disconnect()
+    # self.kb.disconnect()
 
   def move_to_common_space(self, objs):
     """

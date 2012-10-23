@@ -103,7 +103,7 @@ class ProxyCore(object):
   def change_group(self, group_name):
     self.group_name = group_name
     self.transaction_tokens = 0
-    self.disconnect()
+    # self.disconnect()
 
   def connect(self):
     if not self.current_session:
@@ -133,18 +133,18 @@ class ProxyCore(object):
 
   def ome_operation(self, operation, action, *action_args):
     session = self.connect()
+    # try:
     try:
-      try:
-        service = getattr(session, operation)()
-      except AttributeError:
-        raise kb.KBError("%r kb operation not supported" % operation)
-      try:
-        result = getattr(service, action)(*action_args)
-      except AttributeError:
-        raise kb.KBError("%r kb action not supported on operation %r" %
-                         (action, operation))
-    finally:
-      self.disconnect()
+      service = getattr(session, operation)()
+    except AttributeError:
+      raise kb.KBError("%r kb operation not supported" % operation)
+    try:
+      result = getattr(service, action)(*action_args)
+    except AttributeError:
+      raise kb.KBError("%r kb action not supported on operation %r" %
+                       (action, operation))
+    # finally:
+    #   self.disconnect()
     return result
 
   def find_all_by_query(self, query, params, factory):
@@ -243,20 +243,20 @@ class ProxyCore(object):
     return self.ome_operation('getQueryService', 'findAllByString',
                               'OriginalFile', 'name', table_name, True, None)
 
-  def get_table(self, table_name):
-    s = self.connect()
-    try:
-      ofiles = self._list_table_copies(table_name)
-    finally:
-      self.disconnect()
-    if len(ofiles) != 1:
-       raise kb.KBError('the requested %s table is missing' % table_name)
-    r = s.sharedResources()
-    t = r.openTable(ofile)
-    return t
-    if len(ofiles) != 1:
-      raise ValueError('get_table: cannot resolve %s' % table_name)
-    return
+  # def get_table(self, table_name):
+  #   s = self.connect()
+  #   # try:
+  #   ofiles = self._list_table_copies(table_name)
+  #   # finally:
+  #   #   self.disconnect()
+  #   if len(ofiles) != 1:
+  #      raise kb.KBError('the requested %s table is missing' % table_name)
+  #   r = s.sharedResources()
+  #   t = r.openTable(ofile)
+  #   return t
+  #   if len(ofiles) != 1:
+  #     raise ValueError('get_table: cannot resolve %s' % table_name)
+  #   return
 
   def delete_table(self, table_name):
     """
@@ -268,32 +268,32 @@ class ProxyCore(object):
 
       ${OMERO_HOME}/bin/omero admin cleanse ${OMERO_DATA_DIR}
     """
-    try:
-      self.connect()
-      ofiles = self._list_table_copies(table_name)
-      for o in ofiles:
-        self.ome_operation('getUpdateService' , 'deleteObject', o)
-    finally:
-      self.disconnect()
+    # try:
+    self.connect()
+    ofiles = self._list_table_copies(table_name)
+    for o in ofiles:
+      self.ome_operation('getUpdateService' , 'deleteObject', o)
+    # finally:
+    #   self.disconnect()
 
   def table_exists(self, table_name):
-    try:
-      ofiles = self._list_table_copies(table_name)
-    finally:
-      self.disconnect()
+    # try:
+    ofiles = self._list_table_copies(table_name)
+    # finally:
+      # self.disconnect()
     return len(ofiles) > 0
 
   def create_table(self, table_name, fields):
     ofields = [self.OME_TABLE_COLUMN[f[0]](*f[1:]) for f in fields]
     s = self.connect()
-    try:
-      r = s.sharedResources()
-      m = r.repositories()
-      i = m.descriptions[0].id.val
-      t = r.newTable(i, table_name)
-      t.initialize(ofields)
-    finally:
-      self.disconnect()
+    # try:
+    r = s.sharedResources()
+    m = r.repositories()
+    i = m.descriptions[0].id.val
+    t = r.newTable(i, table_name)
+    t.initialize(ofields)
+    # finally:
+    #   self.disconnect()
     return t
 
   def _get_table(self, session, table_name):
@@ -317,7 +317,7 @@ class ProxyCore(object):
         for k in range(j - i):
           yield Z[k]
         i = j
-      self.disconnect()  # this closes the connect() below
+      # self.disconnect()  # this closes the connect() below
     s = self.connect()
     t = self._get_table(s, table_name)
     col_objs = t.getHeaders()
@@ -345,16 +345,16 @@ class ProxyCore(object):
     the list elements.
     """
     s = self.connect()
-    try:
-      t = self._get_table(s, table_name)
-      col_numbers = self.__convert_col_names_to_indices(t, col_names)
-      if selector:
-        res = self.__get_table_rows_selected(t, selector, col_numbers,
-                                             batch_size)
-      else:
-        res = self.__get_table_rows_bulk(t, col_numbers, batch_size)
-    finally:
-      self.disconnect()
+    # try:
+    t = self._get_table(s, table_name)
+    col_numbers = self.__convert_col_names_to_indices(t, col_names)
+    if selector:
+      res = self.__get_table_rows_selected(t, selector, col_numbers,
+                                           batch_size)
+    else:
+      res = self.__get_table_rows_bulk(t, col_numbers, batch_size)
+    # finally:
+    #   self.disconnect()
     return res
 
   def get_table_rows_by_indices(self, table_name, indices, col_names=None,
@@ -363,13 +363,13 @@ class ProxyCore(object):
     indices must be a list of integer values.
     """
     s = self.connect()
-    try:
-      t = self._get_table(s, table_name)
-      col_numbers = self.__convert_col_names_to_indices(t, col_names)
-      res = self.__get_table_rows_by_indices(t, indices, col_numbers,
-                                             batch_size)
-    finally:
-      self.disconnect()
+    # try:
+    t = self._get_table(s, table_name)
+    col_numbers = self.__convert_col_names_to_indices(t, col_names)
+    res = self.__get_table_rows_by_indices(t, indices, col_numbers,
+                                           batch_size)
+    # finally:
+    #   self.disconnect()
     return res
 
   def __get_table_rows_by_indices(self, table, row_indices, col_numbers,
@@ -413,22 +413,22 @@ class ProxyCore(object):
   def get_table_slice(self, table_name, row_numbers, col_names=None,
                       batch_size=BATCH_SIZE):
     s = self.connect()
-    try:
-      t = self._get_table(s, table_name)
-      col_numbers = self.__convert_col_names_to_indices(t, col_names)
-      res = self.__get_table_rows_slice(t, row_numbers, col_numbers, batch_size)
-    finally:
-      self.disconnect()
+    # try:
+    t = self._get_table(s, table_name)
+    col_numbers = self.__convert_col_names_to_indices(t, col_names)
+    res = self.__get_table_rows_slice(t, row_numbers, col_numbers, batch_size)
+    # finally:
+    #   self.disconnect()
     return res
   
   def get_table_headers(self, table_name):
     col_objs = None
     s = self.connect()
-    try:
-      t = self._get_table(s, table_name)
-      col_objs = t.getHeaders()
-    finally:
-      self.disconnect()
+    # try:
+    t = self._get_table(s, table_name)
+    col_objs = t.getHeaders()
+    # finally:
+    #   self.disconnect()
     if col_objs:
       return convert_to_numpy_record_type(col_objs)
 
@@ -458,22 +458,22 @@ class ProxyCore(object):
                      batch_size=BATCH_SIZE):
     s = self.connect()
     indices = []
-    try:
-      t = self._get_table(s, table_name)
+    # try:
+    t = self._get_table(s, table_name)
+    col_objs = t.getHeaders()
+    batch = batch_loader(records_stream, col_objs, batch_size)
+    # First index of the new batch of rows is the number of rows
+    # already stored into the table
+    first_index = t.getNumberOfRows()
+    while batch:
+      t.addData(batch)
+      indices.extend(range(first_index, t.getNumberOfRows()))
       col_objs = t.getHeaders()
       batch = batch_loader(records_stream, col_objs, batch_size)
-      # First index of the new batch of rows is the number of rows
-      # already stored into the table
       first_index = t.getNumberOfRows()
-      while batch:
-        t.addData(batch)
-        indices.extend(range(first_index, t.getNumberOfRows()))
-        col_objs = t.getHeaders()
-        batch = batch_loader(records_stream, col_objs, batch_size)
-        first_index = t.getNumberOfRows()
-    finally:
-      self.disconnect()
-      return indices
+    # finally:
+    #   self.disconnect()
+    return indices
 
   def __load_batch(self, records_stream, col_objs, chunk_size):
     v = {}
@@ -488,45 +488,45 @@ class ProxyCore(object):
 
   def update_table_row(self, table_name, selector, row):
     s = self.connect()
-    try:
-      t = self._get_table(s, table_name)
-      idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
-      self.logger.debug('\tselector %s results in %s' % (selector, idxs))
-      if not len(idxs) == 1:
-        raise ValueError('selector %s does not yield a single row' % selector)
-      self.logger.debug('\tselected idx: %s' % idxs)
-      data = t.readCoordinates(idxs)
-      self.__update_data_contents(data, row)
-      t.update(data)
-    finally:
-      self.disconnect()
+    # try:
+    t = self._get_table(s, table_name)
+    idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
+    self.logger.debug('\tselector %s results in %s' % (selector, idxs))
+    if not len(idxs) == 1:
+      raise ValueError('selector %s does not yield a single row' % selector)
+    self.logger.debug('\tselected idx: %s' % idxs)
+    data = t.readCoordinates(idxs)
+    self.__update_data_contents(data, row)
+    t.update(data)
+    # finally:
+    #   self.disconnect()
 
   def update_table_rows(self, table_name, selector, update_items):
     s = self.connect()
-    try:
-      t = self._get_table(s, table_name)
-      idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
-      self.logger.debug('\tselector %s results in %s' % (selector, idxs))
-      if len(idxs) == 0:
-        self.logger.debug('\tno rows to update') 
-        return
-      data = t.readCoordinates(idxs)
-      cols = [c.name for c in data.columns]
-      for x in update_items.keys():
-        if x not in cols:
-          raise ValueError('%s is not a valid field for table %s' % (x, table_name))
-      for dc in data.columns:
-        if dc.name in update_items.keys():
-          for x in range(0, len(dc.values)):
-            self.logger.debug('\tcolumn :%s  -> setting value to %s (old value %s)' % (dc.name,
-                                                                                       update_items[dc.name],
-                                                                                       dc.values[x]))
-            dc.values[x] = update_items[dc.name]
-      self.logger.debug('\trecords have been modified')
-      t.update(data)
-      self.logger.debug('\tdata update complete')
-    finally:
-      self.disconnect()
+    # try:
+    t = self._get_table(s, table_name)
+    idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
+    self.logger.debug('\tselector %s results in %s' % (selector, idxs))
+    if len(idxs) == 0:
+      self.logger.debug('\tno rows to update') 
+      return
+    data = t.readCoordinates(idxs)
+    cols = [c.name for c in data.columns]
+    for x in update_items.keys():
+      if x not in cols:
+        raise ValueError('%s is not a valid field for table %s' % (x, table_name))
+    for dc in data.columns:
+      if dc.name in update_items.keys():
+        for x in range(0, len(dc.values)):
+          self.logger.debug('\tcolumn :%s  -> setting value to %s (old value %s)' % (dc.name,
+                                                                                     update_items[dc.name],
+                                                                                     dc.values[x]))
+          dc.values[x] = update_items[dc.name]
+    self.logger.debug('\trecords have been modified')
+    t.update(data)
+    self.logger.debug('\tdata update complete')
+    # finally:
+    #   self.disconnect()
 
   def __update_data_contents(self, data, row):
     assert len(data.rowNumbers) == 1
