@@ -147,6 +147,7 @@ class App(Core):
             writer.write_record(ind, dsamples, dc_samples)
         self.logger.info('Closing writer')
         writer.close()
+        self.kb.disconnect()
         self.logger.info('Job complete')
 
 
