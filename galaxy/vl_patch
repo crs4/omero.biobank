@@ -4,7 +4,7 @@
 # END_COPYRIGHT
 
 
-import sys, os
+import sys, os, argparse
 
 
 BUILDAPP_PATCHES = [
@@ -24,18 +24,32 @@ def cp(src, dst, patches=None):
     outf.write(code)
   print "%s --> %s" % (src, dst)
 
+def make_parser():
+  parser = argparse.ArgumentParser('Patch Galaxy instance enabling OMERO.biobank support')
+  parser.add_argument('--galaxy_home', type=str, required=True,
+                      help='Galaxy home directory')
+  parser.add_argument('--blue_collar', action='store_true',
+                      help='apply patch to a "blue collar" Galaxy')
+  return parser
 
 def main(argv):
-  try:
-    galaxy_home = argv[1]
-  except IndexError:
-    sys.exit("Usage: %s GALAXY_HOME" % argv[0])
+  parser = make_parser()
+  args = parser.parse_args()
+  
+  galaxy_home = args.galaxy_home
+
   this_dir = os.path.dirname(sys.argv[0])
   galaxy_pkg_dir = os.path.join(galaxy_home, "lib", "galaxy")
   cp(os.path.join(this_dir, "vl_app.py"),
      os.path.join(galaxy_pkg_dir, "vl_app.py"))
-  cp(os.path.join(galaxy_pkg_dir, "web", "buildapp.py"),
-     os.path.join(galaxy_pkg_dir, "web", "buildapp.py"),
+
+  if not args.blue_collar:
+    webapp_dir = 'web'
+  else:
+    webapp_dir = 'webapps/galaxy'
+
+  cp(os.path.join(galaxy_pkg_dir, webapp_dir, "buildapp.py"),
+     os.path.join(galaxy_pkg_dir, webapp_dir, "buildapp.py"),
      BUILDAPP_PATCHES)
 
 
