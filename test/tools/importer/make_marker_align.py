@@ -2,6 +2,7 @@
 # END_COPYRIGHT
 
 import sys, csv, random
+from contextlib import nested
 
 FIELDS = ['marker_vid', 'chromosome', 'pos', 'allele', 'strand', 'copies']
 
@@ -11,7 +12,7 @@ try:
 except IndexError:
   sys.exit("Usage: python %s INPUT_F OUTPUT_F" % sys.argv[0])
 
-with open(in_fn) as fi, open(out_fn, 'w') as fo:
+with nested(open(in_fn), open(out_fn, 'w')) as (fi, fo):
   i = csv.DictReader(fi, delimiter='\t')
   o = csv.DictWriter(fo, delimiter='\t', lineterminator="\n",
                      fieldnames=FIELDS)

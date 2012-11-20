@@ -7,7 +7,7 @@ Patch VL marker alignments file, adding dummy lines for unaligned SNPs.
 
 import os, csv
 from common import MARKER_AL_FIELDS, DUMMY_AL_VALUES
-
+from contextlib import nested
 
 HELP_DOC = __doc__
 
@@ -36,7 +36,7 @@ def main(logger, args):
   logger.info("reading alignment records")
   al_records = get_al_records(args.align_in_file)
   logger.info("patching alignment file")
-  with open(args.def_file) as f, open(args.align_out_file, 'w') as outf:
+  with nested(open(args.def_file), open(args.align_out_file, 'w')) as (f, outf):
     reader = csv.DictReader(f, delimiter='\t')
     writer = csv.DictWriter(outf, MARKER_AL_FIELDS, delimiter='\t',
                             lineterminator=os.linesep)

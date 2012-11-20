@@ -29,6 +29,7 @@ spaces represent tabs)::
 """
 import sys, os, argparse, csv, logging
 from collections import OrderedDict
+from contextlib import nested
 
 from bl.core.io.illumina import GenomeStudioFinalReportReader as DataReader
 from bl.core.io.illumina import IllSNPReader
@@ -189,7 +190,7 @@ def main(argv):
   snp_name_to_label = get_snp_name_to_label(args.annot_file)
   logger.info("total SNPs: %d" % len(snp_name_to_label))
 
-  with open(args.ds_fn, "w") as ds_f, open(args.do_fn, "w") as do_f:
+  with nested(open(args.ds_fn, 'w'), open(args.do_fn, 'w')) as (ds_f, do_f):
     ds_w = DataSampleWriter(ds_f)
     do_w = DataObjectWriter(do_f)
     for w in ds_w, do_w:

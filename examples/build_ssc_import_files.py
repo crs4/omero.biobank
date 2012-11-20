@@ -23,6 +23,7 @@ TSV mapping file must be like::
 
 """
 import sys, os, argparse, csv, logging
+from contextlib import nested
 
 from bl.vl.utils import compute_sha1
 from bl.vl.kb import mimetypes
@@ -98,7 +99,7 @@ def main(argv):
             ssc_files.remove(ssc)
     logger.info('%d files ready to be processed' % len(ssc_files))
 
-    with open(args.ds_fn, 'w') as ds_f, open(args.do_fn, 'w') as do_f:
+    with nested(open(args.ds_fn, 'w'), open(args.do_fn, 'w')) as (ds_f, do_f):
         ds_w = DataSampleWriter(ds_f)
         do_w = DataObjectWriter(do_f)
         for w in ds_w, do_w:
