@@ -32,7 +32,6 @@ SUBMOD_NAMES = [
   "study",
   "individual",
   "biosample",
-  "titer_plate",
   "samples_container",
   "device",
   "data_sample",
