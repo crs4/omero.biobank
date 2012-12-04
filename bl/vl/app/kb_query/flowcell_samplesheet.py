@@ -19,8 +19,7 @@ class IdentifierError(Exception):
 class BuildFlowCellSamplesheetApp(Core):
 
     OUT_FILE_HEADER = ['FCID', 'Lane', 'SampleID', 'SampleRef', 'Index',
-                       'Description', 'Control', 'Recipe', 'Operator',
-                       'SampleProject']
+                       'Description', 'Control', 'Recipe', 'Operator']
     NAMESPACE_DELIMITER = '|'
 
     def __init__(self, host=None, user=None, passwd=None,
