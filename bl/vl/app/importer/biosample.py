@@ -95,8 +95,17 @@ class Recorder(core.Core):
       rtsv.writerow(br)
     device = self.get_device('importer-%s.biosample' % version,
                              'CRS4', 'IMPORT', version)
-    asetup = self.get_action_setup('import-prog-%f' % time.time(),
-                                   json.dumps(self.action_setup_conf))
+    act_setups = set(Recorder.get_action_setup_options(r, self.action_setup_conf)
+                     for r in records)
+    asetup = {}
+    for acts in act_setups:
+    # asetup = self.get_action_setup('import-prog-%f' % time.time(),
+    #                                json.dumps(self.action_setup_conf))
+      setup_conf = {'label' : 'import-prog-%f' % time.time(),
+                    'conf' : acts}
+      setup = self.kb.factory.create(self.kb.ActionSetup, 
+                                     setup_conf)
+      asetup[acts] = self.kb.save(setup)
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(otsv, c, study, asetup, device)
@@ -254,21 +263,16 @@ class Recorder(core.Core):
     actions = []
     target_content = []
     for r in chunk:
-      # if r['source']:
-      #   target = self.preloaded_sources[r['source']]
-      #   target_content.append(getattr(target, 'content', None))
       conf = {
-        'setup': asetup,
+        'setup': asetup[Recorder.get_action_setup_options(r, self.action_setup_conf)],
         'device': device,
         'actionCategory': getattr(self.kb.ActionCategory, r['action_category']),
         'operator': self.operator,
         'context': study,
-        # 'target': target
         }
       if r['source']:
         target = self.preloaded_sources[r['source']]
         conf['target'] = target
-      # target_content.append(getattr(target, 'content', None))
       else:
         target = None
       target_content.append(getattr(target, 'content', None))
