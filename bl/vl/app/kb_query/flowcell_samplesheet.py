@@ -80,19 +80,21 @@ class BuildFlowCellSamplesheetApp(Core):
         else:
             return self.NAMESPACE_DELIMITER.join(obj.label.split(self.NAMESPACE_DELIMITER)[1:])
 
-    def __dump_record(self, csv_writer, laneslot, remove_namespaces):
-        record = {'FCID' : self.__get_label(laneslot.lane.flowCell, remove_namespaces),
-                  'Lane' : laneslot.lane.slot,
-                  'SampleID' : self.__get_label(laneslot.action.target, remove_namespaces), # FIX: crashes if source is not a sample
-                  'Index' : laneslot.tag or '',
-                  'Recipe' : json.loads(laneslot.action.setup.conf)['protocol'],
+    def __dump_record(self, csv_writer, laneslot, remove_namespaces, add_sample_label):
+        record = {'FCID'     : self.__get_label(laneslot.lane.flowCell, remove_namespaces),
+                  'Lane'     : laneslot.lane.slot,
+                  'SampleID' : laneslot.action.target.id,
+                  'Index'    : laneslot.tag or '',
+                  'Recipe'   : json.loads(laneslot.action.setup.conf)['protocol'],
                   'Operator' : json.loads(laneslot.action.setup.conf)['operator']
                   }
+        if add_sample_label:
+            record['SampleLabel'] = self.__get_label(laneslot.action.target, remove_namespaces) # FIX: crashes if source is not a sample
         self.logger.debug('Dumping record %r' % record)
         csv_writer.writerow(record)
 
     def dump(self, flowcell_id, out_file, fields_separator,
-             ignore_namespace, remove_namespaces):
+             ignore_namespace, remove_namespaces, add_sample_label):
         self.logger.info('Starting job')
         flowcell = self.__get_flowcell(flowcell_id, ignore_namespace)
         if not flowcell:
@@ -103,11 +105,13 @@ class BuildFlowCellSamplesheetApp(Core):
             self.logger.info('There aren\'t slots associated to this FlowCell, nothing to do.')
             sys.exit(0)
         self.logger.info('Writing samplesheet')
+        if add_sample_label:
+            self.OUT_FILE_HEADER.append('SampleLabel')
         out_writer = csv.DictWriter(out_file, self.OUT_FILE_HEADER,
                                     delimiter=fields_separator)
         out_writer.writeheader()
         for element in fc_elements:
-            self.__dump_record(out_writer, element, remove_namespaces)
+            self.__dump_record(out_writer, element, remove_namespaces, add_sample_label)
         out_file.close()
         self.logger.info('Job completed')
 
@@ -119,6 +123,8 @@ def make_parser(parser):
                         help='ignore namespace when looking for the given FlowCell ID')
     parser.add_argument('--remove_namespaces', action='store_true',
                         help='remove namespaces from IDs in output file')
+    parser.add_argument('--sample_label', action='store_true',
+                       help='add the SampleLabel column to the output file')
     parser.add_argument('-s', '--separator', type=str, default=',',
                         help='delimiter character for the output file')
 
@@ -126,7 +132,8 @@ def implementation(logger, host, user, passwd, args):
     app = BuildFlowCellSamplesheetApp(host=host, user=user, passwd=passwd,
                                       keep_tokens=args.keep_tokens, logger=logger)
     app.dump(args.flowcell, args.ofile, args.separator,
-             args.ignore_namespace, args.remove_namespaces)
+             args.ignore_namespace, args.remove_namespaces,
+             args.sample_label)
 
 def do_register(registration_list):
     help_doc = 'Extract samplesheet for the given FlowCell'
