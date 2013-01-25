@@ -30,6 +30,10 @@ def convert_type(o):
     return 'b'
   elif isinstance(o, omero.grid.StringColumn):
     return '|S%d' % o.size
+  elif isinstance(o, omero.grid.DoubleArrayColumn):
+    return '(%d,)float64' % o.size
+  elif isinstance(o, omero.grid.LongArrayColumn):
+    return '(%d,)int64' % o.size
 
 
 def convert_coordinates_to_np(d):
@@ -68,6 +72,8 @@ class ProxyCore(object):
     'long': omero.grid.LongColumn,
     'double': omero.grid.DoubleColumn,
     'bool': omero.grid.BoolColumn,
+    'double_array': omero.grid.DoubleArrayColumn,
+    'long_array': omero.grid.LongArrayColumn,
     }
   _CACHE = {}
 
