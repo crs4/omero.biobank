@@ -19,7 +19,7 @@ fi
 IMPORTER='../../../tools/importer -U root -P romeo --operator aen'
 KB_QUERY='../../../tools/kb_query -U root -P romeo --operator aen'
 DATA_DIR='./small'
-STUDY_LABEL=$(date +"%F-%R")
+STUDY_LABEL=TEST_${RANDOM}${RANDOM}
 
 
 echo 'Running tests on dataset:' ${DATA_DIR}
@@ -50,8 +50,8 @@ ${IMPORTER} -i dna_sample_mapped.tsv -o dna_sample_mapping.tsv \
     --vessel-type Tube || die "import dna sample failed"
 
 ${IMPORTER} -i ${DATA_DIR}/titer_plates.tsv -o titer_plate_mapping.tsv \
-    titer_plate --study ${STUDY_LABEL} --plate-shape=32x48 \
-    --maker=foomak --model=foomod || die "import plate failed"
+    samples_container --container-type=TiterPlate --study ${STUDY_LABEL} \
+    --plate-shape=32x48 || die "import plate failed"
 
 ${KB_QUERY} -o plate_well_mapped_1.tsv map_vid \
     -i ${DATA_DIR}/plate_wells.tsv --column sample_label \
@@ -102,10 +102,10 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
 
 
 #-----------------
-# use the following command to scratch and recreate the markers tables
-# THIS IS A VERY DANGEOURS THING TO DO.
-# If you are not sure, DO NOT DO IT!
-#../../../tools/create_tables  -U root -P romeo --do-it
+# use the following command to scratch and recreate omero tables
+# say that you really really want to do it with '--do-it':
+#  ../../../tools/create_tables -H localhost -U root -P romeo --markers --do-it
+#  ../../../tools/create_tables -H localhost -U root -P romeo --ehr --do-it
 #-----------------
 
 ${KB_QUERY} -o diagnosis_mapped.tsv map_vid -i ${DATA_DIR}/diagnosis.tsv \
