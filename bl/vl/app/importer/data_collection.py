@@ -45,7 +45,18 @@ class Recorder(core.Core):
     self.action_setup_conf = action_setup_conf
     self.preloaded_data_samples = {}
     self.preloaded_data_collections = {}
-    self.preloaded_items = {}
+    self.__preloaded_items = {}
+
+  @property
+  def preloaded_items(self):
+    if not self.__preloaded_items:
+      self.logger.info('start preloading data collection items')
+      objs = self.kb.get_objects(self.kb.DataCollectionItem)
+      for o in objs:
+        assert not o.dataCollectionItemUK in self.__preloaded_items
+        self.__preloaded_items[o.dataCollectionItemUK] = o
+      self.logger.info('done preloading data collection items')
+    return self.__preloaded_items
 
   def record(self, records, otsv, rtsv):
     def records_by_chunk(batch_size, records):
@@ -119,19 +130,11 @@ class Recorder(core.Core):
                      % len(self.preloaded_data_collections))
 
   def do_consistency_checks(self, data_collection, records):
-    def preload_data_collection_items():
-      self.logger.info('start preloading data collection items')
-      objs = self.kb.get_objects(self.kb.DataCollectionItem)
-      for o in objs:
-        assert not o.dataCollectionItemUK in self.preloaded_items
-        self.preloaded_items[o.dataCollectionItemUK] = o
-      self.logger.info('done preloading data collection items')
     self.logger.info('start consistency checks on %s' % data_collection.label)
     def build_key(dc, r):
       data_collection = dc
       data_sample = self.preloaded_data_samples[r['data_sample']]
       return make_unique_key(data_collection.id, data_sample.id)
-    preload_data_collection_items()
     good_records = []
     bad_records = []
     seen = []
