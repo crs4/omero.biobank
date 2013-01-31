@@ -15,7 +15,7 @@ except IndexError:
   sys.exit(USAGE)
 
 
-with nested(open(in_fn), open(out_fn, 'w') as (fi, fo):
+with nested(open(in_fn), open(out_fn, 'w')) as (fi, fo):
   i = csv.DictReader(fi, delimiter='\t')
   o = csv.DictWriter(fo, delimiter='\t', lineterminator="\n",
                      fieldnames=['label', 'source', 'device', 'status'])
