@@ -114,6 +114,7 @@ class Recorder(core.Core):
         bad_records.append(bad_rec)
         continue
       good_records.append(r)
+    self.logger.info('done consistency checks')
     return good_records, bad_records
 
   def record(self, records, rtsv):
