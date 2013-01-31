@@ -16,8 +16,12 @@ if [ "$1" == "--clean" ]; then
 fi
 
 
-IMPORTER='../../../tools/importer -U root -P romeo --operator aen'
-KB_QUERY='../../../tools/kb_query -U root -P romeo --operator aen'
+export OME_HOST="localhost"
+export OME_USER="root"
+export OME_PASSWD="romeo"
+
+IMPORTER='../../../tools/importer --operator aen'
+KB_QUERY='../../../tools/kb_query --operator aen'
 DATA_DIR='./small'
 STUDY_LABEL=TEST_${RANDOM}${RANDOM}
 

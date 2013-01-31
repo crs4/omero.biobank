@@ -291,12 +291,15 @@ class GenotypingAdapter(object):
     tname = self.snp_markers_set_table_name(MSET_TABLE, set_vid)
     vids = [t[0] for t in
             self.kb.get_table_rows(tname, None, col_names=['marker_vid'])]
+    vids_set = frozenset(vids)
     def add_vids(stream):
       multiple_hits = {}
       for x in stream:
+        k = x['marker_vid']
+        if k not in vids_set:
+          continue
         x['op_vid'] = op_vid
         if x['copies'] > 1:
-          k = x['marker_vid']
           if k in multiple_hits:
             multiple_hits[k].append(x)
             continue
