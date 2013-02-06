@@ -82,7 +82,7 @@ ${KB_QUERY} -o data_sample_mapped_2.tsv map_vid -i data_sample_mapped_1.tsv \
     --column device_label,device --source-type Chip \
     --study ${STUDY_LABEL} || die "map data sample vid 2 failed"
 
-SCANNER=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('localhost', 'root', 'romeo'); print kb.get_device('pula01').id")
+SCANNER=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('${OME_HOST}', '${OME_USER}', '${OME_PASSWD}'); print kb.get_device('pula01').id")
 ${IMPORTER} -i data_sample_mapped_2.tsv -o data_sample_mapping.tsv \
     data_sample --study ${STUDY_LABEL} --source-type PlateWell \
     --device-type Chip --scanner ${SCANNER} || die "import data sample failed"
@@ -106,10 +106,10 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
 
 
 #-----------------
-# use the following command to scratch and recreate omero tables
-# say that you really really want to do it with '--do-it':
-#  ../../../tools/create_tables -H localhost -U root -P romeo --markers --do-it
-#  ../../../tools/create_tables -H localhost -U root -P romeo --ehr --do-it
+# use the following commands to (scratch and re)create omero tables:
+#   export LOGIN_OPTS="-H ${OME_HOST} -U ${OME_USER} -P ${OME_PASSWD}"
+#   ../../../tools/create_tables ${LOGIN_OPTS} --markers --do-it
+#   ../../../tools/create_tables ${LOGIN_OPTS} --ehr --do-it
 #-----------------
 
 ${KB_QUERY} -o diagnosis_mapped.tsv map_vid -i ${DATA_DIR}/diagnosis.tsv \
@@ -141,7 +141,7 @@ ${IMPORTER} -i markers_sets_16.tsv -o markers_sets_16_mapping.tsv \
     --maker CRS4 --model MSET1 \
     --release `date +"%F-%R"` || die "import marker set 1 failed"
 
-MSET_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('localhost', 'root', 'romeo'); print kb.get_snp_markers_set(label='${MSET1}').id")
+MSET_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('${OME_HOST}', '${OME_USER}', '${OME_PASSWD}'); print kb.get_snp_markers_set(label='${MSET1}').id")
 python make_marker_align.py marker_definition_mapping.tsv marker_alignments.tsv
 ${IMPORTER} -i marker_alignments.tsv \
     marker_alignment --study ${STUDY_LABEL} --ref-genome hgFake \
@@ -154,7 +154,7 @@ python -c "print 'GenotypingProgram\t${MSET1}\tCRS4\tTest\t${MSET1}\t${MSET_VID}
 ${IMPORTER} -i foo_device.tsv -o foo_device_mapping.tsv device \
     --study ${STUDY_LABEL} || die "import foo device failed"
 
-DEVICE_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('localhost', 'root', 'romeo'); print kb.get_device('${MSET1}').id")
+DEVICE_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('${OME_HOST}', '${OME_USER}', '${OME_PASSWD}'); print kb.get_device('${MSET1}').id")
 echo "* extract a subset of individuals"
 FOO_GROUP=foo-`date +"%F-%R"`
 ${KB_QUERY} --ofile group_foo.tsv selector --study ${STUDY_LABEL} \
