@@ -88,7 +88,7 @@ class Recorder(core.Core):
       if r['marker_vid'] not in preloaded_marker_vids:
         f = 'there is no marker with ID %s' % r['marker_vid']
         self.logger.error(reject + f)
-        bar_rec = copy.deepcopy(r)
+        bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
