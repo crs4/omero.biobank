@@ -5,13 +5,19 @@
 Import marker_alignment
 =======================
 
-Will read in a tsv file with the following columns::
+Adds marker alignment info to a marker set.  The input tsv file is
+structured as follows::
 
   marker_vid chromosome pos      strand allele copies
   V0909090   10         82938938 True   A      1
   V0909091   1          82938999 True   A      2
   V0909092   1          82938938 True   B      2
   ...
+
+An alignment record is required for each marker in the set.  Missing
+alignment info must be filled by dummy records::
+
+  V0909093   None       None     None   None   0
 
 The pos fields is relative to 5': if the marker has been aligned on
 the other strand, it is the responsibility of the aligner app to
