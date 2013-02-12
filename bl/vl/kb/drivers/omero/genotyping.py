@@ -314,7 +314,10 @@ class GenotypingAdapter(object):
     for i in xrange(len(vids)):
       r = i_s.next()
       by_vid[r['marker_vid']] = r
-    records = [by_vid[v] for v in vids]
+    try:
+      records = [by_vid[v] for v in vids]
+    except KeyError as e:
+      raise ValueError("no alignment info for %s" % e.args[0])
     i_s = it.chain(iter(records), i_s)
     return self._fill_snp_markers_set_table(ALIGN_TABLE, set_vid, i_s,
                                             batch_size=batch_size)
