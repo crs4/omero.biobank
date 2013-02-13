@@ -82,6 +82,8 @@ def main(argv):
     kwargs = {'format': LOG_FORMAT,
               'datefmt': LOG_DATEFMT,
               'level': log_level}
+    if args.logfile:
+        kwargs['filename'] = args.logfile
     logging.basicConfig(**kwargs)
     logger = logging.getLogger()
 
