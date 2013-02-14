@@ -25,7 +25,7 @@ def get_random_table_name():
 
 class TestProxyCore(unittest.TestCase):
 
-  def __make_fields(self):
+  def __make_fields(self, array_size=ARRAY_SIZE):
     fields =  [
       ('string', 'r_type', 'Result object type', RES_SIZE, None),
       ('string', 'r_vid', 'Result object VID', VID_SIZE, None),
@@ -33,12 +33,12 @@ class TestProxyCore(unittest.TestCase):
       ('string', 'o_vid', 'Action VID', VID_SIZE, None),
       ('string', 't_vid', 'Action target object VID', VID_SIZE, None),
       ('string', 'i_vid', 'Root tree VID', VID_SIZE, None),
-      ('double_array', 'a_d_type', 'DoubleArray', ARRAY_SIZE),
-      ('long_array', 'a_l_type', 'LongArray', ARRAY_SIZE),
+      ('double_array', 'a_d_type', 'DoubleArray', array_size),
+      ('long_array', 'a_l_type', 'LongArray', array_size),
       ]
     return fields
 
-  def __fill_table(self, pc, table_name, n_rows):
+  def __fill_table(self, pc, table_name, n_rows, array_size=ARRAY_SIZE):
     rec_desc = pc.get_table_headers(table_name)
     data = np.zeros(n_rows, dtype=rec_desc)
     data['r_id'] =  np.arange(n_rows)
@@ -47,9 +47,9 @@ class TestProxyCore(unittest.TestCase):
     data['o_vid'] = ['o_vid%04d' % i for i in xrange(n_rows)]
     data['t_vid'] = ['t_vid%04d' % i for i in xrange(n_rows)]
     data['i_vid'] = ['i_vid%04d' % i for i in xrange(n_rows)]
-    data['a_d_type'] = [np.random.random(ARRAY_SIZE) for i in xrange(n_rows)]
+    data['a_d_type'] = [np.random.random(array_size) for i in xrange(n_rows)]
     data['a_l_type'] = [
-      np.random.randint(0, 2**63-1, ARRAY_SIZE) for i in xrange(n_rows)
+      np.random.randint(0, 2**63-1, array_size) for i in xrange(n_rows)
       ]
     pc.add_table_rows(table_name, data[:-1])
     pc.add_table_row(table_name, data[-1])
@@ -145,6 +145,23 @@ class TestProxyCore(unittest.TestCase):
     for i, r in it.izip(irange, rows_lite):
       self.assertTrue(data[i] == r)
 
+  def test_array_size(self):
+    print
+    exp = 5  # large values may trigger a mem overflow (see Ice.MessageSizeMax)
+    for i in xrange(exp):
+      array_size = 10**i
+      print "  array_size =", array_size
+      fields = self.__make_fields(array_size=array_size)
+      table_name = get_random_table_name()
+      try:
+        pc = ProxyCore(OME_HOST, OME_USER, OME_PASS)
+        pc.create_table(table_name, fields)
+        data = self.__fill_table(pc, table_name, N_ROWS, array_size=array_size)
+        rows = pc.get_table_rows(table_name, None)
+      finally:
+        pc.delete_table(table_name)
+      self.assertTrue(np.all(data == rows))
+
 
 def suite():
   suite = unittest.TestSuite()
@@ -153,6 +170,7 @@ def suite():
   suite.addTest(TestProxyCore('test_table_rows_iterator'))
   suite.addTest(TestProxyCore('test_update_row'))
   suite.addTest(TestProxyCore('test_selections'))
+  suite.addTest(TestProxyCore('test_array_size'))
   return suite
 
 
