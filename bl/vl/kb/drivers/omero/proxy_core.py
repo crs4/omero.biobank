@@ -30,6 +30,8 @@ def convert_type(o):
     return 'b'
   elif isinstance(o, omero.grid.StringColumn):
     return '|S%d' % o.size
+  elif isinstance(o, omero.grid.FloatArrayColumn):
+    return '(%d,)float32' % o.size
   elif isinstance(o, omero.grid.DoubleArrayColumn):
     return '(%d,)float64' % o.size
   elif isinstance(o, omero.grid.LongArrayColumn):
@@ -72,6 +74,7 @@ class ProxyCore(object):
     'long': omero.grid.LongColumn,
     'double': omero.grid.DoubleColumn,
     'bool': omero.grid.BoolColumn,
+    'float_array': omero.grid.FloatArrayColumn,
     'double_array': omero.grid.DoubleArrayColumn,
     'long_array': omero.grid.LongArrayColumn,
     }

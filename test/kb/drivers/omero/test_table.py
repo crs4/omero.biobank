@@ -33,6 +33,7 @@ class TestProxyCore(unittest.TestCase):
       ('string', 'o_vid', 'Action VID', VID_SIZE, None),
       ('string', 't_vid', 'Action target object VID', VID_SIZE, None),
       ('string', 'i_vid', 'Root tree VID', VID_SIZE, None),
+      ('float_array', 'a_f_type', 'FloatArray', array_size),
       ('double_array', 'a_d_type', 'DoubleArray', array_size),
       ('long_array', 'a_l_type', 'LongArray', array_size),
       ]
@@ -47,6 +48,9 @@ class TestProxyCore(unittest.TestCase):
     data['o_vid'] = ['o_vid%04d' % i for i in xrange(n_rows)]
     data['t_vid'] = ['t_vid%04d' % i for i in xrange(n_rows)]
     data['i_vid'] = ['i_vid%04d' % i for i in xrange(n_rows)]
+    data['a_f_type'] = [
+      np.random.random(array_size).astype(np.float32) for i in xrange(n_rows)
+      ]
     data['a_d_type'] = [np.random.random(array_size) for i in xrange(n_rows)]
     data['a_l_type'] = [
       np.random.randint(0, 2**63-1, array_size) for i in xrange(n_rows)
@@ -68,6 +72,8 @@ class TestProxyCore(unittest.TestCase):
           self.assertEqual('|S%d' % f[3], n[1])
         elif f[0] == 'long':
           self.assertEqual('i8', n[1])
+        elif f[0] == 'float_array':
+          self.assertEqual('(%d,)float32' % f[3], n[1])
         elif f[0] == 'double_array':
           self.assertEqual('(%d,)float64' % f[3], n[1])
         elif f[0] == 'long_array':
