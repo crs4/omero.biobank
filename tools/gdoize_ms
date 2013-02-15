@@ -104,10 +104,11 @@ def main(argv):
         ssc_do = do
     else:
       if ssc_do:
-        logger.info("creating gdo for %s" % g.label)
+        logger.info("reading genotyping data for %s" % g.label)
         probs, confs = read_ssc(ssc_do.path, ms)
+        logger.info("creating gdo for %s" % g.label)
         kb.add_gdo_data_object(action, g, probs, confs)
-        logger.info("finished creating gdo for %s" % g.label)
+        logger.info("finished with %s" % g.label)
         n_created_gdos += 1
   if n_created_gdos == 0:
     kb.delete(action)

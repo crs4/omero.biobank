@@ -20,7 +20,8 @@ class MapVIDApp(Core):
 
   SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
                             'Chip', 'DataSample', 'Marker', 'Scanner',
-                            'SoftwareProgram', 'SNPMarkersSet', 'DataCollectionItem',
+                            'SoftwareProgram', 'SNPMarkersSet',
+                            'DataCollectionItem', 'Device',
                             'FlowCell', 'Lane', 'SequencerOutput']
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
