@@ -436,10 +436,7 @@ class ProxyCore(object):
     if hasattr(row, 'dtype'):
       dtype = row.dtype
       row = dict([(k, convert_from_numpy(row[k])) for k in dtype.names])
-    def stream(row):
-      for i in range(1):
-        yield row
-    return self.add_table_rows_from_stream(table_name, stream(row), 10)
+    return self.add_table_rows_from_stream(table_name, iter([row]), 10)
 
   def add_table_rows(self, table_name, rows, batch_size=BATCH_SIZE):
     dtype = rows.dtype
@@ -478,8 +475,8 @@ class ProxyCore(object):
   def __load_batch(self, records_stream, col_objs, chunk_size):
     v = {}
     for r in it.islice(records_stream, chunk_size):
-      for k in r.keys():
-        v.setdefault(k,[]).append(r[k])
+      for k, x in r.iteritems():
+        v.setdefault(k, []).append(x)
     if len(v) == 0:
       return None
     for o in col_objs:
