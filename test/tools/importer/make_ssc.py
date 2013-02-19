@@ -7,6 +7,7 @@ from random import choice, uniform
 from bl.core.io import MessageStreamWriter
 
 PAYLOAD_TYPE = "core.gt.messages.SampleSnpCall"
+MAP_FILE = "ssc_map.tsv"
 
 
 def write_an_ssc(sample_id, snp_labels, out_dir):
@@ -15,7 +16,8 @@ def write_an_ssc(sample_id, snp_labels, out_dir):
   sig_range = [1e2, 1e4]
   w_range = [0, 1e-5]
   hdr = {'sample_id': sample_id}
-  path = os.path.join(out_dir, '%s.ssc' % sample_id)
+  fn = '%s.ssc' % sample_id
+  path = os.path.join(out_dir, fn)
   print "writing", path
   with open(path, "w") as fo:
     writer = MessageStreamWriter(fo, PAYLOAD_TYPE, hdr)
@@ -31,6 +33,7 @@ def write_an_ssc(sample_id, snp_labels, out_dir):
         'w_AB': uniform(*w_range),
         'w_BB': uniform(*w_range),
         })
+  return fn
 
 
 def get_labels(tsv_fn):
@@ -55,8 +58,12 @@ def main():
     os.makedirs(out_dir)
   snp_labels = get_labels(marker_defs_fn)
   ind_labels = get_labels(individuals_fn)
-  for l in ind_labels:
-    write_an_ssc(l, snp_labels, out_dir)
+  with open(MAP_FILE, "w") as fo:
+    fo.write("ssc_label\tsource_label\n")
+    for l in ind_labels:
+      fn = write_an_ssc(l, snp_labels, out_dir)
+      fo.write("%s\t%s\n" % (fn, l))
+  print "wrote %s" % MAP_FILE
 
 
 if __name__ == "__main__":
