@@ -304,6 +304,8 @@ class ProxyCore(object):
       raise kb.KBError('the requested %s table is missing' % table_name)
     r = s.sharedResources()
     t = r.openTable(ofile)
+    if not t:
+      raise ValueError("failed to retrieve table '%s'" % table_name)
     return t
 
   def get_table_rows_iterator(self, table_name, batch_size=100):

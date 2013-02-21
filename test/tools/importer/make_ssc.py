@@ -5,9 +5,42 @@ import sys, os, csv
 from random import choice, uniform
 
 from bl.core.io import MessageStreamWriter
+from bl.vl.kb import KnowledgeBase
 
 PAYLOAD_TYPE = "core.gt.messages.SampleSnpCall"
 MAP_FILE = "ssc_map.tsv"
+
+
+def get_ome_env():
+  ome_env = {}
+  for var in 'OME_HOST', 'OME_USER', 'OME_PASSWD':
+    try:
+      ome_env[var] = os.environ[var]
+    except KeyError:
+      raise ValueError("%s env var not set" % var)
+  return ome_env
+
+
+def get_snp_labels(mset_label):
+  ome_env = get_ome_env()
+  try:
+    kb = KnowledgeBase(driver='omero')(
+      ome_env['OME_HOST'], ome_env['OME_USER'], ome_env['OME_PASSWD'],
+      )
+    mset = kb.get_snp_markers_set(mset_label)
+    if not mset:
+      raise ValueError("No marker set in kb with label %s" % mset_label)
+    mset.load_markers(additional_fields=['label'])
+    labels = mset.add_marker_info['label']
+  finally:
+    kb.disconnect()
+  return labels
+
+
+def get_ind_labels(tsv_fn):
+  with open(tsv_fn) as fi:
+    reader = csv.DictReader(fi, delimiter='\t')
+    return [r["label"] for r in reader]
 
 
 def write_an_ssc(sample_id, snp_labels, out_dir):
@@ -36,16 +69,10 @@ def write_an_ssc(sample_id, snp_labels, out_dir):
   return fn
 
 
-def get_labels(tsv_fn):
-  with open(tsv_fn) as fi:
-    reader = csv.DictReader(fi, delimiter='\t')
-    return [r["label"] for r in reader]
-
-
 def main():
-  USAGE = "Usage: python %s MDEF_F IND_F [OUTPUT_D]" % sys.argv[0]
+  USAGE = "Usage: python %s MS_LABEL IND_F [OUTPUT_D]" % sys.argv[0]
   try:
-    marker_defs_fn = sys.argv[1]
+    ms_label = sys.argv[1]
     individuals_fn = sys.argv[2]
   except IndexError:
     sys.exit(USAGE)
@@ -56,8 +83,8 @@ def main():
   #--
   if not os.path.isdir(out_dir):
     os.makedirs(out_dir)
-  snp_labels = get_labels(marker_defs_fn)
-  ind_labels = get_labels(individuals_fn)
+  snp_labels = get_snp_labels(ms_label)
+  ind_labels = get_ind_labels(individuals_fn)
   with open(MAP_FILE, "w") as fo:
     fo.write("ssc_label\tsource_label\n")
     for l in ind_labels:
