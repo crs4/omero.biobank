@@ -196,8 +196,8 @@ def implementation(logger, host, user, passwd, args):
   for m in recorder.kb.get_objects(recorder.kb.SNPMarkersSet):
     if m.label == args.label:
       msg = 'a marker set labeled %s is already present in the kb' % args.label
-      logger.critical(msg)
-      raise ValueError(msg)
+      logger.error(msg)
+      return
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
