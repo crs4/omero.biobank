@@ -35,7 +35,6 @@ SNP record has the following additional fields:
   * a 'ref_rs_genome' string
 """
 
-import numpy as np
 import itertools as it
 from operator import itemgetter
 
@@ -234,10 +233,10 @@ class GenotypingAdapter(object):
       ('string', 'vid', 'gdo VID', VID_SIZE, None),
       ('string', 'op_vid', 'Last operation that modified this row',
        VID_SIZE, None),
-      ('string', 'probs', 'np.zeros((2,N), dtype=np.float32).tostring()',
-       2*N*4, None),
-      ('string', 'confidence', 'np.zeros((N,), dtype=np.float32).tostring()',
-       N*4, None),
+      ('float_array', 'probs', 'np.zeros((2,N), dtype=np.float32)',
+       2*N, None),
+      ('float_array', 'confidence', 'np.zeros((N,), dtype=np.float32)',
+       N, None),
       ]
     return cols
 
@@ -328,28 +327,21 @@ class GenotypingAdapter(object):
                                             batch_size=batch_size)
 
   def add_gdo(self, set_vid, probs, confidence, op_vid):
-    pstr = probs.tostring()
-    cstr = confidence.tostring()
-    assert len(pstr) == 2*len(cstr)
+    probs.shape = probs.size
     table_name = self.snp_markers_set_table_name(GDO_TABLE, set_vid)
-    row = {'op_vid': op_vid, 'probs':  pstr, 'confidence': cstr}
+    row = {'op_vid': op_vid, 'probs': probs, 'confidence': confidence}
     assign_vid(row)
     row_indices = self.kb.add_table_row(table_name, row)
     assert len(row_indices) == 1
+    probs.shape = (2, probs.size/2)
     return row['vid'], row_indices[0]
 
   def _unwrap_gdo(self, row, indices):
-    def unpack(r, field):
-      def normalize_size(string, size):
-        return string + chr(0) * (size - len(string))
-      p = np.fromstring(normalize_size(r[field], r.dtype[field].itemsize),
-                        dtype=np.float32)
-      return p
     r = {'vid': row['vid'], 'op_vid': row['op_vid']}
-    p = unpack(row, 'probs')
-    p.shape = (2, p.shape[0]/2)
+    p = row['probs']
+    p.shape = (2, p.size/2)
     r['probs'] = p[:, indices] if indices is not None else p
-    c = unpack(row, 'confidence')
+    c = row['confidence']
     r['confidence'] = c[indices] if indices is not None else c
     return r
 
