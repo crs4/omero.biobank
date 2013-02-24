@@ -10,6 +10,8 @@ export OME_PASSWD=${OME_PASSWD:="romeo"}
 export BASEDIR=$(cd $(dirname ${BASH_SOURCE}); pwd; cd - >/dev/null)
 export WORK=${BASEDIR}/work
 
+TMP_DIR=/var/tmp
+
 CREATE_MDEF_TABLE="../../../tools/create_tables -H ${OME_HOST} -U ${OME_USER} -P ${OME_PASSWD} --markers --do-it"
 IMPORTER='../../../tools/importer --operator aen'
 KB_QUERY='../../../tools/kb_query --operator aen'
@@ -100,13 +102,13 @@ ${BUILD_SSC_IMPORT} --ssc-dir ${WORK}/ssc --map-file ${WORK}/ssc_map.tsv \
     --ds-fn=${WORK}/ssc_data_samples.tsv \
     --do-fn=${WORK}/ssc_data_objects.tsv || die "build ssc import files failed"
 
-${KB_QUERY} -o /tmp/temp.tsv map_vid -i ${WORK}/ssc_data_samples.tsv \
+${KB_QUERY} -o ${TMP_DIR}/temp.tsv map_vid -i ${WORK}/ssc_data_samples.tsv \
     --study ${STUDY_LABEL} --source-type Individual \
     --column source || die "intermediate map vid on data samples failed"
-${KB_QUERY} -o ${WORK}/ssc_data_samples_vids.tsv map_vid -i /tmp/temp.tsv \
+${KB_QUERY} -o ${WORK}/ssc_data_samples_vids.tsv map_vid -i ${TMP_DIR}/temp.tsv \
     --study ${STUDY_LABEL} --source-type Device \
     --column device,device || die "final map vid on data samples failed"
-rm -fv /tmp/temp.tsv
+rm -fv ${TMP_DIR}/temp.tsv
 
 ${IMPORTER} -i ${WORK}/ssc_data_samples_vids.tsv \
     -o ${WORK}/ssc_data_samples_vids_mapping.tsv \
