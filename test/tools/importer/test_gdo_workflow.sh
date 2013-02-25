@@ -86,15 +86,16 @@ ${IMPORTER} -i ${WORK}/device_vids.tsv -o ${WORK}/device_map.tsv device \
 
 python ${BASEDIR}/make_marker_align.py ${WORK}/marker_definitions_map.tsv \
     ${WORK}/marker_alignments.tsv
-${KB_QUERY} -o ${WORK}/marker_alignments_vids.tsv map_vid \
-    -i ${WORK}/marker_alignments.tsv \
-    --source-type Marker --column marker_vid,marker_vid \
-    --study ${STUDY_LABEL} || die "map vid on marker alignments failed"
+# this is basically a no-op
+# ${KB_QUERY} -o ${WORK}/marker_alignments_vids.tsv map_vid \
+#     -i ${WORK}/marker_alignments.tsv \
+#     --source-type Marker --column marker_vid,marker_vid \
+#     --study ${STUDY_LABEL} || die "map vid on marker alignments failed"
 
-${importer} -i ${WORK}/marker_alignments_vids.tsv \
+${IMPORTER} -i ${WORK}/marker_alignments.tsv \
     -o ${WORK}/marker_alignments_map.tsv \
     marker_alignment --markers-set ${MS_LABEL} --ref-genome='hg19' \
-    --study ${STUDY_LABEL} || "import marker alignments failed"
+    --study ${STUDY_LABEL} || die "import marker alignments failed"
 
 pushd ${WORK}
 python ${BASEDIR}/make_ssc.py ${MS_LABEL} individual.tsv
