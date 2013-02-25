@@ -124,7 +124,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def __set_add_marker_info(self, v):
     self.bare_setattr('add_marker_info', v)
 
-  def __get_add_marker_info(self, v):
+  def __get_add_marker_info(self):
     return self.bare_getattr('add_marker_info')
 
   def __set_aligns(self, v):
@@ -149,18 +149,24 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def has_add_marker_info(self):
     return hasattr(self, 'add_marker_info')
 
-
   def __getitem__(self, i):
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded')
     mdef = self.markers[i]
-    pos = (0, 0)
+    kwargs = {'index' : mdef['marker_indx'],
+              'flip'  : mdef['allele_flip']}
     if self.has_aligns():
       mali = self.aligns[i]
       if mali['copies'] == 1:
-        pos = (mali['chromosome'], mali['pos'])
-    return Marker(mdef['marker_vid'], mdef['marker_indx'],
-                  pos, flip=mdef['allele_flip'])
+        kwargs.update({'position' : (mali['chromosome'], mali['pos']),
+                       'on_reference_strand' : mali['strand'],
+                       'allele_on_reference' : mali['allele']})
+      else:
+        kwargs.update({'position' : (0, 0)})
+    if self.has_add_marker_info():
+      kwargs.update(dict(zip(self.add_marker_info.dtype.names,
+                             self.add_marker_info[i])))
+    return Marker(**kwargs)
 
   def load_markers(self, batch_size=1000, additional_fields=None):
     """
@@ -198,7 +204,8 @@ class SNPMarkersSet(wp.OmeroWrapper):
       self.id, batch_size=batch_size
       )
     assert len(aligns) >= len(self)
-    aligns = aligns[['chromosome', 'pos', 'global_pos', 'copies']]
+    aligns = aligns[['chromosome', 'pos', 'global_pos', 'strand', 'allele',
+                     'copies']]
     aligns = aligns[:len(self)]
     no_align_positions =  - (self.markers['marker_indx'] +
                              (self.omero_id * self.MAX_LEN))
