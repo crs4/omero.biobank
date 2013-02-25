@@ -10,9 +10,12 @@ import array, struct, logging
 logger = logging.getLogger('bl.vl.genotype.io')
 import numpy as np
 import itertools as it
+import datetime
 
 from collections import Counter
 
+from bl.core.seq.utils import reverse_complement as rev_compl
+from bl.vl.utils.snp import split_mask
 from bl.core.io import MessageStreamReader
 from bl.vl.genotype.algo import project_to_discrete_genotype
 
@@ -147,6 +150,82 @@ class PedLineParser(object):
         preview = " ".join(data[:5]) + " [...]"
         raise MismatchError("%r is not consistent with DAT types" % preview)
 
+class VCFWriter(object):
+  """
+  Writes a `VCF 4.1 <http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41>'_ formatted file
+
+  Current version is a minimalistic implementation, but should produce
+  something that, at least, verifyBAMid could read.
+
+  Example
+
+  ##fileformat=VCFv4.1
+  ##fileDate=20090805
+  ##source=myImputationProgramV3.1
+  ##reference=file:///seq/references/1000GenomesPilot-NCBI36.fasta
+  ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+  #CHROM POS     ID        REF    ALT     QUAL FILTER FORMAT NA01 NA02 NA03
+  20     14370   rs6054257 G      A       .    PASS   GT     0/0  1/0  1/1
+  20     17330   .         T      A       .    PASS   GT     0/0  0/1  0/0
+  20     1110696 rs6040355 A      G       .    PASS   GT     1/2  2/1  2/2
+
+  The REF column corresponds to the allele found on the reference for
+  that SNP, while ALT is the alternative allele. The last three
+  columns in this example are what has been measured for,
+  respectively, samples NA01, NA02, NA03.
+
+  """
+  def __init__(self, mset, ref_genome, marker_selector=None):
+    self.mset = mset
+    self.ref_genome = ref_genome
+    self.marker_selector = marker_selector
+    self.mset.load_markers(additional_fields=['mask', 'rs_label'])
+    self.mset.load_alignments(self.ref_genome)
+
+  def __load_data(self, data_samples):
+    N = len(data_samples)
+    M = len(self.marker_selector)
+    data = np.zeros((N, M), dtype=np.uint8)
+    labels = []
+    for i, d in enumerate(data_samples):
+      labels.append(d.label)
+      # FIXME: it would be better if we could directly tell resolve_to_data
+      # to fetch only as selected by marker_selector
+      probs, _ = d.resolve_to_data()
+      data[i, :] = project_to_discrete_genotype(probs[self.marker_selector])
+    return labels, data
+
+  def __write_header(self, fobj, labels):
+    d = datetime.date.today()
+    fobj.write('##fileformat=VCFv4.1\n')
+    fobj.write('##fileDate=%d%02d%02d\n' % (d.year, d.month, d.day))
+    fobj.write('##source=biobank.export.v0\n')
+    fobj.write('##reference=%s\n' % self.ref_genome) # FIXME
+    fobj.write('##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n')
+    fobj.write('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tFORMAT')
+    fobj.write('\t' + '\t'.join(labels))
+    fobj.write('\n')
+
+  def __write_snp(self, fobj, m, label, dat):
+    allele_patterns = np.array(['0/0','1/1','0/1', './.'])
+    _, alleles, _ = split_mask(m.mask)
+    if m.on_reference_strand:
+      ref_allele = alleles[m.allele_on_reference == 'B']
+      alt_allele = alleles[m.allele_on_reference == 'A']
+    else:
+      ref_allele = rev_compl(alleles[m.allele_on_reference == 'B'])
+      alt_allele = rev_compl(alleles[m.allele_on_reference == 'A'])
+    fobj.write('%s\t%s' % m.position)
+    fobj.write('\t%s\t%s\t%s' % (m.rs_label, ref_allele, alt_allele))
+    fobj.write('\t.\tPASS\tGT')
+    fobj.write('\t' + '\t'.join(allele_patterns[dat]))
+    fobj.write('\n')
+
+  def write(self, file_object, data_samples):
+    labels, data = self.__load_data(data_samples)
+    self.__write_header(labels)
+    for i, l in enumerate(labels):
+      self.__write_snp(self.mset[i], l, data[i, :])
 
 class PedWriter(object):
   """
