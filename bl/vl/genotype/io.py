@@ -182,7 +182,13 @@ class VCFWriter(object):
     self.mset.load_markers(additional_fields=['mask', 'rs_label'])
     self.mset.load_alignments(self.ref_genome)
 
+  def __initialize_marker_selector(self, d):
+    if self.marker_selector is None:
+      probs, _ = d.resolve_to_data()
+      self.marker_selector = np.arange(probs.shape[1], dtype=np.uint32)
+
   def __load_data(self, data_samples):
+    self.__initialize_marker_selector(data_samples[0])
     N = len(data_samples)
     M = len(self.marker_selector)
     data = np.zeros((N, M), dtype=np.uint8)
@@ -192,7 +198,7 @@ class VCFWriter(object):
       # FIXME: it would be better if we could directly tell resolve_to_data
       # to fetch only as selected by marker_selector
       probs, _ = d.resolve_to_data()
-      data[i, :] = project_to_discrete_genotype(probs[self.marker_selector])
+      data[i, :] = project_to_discrete_genotype(probs[:, self.marker_selector])
     return labels, data
 
   def __write_header(self, fobj, labels):
@@ -223,9 +229,9 @@ class VCFWriter(object):
 
   def write(self, file_object, data_samples):
     labels, data = self.__load_data(data_samples)
-    self.__write_header(labels)
+    self.__write_header(file_object, labels)
     for i, l in enumerate(labels):
-      self.__write_snp(self.mset[i], l, data[i, :])
+      self.__write_snp(file_object, self.mset[i], l, data[i, :])
 
 class PedWriter(object):
   """
