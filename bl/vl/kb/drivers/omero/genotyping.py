@@ -249,7 +249,7 @@ class GenotypingAdapter(object):
                         (ALIGN_TABLE, self.SNP_ALIGNMENT_COLS),
                         (GDO_TABLE, snp_gdo_repo_cols)):
       self._create_snp_markers_set_table(table, cols, set_vid)
-      
+
   def delete_snp_markers_set_tables(self, set_vid):
     """
     Delete all tables related to a SNPMarkersSet.
@@ -282,7 +282,7 @@ class GenotypingAdapter(object):
                                      batch_size=BATCH_SIZE):
     """
     Add alignment info to a SNPMarkersSet table.
-    
+
     In the case of multiple hits, only the first copy encountered is
     added in the same order as it is found in the input stream;
     additional copies are temporarily stored and appended at the end.
