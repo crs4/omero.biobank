@@ -3,9 +3,9 @@ die() {
     exit 1
 }
 
-export OME_HOST="localhost"
-export OME_USER="root"
-export OME_PASSWD="romeo"
+export OME_HOST=${OME_HOST:="localhost"}
+export OME_USER=${OME_USER:="root"}
+export OME_PASSWD=${OME_PASSWD:="romeo"}
 
 export BASEDIR=$(cd $(dirname ${BASH_SOURCE}); pwd; cd - >/dev/null)
 export WORK=${BASEDIR}/work
@@ -85,14 +85,9 @@ ${IMPORTER} -i ${WORK}/device_vids.tsv -o ${WORK}/device_map.tsv device \
     --study ${STUDY_LABEL} || die "import device failed"
 
 python ${BASEDIR}/make_marker_align.py ${WORK}/marker_definitions_map.tsv \
-    ${WORK}/marker_alignments.tsv
-# this is basically a no-op
-# ${KB_QUERY} -o ${WORK}/marker_alignments_vids.tsv map_vid \
-#     -i ${WORK}/marker_alignments.tsv \
-#     --source-type Marker --column marker_vid,marker_vid \
-#     --study ${STUDY_LABEL} || die "map vid on marker alignments failed"
+    ${WORK}/marker_alignments_vids.tsv
 
-${IMPORTER} -i ${WORK}/marker_alignments.tsv \
+${IMPORTER} -i ${WORK}/marker_alignments_vids.tsv \
     -o ${WORK}/marker_alignments_map.tsv \
     marker_alignment --markers-set ${MS_LABEL} --ref-genome='hg19' \
     --study ${STUDY_LABEL} || die "import marker alignments failed"
