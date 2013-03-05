@@ -1,12 +1,16 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-# FIXME assumes an existing setup on the KB server
+# FIXME: it assumes to be launched after ../tools/importers/test_gdo_workflow.sh
 
 import unittest
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.genotype.io import PedWriter
+
+STUDY_LABEL='GDO_TEST_STUDY'
+MS_LABEL='GDO_TEST_MS'
+REF_GENOME='hg19'
 
 
 class ped_writer(unittest.TestCase):
@@ -27,12 +31,12 @@ class ped_writer(unittest.TestCase):
         by_individual[i.id] = gds[0]
       return by_individual
 
-    study = self.kb.get_study('TEST01')
+    study = self.kb.get_study(STUDY_LABEL)
     family = self.kb.get_individuals(study)
-    mset = self.kb.get_snp_markers_set(label='FakeTaqSet01')
+    mset = self.kb.get_snp_markers_set(label=MS_LABEL)
     gds_by_individual = extract_data_sample(study, mset, 'GenotypeDataSample')
 
-    pw = PedWriter(mset, base_path="./foo")
+    pw = PedWriter(mset, base_path="./foo", ref_genome=REF_GENOME)
     pw.write_map()
     pw.write_family(study.id, family, gds_by_individual)
     pw.close()

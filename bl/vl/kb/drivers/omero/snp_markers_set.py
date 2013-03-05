@@ -153,16 +153,16 @@ class SNPMarkersSet(wp.OmeroWrapper):
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded')
     mdef = self.markers[i]
-    kwargs = {'index' : mdef['marker_indx'],
-              'flip'  : mdef['allele_flip']}
+    kwargs = {'vid' : mdef['marker_vid'],
+              'index' : mdef['marker_indx'],
+              'flip'  : mdef['allele_flip'],
+              'position' : (0, 0)}
     if self.has_aligns():
       mali = self.aligns[i]
       if mali['copies'] == 1:
         kwargs.update({'position' : (mali['chromosome'], mali['pos']),
                        'on_reference_strand' : mali['strand'],
                        'allele_on_reference' : mali['allele']})
-      else:
-        kwargs.update({'position' : (0, 0)})
     if self.has_add_marker_info():
       kwargs.update(dict(zip(self.add_marker_info.dtype.names,
                              self.add_marker_info[i])))

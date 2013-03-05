@@ -150,16 +150,12 @@ class PedLineParser(object):
         preview = " ".join(data[:5]) + " [...]"
         raise MismatchError("%r is not consistent with DAT types" % preview)
 
-
 class VCFWriter(object):
   """
-  Writes a `VCF 4.1
-  <http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41>`_
-  file.
+  Writes a `VCF 4.1 <http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41>'_ formatted file
 
-  This is a minimal implementation, but the VCF output should be at
-  least readable by `VerifyBamID
-  <http://genome.sph.umich.edu/wiki/VerifyBamID>`_.
+  Current version is a minimalistic implementation, but should produce
+  something that, at least, verifyBAMid could read.
 
   Example
 
@@ -177,6 +173,7 @@ class VCFWriter(object):
   that SNP, while ALT is the alternative allele. The last three
   columns in this example are what has been measured for,
   respectively, samples NA01, NA02, NA03.
+
   """
   def __init__(self, mset, ref_genome, marker_selector=None):
     self.mset = mset
@@ -215,7 +212,7 @@ class VCFWriter(object):
     fobj.write('\t' + '\t'.join(labels))
     fobj.write('\n')
 
-  def __write_snp(self, fobj, m, dat):
+  def __write_snp(self, fobj, m, label, dat):
     allele_patterns = np.array(['0/0','1/1','0/1', './.'])
     _, alleles, _ = split_mask(m.mask)
     if m.on_reference_strand:
@@ -234,8 +231,7 @@ class VCFWriter(object):
     labels, data = self.__load_data(data_samples)
     self.__write_header(file_object, labels)
     for i, l in enumerate(labels):
-      self.__write_snp(file_object, self.mset[i], data[i, :])
-
+      self.__write_snp(file_object, self.mset[i], l, data[i, :])
 
 class PedWriter(object):
   """
@@ -275,7 +271,7 @@ class PedWriter(object):
     try:
       N = len(self.mset)
     except ValueError:
-      self.mset.load_markers()
+      self.mset.load_markers(additional_fields=['rs_label'])
       N = len(self.mset)
     self.null_probs = np.empty((2, N), dtype=np.float32)
     self.null_probs.fill(1/3.)
@@ -299,9 +295,9 @@ class PedWriter(object):
       return { 23 : 'X', 24 : 'Y', 25 : 'XY', 26 : 'MT'}[x]
     def dump_markers(fo, marker_indx):
       for i in marker_indx:
-        m = self.mset.markers[i]
+        m = self.mset[i]
         chrom, pos = m.position
-        fo.write('%s\t%s\t%s\t%s\n' % (chrom, m.label, 0, pos))
+        fo.write('%s\t%s\t%s\t%s\n' % (chrom, m.rs_label, 0, pos))
     with open(self.base_path + '.map', 'w') as fo:
       fo.write('# map based on mset %s aligned on %s\n' %
                (self.mset.id, self.ref_genome))
