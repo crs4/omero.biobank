@@ -125,3 +125,5 @@ ${IMPORTER} -i ${WORK}/ssc_data_objects_vids.tsv \
     data_object --study ${STUDY_LABEL} || die "import dos failed"
 
 ${GDOIZE_MS} -s ${STUDY_LABEL} -m ${MS_LABEL}
+
+REF_GENOME=hg19 python write_vcf.py ${WORK}/data.vcf
