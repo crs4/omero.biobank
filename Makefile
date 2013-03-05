@@ -1,4 +1,5 @@
 PYTHON = python
+PY_V := $(shell $(PYTHON) -c 'import sys; print "%d.%d" % sys.version_info[:2]')
 
 EXPORT_DIR = svn_export
 APP = $(shell cat NAME)
@@ -10,7 +11,7 @@ COPYRIGHTER = copyrighter -p $(APP) -n $(NOTICE_TEMPLATE) $(COPYRIGHT_OWNER)
 GENERATED_FILES = AUTHORS MANIFEST README bl/vl/version.py
 
 
-.PHONY: all build install install_user clean distclean
+.PHONY: all build install install_user clean distclean uninstall_user
 
 all: build
 
@@ -43,3 +44,7 @@ clean:
 
 distclean: clean
 	rm -rf $(EXPORT_DIR) dist
+
+uninstall_user:
+	rm -rf ~/.local/lib/python$(PY_V)/site-packages/bl/vl
+	rm -rf ~/.local/lib/python$(PY_V)/site-packages/biobank*
