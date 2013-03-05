@@ -40,7 +40,7 @@ class ped_writer(unittest.TestCase):
 
 def suite():
   suite = unittest.TestSuite()
-  #suite.addTest(ped_writer('test_base'))
+  suite.addTest(ped_writer('test_base'))
   return suite
 
 
