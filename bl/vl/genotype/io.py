@@ -7,7 +7,7 @@ Genotyping-related I/O
 """
 
 import array, struct, logging
-logger = logging.getLogger('bl.vl.genotype.io')
+LOGGER = logging.getLogger('bl.vl.genotype.io')
 import numpy as np
 import itertools as it
 import datetime
@@ -20,9 +20,14 @@ from bl.core.io import MessageStreamReader
 from bl.vl.genotype.algo import project_to_discrete_genotype
 
 
-class Error(Exception): pass
-class InvalidRecordError(Error): pass
-class MismatchError(Error): pass
+class Error(Exception):
+  pass
+
+class InvalidRecordError(Error):
+  pass
+
+class MismatchError(Error):
+  pass
 
 
 # merlin-1.1.2/libsrc/PedigreeDescription.cpp
@@ -150,12 +155,16 @@ class PedLineParser(object):
         preview = " ".join(data[:5]) + " [...]"
         raise MismatchError("%r is not consistent with DAT types" % preview)
 
+
 class VCFWriter(object):
   """
-  Writes a `VCF 4.1 <http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41>'_ formatted file
+  Writes a `VCF 4.1
+  <http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41>`_
+  file.
 
-  Current version is a minimalistic implementation, but should produce
-  something that, at least, verifyBAMid could read.
+  This is a minimal implementation, but the VCF output should be at
+  least readable by `VerifyBamID
+  <http://genome.sph.umich.edu/wiki/VerifyBamID>`_.
 
   Example
 
@@ -173,7 +182,6 @@ class VCFWriter(object):
   that SNP, while ALT is the alternative allele. The last three
   columns in this example are what has been measured for,
   respectively, samples NA01, NA02, NA03.
-
   """
   def __init__(self, mset, ref_genome, marker_selector=None):
     self.mset = mset
@@ -212,8 +220,8 @@ class VCFWriter(object):
     fobj.write('\t' + '\t'.join(labels))
     fobj.write('\n')
 
-  def __write_snp(self, fobj, m, label, dat):
-    allele_patterns = np.array(['0/0','1/1','0/1', './.'])
+  def __write_snp(self, fobj, m, dat):
+    allele_patterns = np.array(['0/0', '1/1', '0/1', './.'])
     _, alleles, _ = split_mask(m.mask)
     if m.on_reference_strand:
       ref_allele = alleles[m.allele_on_reference == 'B']
@@ -230,8 +238,9 @@ class VCFWriter(object):
   def write(self, file_object, data_samples):
     labels, data = self.__load_data(data_samples)
     self.__write_header(file_object, labels)
-    for i, l in enumerate(labels):
-      self.__write_snp(file_object, self.mset[i], l, data[i, :])
+    for i, _ in enumerate(labels):
+      self.__write_snp(file_object, self.mset[i], data[i, :])
+
 
 class PedWriter(object):
   """
@@ -394,18 +403,18 @@ def read_ssc(fn, mset):
       probs[0,idx] = p_AA
       probs[1,idx] = p_BB
     except ZeroDivisionError:
-      logger.warning(
+      LOGGER.warning(
         'read_ssc:\tZeroDivisionError raised while parsing file %s' % fn
         )
-      logger.debug('read_ssc:\tsnp_label = %s -- w_AA, w_AB, w_BB = %r' % (
+      LOGGER.debug('read_ssc:\tsnp_label = %s -- w_AA, w_AB, w_BB = %r' % (
         snp_label, (w_AA, w_AB, w_BB)
         ))
-      logger.debug('read_ssc:\tusing default probs %r' % (
+      LOGGER.debug('read_ssc:\tusing default probs %r' % (
         (probs[0,idx], probs[1,idx]),
         ))
       ct['outliers'] += 1
     confs[idx] = conf
-  logger.info('read_scc:\tfound %d suspected outliers in %s' % (
+  LOGGER.info('read_scc:\tfound %d suspected outliers in %s' % (
     ct['outliers'], fn
     ))
   return probs, confs
