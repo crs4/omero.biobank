@@ -2,7 +2,36 @@
 Import Sequencing related datasample
 ===============
 
-TODO: add doc...
+Will read a tsv file with the following columns::
+
+ study   label      source   source_type  seq_dsample_type  status  device
+ FOOBAR  seq_out_1  V012141  FlowCell     SequencerOutput   USABLE  V123141
+ FOOBAR  seq_out_2  V012141  FlowCell     SequencerOutput   USABLE  V123141
+ FOOBAR  seq_out_3  V1AD124  FlowCell     SequencerOutput   USABLE  V123141
+ ...
+
+where
+  * seq_dsample_type can assume one of the following values: SequencerOutput, RawSeqDataSample, SeqDataSample
+  * source_type can assume one of the following values: FlowCell, SequencerOutput, RawSeqDataSample
+ 
+study, source_type, seq_dsample_type, status and device columns can be
+overwritten by using command line options.
+
+A special case of the previous file is when seq_dsample_type is
+SeqDataSample, in this case a mandatory sample column is required,
+this column has to contain IDs of Tube objects.
+The file will look like this
+
+ study   label          source   source_type      seq_dsample_type  status  device   sample
+ FOOBAR  seq_dsample_1  V041241  SequencerOutput  SeqDataSample     USABLE  VBB2351  V124AA41
+ FOOBAR  seq_dsample_2  V051561  SequencerOutput  SeqDataSample     USABLE  VBB2351  V4151AAE
+ FOOBAR  seq_dsample_3  V151561  SequencerOutput  SeqDataSample     USABLE  VBB2351  V15199CD
+ ...
+
+A file containing ax export of the Galaxy history that produced the
+data that are going to be imported can be passed as input parameter,
+history details must represented as a string serialized in JSON
+format.
 
 """
 
