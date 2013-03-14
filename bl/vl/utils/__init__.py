@@ -8,7 +8,7 @@ Generic Utilities
 Generic utilities used by other modules.
 """
 
-import uuid, hashlib
+import uuid, hashlib, logging
 
 
 DEFAULT_BUFSIZE = 16777216
@@ -31,3 +31,8 @@ def compute_sha1(fname, bufsize=DEFAULT_BUFSIZE):
       sha1.update(s)
       s = fi.read(bufsize)
   return sha1.hexdigest()
+
+
+def get_logger(logger_label):
+  logger = logging.getLogger(logger_label)
+  return logger
