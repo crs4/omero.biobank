@@ -1,5 +1,0 @@
-study	device_type	label	maker	model	release	location
-TEST01	Scanner	illumina-scanner-Base	Illumina	iScan	A	Tramariglio
-TEST01	Scanner	affy-scanner-Pula	Affymetrix	GeneChip Scanner 3000	7G	Pula
-TEST01	Scanner	affy-scanner-Lanusei	Affymetrix	GeneChip Scanner 3000	7G	Lanusei
-TEST01	Scanner	affy-scanner-USA	Affymetrix	GeneChip Scanner 3000	7G	USA
