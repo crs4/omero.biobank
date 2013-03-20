@@ -27,7 +27,9 @@ def make_fake_data(mset, add_nan=False):
   probs = 0.5 * np.cast[np.float32](np.random.random((2, n)))
   confs = np.cast[np.float32](np.random.random(n))
   if add_nan:
-    rand_indices = np.random.random_integers(0, len(probs[0]) - 1, len(probs[0])/2)
+    rand_indices = np.random.random_integers(
+      0, len(probs[0]) - 1, len(probs[0]) / 2
+      )
     for x in set(rand_indices):
       probs[0][x] = np.nan
       probs[1][x] = np.nan
@@ -126,7 +128,7 @@ class markers_set(unittest.TestCase):
     self.kb.align_snp_markers_set(mset, ref_genome, aligns, self.action)
     return pos
 
-  def create_data_sample(self, mset, label):
+  def __create_data_sample(self, mset, label):
     conf = {
       'label': label,
       'status': self.kb.DataSampleStatus.USABLE,
@@ -138,7 +140,7 @@ class markers_set(unittest.TestCase):
     self.kill_list.append(data_sample)
     return data_sample
 
-  def create_data_object(self, data_sample, add_nan=False):
+  def __create_data_object(self, data_sample, add_nan=False):
     probs, confs = make_fake_data(data_sample.snpMarkersSet, add_nan)
     do = self.kb.add_gdo_data_object(self.action, data_sample, probs, confs)
     self.kill_list.append(do)
@@ -196,8 +198,8 @@ class markers_set(unittest.TestCase):
     lvs = self.__create_markers(N)
     mset = self.__create_snp_markers_set(lvs)
     mset.load_markers()
-    data_sample = self.create_data_sample(mset, 'foo-data')
-    probs, confs = self.create_data_object(data_sample)
+    data_sample = self.__create_data_sample(mset, 'foo-data')
+    probs, confs = self.__create_data_object(data_sample)
     probs1, confs1 = data_sample.resolve_to_data()
     self.assertTrue((probs == probs1).all())
     self.assertTrue((confs == confs1).all())
@@ -207,8 +209,9 @@ class markers_set(unittest.TestCase):
       self.assertTrue((confs == x['confidence']).all())
     self.assertEqual(i, 0)
     indices = slice(N/4, N/2)
-    s = self.kb.get_gdo_iterator(mset, data_samples=[data_sample],
-                                 indices=indices)
+    s = self.kb.get_gdo_iterator(
+      mset, data_samples=[data_sample], indices=indices
+      )
     for i, x in enumerate(s):
       self.assertTrue((probs[:,indices] == x['probs']).all())
       self.assertTrue((confs[indices] == x['confidence']).all())
@@ -259,7 +262,6 @@ class markers_set(unittest.TestCase):
     self.assertTrue(np.array_equal(idx1, idx2))
     self.assertEqual(len(idx1), len(mset1))
     self.assertEqual(len(idx1), N1)
-
     idx1, idx2 = self.kb.SNPMarkersSet.intersect(mset1, mset2)
     self.assertEqual(len(idx1), len(idx2))
     self.assertEqual(len(idx1), N2 - max(M1, M2))
@@ -278,8 +280,9 @@ class markers_set(unittest.TestCase):
     print 'creating %d markers took %f' % (N1, time.time() - beg)
     beg = time.time()
     mset1 = self.__create_snp_markers_set(lvs)
-    print 'creating a markers set with %d markers took %f' % (N1,
-                                                              time.time() - beg)
+    print 'creating a markers set with %d markers took %f' % (
+      N1, time.time() - beg
+      )
     beg = time.time()
     mset1.load_markers()
     print 'loading markers took %f' % (time.time() - beg)
@@ -308,10 +311,10 @@ class markers_set(unittest.TestCase):
     mset.load_markers()
     print 'loading %d markers took %f' % (N, time.time() - beg)
     beg = time.time()
-    data_sample = self.create_data_sample(mset, 'foo-data')
+    data_sample = self.__create_data_sample(mset, 'foo-data')
     print 'creating a data sample took %f' % (time.time() - beg)
     beg = time.time()
-    probs, confs = self.create_data_object(data_sample)
+    probs, confs = self.__create_data_object(data_sample)
     print 'creating a data object took %f' % (time.time() - beg)
     beg = time.time()
     probs1, confs1 = data_sample.resolve_to_data()
@@ -327,25 +330,27 @@ class markers_set(unittest.TestCase):
     print 'iterating took %f' % (time.time() - beg)
     indices = slice(N/4, N/2)
     beg = time.time()
-    s = self.kb.get_gdo_iterator(mset, data_samples=[data_sample],
-                                 indices=indices)
+    s = self.kb.get_gdo_iterator(
+      mset, data_samples=[data_sample], indices=indices
+      )
     for i, x in enumerate(s):
       self.assertTrue((probs[:,indices] == x['probs']).all())
       self.assertTrue((confs[indices] == x['confidence']).all())
     self.assertEqual(i, 0)
     print 'iterating with indices took %f' % (time.time() - beg)
 
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(markers_set('test_creation_destruction'))
   suite.addTest(markers_set('test_align'))
   suite.addTest(markers_set('test_get_markers_iterator'))
-  # suite.addTest(markers_set('test_read_ssc'))
+  suite.addTest(markers_set('test_read_ssc'))
   suite.addTest(markers_set('test_gdo'))
-  # suite.addTest(markers_set('test_define_range_selector'))
-  # suite.addTest(markers_set('test_intersect'))
-  # suite.addTest(markers_set('test_speed'))
-  # suite.addTest(markers_set('test_speed_gdo'))
+  suite.addTest(markers_set('test_define_range_selector'))
+  suite.addTest(markers_set('test_intersect'))
+  suite.addTest(markers_set('test_speed'))
+  suite.addTest(markers_set('test_speed_gdo'))
   return suite
 
 
