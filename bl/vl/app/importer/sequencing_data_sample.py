@@ -96,7 +96,7 @@ class Recorder(core.Core):
                         'context' : study,
                         'target' : self.preloaded_sources[acts[0]]}
             if acts[1]:
-                act_conf['device'] = acts[1]
+                act_conf['device'] = self.preloaded_devices[acts[1]]
             action = self.kb.factory.create(act_klass, act_conf)
             action = self.kb.save(action)
             # Unload the action object or it will cause a bug when
