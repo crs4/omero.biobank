@@ -276,7 +276,7 @@ class RecordCanonizer(core.RecordCanonizer):
 
     def canonize(self, r):
         super(RecordCanonizer, self).canonize(r)
-        for f in 'device', 'sample', 'lane':
+        for f in 'device', 'sample', 'lane', 'options':
             if f in r:
                 if r[f].upper() == 'NONE':
                     r[f] = None
