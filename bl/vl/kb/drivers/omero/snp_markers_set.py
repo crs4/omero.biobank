@@ -146,9 +146,6 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def __nonzero__(self):
     return True
 
-  def has_add_marker_info(self):
-    return hasattr(self, 'add_marker_info')
-
   def __getitem__(self, i):
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded')
