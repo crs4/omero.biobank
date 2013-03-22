@@ -44,8 +44,7 @@ class GalaxyWrapper(object):
         new_dataset_map = {}
         for k, v in dataset_map:
             new_dataset_map[w_in_mappings[k]] = v
-        history_name = '%s_%d-%02d-%d' % (history_name_prefix, now.year,
-                                          now.mont, now.day)
+        history_name = '%s_%s' % (history_name_prefix, now.strftime('%Y-%M-%d_%H:%m:%S'))
         history_details = self.gi.workflows.run_workflow(workflow_id, new_dataset_map,
                                                          history_name = history_name,
                                                          import_inputs_to_history = True)
