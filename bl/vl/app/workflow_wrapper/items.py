@@ -66,10 +66,10 @@ class DataSampleItem(BiobankItem):
 
 class SequencerOutputItem(DataSampleItem):
     
-    def __init__self(self, dataset_status, data_objects = None,
-                     label = None, source_label = None,
-                     source_type = None, device_label = None,
-                     tags = None, history_dataset_id = None):
+    def __init__(self, dataset_status, data_objects = None,
+                 label = None, source_label = None,
+                 source_type = None, device_label = None,
+                 tags = None, history_dataset_id = None):
         super(SequencerOutputItem, self).__init__('SequencerOutput', dataset_status,
                                                   data_objects, label, source_label,
                                                   source_type, device_label,
