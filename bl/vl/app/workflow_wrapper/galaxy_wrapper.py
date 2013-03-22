@@ -80,13 +80,13 @@ class GalaxyWrapper(object):
             if hasattr(i, 'sample_label'):
                 ds_record['sample'] = i.sample_label
             ds_writer.writerow(ds_record)
-            for p in i.paths:
+            for d in i.data_objects:
                 do_writer.writerow({'study'       : study,
-                                    'path'        : p['path'],
+                                    'path'        : d.path,
                                     'data_sample' : i.label,
-                                    'mimetype'    : p['mimetype'],
-                                    'size'        : p['size'],
-                                    'sha1'        : p['sha1']})
+                                    'mimetype'    : d.mimetype,
+                                    'size'        : d.size,
+                                    'sha1'        : d.sha1})
         return ds_tmp, do_tmp
 
     def run_datasets_import(self, history, items, action_context):

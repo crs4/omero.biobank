@@ -39,9 +39,18 @@ class BiobankItem(object):
         self.source_type = source_type
 
 
+class DataObjectItem(object):
+    def __init__(self, path, mimetype, size = -1,
+                 sha1 = 'N.A.'):
+        self.path = path
+        self.mimetype = mimetype
+        self.size = size
+        self.sha1 = sha1
+
+
 class DataSampleItem(BiobankItem):
 
-    def __init__(self, dataset_type, dataset_status, paths = None,
+    def __init__(self, dataset_type, dataset_status, data_objects = None,
                  label = None, source_label = None,
                  source_type = None, device_label = None,
                  tags = None, history_dataset_id = None):
@@ -49,7 +58,7 @@ class DataSampleItem(BiobankItem):
                                              source_type)
         self.dataset_type = dataset_type
         self.dataset_status = dataset_status
-        self.paths = paths
+        self.data_objects = data_objects
         self.device_label = device_label
         self.tags = tags
         self.history_dataset_id = history_dataset_id
