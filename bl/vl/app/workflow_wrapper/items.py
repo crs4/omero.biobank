@@ -66,12 +66,12 @@ class DataSampleItem(BiobankItem):
 
 class SequencerOutputItem(DataSampleItem):
     
-    def __init__self(self, dataset_status, paths = None,
+    def __init__self(self, dataset_status, data_objects = None,
                      label = None, source_label = None,
                      source_type = None, device_label = None,
                      tags = None, history_dataset_id = None):
         super(SequencerOutputItem, self).__init__('SequencerOutput', dataset_status,
-                                                  paths, label, source_label,
+                                                  data_objects, label, source_label,
                                                   source_type, device_label,
                                                   tags, history_dataset_id)
 
@@ -79,11 +79,11 @@ class SequencerOutputItem(DataSampleItem):
 class SeqDataSampleItem(DataSampleItem):
     
     def __init__(self, dataset_status, sample_label = None,
-                 paths = None, label = None, source_label = None,
+                 data_objects = None, label = None, source_label = None,
                  source_type = None, device_label = None,
                  tags = None, history_dataset_id = None):
         super(SeqDataSampleItem, self).__init__('SeqDataSample', dataset_status,
-                                                paths, label, source_label,
+                                                data_objects, label, source_label,
                                                 source_type, device_label,
                                                 tags, history_dataset_id)
         self.sample_label = sample_label
