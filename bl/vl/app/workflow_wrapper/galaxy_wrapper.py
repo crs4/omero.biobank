@@ -32,7 +32,7 @@ class GalaxyWrapper(object):
 
     def __upload_to_library(self, data_stream, library_id, folder_id = None):
         dset_details = self.gi.libraries.upload_file_contents(library_id,
-                                                              data_stream.value,
+                                                              data_stream.getvalue(),
                                                               folder_id = folder_id)
         return dset_details[0]['id']
 
