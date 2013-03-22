@@ -106,7 +106,9 @@ class Recorder(core.Core):
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
-      if not r['size'].isdigit():
+      try:
+        int(r['size'])
+      except ValueError, ve:
         f = 'bad size value %s' % r['size']
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
