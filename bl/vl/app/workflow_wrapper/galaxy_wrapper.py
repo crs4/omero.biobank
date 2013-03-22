@@ -2,6 +2,8 @@ import StringIO, csv, yaml, uuid
 from datetime import datetime
 from bioblend.galaxy import GalaxyInstance
 
+from items import SequencerOutputItem, SeqDataSampleItem
+
 class GalaxyWrapper(object):
     
     def __init__(self, config_file):
@@ -11,7 +13,8 @@ class GalaxyWrapper(object):
                 galaxy_conf_values = conf.get('galaxy')
                 self.gi = GalaxyInstance(galaxy_conf_values['url'],
                                          galaxy_conf_values['api_key'])
-                self.seq_ds_workflow_conf = galaxy_conf_values['seq_ds_importer_workflow']
+                self.seq_out_workflow_conf = galaxy_conf_values['sequencer_output_importer_workflow']
+                self.seq_ds_workflow_conf = galaxy_conf_values['seq_data_sample_importer_workflow']
             else:
                 raise RuntimeError('No galaxy configuration in config file')
 
@@ -36,18 +39,30 @@ class GalaxyWrapper(object):
                                                               folder_id = folder_id)
         return dset_details[0]['id']
 
+    def __get_workflow_id(self, workflow_label):
+        workflow_mappings = {}
+        for wf in self.gi.workflows.get_workflows():
+            workflow_mappings.setdefault(wf['name'], []).append(wf['id'])
+        if workflow_mappings.has_key(workflow_label):
+            if len(workflow_mappings[workflow_label]) == 1:
+                return workflow_mappings[workflow_label][0]
+            else:
+                raise RuntimeError('Multiple workflow with label "%s", unable to resolve ID' % workflow_label)
+        else:
+            raise ValueError('Unable to retrieve workflow with label "%s"' % workflow_label)
+
     def __run_workflow(self, workflow_id, dataset_map, history_name_prefix):
         now = datetime.now()
         w_in_mappings = {}
         for k, v in self.gi.workflows.show_workflow(workflow_id)['inputs'].iteritems():
             w_in_mappings[v['label']] = k
         new_dataset_map = {}
-        for k, v in dataset_map:
+        for k, v in dataset_map.iteritems():
             new_dataset_map[w_in_mappings[k]] = v
-        history_name = '%s_%s' % (history_name_prefix, now.strftime('%Y-%M-%d_%H:%m:%S'))
+        history_name = '%s_%s' % (history_name_prefix, now.strftime('%Y-%m-%d_%H:%M:%S'))
         history_details = self.gi.workflows.run_workflow(workflow_id, new_dataset_map,
                                                          history_name = history_name,
-                                                         import_inputs_to_history = True)
+                                                         import_inputs_to_history = False)
         return history_details
 
     def __dump_history_details(self, history):
@@ -113,20 +128,20 @@ class GalaxyWrapper(object):
         hdset_id = self.__upload_to_library(history_dataset, lib_id, folder_id)
         dsset_id = self.__upload_to_library(dsamples_dataset, lib_id, folder_id)
         doset_id = self.__upload_to_library(dobjects_dataset, lib_id, folder_id)
+        if type(items[0]) == SequencerOutputItem:
+            wf_conf = self.seq_out_workflow_conf
+        elif type(items[0]) == SeqDataSampleItem:
+            wf_conf = self.seq_ds_workflow_conf
+        else:
+            raise RuntimeError('Unable to run workflow for type %r' % type(items[0]))
         # Preparing dataset map
-        ds_map = {self.seq_ds_workflow_conf['history_dataset_label']:
-                      {
-                        'id' : hdset_id, 'src' : 'ld'
-                      },
-                  self.seq_ds_workflow_conf['dsamples_dataset_label']:
-                      {
-                        'id' : dsset_id, 'src' : 'ld'
-                      },
-                  self.seq_ds_workflow_conf['dobjects_dataset_label']:
-                      {
-                        'id' : doset_id, 'src' : 'ld'
-                      }
+        ds_map = {wf_conf['history_dataset_label']: { 'id' :
+                      hdset_id, 'src' : 'ld' },
+                  wf_conf['dsamples_dataset_label']: { 'id' :
+                      dsset_id, 'src' : 'ld' },
+                  wf_conf['dobjects_dataset_label']: { 'id' :
+                      doset_id, 'src' : 'ld' }
                   }
-        hist_details = self.__run_workflow(self.seq_ds_workflow_conf['id'],
+        hist_details = self.__run_workflow(self.__get_workflow_id(wf_conf['label']),
                                            ds_map, 'seq_datasets_import')
         return hist_details
