@@ -57,9 +57,19 @@ class GalaxyWrapper(object):
         tmp.flush()
         return tmp
 
+    def __serialize_options(self, opts_dict):
+        if len(opts_dict) == 0:
+            return 'None'
+        else:
+            opts = []
+            for k,v in opts_dict.iteritems():
+                opts.append('%s=%s' % (k,v))
+            return ','.join(opts)
+
     def __dump_ds_do_datasets(self, items, study):
         ds_csv_header = ['study', 'label', 'source', 'source_type',
-                         'seq_dsample_type', 'status', 'device']
+                         'seq_dsample_type', 'status', 'device',
+                         'options']
         if hasattr(items[0], 'sample_label'):
             ds_csv_header.append('sample')
         do_csv_header = ['study', 'path', 'data_sample', 'mimetype',
@@ -71,12 +81,18 @@ class GalaxyWrapper(object):
         do_writer = csv.DictWriter(do_tmp, do_csv_header, delimiter = '\t')
         do_writer.writeheader()
         for i in items:
+            opts = {}
+            if i.tags:
+                opts = i.tags
+            if i.history_dataset_id:
+                opts['history_dataset_id'] = i.history_dataset_id
             ds_record = {'study' : study, 'label' : i.label,
                          'source' : i.source_label,
                          'source_type' : i.source_type,
                          'seq_dsample_type' : i.dataset_type,
                          'status' : i.dataset_status,
-                         'device' : i.device_label}
+                         'device' : i.device_label,
+                         'options' : self.__serialize_options(opts)}
             if hasattr(i, 'sample_label'):
                 ds_record['sample'] = i.sample_label
             ds_writer.writerow(ds_record)
