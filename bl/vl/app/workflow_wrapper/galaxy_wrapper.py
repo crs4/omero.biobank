@@ -18,7 +18,7 @@ class GalaxyWrapper(object):
     def __get_or_create_library(self, name):
         lib_details = self.gi.libraries.get_libraries(name = name)
         if len(lib_details) == 0:
-            lib_details = self.gi.libraries.create_library(name)
+            lib_details = [self.gi.libraries.create_library(name)]
         return lib_details[0]['id']
 
     def __create_folder(self, folder_name_prefix, library_id):
