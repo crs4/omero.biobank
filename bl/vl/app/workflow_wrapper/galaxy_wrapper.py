@@ -85,7 +85,7 @@ class GalaxyWrapper(object):
                          'seq_dsample_type', 'status', 'device',
                          'options']
         if hasattr(items[0], 'sample_label'):
-            ds_csv_header.append('sample')
+            ds_csv_header.insert(-1, 'sample')
         do_csv_header = ['study', 'path', 'data_sample', 'mimetype',
                          'size', 'sha1']
         ds_tmp = StringIO.StringIO()
