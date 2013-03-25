@@ -1,4 +1,4 @@
-import StringIO, csv, yaml, uuid
+import StringIO, csv, yaml, uuid, time
 from datetime import datetime
 from bioblend.galaxy import GalaxyInstance
 
@@ -6,6 +6,23 @@ from items import SequencerOutputItem, SeqDataSampleItem
 
 class GalaxyWrapper(object):
     
+    # In order to work config_file has to be a YAML file that must contain
+    # the following section:
+    #
+    # ...
+    # galaxy:
+    #   api_key: your_api_key
+    #   url: galaxy_url
+    #   sequencer_output_importer_workflow:
+    #     label: workflow_label
+    #     history_dataset_label: label_into_the_worflow
+    #     dsamples_dataset_label: label_into_the_worflow
+    #     dobjects_dataset_label: label_into_the_worflow
+    #   seq_data_sample_importer_workflow:
+    #     label: worflow_label
+    #     history_dataset_label: label_into_the_worflow
+    #     dsamples_dataset_label: label_into_the_worflow
+    #     dobjects_dataset_label: label_into_the_worflow
     def __init__(self, config_file):
         with open(config_file) as cfg:
             conf = yaml.load(cfg)
@@ -119,7 +136,21 @@ class GalaxyWrapper(object):
                                     'sha1'        : d.sha1})
         return ds_tmp, do_tmp
 
-    def run_datasets_import(self, history, items, action_context):
+    def __wait(self, history_id, sleep_interval = 5):
+        sleep_interval_sec = sleep_interval
+        while True:
+            status_info = self.gi.histories.get_status(history_id)['state']
+            if status_info not in ('queued', 'running'):
+                return status_info
+            else:
+                time.sleep(sleep_interval)
+        return status_info
+
+    # Import DataSamples and DataObjects within OMERO.biobank,
+    # automatically selects proper workflow by checking object type
+    # of 'items' elements
+    def run_datasets_import(self, history, items, action_context,
+                            async = False):
         history_dataset = self.__dump_history_details(history)
         dsamples_dataset, dobjects_dataset = self.__dump_ds_do_datasets(items,
                                                                         action_context)
@@ -144,4 +175,16 @@ class GalaxyWrapper(object):
                   }
         hist_details = self.__run_workflow(self.__get_workflow_id(wf_conf['label']),
                                            ds_map, 'seq_datasets_import')
-        return hist_details
+        if async:
+            return hist_details
+        else:
+            status = self.__wait(hist_details['history'])
+            if status == 'ok':
+                return hist_details
+            else:
+                raise RuntimeError('Error occurred while processing data')
+
+
+    def run_flowcells_import(self, samplesheet_data, action_context, namespace = None,
+                             async = False):
+        pass
