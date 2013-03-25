@@ -182,7 +182,7 @@ class GenotypingAdapter(object):
 
   @classmethod
   def snp_markers_set_table_name_parse(klass, table_name):
-    tag, set_vid = table_name.rsplit('.')[0].split('-', 1)
+    tag, set_vid = table_name.rsplit('.', 1)[0].rsplit('-', 1)
     if tag not in MS_TABLES:
       raise ValueError('tag %s from %s is illegal' % (tag, table_name))
     return tag, set_vid
