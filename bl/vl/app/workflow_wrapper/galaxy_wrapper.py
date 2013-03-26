@@ -23,6 +23,10 @@ class GalaxyWrapper(object):
     #     history_dataset_label: label_into_the_worflow
     #     dsamples_dataset_label: label_into_the_worflow
     #     dobjects_dataset_label: label_into_the_worflow
+    #  flowcell_from_samplesheet_importer_workflow:
+    #    label: workflow_label
+    #    samplesheet_dataset_label: label_into_the_workflow
+    #    config_parameters_file_label: label_into_the_workflow
     def __init__(self, config_file):
         with open(config_file) as cfg:
             conf = yaml.load(cfg)
@@ -32,6 +36,7 @@ class GalaxyWrapper(object):
                                          galaxy_conf_values['api_key'])
                 self.seq_out_workflow_conf = galaxy_conf_values['sequencer_output_importer_workflow']
                 self.seq_ds_workflow_conf = galaxy_conf_values['seq_data_sample_importer_workflow']
+                self.smpsh_to_fc_workflow_conf = galaxy_conf_values['flowcell_from_samplesheet_importer_workflow']
             else:
                 raise RuntimeError('No galaxy configuration in config file')
 
@@ -51,8 +56,13 @@ class GalaxyWrapper(object):
         raise NotImplementedError()
 
     def __upload_to_library(self, data_stream, library_id, folder_id = None):
-        dset_details = self.gi.libraries.upload_file_contents(library_id,
-                                                              data_stream.getvalue(),
+        if type(data_stream) == str:
+            data = data_stream
+        elif hasattr(data_stream, 'getvalue'):
+            data = data_stream.getvalue()
+        else:
+            raise RuntimeError('Unable to upload data_stream of type %r to library' % type(data_stream))
+        dset_details = self.gi.libraries.upload_file_contents(library_id, data,
                                                               folder_id = folder_id)
         return dset_details[0]['id']
 
@@ -145,6 +155,15 @@ class GalaxyWrapper(object):
                 time.sleep(sleep_interval)
         return status_info
 
+    def __dump_config_params(self, study_label, namespace = None):
+        conf_dict = {'config_parameters': {'study_label' : study_label}}
+        if namespace:
+            conf_dict['config_parameters']['namespace'] = namespace
+        return self.__dump_to_yaml(conf_dict)
+
+    def __dump_to_yaml(self, config_dict):
+        return yaml.dump(config_dict, default_flow_style=False)
+
     # Import DataSamples and DataObjects within OMERO.biobank,
     # automatically selects proper workflow by checking object type
     # of 'items' elements
@@ -183,7 +202,27 @@ class GalaxyWrapper(object):
             else:
                 raise RuntimeError('Error occurred while processing data')
 
-
-    def run_flowcells_import(self, samplesheet_data, action_context, namespace = None,
+    # Import a flowcell samplesheet produced by a Galaxy NGLIMS within OMERO.biobank
+    def run_flowcell_from_samplesheet_import(self, samplesheet_data, action_context, namespace = None,
                              async = False):
-        pass
+        conf_params = self.__dump_config_params(action_context, namespace)
+        lib_id = self.__get_or_create_library('import_datasets')
+        folder_id = self.__create_folder('flowcell_from_samplesheet', lib_id)
+        samplesheet_id = self.__upload_to_library(samplesheet_data, lib_id, folder_id)
+        conf_file_id = self.__upload_to_library(conf_params, lib_id, folder_id)
+        wf_conf = self.smpsh_to_fc_workflow_conf
+        ds_map = {wf_conf['samplesheet_dataset_label']: {'id':
+                      samplesheet_id, 'src': 'ld'},
+                  wf_conf['config_parameters_file_label']: {'id':
+                      conf_file_id, 'src': 'ld'}
+                  }
+        hist_details = self.__run_workflow(self.__get_workflow_id(wf_conf['label']),
+                                           ds_map, 'flowcell_samplesheet_import')
+        if async:
+            return hist_details
+        else:
+            status = self.__wait(hist_details['history'])
+            if status == 'ok':
+                return hist_details
+            else:
+                raise RuntimeError('Error occurred while processing data')
