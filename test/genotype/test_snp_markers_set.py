@@ -39,7 +39,7 @@ def make_fake_data(mset, add_nan=False):
 def make_fake_ssc(mset, sample_id, probs, conf, fn):
   header = {'markers_set' : mset.label, 'sample_id':  sample_id}
   stream = MessageStreamWriter(fn, PAYLOAD_MSG_TYPE, header)
-  labels = mset.add_marker_info['label']
+  labels = mset.markers['label']
   for l, p_AA, p_BB, c in  it.izip(labels, probs[0], probs[1], conf):
     p_AB = 1.0 - (p_AA + p_BB)
     w_aa, w_ab, w_bb = p_AA, p_AB, p_BB
@@ -55,12 +55,6 @@ def make_fake_ssc(mset, sample_id, probs, conf, fn):
       'w_BB': float(w_bb),
       })
   stream.close()
-
-
-def marker_generator(n_markers):
-  for i in xrange(n_markers):
-    label = rs_label = 'A%f-%d' % (time.time(), i)
-    yield label, rs_label, 'ACCA[A/B]TACCA'
 
 
 class markers_set(unittest.TestCase):
@@ -86,26 +80,19 @@ class markers_set(unittest.TestCase):
       self.kb.delete(x)
     self.kill_list = []
 
-  def __create_markers(self, N):
-    source, context, release = 'unit_testing', 'markers_set', '%f' % time.time()
-    ref_rs_genome, dbsnp_build = 'foo-rs-genome', 123000
-    return self.kb.create_markers(
-      source, context, release, ref_rs_genome, dbsnp_build,
-      marker_generator(N), self.action,
-      )  # [(label, vid), ...]
-
-  def __create_snp_markers_set(self, lvs):
+  def __create_snp_markers_set(self, N):
     label = 'ams-%f' % time.time()
     maker, model, release = 'FOO', 'FOO1', '%f' % time.time()
-    stream = ((v, i, False) for i, (l, v) in enumerate(lvs))
+    rows = [('M%d' % i, 'AC[A/G]GT', i, False) for i in xrange(N)]
     mset = self.kb.create_snp_markers_set(
-      label, maker, model, release, len(lvs), stream, self.action
+      label, maker, model, release, N, iter(rows), self.action
       )
     self.kill_list.append(mset)
-    return mset
+    return mset, rows
 
   def __create_alignments(self, mset, ref_genome, n_duplicates):
-    mset.load_markers()
+    if not mset.has_markers():
+      mset.load_markers()
     self.assertTrue(len(mset) > 0)
     n_aligns = len(mset.markers) + n_duplicates
     pos = []
@@ -147,28 +134,27 @@ class markers_set(unittest.TestCase):
     return probs, confs
 
   def __create_aligned_mset(self, N, N_dups, ref_genome):
-    lvs = self.__create_markers(N)
-    mset = self.__create_snp_markers_set(lvs)
+    mset, _ = self.__create_snp_markers_set(N)
     pos = self.__create_alignments(mset, ref_genome, N_dups)
     return mset, pos
 
   def test_creation_destruction(self):
     N = 32
-    lvs = self.__create_markers(N)
-    mset = self.__create_snp_markers_set(lvs)
+    mset, rows = self.__create_snp_markers_set(N)
     mset.load_markers()
     self.assertEqual(len(mset), N)
-    for (l, v), m in it.izip(lvs, mset.markers):
-      self.assertEqual(v, m[0])
+    for r, m in it.izip(rows, mset.markers):
+      self.assertEqual(len(r)+2, len(m))
+      for i, x in enumerate(r):
+        self.assertEqual(x, m[i+1])
 
   def test_get_markers_iterator(self):
     N = 32
-    lvs = self.__create_markers(N)
-    mset = self.__create_snp_markers_set(lvs)
+    mset, _ = self.__create_snp_markers_set(N)
     mset.load_markers()
     for mdef, m in it.izip(mset.markers, mset.get_markers_iterator()):
       self.assertTrue(isinstance(m, Marker))
-      self.assertEqual(mdef['marker_vid'], m.id)
+      self.assertEqual(mdef['vid'], m.id)
 
   def test_align(self):
     N = 16
@@ -184,7 +170,7 @@ class markers_set(unittest.TestCase):
     N_dups = 4
     ref_genome = 'g' + ('%f' % time.time())[-14:]
     mset, pos = self.__create_aligned_mset(N, N_dups, ref_genome)
-    mset.load_markers(additional_fields=['label'])
+    mset.load_markers()
     probs, confs = make_fake_data(mset)
     sample_id = 'ffoo-%f' % time.time()
     fn = tempfile.NamedTemporaryFile().name
@@ -195,8 +181,7 @@ class markers_set(unittest.TestCase):
 
   def test_gdo(self):
     N = 32
-    lvs = self.__create_markers(N)
-    mset = self.__create_snp_markers_set(lvs)
+    mset, _ = self.__create_snp_markers_set(N)
     mset.load_markers()
     data_sample = self.__create_data_sample(mset, 'foo-data')
     probs, confs = self.__create_data_object(data_sample)
@@ -240,16 +225,14 @@ class markers_set(unittest.TestCase):
     M1 = 2
     N2 = N1/2
     M2 = 1
-    lvs = self.__create_markers(N1)
-    mset1 = self.__create_snp_markers_set(lvs)
+    mset1, _ = self.__create_snp_markers_set(N1)
     mset1.load_markers()
     aligns = [(m[0], random.randint(1,26), 1 + i*2000, True, 'A', 1)
               for i, m in enumerate(mset1.markers)]
     for i in range(M1):
       aligns[i] = (aligns[i][0], 0, 0, True, 'A', 0)
     self.kb.align_snp_markers_set(mset1, ref_genome, aligns, self.action)
-    lvs = self.__create_markers(N2)
-    mset2 = self.__create_snp_markers_set(lvs)
+    mset2, _ = self.__create_snp_markers_set(N2)
     mset2.load_markers()
     aligns = [(m[0], a[1], a[2], a[3], a[4], a[5])
               for m, a in it.izip(mset2.markers, aligns[:len(mset2)])]
@@ -275,11 +258,10 @@ class markers_set(unittest.TestCase):
     N1 = 1024*1024
     N2 = N1/2
     beg = time.time()
-    lvs = self.__create_markers(N1)
     print ''
     print 'creating %d markers took %f' % (N1, time.time() - beg)
     beg = time.time()
-    mset1 = self.__create_snp_markers_set(lvs)
+    mset1, _ = self.__create_snp_markers_set(N1)
     print 'creating a markers set with %d markers took %f' % (
       N1, time.time() - beg
       )
@@ -303,10 +285,9 @@ class markers_set(unittest.TestCase):
   def test_speed_gdo(self):
     N = 934968
     beg = time.time()
-    lvs = self.__create_markers(N)
     print ''
     print 'creating %d markers took %f' % (N, time.time() - beg)
-    mset = self.__create_snp_markers_set(lvs)
+    mset, _ = self.__create_snp_markers_set(N)
     beg = time.time()
     mset.load_markers()
     print 'loading %d markers took %f' % (N, time.time() - beg)
@@ -343,8 +324,8 @@ class markers_set(unittest.TestCase):
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(markers_set('test_creation_destruction'))
-  suite.addTest(markers_set('test_align'))
   suite.addTest(markers_set('test_get_markers_iterator'))
+  suite.addTest(markers_set('test_align'))
   suite.addTest(markers_set('test_read_ssc'))
   suite.addTest(markers_set('test_gdo'))
   suite.addTest(markers_set('test_define_range_selector'))

@@ -62,7 +62,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
       raise ValueError('aligns vector has not been loaded')
     beg, end = gc_range
     global_pos = mset.aligns['global_pos']
-    idx = mset.markers['marker_indx']
+    idx = mset.markers['index']
     low_gpos = SNPMarkersSet.compute_global_position(beg)
     high_gpos = SNPMarkersSet.compute_global_position(end)
     sel = (low_gpos <= global_pos) &  (global_pos <= high_gpos)
@@ -109,9 +109,6 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def has_markers(self):
     return hasattr(self, 'markers')
 
-  def has_add_marker_info(self):
-    return hasattr(self, 'add_marker_info')
-
   def has_aligns(self):
     return hasattr(self, 'aligns')
 
@@ -121,22 +118,11 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def __get_markers(self):
     return self.bare_getattr('markers')
 
-  def __set_add_marker_info(self, v):
-    self.bare_setattr('add_marker_info', v)
-
-  def __get_add_marker_info(self):
-    return self.bare_getattr('add_marker_info')
-
   def __set_aligns(self, v):
     self.bare_setattr('aligns', v)
 
   def __get_aligns(self):
     return self.bare_getattr('aligns')
-
-  def get_add_marker_info_fields(self):
-    if not self.has_add_marker_info():
-      return ()
-    return self.add_marker_info.dtype.names
 
   def __len__(self):
     if not self.has_markers():
@@ -150,43 +136,29 @@ class SNPMarkersSet(wp.OmeroWrapper):
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded')
     mdef = self.markers[i]
-    kwargs = {'vid' : mdef['marker_vid'],
-              'index' : mdef['marker_indx'],
-              'flip'  : mdef['allele_flip'],
-              'position' : (0, 0)}
+    kwargs = {
+      'vid': mdef['vid'],
+      'label': mdef['label'],
+      'mask': mdef['mask'],
+      'index': mdef['index'],
+      'flip': mdef['allele_flip'],
+      'position': (0, 0),
+      }
     if self.has_aligns():
       mali = self.aligns[i]
       if mali['copies'] == 1:
         kwargs.update({'position' : (mali['chromosome'], mali['pos']),
                        'on_reference_strand' : mali['strand'],
                        'allele_on_reference' : mali['allele']})
-    if self.has_add_marker_info():
-      kwargs.update(dict(zip(self.add_marker_info.dtype.names,
-                             self.add_marker_info[i])))
     return Marker(**kwargs)
 
-  def load_markers(self, batch_size=1000, additional_fields=None):
+  def load_markers(self, batch_size=1000):
     """
     Read marker info from the marker set table and store it in the
     markers attribute.
-
-    If additional_fields is provided, it must be a list of fields from
-    the marker definition table; in this case, the additional info is
-    stored in the add_marker_info attribute.
     """
     data = self.proxy.gadpt.read_snp_markers_set(self.id, batch_size=batch_size)
     self.__set_markers(data)
-    if additional_fields is not None:
-      if "vid" not in additional_fields:
-        additional_fields.append("vid")
-      recs = self.proxy.get_snp_marker_definitions(col_names=additional_fields,
-                                                   batch_size=batch_size)
-      i1, i2 = np_ext.index_intersect(data['marker_vid'], recs['vid'])
-      recs = recs[i2]
-      # FIXME: this is not very efficient
-      by_vid = dict((r['vid'], r) for r in recs)
-      recs = np.array([by_vid[d['marker_vid']] for d in data], dtype=recs.dtype)
-      self.__set_add_marker_info(recs)
 
   def load_alignments(self, ref_genome, batch_size=1000):
     """
@@ -204,7 +176,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
     aligns = aligns[['chromosome', 'pos', 'global_pos', 'strand', 'allele',
                      'copies']]
     aligns = aligns[:len(self)]
-    no_align_positions =  - (self.markers['marker_indx'] +
+    no_align_positions =  - (self.markers['index'] +
                              (self.omero_id * self.MAX_LEN))
     aligns['global_pos'] = np.choose(aligns['copies'] == 1,
                                      [no_align_positions, aligns['global_pos']])

@@ -378,18 +378,16 @@ def read_ssc(fn, mset):
   :type mset: SNPMarkersSet
   """
   ct = Counter()
-  if (not mset.has_markers()
-      or 'label' not in mset.get_add_marker_info_fields()):
-    mset.load_markers(additional_fields=['label'])
+  if not mset.has_markers():
+    mset.load_markers()
   n_markers = len(mset)
   probs = np.empty((2, n_markers), dtype=np.float32)
   probs.fill(1/3.)
   confs = np.zeros((n_markers,), dtype=np.float32)
   markers = mset.markers
-  add_marker_info = mset.add_marker_info
-  labels = add_marker_info['label']
+  labels = markers['label']
   flips = markers['allele_flip']
-  indx  = markers['marker_indx']
+  indx  = markers['index']
   l2m = dict((l, (f, i)) for (l, f, i) in it.izip(labels, flips, indx))
   reader = MessageStreamReader(fn)
   for _ in xrange(n_markers):
