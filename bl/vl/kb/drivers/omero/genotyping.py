@@ -2,37 +2,26 @@
 # END_COPYRIGHT
 
 """
-Genotyping support
+Genotyping adapter
 ==================
 
-Here, a SNP is defined by:
+This module adds genotyping support to the knowledge base.  The
+central entity is the genetic marker, a mutation in the DNA that can
+be used to study the relationship between a phenotypic trait and its
+genetic cause.  We model a specific type of marker known as Single
+Nucleotide Polymorphism (SNP).
 
- * a SNP definition mask in the <FLANK>[A/B]<FLANK> format. Allele
-   order is defined by the order within the square brackets. The mask
-   is expected to be on the Illumina convention TOP strand, if the
-   Illumina strand detection algorithm yields a result.
+SNPs are variations at a single position in a DNA sequence.  In most
+cases, a SNP consists of only two variants, or alleles, customarily
+denoted by the letters A and B.  Thus, for diploid organisms such as
+humans, there are three possible genotype configurations at each SNP
+site: AA, AB and BB.
 
- * a 'source' string, e. g., 'Affymetrix', 'Illumina', 'ABI'
-
- * a 'context' string, e. g., 'TaqMan-SNP_Genotyping_Assays'
-
- * a 'release' string, e. g., '12-Nov-2010'
-
- * a 'label' string, unique within the (source, context, release) domain.
-
-SNPs can have a dbSNP rs label that depends on a specific dbSNP
-release and reference genome. The association of SNPs to their rs
-labels (see the snp_manager app) is based on the comparison of the
-aligment position of the SNP mask wrt a given reference genome and
-that of dbSNP masks wrt the same genome. To keep track of this, each
-SNP record has the following additional fields:
-
-  * an 'rs_label' string. When none is known, this is set to the same
-    value as that of the 'label' field
-
-  * a 'dbSNP_build' long int
-
-  * a 'ref_rs_genome' string
+a SNP is typically described by a mask in the <FLANK>[A/B]<FLANK>
+format.  Allele order is defined by the order within the square
+brackets.  The mask is expected to be in the TOP Illumina convention,
+if the Illumina strand detection algorithm yields a result (see
+:func:`~bl.vl.utils.snp.convert_to_top`).
 """
 
 import itertools as it
@@ -73,108 +62,12 @@ class Marker(object):
 
 class GenotypingAdapter(object):
 
-  SNP_MARKER_DEFINITIONS_TABLE = 'snp_marker_definitions.h5'
   SNP_FLANK_SIZE = vlu_snp.SNP_FLANK_SIZE
   SNP_MASK_SIZE = 2 * SNP_FLANK_SIZE + len("[A/B]")
-
-  SNP_MARKER_DEFINITIONS_COLS = [
-    ('string', 'vid', "This marker's VID", VID_SIZE, None),
-    ('string', 'source', "Origin of this marker's definition", 16, None),
-    ('string', 'context', 'Context of definition', 16, None),
-    ('string', 'release', 'Release within the context', 16, None),
-    ('string', 'label', "This marker's label within the context", 48, None),
-    ('string', 'rs_label', 'dbSNP id', 32, None),  # FIXME too small
-    ('long', 'dbSNP_build', 'dbSNP build', None),
-    ('string', 'ref_rs_genome', 'Reference rs alignment genome', 16, None),
-    ('string', 'mask', "Illumina TOP mask in the <FLANK>[A/B]<FLANK> format",
-     SNP_MASK_SIZE, None),
-    ('string', 'op_vid', 'Last operation that modified this row',
-     VID_SIZE, None),
-    ]
 
   def __init__(self, kb):
     self.kb = kb
 
-  #--- marker definitions ---
-  def create_snp_marker_definitions_table(self):
-    self.kb.create_table(self.SNP_MARKER_DEFINITIONS_TABLE,
-                         self.SNP_MARKER_DEFINITIONS_COLS)
-
-  def add_snp_marker_definitions(self, stream, op_vid, batch_size=BATCH_SIZE):
-    vid_correspondence = []
-    def add_vid_filter_and_op_vid(stream, op_vid):
-      for x in stream:
-        assign_vid(x)
-        x['op_vid'] = op_vid
-        vid_correspondence.append((x['label'], x['vid']))
-        yield x
-    i_s = add_vid_filter_and_op_vid(stream, op_vid)
-    self.kb.add_table_rows_from_stream(self.SNP_MARKER_DEFINITIONS_TABLE,
-                                       i_s, batch_size=batch_size)
-    return vid_correspondence
-
-  def get_snp_marker_definitions(self, selector=None, col_names=None,
-                                 batch_size=BATCH_SIZE):
-    return self.kb.get_table_rows(self.SNP_MARKER_DEFINITIONS_TABLE,
-                                  selector, col_names, batch_size=batch_size)
-
-  def get_snp_markers_by_source(self, source, context=None, release=None,
-                                batch_size=BATCH_SIZE):
-    selector = '(source=="%s")' % source
-    if context:
-      selector += '&(context=="%s")' % context
-    # TODO handle the release-without-context case
-    if release:
-      selector += '&(release=="%s")' % release
-    recs = self.get_snp_marker_definitions(
-      selector=selector, col_names=['vid'], batch_size=batch_size
-      )
-    return [Marker(r['vid']) for r in recs]
-
-  def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
-                      batch_size=BATCH_SIZE, col_names=None):
-    """
-    Return a list of Marker objects corresponding to the given list
-    (labels, rs_labels or vids). Return an empty list if at least one
-    of the items in the list does not correspond to any marker.
-
-    The optional col_names param is a list of marker definition
-    headers that will set corresponding attributes in the returned
-    Marker objects.
-    """
-    if col_names is None:
-      col_names = ['vid']
-    elif 'vid' not in col_names:
-      col_names.append('vid')
-    if (labels is None) + (rs_labels is None) + (vids is None) != 2:
-      raise ValueError('assign exactly one of labels, rs_labels or vids')
-    if labels:
-      field_name, requested = 'label', labels
-    elif rs_labels:
-      field_name, requested = 'rs_label', rs_labels
-    else:
-      field_name, requested = 'vid', vids
-    recs = self.get_snp_marker_definitions(
-      col_names=[field_name], batch_size=max(batch_size, len(requested))
-      )
-    by_field = dict((r[0], i) for i, r in enumerate(recs))
-    del recs
-    row_indices = []
-    for x in requested:
-      try:
-        row_indices.append(by_field[x])
-      except KeyError:
-        return []
-    recs = self.kb.get_table_slice(
-      self.SNP_MARKER_DEFINITIONS_TABLE, row_indices, col_names, batch_size
-      )
-    mlist = []
-    for r in recs:
-      kwargs = dict((n, r[n]) for n in col_names if n != 'vid')
-      mlist.append(Marker(r['vid'], **kwargs))
-    return mlist
-
-  #--- SNPMarkersSet ---
   @classmethod
   def snp_markers_set_table_name(klass, table_name_root, set_vid):
     assert(table_name_root in MS_TABLES)
@@ -207,15 +100,18 @@ class GenotypingAdapter(object):
     return self.kb.get_table_rows(table_name, selector, batch_size=batch_size)
 
   SNP_SET_COLS = [
-    ('string', 'marker_vid', 'Marker VID', VID_SIZE, None),
-    ('long', 'marker_indx', "Marker index within this set", None),
+    ('string', 'vid', 'Marker VID', VID_SIZE, None),
+    ('string', 'label', 'Marker label', 48, None),
+    ('string', 'mask', 'Illumina TOP mask in the <FLANK>[A/B]<FLANK> format',
+     SNP_MASK_SIZE, None),
+    ('long', 'index', "Marker index within this set", None),
     ('bool', 'allele_flip', 'True if the A/B convention is reversed', None),
     ('string', 'op_vid', 'Last operation that modified this row',
      VID_SIZE, None),
     ]
 
   SNP_ALIGNMENT_COLS = [
-    ('string', 'marker_vid', 'VID of the aligned marker', VID_SIZE, None),
+    ('string', 'vid', 'Marker VID', VID_SIZE, None),
     ('string', 'ref_genome', 'Reference alignment genome', 16, None),
     ('long', 'chromosome', '1-22, 23(X), 24(Y), 25(XY), 26(MT)', None),
     ('long', 'pos', "Position on the chromosome wrt 5'", None),
@@ -262,14 +158,15 @@ class GenotypingAdapter(object):
     """
     Fill in a SNPMarkersSet definition table.
     """
-    def add_op_vid(stream, N):
+    N = [0]
+    def mod_stream():
       for x in stream:
+        assign_vid(x)
         x['op_vid'] = op_vid
         N[0] += 1
         yield x
-    N = [0]
-    i_s = add_op_vid(stream, N)
-    by_idx_s = iter(sorted(i_s, key=itemgetter('marker_indx')))  # uses memory
+    i_s = mod_stream()
+    by_idx_s = iter(sorted(i_s, key=itemgetter('index')))  # uses memory
     self._fill_snp_markers_set_table(MSET_TABLE, set_vid, by_idx_s,
                                      batch_size=batch_size)
     return N[0]
