@@ -137,7 +137,6 @@ class GalaxyWrapper(object):
         return ds_tmp, do_tmp
 
     def __wait(self, history_id, sleep_interval = 5):
-        sleep_interval_sec = sleep_interval
         while True:
             status_info = self.gi.histories.get_status(history_id)['state']
             if status_info not in ('queued', 'running'):
