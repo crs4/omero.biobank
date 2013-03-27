@@ -85,6 +85,9 @@ class Proxy(ProxyCore):
   def update_dependency_tree(self):
     self.dt = DependencyTree(self)
 
+  def create_global_tables(self, destructive=False):
+    self.eadpt.create_ehr_table(destructive=destructive)
+
   # Modeling-related utility functions
   # ==================================
 
@@ -485,15 +488,8 @@ class Proxy(ProxyCore):
     laneslots = self.find_all_by_query(query, {'l_vid' : lane.vid})
     return (ls for ls in laneslots)
 
-
   # EVA-related utility functions
   # =============================
-
-  def create_ehr_tables(self):
-    self.eadpt.create_ehr_table()
-
-  def delete_ehr_tables(self):
-    self.delete_table(self.eadpt.EAV_EHR_TABLE)
 
   def add_ehr_record(self, action, timestamp, archetype, rec):
     """

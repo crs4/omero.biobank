@@ -4,89 +4,44 @@
 # END_COPYRIGHT
 
 """
-Destroy and recreate OMERO tables
-=================================
+Create global OMERO tables
+==========================
 
-This is a dangerous thing to do. It is destructive, and should be
-done only when all tables need to be redefined.
+Global tables are not related to any specific KB object.
 """
 
-import sys, argparse, logging
+import os, argparse
 from bl.vl.kb.drivers.omero.proxy import Proxy
 
 
-LOG_FILENAME='create_tables.log'
-logging.basicConfig(
-  format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-  level=logging.INFO,
-  filename=LOG_FILENAME)
-logger = logging.getLogger()
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-formatter = logging.Formatter(
-  fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-  )
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+OME_HOST = os.getenv("OME_HOST", "localhost")
+OME_USER = os.getenv("OME_USER", "root")
+OME_PASSWD = os.getenv("OME_PASSWD", "romeo")
 
 
 def make_parser():
-  desc="Destroy and recreate OMERO tables"
-  epilog="*** THIS PROGRAM WILL DESTROY ALL YOUR OMERO TABLE DATA ***"
   parser = argparse.ArgumentParser(
-    description=desc, epilog=epilog,
+    description=__doc__.lstrip().splitlines()[0],
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
   parser.add_argument('-H', '--host', metavar="STRING",
-                      help='OMERO hostname', default='localhost')
+                      help='OMERO hostname', default=OME_HOST)
   parser.add_argument('-U', '--user', metavar="STRING",
-                      help='OMERO user', default='test')
+                      help='OMERO user', default=OME_USER)
   parser.add_argument('-P', '--passwd', metavar="STRING",
-                      help='OMERO password', required=True)
-  parser.add_argument('--ehr', action='store_true',
-                      help='Create the EHR table')
-  parser.add_argument('--markers', action='store_true',
-                      help='Create the Markers definition table')
-  parser.add_argument('--do-it', action='store_true',
-                      help='I known the risks. I still want to do it')
+                      help='OMERO password', default=OME_PASSWD)
+  parser.add_argument('-d', '--destructive', action='store_true',
+                      help='destroy existing tables if present')
   return parser
 
 
 def main():
   parser = make_parser()
   args = parser.parse_args()
-  if not args.do_it:
-    print 'Are you sure? Really? Then enable the --do-it flag.'
-    parser.print_usage()
-    sys.exit(0)
-  if not args.ehr and not args.markers:
-    print 'Please select at least one table'
-    parser.print_usage()
-    sys.exit(0)
-  host, user, passwd = args.host, args.user, args.passwd
-  logger.info('connecting to %s with user %s' % (host, user))
-  p = Proxy(host, user, passwd)
-  logger.info('connected')
-  if args.markers:
-    logger.info('deleting current snp marker definition table')
-    p.delete_snp_marker_defitions_table()
-    logger.info('deleted current snp marker definition table')
-    logger.info('creating snp marker definition table')
-    p.create_snp_marker_definitions_table()
-    logger.info('created snp marker definition table')
-  if args.ehr:
-    logger.info('deleting current ehr tables')
-    p.delete_ehr_tables()
-    logger.info('deleted current ehr tables')
-    logger.info('creating ehr tables')
-    p.create_ehr_tables()
-    logger.info('created ehr tables')
+  p = Proxy(args.host, args.user, args.passwd)
+  print 'creating global tables in %s' % args.host
+  p.create_global_tables(destructive=args.destructive)
 
 
 if __name__ == "__main__":
   main()
-
-
-# Local Variables: **
-# mode: python **
-# End: **

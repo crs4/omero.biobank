@@ -1,7 +1,7 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import time
+import time, warnings
 from datetime import datetime
 
 import bl.vl.utils as vlu
@@ -98,7 +98,13 @@ class EAVAdapter(object):
   def __init__(self, kb):
     self.kb = kb
 
-  def create_ehr_table(self):
+  def create_ehr_table(self, destructive=False):
+    if self.kb.table_exists(self.EAV_EHR_TABLE):
+      if destructive:
+        self.kb.delete_table(self.EAV_EHR_TABLE)
+      else:
+        warnings.warn("NOT replacing %s (already exists)" % self.EAV_EHR_TABLE)
+        return
     self.kb.create_table(self.EAV_EHR_TABLE, self.EAV_STORAGE_COLS)
 
   def add_eav_record_row(self, row):
