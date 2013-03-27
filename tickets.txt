@@ -8,9 +8,6 @@
 
 * we should probably avoid using OriginalFile in InformedConsent .. Why?
 
-* we should add a check for label string truncation in importer
-  marker_definition.
-
 * get_table_rows should allow column selection. It is usually the case
   that hundreds of megabytes are transfered for nothing. For instance,
   to get the label -> rs_label association from marker definition we

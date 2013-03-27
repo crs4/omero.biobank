@@ -21,8 +21,6 @@ The import tool
 
 .. automodule:: bl.vl.app.importer.diagnosis
 
-.. automodule:: bl.vl.app.importer.marker_definition
-
 .. automodule:: bl.vl.app.importer.marker_alignment
 
 .. automodule:: bl.vl.app.importer.markers_set
