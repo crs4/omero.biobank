@@ -64,6 +64,40 @@ class GenotypingAdapter(object):
 
   SNP_FLANK_SIZE = vlu_snp.SNP_FLANK_SIZE
   SNP_MASK_SIZE = 2 * SNP_FLANK_SIZE + len("[A/B]")
+  SNP_SET_COLS = [
+    ('string', 'vid', 'Marker VID', VID_SIZE, None),
+    ('string', 'label', 'Marker label', 48, None),
+    ('string', 'mask', 'Illumina TOP mask in the <FLANK>[A/B]<FLANK> format',
+     SNP_MASK_SIZE, None),
+    ('long', 'index', "Marker index within this set", None),
+    ('bool', 'allele_flip', 'True if the A/B convention is reversed', None),
+    ('string', 'op_vid', 'Last operation that modified this row',
+     VID_SIZE, None),
+    ]
+  SNP_ALIGNMENT_COLS = [
+    ('string', 'marker_vid', 'Marker VID', VID_SIZE, None),
+    ('string', 'ref_genome', 'Reference alignment genome', 16, None),
+    ('long', 'chromosome', '1-22, 23(X), 24(Y), 25(XY), 26(MT)', None),
+    ('long', 'pos', "Position on the chromosome wrt 5'", None),
+    ('long', 'global_pos', "Overall position in the genome", None),
+    ('bool', 'strand', 'True if aligned on reference strand', None),
+    ('string', 'allele', 'Allele found at this position (A/B)', 1, None),
+    ('long', 'copies', "Number of alignments for this marker", None),
+    ('string', 'op_vid', 'Last operation that modified this row',
+     VID_SIZE, None),
+    ]
+  @staticmethod
+  def SNP_GDO_REPO_COLS(N):
+    cols = [
+      ('string', 'vid', 'gdo VID', VID_SIZE, None),
+      ('string', 'op_vid', 'Last operation that modified this row',
+       VID_SIZE, None),
+      ('float_array', 'probs', 'np.zeros((2,N), dtype=np.float32)',
+       2*N, None),
+      ('float_array', 'confidence', 'np.zeros((N,), dtype=np.float32)',
+       N, None),
+      ]
+    return cols
 
   def __init__(self, kb):
     self.kb = kb
@@ -98,43 +132,6 @@ class GenotypingAdapter(object):
                                   batch_size):
     table_name = self.snp_markers_set_table_name(table_name_root, set_vid)
     return self.kb.get_table_rows(table_name, selector, batch_size=batch_size)
-
-  SNP_SET_COLS = [
-    ('string', 'vid', 'Marker VID', VID_SIZE, None),
-    ('string', 'label', 'Marker label', 48, None),
-    ('string', 'mask', 'Illumina TOP mask in the <FLANK>[A/B]<FLANK> format',
-     SNP_MASK_SIZE, None),
-    ('long', 'index', "Marker index within this set", None),
-    ('bool', 'allele_flip', 'True if the A/B convention is reversed', None),
-    ('string', 'op_vid', 'Last operation that modified this row',
-     VID_SIZE, None),
-    ]
-
-  SNP_ALIGNMENT_COLS = [
-    ('string', 'marker_vid', 'Marker VID', VID_SIZE, None),
-    ('string', 'ref_genome', 'Reference alignment genome', 16, None),
-    ('long', 'chromosome', '1-22, 23(X), 24(Y), 25(XY), 26(MT)', None),
-    ('long', 'pos', "Position on the chromosome wrt 5'", None),
-    ('long', 'global_pos', "Overall position in the genome", None),
-    ('bool', 'strand', 'True if aligned on reference strand', None),
-    ('string', 'allele', 'Allele found at this position (A/B)', 1, None),
-    ('long', 'copies', "Number of alignments for this marker", None),
-    ('string', 'op_vid', 'Last operation that modified this row',
-     VID_SIZE, None),
-    ]
-
-  @classmethod
-  def SNP_GDO_REPO_COLS(klass, N):
-    cols = [
-      ('string', 'vid', 'gdo VID', VID_SIZE, None),
-      ('string', 'op_vid', 'Last operation that modified this row',
-       VID_SIZE, None),
-      ('float_array', 'probs', 'np.zeros((2,N), dtype=np.float32)',
-       2*N, None),
-      ('float_array', 'confidence', 'np.zeros((N,), dtype=np.float32)',
-       N, None),
-      ]
-    return cols
 
   def create_snp_markers_set_tables(self, set_vid, N):
     """
