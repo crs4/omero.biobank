@@ -18,7 +18,7 @@ def get_logger(log_format, log_date_format, log_level,
 
 
 def run_datasets_import(history, items, action_context, async = False,
-                        driver = 'galaxy', conf_file_path = None,
+                        driver = 'galaxy', conf = None,
                         logger = None):
     if not logger:
         logger = get_logger(LOG_FORMAT, LOG_DATEFMT, 'INFO')
@@ -35,7 +35,7 @@ def run_datasets_import(history, items, action_context, async = False,
             logger.error(msg)
             raise ValueError(msg)
     if driver == 'galaxy':
-        gw = GalaxyWrapper(conf_file_path, logger)
+        gw = GalaxyWrapper(conf, logger)
         gw.run_datasets_import(history, items, action_context, async)
     else:
         msg = 'Driver %s not supported' % driver
@@ -45,12 +45,12 @@ def run_datasets_import(history, items, action_context, async = False,
 
 def run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
                                          namespace = None, async = False,
-                                         driver = 'galaxy', conf_file_path = None,
+                                         driver = 'galaxy', conf = None,
                                          logger = None):
     if not logger:
         logger = get_logger(LOG_FORMAT, LOG_DATEFMT, 'INFO')
     if driver == 'galaxy':
-        gw = GalaxyWrapper(conf_file_path, logger)
+        gw = GalaxyWrapper(conf, logger)
         gw.run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
                                                 namespace, async)
     else:

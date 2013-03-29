@@ -1,13 +1,14 @@
 import StringIO, csv, yaml, uuid, time
 from datetime import datetime
 from bioblend.galaxy import GalaxyInstance
+from voluptuous import Schema, Required, Invalid
 
 from items import SequencerOutputItem, SeqDataSampleItem
 
 class GalaxyWrapper(object):
     
-    # In order to work config_file has to be a YAML file that must contain
-    # the following section:
+    # In order to work config has to be a dictionary loaded from a YAML
+    # configuration file containing the following sections:
     #
     # ...
     # galaxy:
@@ -27,21 +28,53 @@ class GalaxyWrapper(object):
     #    label: workflow_label
     #    samplesheet_dataset_label: label_into_the_workflow
     #    config_parameters_file_label: label_into_the_workflow
-    def __init__(self, config_file, logger):
+    
+    def __init__(self, config, logger):
         self.logger = logger
-        with open(config_file) as cfg:
-            conf = yaml.load(cfg)
-            if conf.has_key('galaxy'):
-                galaxy_conf_values = conf.get('galaxy')
-                self.gi = GalaxyInstance(galaxy_conf_values['url'],
-                                         galaxy_conf_values['api_key'])
-                self.seq_out_workflow_conf = galaxy_conf_values['sequencer_output_importer_workflow']
-                self.seq_ds_workflow_conf = galaxy_conf_values['seq_data_sample_importer_workflow']
-                self.smpsh_to_fc_workflow_conf = galaxy_conf_values['flowcell_from_samplesheet_importer_workflow']
-            else:
-                msg = 'No galaxy configuration in config file'
-                self.logger.error(msg)
-                raise RuntimeError(msg)
+        if GalaxyWrapper.validate_configuration(config, logger):
+            galaxy_conf_values = config['galaxy']
+            self.gi = GalaxyInstance(galaxy_conf_values['url'],
+                                     galaxy_conf_values['api_key'])
+            self.seq_out_workflow_conf = galaxy_conf_values['sequencer_output_importer_workflow']
+            self.seq_ds_workflow_conf = galaxy_conf_values['seq_data_sample_importer_workflow']
+            self.smpsh_to_fc_workflow_conf = galaxy_conf_values['flowcell_from_samplesheet_importer_workflow']
+        else:
+            msg = 'Invalid configuration'
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+    @staticmethod
+    def validate_configuration(config, logger = None):
+        validation_schema = Schema({Required('galaxy') : {
+                                      Required('api_key') : str,
+                                      Required('url') : str,
+                                      Required('sequencer_output_importer_workflow') : {
+                                        Required('label') : str,
+                                        Required('history_dataset_label') : str,
+                                        Required('dsamples_dataset_label') : str,
+                                        Required('dobjects_dataset_label') : str,
+                                        },
+                                      Required('seq_data_sample_importer_workflow') : {
+                                        Required('label') : str,
+                                        Required('history_dataset_label') : str,
+                                        Required('dsamples_dataset_label') : str,
+                                        Required('dobjects_dataset_label') : str,
+                                        },
+                                      Required('flowcell_from_samplesheet_importer_workflow') : {
+                                        Required('label') : str,
+                                        Required('samplesheet_dataset_label') : str,
+                                        Required('config_parameters_file_label') : str,
+                                        } 
+                                      }
+                                    },
+                                   extra = True)
+        try:
+            validation_schema(config)
+            return True
+        except Invalid, inv:
+            if logger:
+                logger.error(inv.msg)
+            return False
 
     def __get_or_create_library(self, name):
         self.logger.debug('Loading library with name %s' % name)
