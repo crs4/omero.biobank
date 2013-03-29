@@ -1,8 +1,10 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import sys, time, csv, random
-from bl.vl.utils.snp import convert_to_top
+import sys, csv, random
+
+from bl.core.seq.utils import reverse_complement as rc
+import bl.vl.utils.snp as snp_utils
 
 try:
   N = int(sys.argv[1])
@@ -13,7 +15,7 @@ try:
 except IndexError:
   out_fn = 'marker_definitions.tsv'
 FLANK_SIZE = 20
-HEADER = ['label', 'rs_label', 'mask', 'allele_a', 'allele_b']
+HEADER = ['label', 'mask', 'index', 'allele_flip']
 
 
 with open(out_fn, 'w') as f:
@@ -27,17 +29,18 @@ with open(out_fn, 'w') as f:
     alleles = random.sample('ACGT', 2)
     mask = '%s[%s]%s' % (lflank, '/'.join(alleles), rflank)
     try:
-      convert_to_top(mask)
+      mask = snp_utils.convert_to_top(mask)
     except ValueError as e:
-      print 'Bad mask, skipping'
-      continue
-    j += 1
-    t = time.time() % 1000000
+      pass
+    new_alleles = snp_utils.split_mask(mask)[1]
+    if set(new_alleles) != set(alleles):
+      new_alleles = rc(new_alleles)
+      assert set(new_alleles) == set(alleles)
     y = {
-      'label': 'foo-%d-%d' % (t, j),
-      'rs_label': 'rs-foo-%d-%d' % (t, j),
+      'label': 'M_%d' % j,
       'mask': mask,
-      'allele_a': alleles[0],
-      'allele_b': alleles[1],
+      'index': j,
+      'allele_flip': new_alleles[0] != alleles[0],
       }
     tsv.writerow(y)
+    j += 1

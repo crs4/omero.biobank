@@ -12,7 +12,6 @@ export WORK=${BASEDIR}/work
 
 TMP_DIR=/var/tmp
 
-CREATE_MDEF_TABLE="../../../tools/create_tables -H ${OME_HOST} -U ${OME_USER} -P ${OME_PASSWD} --markers --do-it"
 IMPORTER='../../../tools/importer --operator aen'
 KB_QUERY='../../../tools/kb_query --operator aen'
 ADD_ALLELE_FLIP='python ../../../examples/add_allele_flip.py'
@@ -23,13 +22,7 @@ STUDY_LABEL=GDO_TEST_STUDY
 MS_LABEL=GDO_TEST_MS
 DEVICE_LABEL=GDO_TEST_DEVICE
 
-check_mdef_table() {
-    local msg="marker def table not found, create it with ${CREATE_MDEF_TABLE}"
-    ${BASEDIR}/check_mdef_table || die "${msg}"
-}
 
-
-check_mdef_table
 mkdir -p ${WORK}
 
 cat <<EOF >${WORK}/study.tsv
@@ -56,21 +49,8 @@ ${IMPORTER} -i ${WORK}/individual.tsv -o ${WORK}/individual_map.tsv \
     individual --study ${STUDY_LABEL} || die "import individuals failed"
 
 python ${BASEDIR}/make_marker_defs.py 100 ${WORK}/marker_definitions.tsv
+
 ${IMPORTER} -i ${WORK}/marker_definitions.tsv \
-    -o ${WORK}/marker_definitions_map.tsv \
-    marker_definition --study ${STUDY_LABEL} --source CRS4 \
-    --context TEST --release 1 --ref-genome hg19 \
-    --dbsnp-build 132 || die "import marker definitions failed"
-
-${KB_QUERY} -o ${WORK}/marker_definitions_vids.tsv map_vid \
-    -i ${WORK}/marker_definitions.tsv --study ${STUDY_LABEL} \
-    --source-type Marker \
-    --column label || die "map vid on marker definitions failed"
-
-${ADD_ALLELE_FLIP} ${WORK}/marker_definitions_vids.tsv \
-    ${WORK}/marker_set.tsv || die "add allele flip failed"
-
-${IMPORTER} -i ${WORK}/marker_set.tsv \
     -o ${WORK}/marker_set_map.tsv markers_set \
     --study ${STUDY_LABEL} --label ${MS_LABEL} \
     --maker CRS4 --model TEST --release 1 || die "import marker set failed"
@@ -86,7 +66,12 @@ ${KB_QUERY} -o ${WORK}/device_vids.tsv map_vid -i ${WORK}/device.tsv \
 ${IMPORTER} -i ${WORK}/device_vids.tsv -o ${WORK}/device_map.tsv device \
     --study ${STUDY_LABEL} || die "import device failed"
 
-python ${BASEDIR}/make_marker_align.py ${WORK}/marker_definitions_map.tsv \
+${KB_QUERY} -o ${WORK}/marker_definitions_vids.tsv map_vid \
+    -i ${WORK}/marker_definitions.tsv --source-type Marker \
+    --column label,vid --study GDO_TEST_STUDY \
+    --marker-set GDO_TEST_MS || die "map vid on marker definitions failed"
+
+python ${BASEDIR}/make_marker_align.py ${WORK}/marker_definitions_vids.tsv \
     ${WORK}/marker_alignments_vids.tsv
 
 ${IMPORTER} -i ${WORK}/marker_alignments_vids.tsv \

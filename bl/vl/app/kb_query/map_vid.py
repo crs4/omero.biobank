@@ -25,11 +25,13 @@ class MapVIDApp(Core):
                             'FlowCell', 'Lane', 'SequencerOutput']
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
-               study_label=None, operator='Alfred E. Neumann', logger=None):
+               study_label=None, mset_label=None,
+               operator='Alfred E. Neumann', logger=None):
     super(MapVIDApp, self).__init__(host, user, passwd, keep_tokens=keep_tokens,
                                     study_label=study_label, logger=logger)
     if study_label is None:
       self.default_study = None
+    self.mset_label = mset_label
 
   def resolve_mapping_individual(self, labels):
     def check_labels(labels):
@@ -112,13 +114,17 @@ class MapVIDApp(Core):
     self.logger.debug('mapping: %s' % mapping)
     return mapping
 
-  def resolve_mapping_marker(self, source_type, labels):
+  def resolve_mapping_marker(self, labels):
+    ms = self.kb.get_snp_markers_set(self.mset_label)
+    if not ms:
+      self.logger.error("unknown marker set label '%s'" % self.mset_label)
+      return {}
     mapping = {}
-    self.logger.info('start selecting %s' % source_type.get_ome_table())
-    objs = self.kb.get_snp_markers(labels=labels, col_names=['vid', 'label'])
-    for o in objs:
-      mapping[o.label] = o.id
-    self.logger.info('done selecting %s' % source_type.get_ome_table())
+    self.logger.info('mapping markers from set %s' % self.mset_label)
+    if not ms.has_markers():
+      ms.load_markers()
+    mapping = dict(zip(ms.markers['label'], ms.markers['vid']))
+    self.logger.info('done mapping markers from set %s' % self.mset_label)
     return mapping
 
   def resolve_mapping(self, source_type, labels):
@@ -127,7 +133,7 @@ class MapVIDApp(Core):
     elif source_type == self.kb.PlateWell:
       return self.resolve_mapping_plate_well(source_type, labels)
     elif source_type == self.kb.Marker:
-      return self.resolve_mapping_marker(source_type, labels)
+      return self.resolve_mapping_marker(labels)
     elif source_type == self.kb.DataCollectionItem:
       return self.resolve_mapping_data_collection_item(source_type, labels)
     else:
@@ -203,12 +209,18 @@ def make_parser(parser):
     the set of input labels to map, while the second one, which
     defaults to 'source', will be used for mapped output values""")
   parser.add_argument('--study', metavar="STRING", help="study label")
+  parser.add_argument('--marker-set', metavar="STRING",
+                      help="marker set label (only for markers)")
 
 
 def implementation(logger, host, user, passwd, args):
+  if args.source_type == "Marker" and not args.marker_set:
+    raise argparse.ArgumentError(
+      None, "--marker-set must be specified when mapping markers"
+      )
   app = MapVIDApp(host=host, user=user, passwd=passwd,
-                  keep_tokens=args.keep_tokens,
-                  study_label=args.study, logger=logger)
+                  keep_tokens=args.keep_tokens, study_label=args.study,
+                  mset_label=args.marker_set, logger=logger)
   app.dump(args.ifile, args.source_type,
            args.column[0], args.column[1], args.ofile)
 

@@ -12,7 +12,7 @@ to different SNPMarkersSet instances.
 
 In more detail, a marker set is defined by:
 
- * identification information:
+ * for the whole set:
 
    * maker: the name of the organization that has defined the
      SNPMarkersSet, e.g., 'CRS4'
@@ -23,22 +23,29 @@ In more detail, a marker set is defined by:
    * release: a string that identifies this specific instance, e.g.,
      'aligned_on_human_g1k_v37'
 
- * reference list: for each marker that should go in the list,
-   the following information is provided:
+ * for each marker in the set:
 
-   * marker_vid: the vid identifier of the marker
+   * label: a descriptive string, usually assigned by the manufacturer
+     and unique within the specific genotyping platform
 
-   * marker_indx: the position of the marker within the marker list
+   * mask: a string that describes the DNA structure of the marker, in
+     the <FLANK>[A/B]<FLANK> format, e.g., ACGTCCAC[A/G]ACTAGCTA.  All
+     input masks are expected to be in the TOP Illumina convention, if
+     the Illumina strand detection algorithm yields a result (see
+     :func:`~bl.vl.utils.snp.convert_to_top`).
+
+   * index: the position of the marker within the marker list
 
    * allele_flip: False if the alleles are in the same order as
-     recorded in the marker definition, True if they are swapped.
+     recorded in the manufacturer's data sheet
 
-For instance::
+Set info is provided through command line parameters, while per-marker
+info must be listed in the tab-separated input file.  For instance::
 
-  marker_vid  marker_indx  allele_flip
-  V902909090  0            False
-  V902909091  1            False
-  V902909092  2            True
+  label  mask               index  allele_flip
+  SNP-1  ACGTCC[A/G]ACTAGC  0      False
+  SNP-2  CGATCG[T/C]ACACTG  1      False
+  SNP-3  TGACTA[T/G]TAGCGA  2      True
   ...
 """
 import os, time, csv, json, copy
@@ -61,11 +68,6 @@ class Recorder(core.Core):
     if len(records) == 0:
       self.logger.warn('no records')
       return
-    self.logger.info('start preloading marker vids')
-    self.preloaded_marker_vids = set(
-      m[0] for m in self.kb.get_snp_marker_definitions(col_names=["vid"])
-      )
-    self.logger.info('done preloading marker vids')
     good_records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
@@ -81,7 +83,7 @@ class Recorder(core.Core):
     N = len(records)
     def stream():
       for r in records:
-        yield r['marker_vid'], r['marker_indx'], r['allele_flip']
+        yield r['label'], r['mask'], r['index'], r['allele_flip']
     mset = self.kb.create_snp_markers_set(label, maker, model, release,
                                           N, stream(), action)
     otsv.writerow({
@@ -93,7 +95,7 @@ class Recorder(core.Core):
 
   def find_markers_set_label(self, records):
     r = records[0]
-    return r['label'], r['maker'], r['model'], r['release']
+    return r['ms_label'], r['maker'], r['model'], r['release']
 
   def find_action(self, study):
     device_label = ('importer.marker_definition.SNP-markers-set-%s' % version)
@@ -119,16 +121,8 @@ class Recorder(core.Core):
     model = records[0]['model']
     release = records[0]['release']
     study = records[0]['study']
-    preloaded_marker_vids = self.preloaded_marker_vids  # speed hack
     for i, r in enumerate(records):
       reject = 'Rejecting import of row %d: ' % i
-      if r['marker_vid'] not in preloaded_marker_vids:
-        f = 'there is no knwon marker with ID %s' % r['marker_vid']
-        self.logger.error(reject + f)
-        bad_rec = copy.deepcopy(r)
-        bad_rec['error'] = f
-        bad_records.append(bad_rec)
-        continue
       if r['maker'] != maker:
         f = 'inconsistent maker'
         self.logger.error(reject + f)
@@ -165,7 +159,7 @@ class RecordCanonizer(core.RecordCanonizer):
 
   def canonize(self, r):
     super(RecordCanonizer, self).canonize(r)
-    r['marker_indx'] = int(r['marker_indx'])
+    r['index'] = int(r['index'])
     r['allele_flip'] = r['allele_flip'].upper() == 'TRUE'
 
 
@@ -177,7 +171,7 @@ import new markers set definitions into the KB.
 def make_parser(parser):
   parser.add_argument('--study', metavar="STRING", required=True,
                       help="study label")
-  parser.add_argument('--label', metavar="STRING",
+  parser.add_argument('--label', metavar="STRING", dest="ms_label",
                       help="markers_set unique label")
   parser.add_argument('--maker', metavar="STRING", required=True,
                       help="markers_set maker")
@@ -194,14 +188,15 @@ def implementation(logger, host, user, passwd, args):
                       operator=args.operator,
                       action_setup_conf=action_setup_conf, logger=logger)
   for m in recorder.kb.get_objects(recorder.kb.SNPMarkersSet):
-    if m.label == args.label:
-      msg = 'a marker set labeled %s is already present in the kb' % args.label
-      logger.error(msg)
+    if m.label == args.ms_label:
+      logger.error(
+        'a marker set labeled %s is already present in the kb' % args.ms_label
+        )
       return
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  fields_to_canonize = ['study', 'label', 'maker', 'model', 'release']
+  fields_to_canonize = ['study', 'ms_label', 'maker', 'model', 'release']
   canonizer = RecordCanonizer(fields_to_canonize, args)
   canonizer.canonize_list(records)
   if len(records) > 0:
