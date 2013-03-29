@@ -30,8 +30,8 @@ def get_snp_labels(mset_label):
     mset = kb.get_snp_markers_set(mset_label)
     if not mset:
       raise ValueError("No marker set in kb with label %s" % mset_label)
-    mset.load_markers(additional_fields=['label'])
-    labels = mset.add_marker_info['label']
+    mset.load_markers()
+    labels = mset.markers['label']
   finally:
     kb.disconnect()
   return labels

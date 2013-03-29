@@ -88,16 +88,8 @@ class Recorder(core.Core):
     self.logger.info('start consistency checks')
     good_records = []
     bad_records = []
-    preloaded_marker_vids = self.preloaded_marker_vids  # speed hack
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i
-      if r['marker_vid'] not in preloaded_marker_vids:
-        f = 'there is no marker with ID %s' % r['marker_vid']
-        self.logger.error(reject + f)
-        bad_rec = copy.deepcopy(r)
-        bad_rec['error'] = f
-        bad_records.append(bad_rec)
-        continue
       if self.missing_fields(MANDATORY_FIELDS, r):
         f = 'missing mandatory field'
         self.logger.error(reject + f)
@@ -124,12 +116,6 @@ class Recorder(core.Core):
     return good_records, bad_records
 
   def record(self, records, rtsv):
-    self.logger.info('start preloading marker vids')
-    ref_genome = records[0]["ref_genome"]
-    self.preloaded_marker_vids = set(
-      m[0] for m in self.kb.get_snp_marker_definitions(col_names=["vid"])
-      )
-    self.logger.info('done preloading marker vids')
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
@@ -137,6 +123,7 @@ class Recorder(core.Core):
       for r in records:
         yield (r['marker_vid'], r['chromosome'], r['pos'],
                r['strand'], r['allele'], r['copies'])
+    ref_genome = records[0]["ref_genome"]
     self.kb.align_snp_markers_set(self.mset, ref_genome, stream(), self.action)
 
 

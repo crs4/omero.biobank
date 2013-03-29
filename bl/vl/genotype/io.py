@@ -187,7 +187,7 @@ class VCFWriter(object):
     self.mset = mset
     self.ref_genome = ref_genome
     self.marker_selector = marker_selector
-    self.mset.load_markers(additional_fields=['mask', 'rs_label'])
+    self.mset.load_markers()
     self.mset.load_alignments(self.ref_genome)
 
   def __initialize_marker_selector(self, d):
@@ -230,7 +230,7 @@ class VCFWriter(object):
       ref_allele = rev_compl(alleles[m.allele_on_reference == 'B'])
       alt_allele = rev_compl(alleles[m.allele_on_reference == 'A'])
     fobj.write('%s\t%s' % m.position)
-    fobj.write('\t%s\t%s\t%s' % (m.rs_label, ref_allele, alt_allele))
+    fobj.write('\t%s\t%s\t%s' % (m.label, ref_allele, alt_allele))
     fobj.write('\t.\tPASS\tGT')
     fobj.write('\t' + '\t'.join(allele_patterns[dat]))
     fobj.write('\n')
@@ -280,7 +280,7 @@ class PedWriter(object):
     try:
       N = len(self.mset)
     except ValueError:
-      self.mset.load_markers(additional_fields=['rs_label'])
+      self.mset.load_markers()
       N = len(self.mset)
     self.null_probs = np.empty((2, N), dtype=np.float32)
     self.null_probs.fill(1/3.)
@@ -306,7 +306,7 @@ class PedWriter(object):
       for i in marker_indx:
         m = self.mset[i]
         chrom, pos = m.position
-        fo.write('%s\t%s\t%s\t%s\n' % (chrom, m.rs_label, 0, pos))
+        fo.write('%s\t%s\t%s\t%s\n' % (chrom, m.label, 0, pos))
     with open(self.base_path + '.map', 'w') as fo:
       fo.write('# map based on mset %s aligned on %s\n' %
                (self.mset.id, self.ref_genome))
