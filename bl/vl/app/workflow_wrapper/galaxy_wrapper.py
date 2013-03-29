@@ -294,3 +294,9 @@ class GalaxyWrapper(object):
                 msg = 'Error occurred while processing data'
                 self.logger.error(msg)
                 raise RuntimeError(msg)
+
+    def delete_history(self, history_id, purge_history = False):
+        self.logger.info('Deleting history with ID %s' % history_id)
+        self.gi.histories.delete_history(history_id, purge_history)
+        self.logger('History deleted')
+        

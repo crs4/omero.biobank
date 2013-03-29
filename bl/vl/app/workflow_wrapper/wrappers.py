@@ -19,6 +19,7 @@ def get_logger(log_format, log_date_format, log_level,
 
 def run_datasets_import(history, items, action_context, async = False,
                         driver = 'galaxy', conf = None,
+                        delete_history = False, purge_history = False,
                         logger = None):
     if not logger:
         logger = get_logger(LOG_FORMAT, LOG_DATEFMT, 'INFO')
@@ -36,7 +37,9 @@ def run_datasets_import(history, items, action_context, async = False,
             raise ValueError(msg)
     if driver == 'galaxy':
         gw = GalaxyWrapper(conf, logger)
-        gw.run_datasets_import(history, items, action_context, async)
+        history_details = gw.run_datasets_import(history, items, action_context, async)
+        if delete_history and not async:
+            gw.delete_history(history_details['history'], purge_history)
     else:
         msg = 'Driver %s not supported' % driver
         logger.error(msg)
@@ -46,13 +49,16 @@ def run_datasets_import(history, items, action_context, async = False,
 def run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
                                          namespace = None, async = False,
                                          driver = 'galaxy', conf = None,
+                                         delete_history = False, purge_history = False,
                                          logger = None):
     if not logger:
         logger = get_logger(LOG_FORMAT, LOG_DATEFMT, 'INFO')
     if driver == 'galaxy':
         gw = GalaxyWrapper(conf, logger)
-        gw.run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
-                                                namespace, async)
+        history_details = gw.run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
+                                                                  namespace, async)
+        if delete_history and not async:
+            gw.delete_history(history_details['history'], purge_history)
     else:
         msg = 'Driver %s not supported' % driver
         logger.error(msg)
