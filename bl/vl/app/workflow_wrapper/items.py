@@ -5,12 +5,13 @@ class HistoryDetails(object):
     
     def __init__(self, history_data, history_type = None,
                  history_type_version = None, history_id = None,
-                 input_ids = None):
+                 input_ids = None, output_id):
         self.history_data = history_data
         self.history_type = history_type
         self.history_type_version = history_type_version
         self.history_id = history_id
         self.input_ids = input_ids
+        self.output_id = output_id
 
     @property
     def json_data(self):
@@ -18,16 +19,18 @@ class HistoryDetails(object):
                            'version' : self.history_type_version,
                            'id'      : self.history_id,
                            'inputs'  : self.input_ids,
+                           'output'  : self.output_id,
                            'details' : self.history_data})
 
 
 class GalaxyHistoryDetails(HistoryDetails):
 
     def __init__(self, history_data, history_type_version = None,
-                 history_id = None, input_ids = None):
+                 history_id = None, input_ids = None
+                 output_id = None):
         super(GalaxyHistoryDetails, self).__init__(history_data, 'galaxy',
-                                                   history_type_version,
-                                                   history_id, input_ids)
+                                                   'v_1.0', history_id,
+                                                   input_ids, output_id)
 
 
 class BiobankItem(object):
