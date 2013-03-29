@@ -5,7 +5,7 @@ class HistoryDetails(object):
     
     def __init__(self, history_data, history_type = None,
                  history_type_version = None, history_id = None,
-                 input_ids = None, output_id):
+                 input_ids = None, output_id = None):
         self.history_data = history_data
         self.history_type = history_type
         self.history_type_version = history_type_version
@@ -26,7 +26,7 @@ class HistoryDetails(object):
 class GalaxyHistoryDetails(HistoryDetails):
 
     def __init__(self, history_data, history_type_version = None,
-                 history_id = None, input_ids = None
+                 history_id = None, input_ids = None,
                  output_id = None):
         super(GalaxyHistoryDetails, self).__init__(history_data, 'galaxy',
                                                    'v_1.0', history_id,
