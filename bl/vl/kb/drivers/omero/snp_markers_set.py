@@ -169,17 +169,19 @@ class SNPMarkersSet(wp.OmeroWrapper):
     """
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded')
+    selector = "(ref_genome == '%s')" % ref_genome
     aligns = self.proxy.gadpt.read_snp_markers_set_alignments(
-      self.id, batch_size=batch_size
+      self.id, selector=selector, batch_size=batch_size
       )
     assert len(aligns) >= len(self)
-    aligns = aligns[['chromosome', 'pos', 'global_pos', 'strand', 'allele',
-                     'copies']]
-    aligns = aligns[:len(self)]
-    no_align_positions =  - (self.markers['index'] +
-                             (self.omero_id * self.MAX_LEN))
-    aligns['global_pos'] = np.choose(aligns['copies'] == 1,
-                                     [no_align_positions, aligns['global_pos']])
+    if len(aligns) > len(self):
+      aligns = aligns[:len(self)]
+    no_align_positions =  - (
+      self.markers['index'] + self.omero_id * self.MAX_LEN
+      )
+    aligns['global_pos'] = np.choose(
+      aligns['copies'] == 1, [no_align_positions, aligns['global_pos']]
+      )
     self.bare_setattr('aligns', aligns)
     self.bare_setattr('ref_genome', ref_genome)
 
