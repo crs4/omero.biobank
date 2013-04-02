@@ -160,7 +160,8 @@ class RecordCanonizer(core.RecordCanonizer):
   def canonize(self, r):
     super(RecordCanonizer, self).canonize(r)
     r['index'] = int(r['index'])
-    r['allele_flip'] = r['allele_flip'].upper() == 'TRUE'
+    r['allele_flip'] = r['allele_flip'].strip().upper()
+    r['allele_flip'] = r['allele_flip'] == 'TRUE' or r['allele_flip'] == '1'
 
 
 help_doc = """

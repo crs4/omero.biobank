@@ -44,7 +44,7 @@ MANDATORY_FIELDS = [
   'copies',
   'study',
   ]
-STRAND_ENCODINGS = frozenset(['TRUE', '+'])
+STRAND_ENCODINGS = frozenset(['TRUE', '+', '1'])
 
 
 class Recorder(core.Core):
