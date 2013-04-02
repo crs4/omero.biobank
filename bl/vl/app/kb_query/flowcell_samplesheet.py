@@ -19,7 +19,8 @@ class IdentifierError(Exception):
 class BuildFlowCellSamplesheetApp(Core):
 
     OUT_FILE_HEADER = ['FCID', 'Lane', 'SampleID', 'SampleRef', 'Index',
-                       'Description', 'Control', 'Recipe', 'Operator']
+                       'Description', 'Control', 'Recipe', 'Operator',
+                       'SampleProject']
     NAMESPACE_DELIMITER = '|'
 
     def __init__(self, host=None, user=None, passwd=None,
@@ -85,9 +86,14 @@ class BuildFlowCellSamplesheetApp(Core):
                   'Lane'     : laneslot.lane.slot,
                   'SampleID' : laneslot.action.target.id,
                   'Index'    : laneslot.tag or '',
-                  'Recipe'   : json.loads(laneslot.action.setup.conf)['protocol'],
-                  'Operator' : json.loads(laneslot.action.setup.conf)['operator']
                   }
+        for k,v in {'Recipe' : 'protocol', 'Operator' : 'operator',
+                    'SampleProject' : 'sample_project'}.iteritems():
+            act_setup_conf = json.loads(laneslot.action.setup.conf)
+            if act_setup_conf.has_key(v):
+                record[k] = act_setup_conf[v]
+            else:
+                record[k] = ''
         if add_sample_label:
             record['SampleLabel'] = self.__get_label(laneslot.action.target, remove_namespaces) # FIX: crashes if source is not a sample
         self.logger.debug('Dumping record %r' % record)

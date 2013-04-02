@@ -130,6 +130,7 @@ setup(
     'bl.vl.app.importer',
     'bl.vl.app.kb_query',
     'bl.vl.app.snp_manager',
+    'bl.vl.app.workflow_wrapper',
     ],
   cmdclass={"sdist": sdist, "build_py": build_py},
   )
