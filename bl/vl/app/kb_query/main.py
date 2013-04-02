@@ -23,7 +23,7 @@ SUBMOD_NAMES = [
   "map_to_collection",
   "flowcell_samplesheet",
   # "tabular",
-  # "markers",
+  "markers",
   # "ehr",
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
