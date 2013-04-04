@@ -22,11 +22,14 @@ export OME_PASSWD="romeo"
 
 IMPORTER='../../../tools/importer --operator aen'
 KB_QUERY='../../../tools/kb_query --operator aen'
+CREATE_TABLES='../../../tools/create_tables'
 DATA_DIR='./small'
 STUDY_LABEL=TEST_${RANDOM}${RANDOM}
 
 
 echo 'Running tests on dataset:' ${DATA_DIR}
+
+${CREATE_TABLES}
 
 ${IMPORTER} -i ${DATA_DIR}/study.tsv -o study_mapping.tsv study \
     --label ${STUDY_LABEL} || die "import study failed"
@@ -104,14 +107,6 @@ ${IMPORTER} -i data_collection_mapped.tsv -o data_collection_mapping.tsv \
     data_collection \
     --study ${STUDY_LABEL} || die "import data collection failed"
 
-
-#-----------------
-# use the following commands to (scratch and re)create omero tables:
-#   export LOGIN_OPTS="-H ${OME_HOST} -U ${OME_USER} -P ${OME_PASSWD}"
-#   ../../../tools/create_tables ${LOGIN_OPTS} --markers --do-it
-#   ../../../tools/create_tables ${LOGIN_OPTS} --ehr --do-it
-#-----------------
-
 ${KB_QUERY} -o diagnosis_mapped.tsv map_vid -i ${DATA_DIR}/diagnosis.tsv \
     --column individual_label,individual --source-type Individual \
     --study ${STUDY_LABEL} || die "map diagnosis vid failed"
@@ -119,55 +114,10 @@ ${KB_QUERY} -o diagnosis_mapped.tsv map_vid -i ${DATA_DIR}/diagnosis.tsv \
 ${IMPORTER} -i diagnosis_mapped.tsv diagnosis \
     --study ${STUDY_LABEL} || die "import diagnosis failed"
 
-python ./make_marker_defs.py 100
-${IMPORTER} -i marker_definitions.tsv -o marker_definition_mapping.tsv \
-    marker_definition --study ${STUDY_LABEL} --source CRS4 \
-    --context TEST --release `date +"%F-%R"` --ref-genome hg19 \
-    --dbsnp-build 132 || die "import marker definition failed"
-
-echo "* define a marker set that uses all known markers"
-python make_marker_set.py marker_definition_mapping.tsv markers_sets.tsv
-MSET0=MSET0-`date +"%F-%R"`
-${IMPORTER} -i markers_sets.tsv -o markers_set_mapping.tsv \
-    markers_set --study ${STUDY_LABEL} --label ${MSET0} \
-    --maker CRS4 --model MSET0 \
-    --release `date +"%F-%R"` || die "import marker set 0 failed"
-
-echo "* define a marker set that uses 16 known markers"
-python make_marker_set.py marker_definition_mapping.tsv markers_sets_16.tsv 16
-MSET1=MSET1-`date +"%F-%R"`
-${IMPORTER} -i markers_sets_16.tsv -o markers_sets_16_mapping.tsv \
-    markers_set --study ${STUDY_LABEL} --label ${MSET1} \
-    --maker CRS4 --model MSET1 \
-    --release `date +"%F-%R"` || die "import marker set 1 failed"
-
-MSET_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('${OME_HOST}', '${OME_USER}', '${OME_PASSWD}'); print kb.get_snp_markers_set(label='${MSET1}').id")
-python make_marker_align.py marker_definition_mapping.tsv marker_alignments.tsv
-${IMPORTER} -i marker_alignments.tsv \
-    marker_alignment --study ${STUDY_LABEL} --ref-genome hgFake \
-    --markers-set ${MSET1} || die "import marker alignment failed"
-
-echo "* define a  GenotypingProgram device that generates datasets on ${MSET1}"
-DEVICE_FILE=foo_device.tsv
-python -c "print 'device_type\tlabel\tmaker\tmodel\trelease\tmarkers_set'" > ${DEVICE_FILE}
-python -c "print 'GenotypingProgram\t${MSET1}\tCRS4\tTest\t${MSET1}\t${MSET_VID}'" >> ${DEVICE_FILE}
-${IMPORTER} -i foo_device.tsv -o foo_device_mapping.tsv device \
-    --study ${STUDY_LABEL} || die "import foo device failed"
-
-DEVICE_VID=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('${OME_HOST}', '${OME_USER}', '${OME_PASSWD}'); print kb.get_device('${MSET1}').id")
-echo "* extract a subset of individuals"
 FOO_GROUP=foo-`date +"%F-%R"`
 ${KB_QUERY} --ofile group_foo.tsv selector --study ${STUDY_LABEL} \
     --group-label ${FOO_GROUP} --total-number=4 --male-fraction=0.5 \
     --reference-disease=icd10-cm:G35 \
     --control-fraction=0.5 || die "select group failed"
 
-echo "* import them as group ${FOO_GROUP}"
 ${IMPORTER} -i group_foo.tsv group || die "import selected group failed"
-
-echo "* add fake GenotypeDataSample(s) to ${MSET1}"
-python make_gds.py group_foo.tsv data_samples_mset1.tsv ${MSET1} ${DEVICE_VID}
-${IMPORTER} -i data_samples_mset1.tsv -o data_samples_mset1_mapping.tsv \
-    data_sample --device-type GenotypingProgram \
-    --data-sample-type GenotypeDataSample --study ${STUDY_LABEL} \
-    --source-type Individual || die "import data samples mset1 failed"

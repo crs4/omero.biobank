@@ -1,7 +1,12 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
+# PROBLEMS:
+#   1. Made obsolete by #449
+#   2. Adds the BeautifulSoup external dependency
+
 """ ...
+
 Given a list of SDS 2.3 AD (text) files, all related to the same set
 of samples but for different snp markers, we will show how to
 do the following:
