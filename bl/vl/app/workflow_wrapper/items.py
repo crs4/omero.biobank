@@ -4,33 +4,26 @@ import json
 class HistoryDetails(object):
     
     def __init__(self, history_data, history_type = None,
-                 history_type_version = None, history_id = None,
-                 input_ids = None, output_id = None):
+                 history_type_version = None, history_id = None):
         self.history_data = history_data
         self.history_type = history_type
         self.history_type_version = history_type_version
         self.history_id = history_id
-        self.input_ids = input_ids
-        self.output_id = output_id
 
     @property
     def json_data(self):
         return json.dumps({'type'    : self.history_type,
                            'version' : self.history_type_version,
                            'id'      : self.history_id,
-                           'inputs'  : self.input_ids,
-                           'output'  : self.output_id,
                            'details' : self.history_data})
 
 
 class GalaxyHistoryDetails(HistoryDetails):
 
     def __init__(self, history_data, history_type_version = None,
-                 history_id = None, input_ids = None,
-                 output_id = None):
+                 history_id = None):
         super(GalaxyHistoryDetails, self).__init__(history_data, 'galaxy',
-                                                   'v_1.0', history_id,
-                                                   input_ids, output_id)
+                                                   'v_1.0', history_id)
 
 
 class BiobankItem(object):
@@ -56,7 +49,8 @@ class DataSampleItem(BiobankItem):
     def __init__(self, dataset_type, dataset_status, data_objects = None,
                  label = None, source_label = None,
                  source_type = None, device_label = None,
-                 tags = None, history_dataset_id = None):
+                 tags = None, hist_src_dataset_id = None,
+                 hist_res_dataset_id = None):
         super(DataSampleItem, self).__init__(label, source_label,
                                              source_type)
         self.dataset_type = dataset_type
@@ -64,7 +58,8 @@ class DataSampleItem(BiobankItem):
         self.data_objects = data_objects
         self.device_label = device_label
         self.tags = tags
-        self.history_dataset_id = history_dataset_id
+        self.hist_src_dataset_id = hist_src_dataset_id
+        self.hist_res_dataset_id = hist_res_dataset_id
 
 
 class SequencerOutputItem(DataSampleItem):
@@ -72,11 +67,13 @@ class SequencerOutputItem(DataSampleItem):
     def __init__(self, dataset_status, data_objects = None,
                  label = None, source_label = None,
                  source_type = None, device_label = None,
-                 tags = None, history_dataset_id = None):
+                 tags = None, hist_src_dataset_id = None,
+                 hist_res_dataset_id = None):
         super(SequencerOutputItem, self).__init__('SequencerOutput', dataset_status,
                                                   data_objects, label, source_label,
                                                   source_type, device_label,
-                                                  tags, history_dataset_id)
+                                                  tags, hist_src_dataset_id,
+                                                  hist_res_dataset_id)
 
 
 class SeqDataSampleItem(DataSampleItem):
@@ -84,9 +81,11 @@ class SeqDataSampleItem(DataSampleItem):
     def __init__(self, dataset_status, sample_label = None,
                  data_objects = None, label = None, source_label = None,
                  source_type = None, device_label = None,
-                 tags = None, history_dataset_id = None):
+                 tags = None, hist_src_dataset_id = None,
+                 hist_res_dataset_id = None):
         super(SeqDataSampleItem, self).__init__('SeqDataSample', dataset_status,
                                                 data_objects, label, source_label,
                                                 source_type, device_label,
-                                                tags, history_dataset_id)
+                                                tags, hist_src_dataset_id,
+                                                hist_res_dataset_id)
         self.sample_label = sample_label

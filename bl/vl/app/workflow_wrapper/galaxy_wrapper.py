@@ -175,8 +175,10 @@ class GalaxyWrapper(object):
             opts = {}
             if i.tags:
                 opts = i.tags
-            if i.history_dataset_id:
-                opts['history_dataset_id'] = i.history_dataset_id
+            if i.hist_src_dataset_id:
+                opts['hist_src_dataset_id'] = i.hist_src_dataset_id
+            if i.hist_res_dataset_id:
+                opts['hist_res_dataset_id'] = i.hist_res_dataset_id
             ds_record = {'study' : study, 'label' : i.label,
                          'source' : i.source_label,
                          'source_type' : i.source_type,
