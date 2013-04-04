@@ -173,10 +173,13 @@ class Proxy(ProxyCore):
         raise ValueError('there are %d records in stream (expected %d)' %
                          (count, N))
     except:
-      self.gadpt.delete_snp_markers_set_tables(mset.id)
-      self.delete(mset)
+      self.delete_snp_markers_set(mset)
       raise
     return mset
+
+  def delete_snp_markers_set(self, mset):
+    self.gadpt.delete_snp_markers_set_tables(mset.id)
+    self.delete(mset)
 
   def align_snp_markers_set(self, mset, ref_genome, stream, action):
     """
@@ -294,12 +297,6 @@ class Proxy(ProxyCore):
   def get_snp_markers_set(self, label=None,
                           maker=None, model=None, release=None):
     return self.madpt.get_snp_markers_set(label, maker, model, release)
-
-  def snp_markers_set_exists(self, label, maker, model, release):
-    """
-    DEPRECATED
-    """
-    return not self.get_snp_markers_set(label, maker, model, release) is None
 
 
   # Syntactic sugar functions built as a composition of the above

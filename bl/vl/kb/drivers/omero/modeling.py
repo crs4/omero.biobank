@@ -239,6 +239,3 @@ class ModelingAdapter(object):
     result = self.kb.ome_operation("getQueryService", "findByQuery",
                                    query, pars)
     return None if result is None else self.kb.factory.wrap(result)
-
-  def snp_markers_set_exists(self, label, maker, model, release):
-    return not self.get_snp_markers_set(label, maker, model, release) is None
