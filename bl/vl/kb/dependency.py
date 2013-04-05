@@ -13,7 +13,7 @@ class DependencyTree(object):
   """
   def __init__(self, kb, logger=logging.getLogger()):
     obj_klasses = [kb.Individual, kb.Vessel, kb.DataSample, kb.VLCollection,
-                   kb.DataCollectionItem]
+                   kb.DataCollectionItem, kb.LaneSlot]
     relationship = {kb.DataCollectionItem: 'dataSample'}
     def base_ome_class(klass):
       "FIXME hardwired to Omero"
