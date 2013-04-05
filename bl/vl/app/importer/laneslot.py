@@ -47,7 +47,7 @@ class Recorder(core.Core):
         self.preloaded_laneslots = {}
         self.preloaded_lanes = {}
 
-    def record(self, records, otsv, rtsv):
+    def record(self, records, otsv, rtsv, blocking_validation):
         def records_by_chunk(batch_size, records):
             offset = 0
             while len(records[offset:]) > 0:
@@ -64,6 +64,8 @@ class Recorder(core.Core):
         records, bad_records = self.do_consistency_checks(records)
         for br in bad_records:
             rtsv.writerow(br)
+        if blocking_validation and len(bad_records) >= 1:
+            raise core.ImporterValidationError('%d invalid records' % len(bad_records))
         device = self.get_device('importer-%s.laneslot' % version,
                                  'CRS4', 'IMPORT', version)
         act_setups = set(Recorder.get_action_setup_options(r, self.action_setup_conf)
@@ -185,7 +187,7 @@ class Recorder(core.Core):
                 'content': content,
                 'action': a
                 }
-            if 'tag' in r:
+            if 'tag' in r and r['tag']:
                 conf['tag'] = r['tag']
             laneslots.append(self.kb.factory.create(self.kb.LaneSlot, conf))
         assert len(laneslots) == len(chunk)
@@ -197,6 +199,13 @@ class Recorder(core.Core):
                     'tag': ls.tag if ls.tag else '',
                     'vid': ls.id,
                     })
+
+class RecordCanonizer(core.RecordCanonizer):
+
+    def canonize(self, r):
+        super(RecordCanonizer, self).canonize(r)
+        if r['tag'] == '':
+            r['tag'] = None
 
 
 def make_parser(parser):
@@ -223,7 +232,7 @@ def implementation(logger, host, user, passwd, args):
     recorder.logger.info('start processing file %s' % args.ifile.name)
     f = csv.DictReader(args.ifile, delimiter='\t')
     records = [r for r in f]
-    canonizer = core.RecordCanonizer(fields_to_canonize, args)
+    canonizer = RecordCanonizer(fields_to_canonize, args)
     canonizer.canonize_list(records)
     if len(records) > 0:
         o = csv.DictWriter(args.ofile,
@@ -236,7 +245,15 @@ def implementation(logger, host, user, passwd, args):
                                 delimiter='\t', lineterminator=os.linesep,
                                 extrasaction='ignore')
         report.writeheader()
-        recorder.record(records, o, report)
+        try:
+            recorder.record(records, o, report,
+                            args.blocking_validator)
+        except core.ImporterValidationError, ve:
+            args.ifile.close()
+            args.ofile.close()
+            args.report_file.close()
+            recorder.logger.critical(ve.message)
+            raise ve
     else:
         recorder.logger.info('empty file')
     args.ifile.close()

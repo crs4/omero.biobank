@@ -47,7 +47,7 @@ class Recorder(core.Core):
     self.preloaded_vessels_collections = {}
     self.preloaded_items = {}
 
-  def record(self, records, otsv, rtsv):
+  def record(self, records, otsv, rtsv, blocking_validation):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -88,6 +88,9 @@ class Recorder(core.Core):
       sub_records.append(good_records)
       for br in bad_records:
         rstv.writerow(br)
+      if blocking_validation and len(bad_records) >= 1:
+        self.kb.delete(action)
+        raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     records = sum(sub_records, [])
     if len(records) == 0:
       self.logger.warn('no records')
@@ -219,7 +222,15 @@ def implementation(logger, host, user, passwd, args):
   report = csv.DictWriter(args.report_file, report_fnames,
                           delimiter='\t', extrasaction='ignore')
   report.writeheader()
-  recorder.record(records, o, report)
+  try:
+    recorder.record(records, o, report,
+                    args.blocking_validator)
+  except core.ImporterValidationError, ve:
+    args.ifile.close()
+    args.ofile.close()
+    args.report_file.close()
+    logger.critical(ve.message)
+    raise ve
   args.ifile.close()
   args.ofile.close()
   args.report_file.close()

@@ -82,6 +82,8 @@ class App(object):
                         help='OMERO password')
     parser.add_argument('--operator', metavar="STRING",
                         help='operator identifier', required=True)
+    parser.add_argument('--blocking-validator', action='store_true',
+                        help='block import if at least one record doesn\'t pass data validation')
     parser.add_argument('-K', '--keep-tokens', type=int,
                         default=1, help='OMERO tokens for open session')
     subparsers = parser.add_subparsers()

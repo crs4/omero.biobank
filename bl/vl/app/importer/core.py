@@ -5,6 +5,8 @@ import json, logging
 
 from bl.vl.kb import KnowledgeBase as KB
 
+class ImporterValidationError(Exception):
+  pass
 
 class Core(object):
 

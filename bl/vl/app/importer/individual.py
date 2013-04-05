@@ -263,6 +263,13 @@ def implementation(logger, host, user, passwd, args):
   records, bad_records = recorder.do_consistency_checks(records)
   for br in bad_records:
     report.writerow(br)
+  if args.blocking_validator and len(bad_records) >= 1:
+    args.ofile.close()
+    args.ifile.close()
+    args.report_file.close()
+    msg = '%d invalid records' % len(bad_records)
+    recorder.logger.critical(msg)
+    raise core.ImporterValidationError(msg)
   by_label = make_ind_by_label(records)
   import_pedigree(recorder, by_label.itervalues())
   recorder.clean_up()
