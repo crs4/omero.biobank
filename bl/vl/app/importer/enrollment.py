@@ -41,7 +41,7 @@ class Recorder(core.Core):
     self.preloaded_enrollments = {}
     self.preloaded_enrolled_inds = {}
 
-  def record(self, records, otsv, rtsv):
+  def record(self, records, otsv, rtsv, blocking_validation):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -56,6 +56,8 @@ class Recorder(core.Core):
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
+    if blocking_validation and len(bad_records) >= 1:
+      raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     if not records:
       self.logger.warn('no records')
       return
@@ -193,7 +195,15 @@ def implementation(logger, host, user, passwd, args):
                             delimiter='\t', lineterminator=os.linesep,
                             extrasaction='ignore')
     report.writeheader()
-    recorder.record(records, o, report)
+    try:
+      recorder.record(records, o, report,
+                      args.blocking_validator)
+    except core.ImporterValidationError, ve:
+      args.ifile.close()
+      args.ofile.close()
+      args.report_file.close()
+      logger.critical(ve.message)
+      raise ve
   else:
     logger.info('empty file')
   args.ifile.close()

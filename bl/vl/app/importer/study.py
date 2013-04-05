@@ -40,7 +40,7 @@ class Recorder(core.Core):
     self.batch_size = batch_size
     self.operator = operator
 
-  def record(self, records):
+  def record(self, records, blocking_validation):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -53,6 +53,8 @@ class Recorder(core.Core):
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       self.report_stream.writerow(br)
+    if blocking_validation and len(bad_records) >= 1:
+      raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(c)
@@ -152,7 +154,14 @@ def implementation(logger, host, user, passwd, args):
                           extrasaction='ignore')
   recorder = Recorder(o, report, host=host, user=user, passwd=passwd,
                       keep_tokens=args.keep_tokens, logger=logger)
-  recorder.record(records)
+  try:
+    recorder.record(records, args.blocking_validator)
+  except core.ImporterValidationError, ve:
+    args.ifile.close()
+    args.ofile.close()
+    args.report_file.close()
+    logger.critical(ve.message)
+    raise ve
   args.ifile.close()
   args.ofile.close()
   args.report_file.close()

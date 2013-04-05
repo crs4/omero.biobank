@@ -75,7 +75,7 @@ class Recorder(core.Core):
     self.preloaded_plates = {}
     self.preloaded_vessels = {}
 
-  def record(self, records, otsv, rtsv):
+  def record(self, records, otsv, rtsv, blocking_validation):
     def records_by_chunk(batch_size, records):
       offset = 0
       while len(records[offset:]) > 0:
@@ -93,6 +93,8 @@ class Recorder(core.Core):
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
+    if blocking_validation and len(bad_records) >= 1:
+      raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     device = self.get_device('importer-%s.biosample' % version,
                              'CRS4', 'IMPORT', version)
     act_setups = set(Recorder.get_action_setup_options(r, self.action_setup_conf)
@@ -412,7 +414,15 @@ def implementation(logger, host, user, passwd, args):
                           delimiter='\t', lineterminator=os.linesep,
                           extrasaction='ignore')
   report.writeheader()
-  recorder.record(records, o, report)
+  try:
+    recorder.record(records, o, report,
+                    args.blocking_validator)
+  except core.ImporterValidationError, ve:
+    args.ifile.close()
+    args.ofile.close()
+    args.report_file.close()
+    recorder.logger.critical(ve.message)
+    raise ve
   args.ifile.close()
   args.ofile.close()
   args.report_file.close()

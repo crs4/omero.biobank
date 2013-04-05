@@ -44,7 +44,7 @@ class Recorder(core.Core):
         self.status_map = dict((st.enum_label(), st) for st in
                                self.kb.get_objects(self.kb.DataSampleStatus))
 
-    def record(self, records, otsv, rtsv):
+    def record(self, records, otsv, rtsv, blocking_validation):
         def records_by_chunk(batch_size, records):
             offset = 0
             while len(records[offset:]) > 0:
@@ -65,6 +65,8 @@ class Recorder(core.Core):
         records, bad_records = self.do_consistency_checks(records)
         for br in bad_records:
             rtsv.writerow(br)
+        if blocking_validation and len(bad_records) >= 1:
+            raise core.ImporterValidationError('%d invalid records' % len(bad_records))
         if len(records) == 0:
             self.logger.warning('No records')
             return
@@ -318,7 +320,7 @@ def implementation(logger, host, user, passwd, args):
                         action_setup_conf = action_setup_conf,
                         history = history, logger = logger)
     f = csv.DictReader(args.ifile, delimiter='\t')
-    logger.info('start processing file %s' % args.ifile.name)
+    recorder.logger.info('start processing file %s' % args.ifile.name)
     records = [r for r in f]
     canonizer = RecordCanonizer(fields_to_canonize, args)
     canonizer.canonize_list(records)
@@ -333,13 +335,21 @@ def implementation(logger, host, user, passwd, args):
                                 delimiter = '\t', lineterminator = os.linesep,
                                 extrasaction = 'ignore')
         report.writeheader()
-        recorder.record(records, o, report)
+        try:
+            recorder.record(records, o, report,
+                            args.blocking_validator)
+        except core.ImporterValidationError, ve:
+            args.ifile.close()
+            args.ofile.close()
+            args.report_file.close()
+            recorder.logger.critical(ve.message)
+            raise ve
     else:
-        logger.warning('empty file')
+        recorder.logger.warning('empty file')
     args.ifile.close()
     args.ofile.close()
     args.report_file.close()
-    logger.info('done processing file %s' % args.ifile.name)
+    recorder.logger.info('done processing file %s' % args.ifile.name)
 
 
 help_doc = """
