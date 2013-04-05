@@ -185,7 +185,7 @@ class Recorder(core.Core):
                 'content': content,
                 'action': a
                 }
-            if 'tag' in r:
+            if 'tag' in r and r['tag']:
                 conf['tag'] = r['tag']
             laneslots.append(self.kb.factory.create(self.kb.LaneSlot, conf))
         assert len(laneslots) == len(chunk)
@@ -197,6 +197,13 @@ class Recorder(core.Core):
                     'tag': ls.tag if ls.tag else '',
                     'vid': ls.id,
                     })
+
+class RecordCanonizer(core.RecordCanonizer):
+
+    def canonize(self, r):
+        super(RecordCanonizer, self).canonize(r)
+        if r['tag'] == '':
+            r['tag'] = None
 
 
 def make_parser(parser):
@@ -223,7 +230,7 @@ def implementation(logger, host, user, passwd, args):
     recorder.logger.info('start processing file %s' % args.ifile.name)
     f = csv.DictReader(args.ifile, delimiter='\t')
     records = [r for r in f]
-    canonizer = core.RecordCanonizer(fields_to_canonize, args)
+    canonizer = RecordCanonizer(fields_to_canonize, args)
     canonizer.canonize_list(records)
     if len(records) > 0:
         o = csv.DictWriter(args.ofile,
