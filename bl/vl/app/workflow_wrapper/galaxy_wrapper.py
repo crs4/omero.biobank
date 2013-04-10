@@ -168,9 +168,14 @@ class GalaxyWrapper(object):
         ds_tmp = StringIO.StringIO()
         do_tmp = StringIO.StringIO()
         ds_writer = csv.DictWriter(ds_tmp, ds_csv_header, delimiter = '\t')
-        ds_writer.writeheader()
         do_writer = csv.DictWriter(do_tmp, do_csv_header, delimiter = '\t')
-        do_writer.writeheader()
+        try:
+            ds_writer.writeheader()
+            do_writer.writeheader()
+        except AttributeError:
+            # python 2.6 compatibility
+            ds_tmp.write('\t'.join(ds_csv_header) + '\n')
+            do_tmp.write('\t'.join(do_csv_header) + '\n')
         for i in items:
             opts = {}
             if i.tags:
