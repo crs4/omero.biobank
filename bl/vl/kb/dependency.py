@@ -12,7 +12,6 @@ from bl.vl.kb.drivers.omero.utils import ome_hash
 
 class OME_Object(Node):
     element_type = 'ome_object'
-    
     obj_class = String(nullable=False)
     obj_id = String(nullable=False)
     obj_hash = String(nullable=False)
@@ -39,11 +38,11 @@ class DependencyTree(object):
 
     DIRECTION_INCOMING = 1
     DIRECTION_OUTGOING = 2
-    DIRECTION_BOTH     = 3
+    DIRECTION_BOTH = 3
 
     def __init__(self, kb):
         self.kb = kb
-        gconf = Config(vlconf.NEO4J_URI)
+        gconf = Config(vlconf.GRAPH_ENGINE_URI)
         try:
             self.graph = Graph(gconf)
             # Resolve the logger issue
@@ -51,7 +50,7 @@ class DependencyTree(object):
                 bulbs_log.root.removeHandler(h)
         except httplib2.ServerNotFoundError:
             raise DependencyTreeError('Unable to find Node4J server at %s' % 
-                                      vlconf.NEO4J_URI)
+                                      vlconf.GRAPH_ENGINE_URI)
         except httplib2.socket.error:
             raise DependencyTreeError('Connection refused by Node4J server')
         self.graph.add_proxy('ome_objects', OME_Object)
