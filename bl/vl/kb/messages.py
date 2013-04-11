@@ -93,10 +93,24 @@ class MessagesHandler(object):
 class EventsSender(MessagesHandler):
 
     def __init__(self, kb):
-        super(MessagesHandler, self).__init__(kb)
+        super(EventsSender, self).__init__(kb)
+
+    def send_event(self, event):
+        if not self.connection:
+            self.connect()
+
+        self.channel.basic_publish(
+            exchange=self.exchange_name,
+            routing_key='%s.%s' % (self.queue, event.event_type),
+            body=event.msg,
+            properties=pika.BasicProperties(
+                delivery_mode=2,  # persistent messages
+                content_type='text/plain'
+            )
+        )
 
 
 class EventsConsumer(MessagesHandler):
 
     def __init__(self, kb):
-        super(MessagesHandler, self).__init__(kb)
+        super(EventsConsumer, self).__init__(kb)
