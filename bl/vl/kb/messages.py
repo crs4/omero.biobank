@@ -1,8 +1,6 @@
 import pika
-import json
 
 import config as vlconf
-#from bl.vl.kb.drivers.omero.utils import ome_hash
 
 
 class MessagesHandler(object):
