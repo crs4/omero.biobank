@@ -56,7 +56,7 @@ class MessagesHandler(object):
         self.channel.queue_bind(
             exchange=self.exchange_name,
             queue=f.method.queue,
-            routing_key=self.queue
+            routing_key='%s.graph.#' % self.queue
         )
 
     @property
@@ -73,7 +73,7 @@ class MessagesHandler(object):
     def __declare_exchange(self):
         self.channel.exchange_declare(
             exchange=self.exchange_name,
-            type='direct',
+            type='topic',
             durable=True
         )
 
