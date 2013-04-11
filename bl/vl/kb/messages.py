@@ -37,6 +37,7 @@ class MessagesHandler(object):
             conn_params = self.__get_connection_params()
             self.connection = pika.BlockingConnection(conn_params)
             self.channel = self.connection.channel()
+            self.__setup_network()
             self.logger.info('connection established')
         else:
             self.logger.debug('Connection object already exist')
@@ -51,8 +52,7 @@ class MessagesHandler(object):
                 self.logger.error('exception raised when closing connection')
                 self.logger.exception(e)
 
-    def setup_network(self):
-        self.connect()
+    def __setup_network(self):
         self.__declare_exchange()
         f = self.__declare_queue()
         self.channel.queue_bind(
