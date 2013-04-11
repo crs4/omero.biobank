@@ -35,17 +35,12 @@ def project_to_discrete_genotype(probs, threshold=0.2):
     AB    -> 2
     undef -> 3
   """
-  x = np.vstack([probs, 1.0 - probs.sum(axis=0)])
-  xt = np.transpose(x)
-  idx = np.argsort(xt)
-  offsets = np.array(xrange(xt.shape[0]))
-  offsets *= idx.shape[1]
-  offsets.shape = (offsets.shape[0], 1)
-  sels = idx[:, -1]
-  xtw = np.take(xt, idx + offsets)
-  c = (xtw[:,-2] / (xtw[:,-1] + 1e-6)) < threshold
-  res = np.select([c], [idx[:,-1]], default=3)
-  return res
+  allprobs = np.vstack((probs, 1.0 - probs.sum(axis=0)))
+  encoding = np.argmax(allprobs, axis=0)
+  allprobs.sort(axis=0)
+  undef_condition = (allprobs[-2] / (allprobs[-1] + 1e-6)) >= threshold
+  encoding[undef_condition] = 3
+  return encoding
 
 
 def count_homozygotes(it):
