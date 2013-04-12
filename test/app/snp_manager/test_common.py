@@ -1,15 +1,14 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import sys, unittest, logging
-logging.basicConfig(level=logging.DEBUG)
-
+import sys, unittest
 import bl.vl.app.snp_manager.common as common
 
 
 NOT_CONVERTIBLE = "CAAA[C/G]AATG"
 IN_TOP = "GTAT[A/C]AAAA"
 IN_TOP_RC = 'TTTT[G/T]ATAC'
+
 
 class TestProcessMask(unittest.TestCase):
 
@@ -20,17 +19,19 @@ class TestProcessMask(unittest.TestCase):
       (("ACTG[A/Z]GTGA", "A", "Z"), ("None", False)),
       ((NOT_CONVERTIBLE, "C", "G"), (NOT_CONVERTIBLE, False)),
       ((NOT_CONVERTIBLE, "G", "C"), (NOT_CONVERTIBLE, True)),
-      ((IN_TOP_RC, "A", "C"), (IN_TOP, False)),
-      ((IN_TOP_RC, "C", "A"), (IN_TOP, True)),
       ((IN_TOP, "A", "C"), (IN_TOP, False)),
       ((IN_TOP, "C", "A"), (IN_TOP, True)),
+      ((IN_TOP_RC, "G", "T"), (IN_TOP, False)),
+      ((IN_TOP_RC, "T", "G"), (IN_TOP, True)),
       ]
 
   def runTest(self):
-    logger = logging.getLogger()
     sys.stderr.write("\n")
-    for args, ret in self.cases:
-      self.assertEqual(common.process_mask(*args, logger=logger), ret)
+    for args, (exp_mask, exp_allele_flip) in self.cases:
+      mask, allele_flip, error = common.process_mask(*args)
+      self.assertEqual(mask, exp_mask)
+      self.assertEqual(allele_flip, exp_allele_flip)
+      sys.stderr.write("%s\n" % (error or "(no error)"))
 
 
 def suite():

@@ -2,8 +2,6 @@
 # END_COPYRIGHT
 
 from bl.core.seq.utils import reverse_complement as rc
-from bl.core.utils import NullLogger
-
 import bl.vl.utils.snp as snp_utils
 
 
@@ -82,32 +80,37 @@ def check_mask(mask):
   return problem
 
 
-def process_mask(mask, allele_a, allele_b, logger=None):
+def process_mask(mask, allele_a, allele_b):
   """
-  Convert mask to top and determine allele flip.
+  Convert mask to top Illumina format and determine allele flip.
+
+  In biobank, the first and second allele are defined by the central
+  part of the mask as stored in the marker set table (in top format,
+  if possible). If the manufacturer provides alleles in reversed
+  order, we set the allele_flip flag to True, so that SNP calling
+  results can be correctly interpreted.
+
+  Input: SNP mask, first and second allele as provided by the manufacturer
+  Output: top SNP mask (if convertible), allele flip, problem encountered
   """
-  logger = logger or NullLogger()
+  error = ""
   try:
     mask = snp_utils.split_mask(mask)
   except ValueError as e:
-    logger.warn("%s, setting mask to 'None'" % e)
-    return 'None', False
+    return 'None', False, "%s, setting mask to 'None'" % e
   orig_alleles = mask[1][:]
   if not(len(mask[1]) == 2 and set(mask[1]) <= POSSIBLE_ALLELES):
-    logger.warn("bad alleles %r, setting mask to 'None'" % (mask[1],))
-    return 'None', False
+    return 'None', False, "bad alleles %r, setting mask to 'None'" % (mask[1],)
   try:
     mask = snp_utils.convert_to_top(mask)
   except ValueError as e:
-    logger.warn("mask cannot be converted to top")
+    error = "mask cannot be converted to top"
   else:
     if mask[1] != orig_alleles:
       allele_a, allele_b = rc((allele_a, allele_b))
     if not set(mask[1]) == set((allele_a, allele_b)):
-      logger.warn(
-        "allele mismatch: %r != (%s, %s)" % (mask[1], allele_a, allele_b)
-        )
-  return snp_utils.join_mask(mask), mask[1] != (allele_a, allele_b)
+      error = "allele mismatch: %r != (%s, %s)" % (mask[1], allele_a, allele_b)
+  return snp_utils.join_mask(mask), mask[1] != (allele_a, allele_b), error
 
 
 def build_index_key(seq):

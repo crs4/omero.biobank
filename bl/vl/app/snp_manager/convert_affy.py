@@ -30,12 +30,20 @@ class AffySNPReader(csv.DictReader):
 
 def extract_data(fi, logger=None):
   logger = logger or NullLogger()
+  bn = os.path.basename(fi.name)
+  logger.info("processing %r" % bn)
   reader = AffySNPReader(fi)
+  warn_count = 0
   for i, r in enumerate(reader):
-    mask, allele_flip = process_mask(
-      r['Flank'], r['Allele A'], r['Allele B'], logger=logger
+    label = r['Probe Set ID']
+    mask, allele_flip, error = process_mask(
+      r['Flank'], r['Allele A'], r['Allele B']
       )
-    yield r['Probe Set ID'], mask, i, allele_flip
+    if error:
+      logger.warn("%s: %s" % (label, error))
+      warn_count += 1
+    yield label, mask, i, allele_flip
+  logger.info("finished processing %s, %d warnings" % (bn, warn_count))
 
 
 def write_output(stream, fo):
@@ -52,13 +60,11 @@ def make_parser(parser):
                       help='output file')
 
 
-def main(logger, args):  
-  bn = os.path.basename(args.input_file)
-  logger.info("processing %r" % bn)
+def main(logger, args):
   with nested(open(args.input_file), open(args.output_file, 'w')) as (f, outf):
     out_stream = extract_data(f, logger=logger)
     write_output(out_stream, outf)
-  logger.info("finished processing '%s'" % bn)
+  logger.info("all done")
 
 
 def do_register(registration_list):
