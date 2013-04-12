@@ -8,7 +8,7 @@ import bl.vl.utils.snp as snp_utils
 
 
 POSSIBLE_ALLELES = frozenset(['A', 'C', 'G', 'T'])
-MARKER_DEF_FIELDS = ("label", "rs_label", "mask", "allele_a", "allele_b")
+MARKER_DEF_FIELDS = ("label", "mask", "index", "allele_flip")
 MARKER_AL_FIELDS = ("marker_vid", "ref_genome", "chromosome", "pos", "strand",
                     "allele", "copies")
 DUMMY_AL_VALUES = {
@@ -92,6 +92,7 @@ def process_mask(mask, allele_a, allele_b, logger=None):
   except ValueError as e:
     logger.warn("%s, setting mask to 'None'" % e)
     return 'None', False
+  orig_alleles = mask[1][:]
   if not(len(mask[1]) == 2 and set(mask[1]) <= POSSIBLE_ALLELES):
     logger.warn("bad alleles %r, setting mask to 'None'" % (mask[1],))
     return 'None', False
@@ -100,6 +101,8 @@ def process_mask(mask, allele_a, allele_b, logger=None):
   except ValueError as e:
     logger.warn("mask cannot be converted to top")
   else:
+    if mask[1] != orig_alleles:
+      allele_a, allele_b = rc((allele_a, allele_b))
     if not set(mask[1]) == set((allele_a, allele_b)):
       logger.warn(
         "allele mismatch: %r != (%s, %s)" % (mask[1], allele_a, allele_b)
