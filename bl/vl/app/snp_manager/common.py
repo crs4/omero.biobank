@@ -2,7 +2,9 @@
 # END_COPYRIGHT
 
 from bl.core.seq.utils import reverse_complement as rc
-from bl.vl.utils.snp import split_mask
+from bl.core.utils import NullLogger
+
+import bl.vl.utils.snp as snp_utils
 
 
 POSSIBLE_ALLELES = frozenset(['A', 'C', 'G', 'T'])
@@ -69,7 +71,7 @@ class SeqNameSerializer(object):
 
 def check_mask(mask):
   try:
-    lflank, alleles, rflank = split_mask(mask)
+    lflank, alleles, rflank = snp_utils.split_mask(mask)
   except ValueError:
     problem = "bad mask format"
   else:
@@ -78,6 +80,31 @@ def check_mask(mask):
     else:
       problem = None
   return problem
+
+
+def process_mask(mask, allele_a, allele_b, logger=None):
+  """
+  Convert mask to top and determine allele flip.
+  """
+  logger = logger or NullLogger()
+  try:
+    mask = snp_utils.split_mask(mask)
+  except ValueError as e:
+    logger.warn("%s, setting mask to 'None'" % e)
+    return 'None', False
+  if not(len(mask[1]) == 2 and set(mask[1]) <= POSSIBLE_ALLELES):
+    logger.warn("bad alleles %r, setting mask to 'None'" % (mask[1],))
+    return 'None', False
+  try:
+    mask = snp_utils.convert_to_top(mask)
+  except ValueError as e:
+    logger.warn("mask cannot be converted to top")
+  else:
+    if not set(mask[1]) == set((allele_a, allele_b)):
+      logger.warn(
+        "allele mismatch: %r != (%s, %s)" % (mask[1], allele_a, allele_b)
+        )
+  return snp_utils.join_mask(mask), mask[1] != (allele_a, allele_b)
 
 
 def build_index_key(seq):
