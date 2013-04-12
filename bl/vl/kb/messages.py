@@ -1,12 +1,12 @@
 import pika
-
+from bl.vl.utils import get_logger
 import config as vlconf
 
 
 class MessagesHandler(object):
     
-    def __init__(self, kb):
-        self.logger = kb.logger
+    def __init__(self, logger=None):
+        self.logger = logger or get_logger('messages-handler')
         self.host = vlconf.QUEUE_MANAGER_ENGINE_HOST
         self.port = vlconf.QUEUE_MANAGER_ENGINE_PORT
         self.user = vlconf.QUEUE_MANAGER_ENGINE_USERNAME
@@ -92,8 +92,8 @@ class MessagesHandler(object):
 
 class EventsSender(MessagesHandler):
 
-    def __init__(self, kb):
-        super(EventsSender, self).__init__(kb)
+    def __init__(self, logger=None):
+        super(EventsSender, self).__init__(logger)
 
     def send_event(self, event):
         if not self.connection:
@@ -112,5 +112,5 @@ class EventsSender(MessagesHandler):
 
 class EventsConsumer(MessagesHandler):
 
-    def __init__(self, kb):
-        super(EventsConsumer, self).__init__(kb)
+    def __init__(self, logger=None):
+        super(EventsConsumer, self).__init__(logger)
