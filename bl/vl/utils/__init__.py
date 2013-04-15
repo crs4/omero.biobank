@@ -48,7 +48,7 @@ def decode_list(data):
             item = decode_list(item)
         elif isinstance(item, dict):
             item = decode_dict(item)
-        decoded,append(item)
+        decoded.append(item)
     return decoded
 
 
