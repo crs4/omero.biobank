@@ -5,14 +5,14 @@
 Parse an Illumina SNP annotation file and extract info needed by the
 marker set importer.
 """
-import os, csv
+import os
 from contextlib import nested
 
 from bl.core.utils import NullLogger
 from bl.core.seq.utils.baseops import COMPLEMENT
 from bl.core.io.illumina import IllSNPReader
 
-from common import process_mask, MARKER_DEF_FIELDS
+from common import process_mask, write_mdef
 
 
 HELP_DOC = __doc__
@@ -41,13 +41,6 @@ def extract_data(fi, logger=None):
   logger.info("finished processing %s, %d warnings" % (bn, warn_count))
 
 
-def write_output(stream, fo):
-  writer = csv.writer(fo, delimiter="\t", lineterminator=os.linesep)
-  writer.writerow(MARKER_DEF_FIELDS)
-  for row in stream:
-    writer.writerow(map(str, row))
-
-
 def make_parser(parser):
   parser.add_argument('-i', '--input-file', metavar='FILE', required=True,
                       help='Illumina SNP annotation file')
@@ -58,7 +51,7 @@ def make_parser(parser):
 def main(logger, args):  
   with nested(open(args.input_file), open(args.output_file, 'w')) as (f, outf):
     out_stream = extract_data(f, logger=logger)
-    write_output(out_stream, outf)
+    write_mdef(out_stream, outf)
   logger.info("all done")
 
 

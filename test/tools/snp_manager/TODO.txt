@@ -1,1 +1,0 @@
-Create fake versions of Affymetrix and Illumina annotation files.

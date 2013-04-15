@@ -1,6 +1,8 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
+import csv, os
+
 from bl.core.seq.utils import reverse_complement as rc
 import bl.vl.utils.snp as snp_utils
 
@@ -115,3 +117,14 @@ def process_mask(mask, allele_a, allele_b):
 
 def build_index_key(seq):
   return min(seq, rc(seq))
+
+
+def write_mdef(stream, fo):
+  """
+  Given a stream of [label, mask, index, allele_flip] rows, write a
+  tsv file suitable for input to the marker set importer.
+  """
+  writer = csv.writer(fo, delimiter="\t", lineterminator=os.linesep)
+  writer.writerow(MARKER_DEF_FIELDS)
+  for row in stream:
+    writer.writerow(map(str, row))
