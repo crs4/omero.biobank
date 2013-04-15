@@ -136,5 +136,5 @@ class LaneSlot(wp.OmeroWrapper):
     else:
       ls_uk = make_unique_key(self.lane.label)
       setattr(self.ome_obj, 'laneSlotUK',
-              selt.to_omero(self.__field__['laneSlotUK'][0], ls_uk))
+              self.to_omero(self.__field__['laneSlotUK'][0], ls_uk))
 
