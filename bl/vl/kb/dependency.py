@@ -8,6 +8,7 @@ import httplib2
 
 import config as vlconf
 from bl.vl.kb.drivers.omero.utils import ome_hash
+import bl.vl.kb.events as events
 
 
 class OME_Object(Node):
@@ -64,27 +65,31 @@ class DependencyTree(object):
     def do_consistency_check(self):
         return True
 
-    def dump_node(self, obj):
-        self.__save_node__({'obj_class' : type(obj).__name__,
-                            'obj_id' : obj.id,
-                            'obj_hash' : ome_hash(obj.ome_obj)})
+    def create_node(self, obj):
+        event = events.build_event(events.NodeCreationEvent, {'bl_obj': obj})
+        self.kb.events_sender.send_event(event)
 
-    def dump_edge(self, source, dest, act):
-        self.__save_edge__({'act_type' : type(act).__name__,
-                            'act_id' : act.id,
-                            'act_hash' : ome_hash(act.ome_obj)},
-                           ome_hash(source.ome_obj),
-                           ome_hash(dest.ome_obj))
+    def create_edge(self, act, source, dest):
+        event = events.build_event(events.EdgeCreationEvent, {'bl_act': act,
+                                                              'bl_src_obj': source,
+                                                              'bl_dest_obj': dest})
+        self.kb.events_sender.send_event(event)
 
-    def drop_node(self, obj):
-        node = self.__get_node__(obj)
-        if node:
-            self.graph.vertices.delete(node.eid)
+    def delete_node(self, obj):
+        event = events.build_event(events.NodeDeletionEvent, {'bl_obj': obj})
+        self.kb.events_sender.send_event(event)
 
-    def drop_edge(self, act):
-        edge = self.__get_edge__(act)
-        if edge:
-            self.graph.edges.delete(edge.eid)
+    def delete_edge(self, act):
+        event = events.build_event(events.EdgeDeletionEvent, {'bl_act': act})
+        self.kb.events_sender.send_event(event)
+
+    def update_edge(self, act, source=None, dest=None):
+        if source is None and dest is None:
+            raise ValueError('no new source or destination specified, no edge update can be triggered')
+        event = events.build_event(events.EdgeUpdateEvent, {'bl_act': act,
+                                                            'bl_src_obj': source,
+                                                            'bl_dest_obj': dest})
+        self.kb.events_sender.send_event(event)
 
     def __save_node__(self, node_conf):
         self.graph.ome_objects.get_or_create('obj_hash', node_conf['obj_hash'],
@@ -168,7 +173,7 @@ class DependencyTree(object):
             return visited_nodes
         else:
             if not depth is None:
-                depth = depth - 1
+                depth -= 1
             return set.union(*[self.__get_connected_nodes__(cn, direction, depth, visited_nodes)
                                for cn in connected])
 

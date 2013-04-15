@@ -112,4 +112,4 @@ class Action(wp.OmeroWrapper):
     return assign_vid_and_timestamp(conf, time_stamp_field='beginTime')
 
   def __cleanup__(self):
-    self.proxy.dt.drop_edge(self)
+    self.proxy.dt.delete_edge(self)

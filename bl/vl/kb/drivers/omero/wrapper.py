@@ -296,14 +296,13 @@ class OmeroWrapper(CoreOmeroWrapper):
 
   def __dump_to_graph__(self):
     if hasattr(self, 'action'):
-      self.proxy.dt.dump_node(self)
+      self.proxy.dt.create_node(self)
       self.action.reload()
       if hasattr(self.action, 'target'):
-        self.proxy.dt.dump_edge(self.action.target, self,
-                                self.action)
+        self.proxy.dt.create_edge(self.action, self.action.target, self)
 
   def __cleanup__(self):
-    self.proxy.dt.drop_node(self)
+    self.proxy.dt.delete_node(self)
 
   def configure(self, conf):
     self.__config__(self.ome_obj, conf)
