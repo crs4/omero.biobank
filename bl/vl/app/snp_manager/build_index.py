@@ -4,6 +4,23 @@
 """
 Build dbSNP index database from Galaxy genome segment extractor output
 in interval format.
+
+Before using this tool, you should perform the following steps.  Given
+a SNP defined as lflank[alleles]rflank, a reference genome DB and a
+requested flanking size L::
+
+  1. align [lflankArflank for A in alleles] to DB, with multiple
+     alignments flagged as suspicious and kept for further processing;
+
+  2. extract a region with L length symmetric flanks around the SNP
+     alignment position: this will be a key into an on-file dictionary
+     where values will be tuples of sequences that correspond to that
+     key.
+
+Given the above mask canonization strategy, this tool will build a
+canonized dbSNP wrt DB and use the resulting key to populate the
+index.  In order to perform a lookup into the index, masks from each
+genotyping platform must be canonized as described above.
 """
 import shelve, csv, os, tempfile
 from cPickle import HIGHEST_PROTOCOL as HP

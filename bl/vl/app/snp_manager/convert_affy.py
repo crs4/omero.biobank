@@ -2,13 +2,15 @@
 # END_COPYRIGHT
 
 """
-Convert Affymetrix SNP annotation files to the VL marker definition format.
+Parse an Affymetrix SNP annotation file and extract info needed by the
+marker set importer.
 """
 import os, csv
 from contextlib import nested
 
 from bl.core.utils import NullLogger
-from common import check_mask, MARKER_DEF_FIELDS
+
+from common import process_mask, write_mdef
 
 
 HELP_DOC = __doc__
@@ -26,24 +28,22 @@ class AffySNPReader(csv.DictReader):
     csv.DictReader.__init__(self, comment_filter(f))
 
 
-def write_output(reader, outf, logger=None):
+def extract_data(fi, logger=None):
   logger = logger or NullLogger()
-  bad_count = 0
-  for r in reader:
+  bn = os.path.basename(fi.name)
+  logger.info("processing %r" % bn)
+  reader = AffySNPReader(fi)
+  warn_count = 0
+  for i, r in enumerate(reader):
     label = r['Probe Set ID']
-    if r['dbSNP RS ID'].startswith('rs'):
-      rs_label = r['dbSNP RS ID']
-    else:
-      rs_label = 'None'
-    mask = r['Flank']
-    problem = check_mask(mask)
-    if problem:
-      mask = 'None'
-      logger.warn("%r: %s, setting mask to 'None'" % (label, problem))
-      bad_count += 1
-    outf.write("%s\t%s\t%s\t%s\t%s\n" %
-               (label, rs_label, mask, r['Allele A'], r['Allele B']))
-  return bad_count
+    mask, allele_flip, error = process_mask(
+      r['Flank'], r['Allele A'], r['Allele B']
+      )
+    if error:
+      logger.warn("%s: %s" % (label, error))
+      warn_count += 1
+    yield label, mask, i, allele_flip
+  logger.info("finished processing %s, %d warnings" % (bn, warn_count))
 
 
 def make_parser(parser):
@@ -53,14 +53,11 @@ def make_parser(parser):
                       help='output file')
 
 
-def main(logger, args):  
+def main(logger, args):
   with nested(open(args.input_file), open(args.output_file, 'w')) as (f, outf):
-    bn = os.path.basename(args.input_file)
-    logger.info("processing %r" % bn)
-    outf.write("\t".join(MARKER_DEF_FIELDS)+"\n")
-    reader = AffySNPReader(f)
-    bad_count = write_output(reader, outf, logger=logger)
-  logger.info("bad masks for %r: %d" % (bn, bad_count))
+    out_stream = extract_data(f, logger=logger)
+    write_mdef(out_stream, outf)
+  logger.info("all done")
 
 
 def do_register(registration_list):

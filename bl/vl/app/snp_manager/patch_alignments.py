@@ -2,7 +2,7 @@
 # END_COPYRIGHT
 
 """
-Patch VL marker alignments file, adding dummy lines for unaligned SNPs.
+Patch a marker alignments file, adding dummy lines for unaligned SNPs.
 """
 
 import os, csv

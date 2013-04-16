@@ -2,40 +2,43 @@
 # END_COPYRIGHT
 
 """
-Convert Illumina SNP annotation files to the VL marker definition format.
+Parse an Illumina SNP annotation file and extract info needed by the
+marker set importer.
 """
-import os, csv
+import os
 from contextlib import nested
 
 from bl.core.utils import NullLogger
+from bl.core.seq.utils.baseops import COMPLEMENT
 from bl.core.io.illumina import IllSNPReader
-from common import check_mask, MARKER_DEF_FIELDS
+
+from common import process_mask, write_mdef
 
 
 HELP_DOC = __doc__
 
 
-def write_output(reader, outf, logger=None):
+def extract_data(fi, logger=None):
   logger = logger or NullLogger()
-  bad_count = 0
-  for r in reader:
+  bn = os.path.basename(fi.name)
+  logger.info("processing %r" % bn)
+  reader = IllSNPReader(fi)
+  warn_count = 0
+  for i, r in enumerate(reader):
     label = r['IlmnID']
-    if r['Name'].startswith('rs'):
-      rs_label = r['Name']
-    else:
-      rs_label = 'None'
-    mask = r['TopGenomicSeq']
     # alleles are the same as those extracted from the mask if strand
     # is TOP; if strand is BOT they are their complement (NOT reversed)
     allele_a, allele_b = r['SNP'].strip("[]").split("/")
-    problem = check_mask(mask)
-    if problem:
-      mask = 'None'
-      logger.warn("%r: %s, setting mask to 'None'" % (label, problem))
-      bad_count += 1
-    outf.write("%s\t%s\t%s\t%s\t%s\n" %
-               (label, rs_label, mask, allele_a, allele_b))
-  return bad_count
+    if r['IlmnStrand'] == 'BOT':
+      allele_a, allele_b = COMPLEMENT[allele_a], COMPLEMENT[allele_b]
+    mask, allele_flip, error = process_mask(
+      r['TopGenomicSeq'], allele_a, allele_b
+      )
+    if error:
+      logger.warn("%s: %s" % (label, error))
+      warn_count += 1
+    yield label, mask, i, allele_flip
+  logger.info("finished processing %s, %d warnings" % (bn, warn_count))
 
 
 def make_parser(parser):
@@ -47,12 +50,9 @@ def make_parser(parser):
 
 def main(logger, args):  
   with nested(open(args.input_file), open(args.output_file, 'w')) as (f, outf):
-    bn = os.path.basename(args.input_file)
-    logger.info("processing %r" % bn)
-    outf.write("\t".join(MARKER_DEF_FIELDS)+"\n")
-    reader = IllSNPReader(f)
-    bad_count = write_output(reader, outf, logger=logger)
-  logger.info("bad masks for %r: %d" % (bn, bad_count))
+    out_stream = extract_data(f, logger=logger)
+    write_mdef(out_stream, outf)
+  logger.info("all done")
 
 
 def do_register(registration_list):

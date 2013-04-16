@@ -2,13 +2,28 @@
 # END_COPYRIGHT
 
 """
-Convert dbSNP files to the VL marker definition format.
+Parse dbSNP files and extract info needed by the marker set importer.
+
+dbSNP data is read from fasta dumps downloaded from:
+ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606/rs_fasta
+
+NOTE: this tool does not deal with the trailing 'comment':
+
+# ================
+# File created at:
+# `date`
+# ================
+
+found in original files downloaded from NCBI. Such 'comments' are not
+legal in FASTA files. This means that, with no pre-processing, those
+lines are included in the last sequence (however, they might not end
+up in the index because of flank truncation).
 """
 import os
 
 from bl.core.seq.io import DbSnpReader
 from bl.core.utils import NullLogger
-from common import POSSIBLE_ALLELES, MARKER_DEF_FIELDS
+from common import process_mask, write_mdef
 
 
 HELP_DOC = __doc__
@@ -29,18 +44,21 @@ def build_mask(lflank, alleles, rflank, mask_size):
   return "%s[%s]%s" % (lflank, alleles, rflank)
 
 
-def write_output(db_snp_reader, outf, mask_size, logger=None):
+def extract_data(fi, mask_size, logger=None):
   logger = logger or NullLogger()
-  bad_count = 0
-  for rs_label, lflank, alleles, rflank in db_snp_reader:
+  bn = os.path.basename(fi.name)
+  logger.info("processing %r" % bn)
+  reader = DbSnpReader(fi, logger=logger)
+  warn_count = 0
+  for i, (label, lflank, alleles, rflank) in enumerate(reader):
     alleles = alleles.split("/")
-    if 2 <= len(alleles) <= 4 and set(alleles) <= POSSIBLE_ALLELES:
-      mask = build_mask(lflank, alleles, rflank, mask_size)
-      outf.write("%s\t%s\t%s\n" % (rs_label, rs_label, mask))
-    else:
-      logger.warn("%r: bad alleles %r, skipping" % (rs_label, alleles))
-      bad_count += 1
-  return bad_count
+    mask = build_mask(lflank, alleles, rflank, mask_size)
+    mask, allele_flip, error = process_mask(mask, alleles[0], alleles[1])
+    if error:
+      logger.warn("%s: %s" % (label, error))
+      warn_count += 1
+    yield label, mask, i, allele_flip
+  logger.info("finished processing %s, %d warnings" % (bn, warn_count))
 
 
 def make_parser(parser):
@@ -58,15 +76,12 @@ def main(logger, args):
                   if fn.endswith('fas')]
   logger.info("found %d dbSNP files" % len(db_filenames))
   with open(args.output_file, 'w') as outf:
-    outf.write("\t".join(MARKER_DEF_FIELDS)+"\n")
-    for fn in db_filenames:
-      bn = os.path.basename(fn)
-      logger.info("processing %r" % bn)
+    for i, fn in enumerate(db_filenames):
+      header = i == 0
       with open(fn) as f:
-        db_snp_reader = DbSnpReader(f, logger=logger)
-        bad_count = write_output(db_snp_reader, outf, args.mask_size,
-                                 logger=logger)
-      logger.info("bad masks for %r: %d" % (bn, bad_count))
+        out_stream = extract_data(f, args.mask_size, logger=logger)
+        write_mdef(out_stream, outf, header=header)
+    logger.info("all done")
 
 
 def do_register(registration_list):
