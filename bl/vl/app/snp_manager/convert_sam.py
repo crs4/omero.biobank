@@ -2,8 +2,12 @@
 # END_COPYRIGHT
 
 """
-Convert SAM alignment data to VL marker alignment or Galaxy extract
-genomic DNA input.
+Parse a `SAM <http://samtools.sourceforge.net/>`_ file and output
+alignment info in one of the following formats:
+
+* tabular, suitable for processing by the marker alignment importer
+* tabular, suitable for processing by the `Galaxy
+  <http://galaxyproject.org/>`_ DNA extractor
 
 Expects single-end BWA alignment data produced by the previous steps
 in the workflow (see markers_to_fastq).
@@ -62,7 +66,6 @@ class SnpHitProcessor(object):
       self.current_id = id_
       self.current_hits = []
     nm = hit.tag_value('NM')
-    seq = hit.get_seq_5()
     mapped = hit.is_mapped()
     if mapped and nm <= 0 and hit.qual > 0:
       snp_pos = hit.get_untrimmed_pos() + snp_offset
