@@ -152,6 +152,8 @@ class MapVIDApp(Core):
     self.logger.info('done reading %s' % ifile.name)
     if len(records) == 0:
       self.logger.info('file %s is empty.' % ifile.name)
+      ifile.close()
+      ofile.close()
       return
     if source_type == self.kb.Individual and self.default_study:
       labels = ['%s:%s' % (self.default_study.label, r[column_label])
@@ -177,6 +179,7 @@ class MapVIDApp(Core):
       if field in mapping:
         r[transformed_column_label] = mapping[field]
         o.writerow(r)
+    ifile.close()
     ofile.close()
     self.logger.info('done writing %s' % ofile.name)
 
