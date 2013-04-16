@@ -134,6 +134,14 @@ class MapVIDApp(Core):
 
   def dump(self, ifile, source_type_label,
            column_label, transformed_column_label, ofile):
+    def get_out_writer(ofile, fieldnames, old_column_label, new_column_label):
+        old_column_index = fieldnames.index(old_column_label)
+        fieldnames.remove(old_column_label)
+        fieldnames.insert(old_column_index, new_column_label)
+        o = csv.DictWriter(ofile, fieldnames, delimiter='\t',
+                           extrasaction='ignore')
+        o.writeheader()
+        return o
     if not hasattr(self.kb, source_type_label):
       msg = 'Unknown source type: %s' % source_type_label
       self.logger.critical(msg)
@@ -143,8 +151,11 @@ class MapVIDApp(Core):
     f = csv.DictReader(ifile, delimiter='\t')
     records = [r for r in f]
     self.logger.info('done reading %s' % ifile.name)
+    o = get_out_writer(ofile, f.fieldnames, column_label, transformed_column_label)
     if len(records) == 0:
       self.logger.info('file %s is empty.' % ifile.name)
+      ifile.close()
+      ofile.close()
       return
     if source_type == self.kb.Individual and self.default_study:
       labels = ['%s:%s' % (self.default_study.label, r[column_label])
@@ -154,14 +165,6 @@ class MapVIDApp(Core):
     mapping = self.resolve_mapping(source_type, labels)
     self.logger.debug('mapped %d records' % len(mapping))
     self.logger.info('start writing %s' % ofile.name)
-    # Preserve input file fields order
-    fieldnames = copy.deepcopy(f.fieldnames)
-    to_be_replaced_index = fieldnames.index(column_label)
-    fieldnames.remove(column_label)
-    fieldnames.insert(to_be_replaced_index, transformed_column_label)
-    o = csv.DictWriter(ofile, fieldnames=fieldnames, delimiter='\t',
-                       extrasaction = 'ignore')
-    o.writeheader()
     for r in records:
       if source_type == self.kb.Individual and self.default_study:
         field = '%s:%s' % (self.default_study.label, r[column_label])
@@ -170,6 +173,7 @@ class MapVIDApp(Core):
       if field in mapping:
         r[transformed_column_label] = mapping[field]
         o.writerow(r)
+    ifile.close()
     ofile.close()
     self.logger.info('done writing %s' % ofile.name)
 
