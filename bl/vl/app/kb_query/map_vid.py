@@ -9,7 +9,7 @@ Reads an input tsv file, replaces labels with VIDs for the specified
 columns and outputs a new tsv files with the VIDs.
 """
 
-import csv, argparse, copy
+import sys, os, csv, argparse
 import itertools as it
 
 from bl.vl.app.importer.core import Core
@@ -95,8 +95,8 @@ class MapVIDApp(Core):
     for l in labels:
       try:
         mapping[l] = dcols_map[l.split(':')[0]][l.split(':')[1]].id
-      except KeyError, ke:
-        self.error('Cannot map label %s' % l)
+      except KeyError as ke:
+        self.logger.error('Cannot map label %s' % l)
         self.logger.debug('invalid key %s' % ke)
     return mapping
 
@@ -114,7 +114,7 @@ class MapVIDApp(Core):
     self.logger.debug('mapping: %s' % mapping)
     return mapping
 
-  def resolve_mapping_marker(self, labels):
+  def resolve_mapping_marker(self):
     ms = self.kb.get_snp_markers_set(self.mset_label)
     if not ms:
       self.logger.error("unknown marker set label '%s'" % self.mset_label)
@@ -146,7 +146,7 @@ class MapVIDApp(Core):
         fieldnames.remove(old_column_label)
         fieldnames.insert(old_column_index, new_column_label)
         o = csv.DictWriter(ofile, fieldnames, delimiter='\t',
-                           extrasaction='ignore')
+                           extrasaction='ignore', lineterminator=os.linesep)
         o.writeheader()
         return o
     if not hasattr(self.kb, source_type_label):
@@ -200,15 +200,18 @@ def make_parser(parser):
     else:
       raise ValueError()
   parser.add_argument(
-    '-i', '--ifile', type=argparse.FileType('r'),
-    help='input tsv file', required=True
+    '-S', '--show-source-types', action="store_true",
+    help="show supported source types and exit",
     )
   parser.add_argument(
-    '--source-type', metavar="STRING", required=True,
+    '-i', '--ifile', type=argparse.FileType('r'), help='input tsv file'
+    )
+  parser.add_argument(
+    '--source-type', metavar="STRING",
     choices=MapVIDApp.SUPPORTED_SOURCE_TYPES, help="source type, e.g., Tube"
     )
   parser.add_argument(
-    '--column', type=pair_of_names, metavar="N1,N2", required=True,
+    '--column', type=pair_of_names, metavar="N1,N2",
     help="""comma-separated pair of column names: the first one identifies
     the set of input labels to map, while the second one, which
     defaults to 'source', will be used for mapped output values""")
@@ -217,11 +220,22 @@ def make_parser(parser):
                       help="marker set label (only for markers)")
 
 
-def implementation(logger, host, user, passwd, args):
+def validate_args(args):
+  if args.show_source_types:
+    print "Supported source types:"
+    for t in sorted(MapVIDApp.SUPPORTED_SOURCE_TYPES):
+      print "\t%s" % t
+    sys.exit(0)
   if args.source_type == "Marker" and not args.marker_set:
-    raise argparse.ArgumentError(
-      None, "--marker-set must be specified when mapping markers"
-      )
+    sys.exit("error: --marker-set must be specified when mapping markers")
+  # we can't simply set required=True for the following, that would break -S
+  for name in "ifile", "source_type", "column":
+    if not getattr(args, name):
+      sys.exit("error: argument %s is required" % name)
+
+
+def implementation(logger, host, user, passwd, args):
+  validate_args(args)
   app = MapVIDApp(host=host, user=user, passwd=passwd,
                   keep_tokens=args.keep_tokens, study_label=args.study,
                   mset_label=args.marker_set, logger=logger)
