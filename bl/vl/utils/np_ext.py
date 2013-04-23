@@ -16,7 +16,11 @@ def index_intersect(a1, a2):
   elements. Return a tuple of two arrays that contain indexes of
   common elements with respect to a1 and a2.
   """
-  assert a1.dtype == a2.dtype
+  if a1.dtype != a2.dtype:
+    raise ValueError("arrays must be of the same type")
+  for a in a1, a2:
+    if a.size != np.unique(a).size:
+      raise ValueError("arrays must contain no duplicate elements")
   dtype = np.dtype([('item', a1.dtype), ('idx', np.int32)])
   b = np.empty(a1.size+a2.size, dtype)
   b['item'][:a1.size] = a1
