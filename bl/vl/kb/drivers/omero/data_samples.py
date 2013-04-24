@@ -4,7 +4,7 @@
 from bl.vl.kb import mimetypes
 import wrapper as wp
 from action import Action, OriginalFile
-from snp_markers_set import SNPMarkersSet
+from genotyping import SNPMarkersSet
 from utils import assign_vid_and_timestamp
 
 

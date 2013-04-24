@@ -6,7 +6,7 @@ import omero.rtypes as ort
 
 from utils import assign_vid_and_timestamp
 import wrapper as wp
-from snp_markers_set import SNPMarkersSet
+from genotyping import SNPMarkersSet
 
 
 class OriginalFile(wp.OmeroWrapper):

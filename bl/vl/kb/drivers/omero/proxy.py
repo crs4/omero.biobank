@@ -12,7 +12,6 @@ from bl.vl.kb import mimetypes
 
 from proxy_core import ProxyCore
 from wrapper import ObjectFactory, MetaWrapper
-import snp_markers_set
 import action
 import vessels
 import objects_collections
@@ -26,7 +25,7 @@ from genotyping import GenotypingAdapter
 from modeling import ModelingAdapter
 from eav import EAVAdapter
 from ehr import EHR
-from genotyping import Marker
+from genotyping import Marker, SNPMarkersSet
 from admin import Admin
 
 
@@ -198,7 +197,7 @@ class Proxy(ProxyCore):
          should be N records for this marker.
     """
     # FIXME no checking
-    global_pos = snp_markers_set.SNPMarkersSet.compute_global_position
+    global_pos = SNPMarkersSet.compute_global_position
     def gen(s):
       for x in s:
         y = {
