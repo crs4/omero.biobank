@@ -330,6 +330,7 @@ def suite():
   suite.addTest(markers_set('test_gdo'))
   suite.addTest(markers_set('test_define_range_selector'))
   suite.addTest(markers_set('test_intersect'))
+  #--
   ## suite.addTest(markers_set('test_speed'))
   ## suite.addTest(markers_set('test_speed_gdo'))
   return suite

@@ -25,7 +25,7 @@ from genotyping import GenotypingAdapter
 from modeling import ModelingAdapter
 from eav import EAVAdapter
 from ehr import EHR
-from genotyping import Marker, SNPMarkersSet
+from genotyping import Marker
 from admin import Admin
 
 
@@ -197,7 +197,6 @@ class Proxy(ProxyCore):
          should be N records for this marker.
     """
     # FIXME no checking
-    global_pos = SNPMarkersSet.compute_global_position
     def gen(s):
       for x in s:
         y = {
@@ -205,7 +204,6 @@ class Proxy(ProxyCore):
           'ref_genome': ref_genome,
           'chromosome': x[1],
           'pos': x[2],
-          'global_pos': global_pos((x[1],x[2])),
           'strand': x[3],
           'allele': x[4],
           'copies': x[5],
@@ -214,7 +212,7 @@ class Proxy(ProxyCore):
     max_len = self.gadpt.SNP_ALIGNMENT_COLS[1][3]
     if len(ref_genome) > max_len:
       raise ValueError('len("%s") > %d' % (ref_genome, max_len))
-    self.gadpt.add_snp_markers_set_alignments(mset.id, gen(stream), action.id)
+    self.gadpt.add_snp_markers_set_alignments(mset, gen(stream), action)
 
   def make_gdo_path(self, mset, vid, index):
     table_name = self.gadpt.snp_markers_set_table_name('gdo', mset.id)

@@ -26,6 +26,7 @@ if the Illumina strand detection algorithm yields a result (see
 
 import itertools as it
 from operator import itemgetter
+from collections import Counter
 
 import numpy as np
 
@@ -217,10 +218,7 @@ class SNPMarkersSet(wp.OmeroWrapper):
 
   def load_alignments(self, ref_genome, batch_size=1000):
     """
-    Load marker positions using known alignments on ref_genome.
-    Markers that do not align will be forced to a global position
-    equal to minus (marker_indx + SNPMarkersSet.MAX_LEN * omero_id of
-    self). This is done to avoid ambiguities in mset intersection.
+    Load marker alignment info wrt ``ref_genome``.
     """
     if not self.has_markers():
       raise ValueError('markers vector has not been reloaded')
@@ -231,12 +229,6 @@ class SNPMarkersSet(wp.OmeroWrapper):
     assert len(aligns) >= len(self)
     if len(aligns) > len(self):
       aligns = aligns[:len(self)]
-    no_align_positions =  - (
-      self.markers['index'] + self.omero_id * self.MAX_LEN
-      )
-    aligns['global_pos'] = np.choose(
-      aligns['copies'] == 1, [no_align_positions, aligns['global_pos']]
-      )
     self.bare_setattr('aligns', aligns)
     self.bare_setattr('ref_genome', ref_genome)
 
@@ -364,7 +356,7 @@ class GenotypingAdapter(object):
     return self._read_snp_markers_set_table(MSET_TABLE, set_vid, selector,
                                             batch_size=batch_size)
 
-  def add_snp_markers_set_alignments(self, set_vid, stream, op_vid,
+  def add_snp_markers_set_alignments(self, mset, stream, action,
                                      batch_size=BATCH_SIZE):
     """
     Add alignment info to a SNPMarkersSet table.
@@ -372,18 +364,29 @@ class GenotypingAdapter(object):
     In the case of multiple hits, only the first copy encountered is
     added in the same order as it is found in the input stream;
     additional copies are temporarily stored and appended at the end.
+    In addition, the global position field for all copies will be set
+    to a unique negative value. Duplicate global positions (different
+    SNPs align to the same position) will also be replaced by unique
+    negative values. This is done to avoid ambiguities in marker set
+    intersection.
     """
-    tname = self.snp_markers_set_table_name(MSET_TABLE, set_vid)
+    tname = self.snp_markers_set_table_name(MSET_TABLE, mset.id)
     vids = [t[0] for t in
             self.kb.get_table_rows(tname, None, col_names=['vid'])]
     vids_set = frozenset(vids)
+    global_pos = SNPMarkersSet.compute_global_position
+    dummy_pos_generator = it.count(-1 - mset.omero_id * mset.MAX_LEN, -1)
     def add_vids(stream):
       multiple_hits = {}
       for x in stream:
         k = x['marker_vid']
         if k not in vids_set:
           continue
-        x['op_vid'] = op_vid
+        x['op_vid'] = action.id
+        if x['copies'] == 1:
+          x['global_pos'] = global_pos((x['chromosome'], x['pos']))
+        else:
+          x['global_pos'] = dummy_pos_generator.next()
         if x['copies'] > 1:
           if k in multiple_hits:
             multiple_hits[k].append(x)
@@ -396,15 +399,22 @@ class GenotypingAdapter(object):
           yield x
     i_s = add_vids(stream)
     by_vid = {}
+    gpos_count = Counter()
     for i in xrange(len(vids)):
       r = i_s.next()
       by_vid[r['marker_vid']] = r
-    try:
-      records = [by_vid[v] for v in vids]
-    except KeyError as e:
-      raise ValueError("no alignment info for %s" % e.args[0])
+      gpos_count[r['global_pos']] += 1
+    records = []
+    for v in vids:
+      try:
+        r = by_vid[v]
+      except KeyError as e:
+        raise ValueError("no alignment info for %s" % e.args[0])
+      if gpos_count[r['global_pos']] > 1:
+        r['global_pos'] = dummy_pos_generator.next()
+      records.append(r)
     i_s = it.chain(iter(records), i_s)
-    return self._fill_snp_markers_set_table(ALIGN_TABLE, set_vid, i_s,
+    return self._fill_snp_markers_set_table(ALIGN_TABLE, mset.id, i_s,
                                             batch_size=batch_size)
 
   def read_snp_markers_set_alignments(self, set_vid, selector=None,
