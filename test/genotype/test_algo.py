@@ -1,7 +1,7 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import unittest
+import unittest, itertools as it
 import numpy as np
 
 import bl.vl.genotype.algo as algo
@@ -26,10 +26,39 @@ class TestProjectToDiscreteGenotype(unittest.TestCase):
     self.__check_gt(0.1, [1, 3, 2, 0])
 
 
+class TestCountHomozigotes(unittest.TestCase):
+
+  def setUp(self):
+    self.prob_list = [
+      [[1, 1, 0, 0, 1],
+       [0, 0, 0, 0, 0]],
+      [[1, 0, 0, 0, 0],
+       [0, 1, 1, 1, 1]],
+      [[1, 1, 0, 1, 0],
+       [0, 0, 1, 0, 0]],
+      [[0, 0, 1, 1, 0],
+       [0, 0, 0, 0, 1]],
+      ]
+    self.gdo_stream = (
+      dict(probs=np.array(p, dtype=np.float32)) for p in self.prob_list
+      )
+
+  def test_no_threshold(self):
+    exp_counts = [
+      [3, 2, 1, 2, 1],
+      [0, 1, 2, 1, 2],
+      ]
+    n_gdos, counts = algo.count_homozygotes(self.gdo_stream)
+    self.assertEqual(n_gdos, len(self.prob_list))
+    for c, exp_c in it.izip(counts, exp_counts):
+      self.assertEqual(c.tolist(), exp_c)
+
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestProjectToDiscreteGenotype('test_no_threshold'))
   suite.addTest(TestProjectToDiscreteGenotype('test_threshold'))
+  suite.addTest(TestCountHomozigotes('test_no_threshold'))
   return suite
 
 
