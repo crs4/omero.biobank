@@ -6,20 +6,17 @@ Genotyping-related algorithms
 =============================
 
 This is a collection of simple algorithms used to analyze genotype
-data. It is assumed that the latter is provided as an iterator whose
-``next`` method returns a ``dict`` with the following fields:
+data provided as an iterable of dictionaries with, at least, the
+following fields:
 
-* row_id: the row id of the GDO within its global container
-
-* vid: the VID of the GDO
-
-* probs: a numpy array like ``np.zeros((2,N), dtype=np.float32)``
-  where (0,:) (1,:) are, respectively, the prob_A and prob_B arrays
-
-* confs: a numpy array like ``np.zeros((N,), dtype=np.float32)`` with
-  the confidence values corresponding to the probs
+* 'probs': a 2 by ``N`` numpy array where the two rows contain,
+  respectively, the probabilities of being homozygous for the first
+  (A) and second (B) allele;
 
 where ``N`` is the number of SNPs in the data set.
+
+Note that most functions in this module operate directly on continuous
+probabilistic representations of genotypes, rather than discrete ones.
 """
 
 import numpy as np
@@ -34,6 +31,10 @@ def project_to_discrete_genotype(probs, threshold=0.2):
     BB    -> 1
     AB    -> 2
     undef -> 3
+
+  The ``threshold`` parameter represents the maximum value of the
+  ratio between the second highest and the highest probability for a
+  marker, beyond which the discrete call is marked as undefined.
   """
   allprobs = np.vstack((probs, 1.0 - probs.sum(axis=0)))
   encoding = np.argmax(allprobs, axis=0)
@@ -45,12 +46,15 @@ def project_to_discrete_genotype(probs, threshold=0.2):
 
 def count_homozygotes(it):
   """
-  Count the number of AA, BB homozygotes.
+  Compute the levels of AA and BB homozigosity.
 
-  :param it: a stream of GDOs
-  :type it: iterator
+  In the case of deterministic calls, i.e., (1.0, 0.0) for AA,
+  (0.0, 1.0) for BB and (0.0, 0.0) for AB, this falls back to
+  conventional homozygote count.
 
-  :rtype: type(np.zeros((2,N), dtype=np.int32))
+  Returns an array with the same shape as the 'probs' arrays in the
+  input stream, whose rows contain the homozigosity levels for,
+  respectively, AA and BB.
   """
   setup_done = False
   for i, x in enumerate(it):
@@ -66,13 +70,11 @@ def maf(it, counts=None):
   """
   Compute Minor Allele Frequencies.
 
-  :param it: a stream of GDOs
-  :type it: iterator
-  
-  :param counts: the result of calling count_homozygotes(it)
-  :type counts: type(np.zeros((2,N), dtype=np.int32))
+  The ``counts`` parameter is the result of calling count_homozygotes
+  on ``it``.
 
-  :rtype: type(np.zeros((2,N), dtype=np.int32)))
+  Returns a mono-dimensional array, of length equal to the number of
+  SNPs, that contains the MAF for each SNP.
   """
   if not counts:
     N, counts = count_homozygotes(it)
@@ -109,7 +111,7 @@ hwe_vector = np.vectorize(hwe_scalar, [np.float32])
 def hwe(it, counts=None):
   """
   Implement Hardy-Weinberg exact calculation using the method described in
-  Wigginton et al., Am.J.Hum.Genet.vol.76-pp.887.
+  `Wigginton et al. <http://dx.doi.org/10.1086/429864>`_.
 
   It returns an array with the probabilities that the distribution of
   alleles seen for each marker is compatible with the Hardy-Weinberg
@@ -127,13 +129,11 @@ def hwe(it, counts=None):
   (total number of diploid individuals) and :math:`n_A`, the measured
   count of the allele A.
 
-  :param it: a stream of GDOs
-  :type it: iterator
-  
-  :param counts: the result of calling count_homozygotes(it)
-  :type counts: type(np.zeros((2,N), dtype=np.int32))
+  The ``counts`` parameter is the result of calling count_homozygotes
+  on ``it``.
 
-  :rtype: type(np.zeros((N,), dtype=np.float32))
+  Returns a mono-dimensional array, of length equal to the number of
+  SNPs, that contains the aforementioned probability for each SNP.
   """
   if not counts:
     N, counts = count_homozygotes(it)
@@ -145,6 +145,7 @@ def hwe(it, counts=None):
   return hwe_vector(low_freq, N_AB, N)
 
 
+# FIXME: this is out-of-sync and currently not used anywhere
 def find_shared_support(kb, gdos):
   """
   Find the set of markers that are shared by a group of GDOs.
