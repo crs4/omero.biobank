@@ -114,3 +114,27 @@ class EventsConsumer(MessagesHandler):
 
     def __init__(self, logger=None):
         super(EventsConsumer, self).__init__(logger)
+
+    def stop(self):
+        self.logger.debug('Closing connection')
+        self.channel.stop_consuming()
+        self.disconnect()
+
+    def run(self, consumer_callback):
+        if not self.channel:
+            self.connect()
+        try:
+            self.channel.basic_consume(consumer_callback, queue=self.queue)
+            self.channel.start_consuming()
+            self.logger.info('Start consuming messages')
+        except KeyboardInterrupt:
+            self.logger.info('Captured keyboard interrupt, stopping')
+        except Exception, e:
+            self.logger.critical('Exception captured: %s' % e)
+            raise e
+        finally:
+            try:
+                self.stop()
+            except:
+                self.logger.debug('Error occurred while calling stop() method')
+                pass
