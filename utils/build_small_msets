@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
+"""
+Ad-hoc script that extracts subsets of the affy and immuno marker
+sets, including all SNPs from their intersection.
+
+This script operates directly on the importer input files and a
+two-column 'intersection' file. The latter contains pairs of labels
+that correspond to the same marker according to alignment info.
+"""
+
+import sys, os, csv, random
+
+
+AFFY_TAG, AFFY_VTAG = ("affy", "na32")
+IMMUNO_TAG, IMMUNO_VTAG = ("immuno", "11419691b")
+
+INTERSECTION_FN = "intersection_%s_%s.tsv" % (AFFY_TAG, IMMUNO_TAG)
+
+MDEF_FN_TEMPLATE = "{0}/{0}_{1}_marker_def.tsv"
+ALIGN_FN_TEMPLATE = "{0}/{0}_{1}_hg19.tsv"
+
+
+class TsvBase(object):
+  TSV_OPTS = dict(
+    delimiter="\t", quoting=csv.QUOTE_NONE, lineterminator=os.linesep
+    )
+
+class TsvReader(TsvBase):
+  def __new__(cls, f):
+    return csv.reader(f, **cls.TSV_OPTS)
+
+
+class TsvWriter(TsvBase):
+  def __new__(cls, f):
+    return csv.writer(f, **cls.TSV_OPTS)
+
+
+def get_intersection_labels(fn):
+  affy_labels, immuno_labels = set(), set()
+  with open(fn) as f:
+    reader = TsvReader(f)
+    _ = reader.next()
+    for i, (affy_l, immuno_l) in enumerate(reader):
+      affy_labels.add(affy_l)
+      immuno_labels.add(immuno_l)
+  assert len(affy_labels) == len(immuno_labels) == i+1
+  print "intersection size: %d" % (i+1)
+  return affy_labels, immuno_labels
+
+
+def get_rows_by_label(fn, labels, n_extra_rows=0):
+  rows = []
+  extra_rows_indices = []
+  with open(fn) as f:
+    reader = TsvReader(f)
+    header = reader.next()
+    for i, r in enumerate(reader):
+      if r[0] in labels:
+        rows.append(r)
+      elif n_extra_rows:
+        extra_rows_indices.append(i)
+  if n_extra_rows:
+    extra_rows_indices = frozenset(
+      random.sample(extra_rows_indices, n_extra_rows)
+      )
+    with open(fn) as f:
+      reader = TsvReader(f)
+      _ = reader.next()
+      for i, r in enumerate(reader):
+        if i in extra_rows_indices:
+          rows.append(r)
+  print "selected %d rows from %s" % (len(rows), fn)
+  return header, rows
+
+
+def write_output(out_fn, header, rows):
+  with open(out_fn, "w") as fo:
+    writer = TsvWriter(fo)
+    writer.writerow(header)
+    writer.writerows(rows)
+  print "wrote", out_fn
+
+
+def build_mset(tag, vtag, labels, n_extra_rows):
+  small_tag = "%s_small" % tag
+  try:
+    os.mkdir(small_tag)
+  except OSError:
+    pass
+  #--
+  mdef_fn = MDEF_FN_TEMPLATE.format(tag, vtag)
+  header, mdef_rows = get_rows_by_label(mdef_fn, labels, n_extra_rows)
+  small_mdef_fn = MDEF_FN_TEMPLATE.format(small_tag, vtag)
+  write_output(small_mdef_fn, header, mdef_rows)
+  #--
+  align_fn = ALIGN_FN_TEMPLATE.format(tag, vtag)
+  labels = set(r[0] for r in mdef_rows)
+  del mdef_rows
+  header, align_rows = get_rows_by_label(align_fn, labels)
+  small_align_fn = ALIGN_FN_TEMPLATE.format(small_tag, vtag)
+  write_output(small_align_fn, header, align_rows)
+
+
+def main():
+  affy_labels, immuno_labels = get_intersection_labels(INTERSECTION_FN)
+  build_mset(AFFY_TAG, AFFY_VTAG, affy_labels, 1000)
+  build_mset(IMMUNO_TAG, IMMUNO_VTAG, immuno_labels, 100)
+  return 0
+
+
+if __name__ == "__main__":
+  sys.exit(main())

@@ -3,7 +3,7 @@ docs/_build
 *.pyc
 *~
 MANIFEST
-README
+/README
 bl/vl/version.py
 dist
 

@@ -1,5 +1,8 @@
 #!/usr/bin/ipython -i
 
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
 OME_HOST = 'localhost'
 OME_USER = 'root'
 OME_PASS = 'romeo'
@@ -26,3 +29,7 @@ print "### KB ENV PRELOADED ###"
 print "# knowledge base: kb"
 print "# extra method: kb.get_objects_dict"
 print "########################"
+
+# Local Variables: **
+# mode: python **
+# End: **
