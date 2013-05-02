@@ -33,6 +33,10 @@ class DependencyTreeError(Exception):
     pass
 
 
+class MissingNodeError(Exception):
+    pass
+
+
 class Neo4JDriver(object):
 
     DIRECTION_INCOMING = 1
@@ -81,10 +85,10 @@ class Neo4JDriver(object):
         if not edge:
             src_node = self.__get_node_by_hash__(source_hash)
             if not src_node:
-                raise DependencyTreeError('Unmapped source node, unable to create edge')
+                raise MissingNodeError('No node with hash %s' % source_hash)
             dest_node = self.__get_node_by_hash__(dest_hash)
             if not dest_node:
-                raise DependencyTreeError('Unmapped destination node, unable to create edge')
+                raise MissingNodeError('No node with hash %s' % dest_hash)
             edge = self.graph.produces.create(src_node, dest_node, action_conf)
         return edge.eid
 
