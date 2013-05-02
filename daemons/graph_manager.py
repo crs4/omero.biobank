@@ -9,8 +9,8 @@ class GraphManagerDaemon(object):
 
     def __init__(self, logger=None):
         self.actions_mapping = {
-            'NODE_CREATION': self.create_node,
-            'EDGE_CREATION': self.create_edge,
+            'NODE_CREATE': self.create_node,
+            'EDGE_CREATE': self.create_edge,
             'NODE_DELETE': self.delete_node,
             'EDGE_DELETE': self.delete_edge,
             'EDGE_UPDATE': self.update_edge,
@@ -34,11 +34,11 @@ class GraphManagerDaemon(object):
         self.messages_consumer.run(self.consume_message)
 
     def create_node(self, msg):
-        id = self.graph_driver.save_node(msg['details'])
+        nid = self.graph_driver.save_node(msg['details'])
 
     def create_edge(self, msg):
-        id = self.graph_driver.save_edge(msg['details'], msg['source_node'],
-                                         msg['dest_node'])
+        eid = self.graph_driver.save_edge(msg['details'], msg['source_node'],
+                                          msg['dest_node'])
 
     def delete_node(self, msg):
         self.graph_driver.delete_node(msg['target'])

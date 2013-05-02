@@ -7,7 +7,7 @@ from bl.vl.utils import decode_dict
 def build_event(event_cls, event_conf):
     def get_node_creation_data(conf):
         return {
-            'action': 'NODE_CREATION',
+            'action': 'NODE_CREATE',
             'details': {
                 'obj_class': type(conf['bl_obj']).__name__,
                 'obj_id': conf['bl_obj'].id,
