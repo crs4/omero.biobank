@@ -19,7 +19,7 @@ class MessagesHandler(object):
     def __get_connection_params(self):
         self.conn_params = pika.ConnectionParameters()
         if not self.host:
-            raise ValueError('No queue manager host provided')
+            raise ValueError('No host provided')
         else:
             self.conn_params.host = self.host
         if self.port:
@@ -136,5 +136,5 @@ class EventsConsumer(MessagesHandler):
             try:
                 self.stop()
             except:
-                self.logger.debug('Error occurred while calling stop() method')
+                self.logger.error('Error occurred while calling stop() method')
                 pass
