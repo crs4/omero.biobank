@@ -37,6 +37,10 @@ class MissingNodeError(Exception):
     pass
 
 
+class MissingEdgeError(Exception):
+    pass
+
+
 class Neo4JDriver(object):
 
     DIRECTION_INCOMING = 1
@@ -96,11 +100,15 @@ class Neo4JDriver(object):
         node = self.__get_node_by_hash__(node_hash)
         if node:
             self.graph.vertices.delete(node.eid)
+        else:
+            raise MissingNodeError('Unable to find node with hash %s. Delete failed.' % node_hash)
 
     def delete_edge(self, edge_hash):
         edge = self.__get_edge_by_hash__(edge_hash)
         if edge:
             self.graph.edges.delete(edge.eid)
+        else:
+            raise MissingEdgeError('Unable to find edge with hash %s. Delete failed.' % edge_hash)
 
     def update_edge(self, action_hash, new_source_hash, new_dest_hash):
         raise NotImplementedError()
