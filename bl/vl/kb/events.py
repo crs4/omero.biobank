@@ -1,10 +1,11 @@
 import json
-from voluptuous import Schema
-from bl.vl.kb.drivers.omero.utils import ome_hash
+from voluptuous import Schema, MultipleInvalid, Invalid
 from bl.vl.utils import decode_dict
 
 
 def build_event(event_cls, event_conf):
+    from bl.vl.kb.drivers.omero.utils import ome_hash
+
     def get_node_creation_data(conf):
         return {
             'action': 'NODE_CREATE',
@@ -79,6 +80,10 @@ def decode_event(routing_key, msg_body):
     return event
 
 
+class InvalidMessageError(Exception):
+    pass
+
+
 class BasicEvent(object):
 
     def __init__(self, event_type, data=None):
@@ -89,19 +94,22 @@ class BasicEvent(object):
     def msg(self):
         return json.dumps(self.data)
 
-    def validate(self):
-        raise NotImplemented()
+    def validate(self, schema):
+        try:
+            schema(self.data)
+        except (MultipleInvalid, Invalid):
+            raise InvalidMessageError('Unknown or invalid message structure')
 
 
 class NodeCreationEvent(BasicEvent):
 
-    def  __init__(self, data):
+    def __init__(self, data):
         super(NodeCreationEvent, self).__init__('graph.node.create', data)
 
     def validate(self):
         schema = Schema(
             {
-                'action': 'NODE_CREATION',
+                'action': 'NODE_CREATE',
                 'details': {
                     'obj_class': str,
                     'obj_id': str,
@@ -109,7 +117,7 @@ class NodeCreationEvent(BasicEvent):
                 }
             }
         )
-        schema(self.data)
+        super(NodeCreationEvent, self).validate(schema)
 
 
 class EdgeCreationEvent(BasicEvent):
@@ -130,7 +138,7 @@ class EdgeCreationEvent(BasicEvent):
                 'dest_node': int
             }
         )
-        schema(self.data)
+        super(EdgeCreationEvent, self).validate(schema)
 
 
 class NodeDeletionEvent(BasicEvent):
@@ -145,7 +153,7 @@ class NodeDeletionEvent(BasicEvent):
                 'target': int
             }
         )
-        schema(self.data)
+        super(NodeDeletionEvent, self).validate(schema)
 
 
 class EdgeDeletionEvent(BasicEvent):
@@ -160,7 +168,7 @@ class EdgeDeletionEvent(BasicEvent):
                 'target': int
             }
         )
-        schema(self.data)
+        super(EdgeDeletionEvent, self).validate(schema)
 
 
 class EdgeUpdateEvent(BasicEvent):
@@ -180,4 +188,4 @@ class EdgeUpdateEvent(BasicEvent):
                 'new_dest_node': validate_optional_int
             }
         )
-        schema(self.data)
+        super(EdgeUpdateEvent, self).validate(schema)
