@@ -176,3 +176,25 @@ def find_shared_support(kb, gdos):
     mrk_to_idx = dict(it.izip(r[1], r[2]))
     selected[k] = np.array([mrk_to_idx[m] for m in I], dtype=np.int32)
   return (I, [selected[v] for v in set_vids])
+
+
+def generate_data(size, conf_sigma=0.05, conf_to_ratio=1.25):
+  """
+  Generate random genotyping data.
+
+  The distribution of confidence values is half-normal with sigma
+  ``conf_sigma``.  The ratio between the highest and the second
+  highest probability is proportional to the confidence value with
+  coefficient ``conf_to_ratio``.
+  """
+  confs = np.abs(np.random.normal(0, conf_sigma, size).astype(np.float32))
+  ratios = conf_to_ratio * confs + np.finfo(np.float32).tiny
+  probs = np.empty((3, size), dtype=np.float32)
+  # p0 + p1 + p2 = 1; p0 <= p1 <= p2; p1 / p2 = r
+  max_p = 1 / (1 + 1/ratios)
+  min_p = 1 / (2 + 1/ratios)
+  probs[1] = (max_p - min_p) * np.random.random(ratios.size) + min_p
+  probs[2] = probs[1] / ratios
+  probs[0] = 1 - probs[1] - probs[2]
+  map(np.random.shuffle, probs.T)
+  return probs[:2], confs

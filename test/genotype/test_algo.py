@@ -1,7 +1,7 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import unittest, itertools as it
+import sys, unittest, itertools as it
 import numpy as np
 
 import bl.vl.genotype.algo as algo
@@ -54,11 +54,38 @@ class TestCountHomozigotes(unittest.TestCase):
       self.assertEqual(c.tolist(), exp_c)
 
 
+class TestGenerateData(unittest.TestCase):
+
+  SIZE = 10000
+  N_ITER = 100
+
+  def runTest(self):
+    params = {"conf_sigma": 0.1, "conf_to_ratio": 1.0}
+    size = self.SIZE
+    for i in xrange(self.N_ITER):
+      if (i + 1) % (self.N_ITER // 10) == 0:
+        sys.stderr.write(".")
+        sys.stderr.flush()
+      probs, confs = algo.generate_data(size, **params)
+      symmetric_confs = np.concatenate((-confs, confs))
+      self.assertAlmostEqual(
+        np.std(symmetric_confs, ddof=1), params["conf_sigma"], 1
+        )
+      allprobs = np.vstack((probs, 1.0 - probs.sum(axis=0)))
+      allprobs.sort(axis=0)
+      ratios = allprobs[1] / allprobs[2]
+      self.assertTrue(np.allclose(
+        ratios, params["conf_to_ratio"] * confs, atol=1e-6
+        ))
+    sys.stderr.write(" ")
+
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestProjectToDiscreteGenotype('test_no_threshold'))
   suite.addTest(TestProjectToDiscreteGenotype('test_threshold'))
   suite.addTest(TestCountHomozigotes('test_no_threshold'))
+  suite.addTest(TestGenerateData('runTest'))
   return suite
 
 
