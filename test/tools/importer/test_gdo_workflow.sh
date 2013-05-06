@@ -14,7 +14,6 @@ TMP_DIR=/var/tmp
 
 IMPORTER='../../../tools/importer --operator aen'
 KB_QUERY='../../../tools/kb_query --operator aen'
-ADD_ALLELE_FLIP='python ../../../examples/add_allele_flip.py'
 BUILD_SSC_IMPORT='python ../../../examples/build_ssc_import_files.py'
 GDOIZE_MS='../../../tools/gdoize_ms'
 
@@ -68,8 +67,8 @@ ${IMPORTER} -i ${WORK}/device_vids.tsv -o ${WORK}/device_map.tsv device \
 
 ${KB_QUERY} -o ${WORK}/marker_definitions_vids.tsv map_vid \
     -i ${WORK}/marker_definitions.tsv --source-type Marker \
-    --column label,vid --study GDO_TEST_STUDY \
-    --marker-set GDO_TEST_MS || die "map vid on marker definitions failed"
+    --column label,vid --study ${STUDY_LABEL} \
+    --marker-set ${MS_LABEL} || die "map vid on marker definitions failed"
 
 python ${BASEDIR}/make_marker_align.py ${WORK}/marker_definitions_vids.tsv \
     ${WORK}/marker_alignments_vids.tsv
