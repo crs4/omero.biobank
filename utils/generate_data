@@ -64,6 +64,7 @@ class DataObjectGenerator(object):
     if study is None:
       study = self.create_study()
     action = self.kb.create_an_action(study)
+    action.reload()
     self.KILL_LIST.append(action)
     self.logger.debug("created action with vid: %s" % action.id)
     return action
@@ -86,7 +87,6 @@ class DataObjectGenerator(object):
     probs, confs = algo.generate_data(len(data_sample.snpMarkersSet))
     data_object = self.kb.add_gdo_data_object(action, data_sample, probs, confs)
     self.KILL_LIST.append(data_object)
-    self.logger.debug("created data object with vid: %s" % data_object.id)
     return data_object, probs, confs
 
   def generate(self, n_samples):
@@ -104,7 +104,7 @@ def make_parser():
   description = __doc__.lstrip().splitlines()[0]
   parser = argparse.ArgumentParser(description=description)
   parser.add_argument('ms_label', help='marker set label')
-  parser.add_argument('n_samples', help='number of samples', default=100)
+  parser.add_argument('n_samples', type=int, help='n. of samples', default=100)
   #--
   parser.add_argument('-H', '--host', type=str, help='omero hostname')
   parser.add_argument('-U', '--user', type=str, help='omero user')
