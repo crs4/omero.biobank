@@ -1,10 +1,10 @@
 import json
 from voluptuous import Schema, MultipleInvalid, Invalid
 from bl.vl.utils import decode_dict
+from bl.vl.utils.ome_utils import ome_hash
 
 
 def build_event(event_cls, event_conf):
-    from bl.vl.kb.drivers.omero.utils import ome_hash
 
     def get_node_creation_data(conf):
         return {

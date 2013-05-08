@@ -113,4 +113,8 @@ class Action(wp.OmeroWrapper):
 
   def __cleanup__(self):
     if hasattr(self, 'target'):
-      self.proxy.dt.delete_edge(self)
+      try:
+        self.proxy.dt.destroy_edge(self)
+      except AttributeError:
+        # Not using the Neo4J driver
+        pass

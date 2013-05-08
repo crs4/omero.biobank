@@ -295,14 +295,22 @@ class OmeroWrapper(CoreOmeroWrapper):
     pass
 
   def __dump_to_graph__(self):
-    if hasattr(self, 'action'):
-      self.proxy.dt.create_node(self)
-      self.action.reload()
-      if hasattr(self.action, 'target'):
-        self.proxy.dt.create_edge(self.action, self.action.target, self)
+    try:
+      if hasattr(self, 'action'):
+        self.proxy.dt.create_node(self)
+        self.action.reload()
+        if hasattr(self.action, 'target'):
+          self.proxy.dt.create_edge(self.action, self.action.target, self)
+    except AttributeError:
+      # Not using Neo4J graph driver
+      pass
 
   def __cleanup__(self):
-    self.proxy.dt.delete_node(self)
+    try:
+      self.proxy.dt.destroy_node(self)
+    except AttributeError:
+      # Not using Neo4J graph driver
+      pass
 
   def configure(self, conf):
     self.__config__(self.ome_obj, conf)

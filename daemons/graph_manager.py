@@ -82,11 +82,11 @@ class GraphManagerDaemon(object):
         self.logger.info('Saved new edge, assigned ID is %d' % eid)
 
     def delete_node(self, msg):
-        self.graph_driver.delete_node(msg['target'])
+        self.graph_driver.destroy_node(msg['target'])
         self.logger.info('Node successfully deleted')
 
     def delete_edge(self, msg):
-        self.graph_driver.delete_edge(msg['target'])
+        self.graph_driver.destroy_edge(msg['target'])
         self.logger.info('Edge successfully deleted')
 
     def update_edge(self, msg):
