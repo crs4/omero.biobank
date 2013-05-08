@@ -8,8 +8,6 @@ import bl.vl.utils as vlu
 import bl.vl.utils.ome_utils as vluo
 from bl.vl.kb import KBError
 
-from utils import ome_hash
-
 
 REQUIRED = 'required'
 OPTIONAL = 'optional'
@@ -57,7 +55,7 @@ class CoreOmeroWrapper(object):
   def __hash__(self):
     if not self.is_mapped():
       raise TypeError("non-persistent objects are not hashable")
-    return ome_hash(self.ome_obj)
+    return vluo.ome_hash(self.ome_obj)
 
   def __eq__(self, obj):
     if type(obj) != self.__class__:

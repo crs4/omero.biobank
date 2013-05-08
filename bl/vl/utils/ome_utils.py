@@ -1,7 +1,9 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import hashlib, time
+import hashlib
+
+import omero
 import omero.rtypes
 
 
@@ -21,3 +23,14 @@ def time2rtime(t):
 
 def rtime2time(t):
   return omero.rtypes.unwrap(t)/1000.0
+
+
+def ome_hash(ome_obj):
+  klass = ome_obj.__class__
+  for i, k in enumerate(ome_obj.__class__.__mro__):
+    if k is omero.model.IObject:
+      try:
+        klass = ome_obj.__class__.__mro__[i-1]
+      except IndexError:
+        pass
+  return hash((klass.__name__, ome_obj.id._val))

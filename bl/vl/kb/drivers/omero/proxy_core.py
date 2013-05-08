@@ -1,7 +1,7 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import time, logging
+import logging
 logger = logging.getLogger("proxy_core")
 import itertools as it
 import numpy as np
@@ -14,8 +14,9 @@ import omero_Tables_ice
 import omero_SharedResources_ice
 
 import bl.vl.kb as kb
+from bl.vl.utils.ome_utils import ome_hash
+
 from wrapper import ome_wrap
-from utils import ome_hash
 
 
 BATCH_SIZE = 5000
