@@ -230,7 +230,7 @@ class Neo4JDriver(object):
                     'object_hash': str(cn.obj_hash)
                 }
                 for cn in connected_nodes
-                if cn.obj_class == aklass
+                if cn.obj_class == aklass.OME_TABLE
             ]
         else:
             return [
