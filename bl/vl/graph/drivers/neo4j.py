@@ -7,6 +7,8 @@ import time
 from bl.vl.utils import get_logger
 from bl.vl.utils.ome_utils import ome_hash
 import bl.vl.kb.events as events
+from bl.vl.graph.errors import DependencyTreeError, MissingEdgeError,\
+    MissingNodeError, GraphOutOfSyncError
 
 
 class OME_Object(Node):
@@ -31,23 +33,6 @@ class OME_Action(Relationship):
 
     def __hash__(self):
         return self.eid
-
-
-class DependencyTreeError(Exception):
-    pass
-
-
-class MissingNodeError(Exception):
-    pass
-
-
-class MissingEdgeError(Exception):
-    pass
-
-
-class GraphOutOfSyncError(Exception):
-    pass
-
 
 class Neo4JDriver(object):
 

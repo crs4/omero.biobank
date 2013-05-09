@@ -127,6 +127,7 @@ setup(
     'bl.vl.individual',
     'bl.vl.genotype',
     'bl.vl.graph',
+    'bl.vl.graph.drivers',
     'bl.vl.app',
     'bl.vl.app.importer',
     'bl.vl.app.kb_query',

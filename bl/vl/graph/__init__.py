@@ -1,5 +1,5 @@
-from neo4j import Neo4JDriver
-from local_pygraph import PygraphDriver
+from drivers.neo4j import Neo4JDriver
+from drivers.local_pygraph import PygraphDriver
 import bl.vl.kb.config as vlconf
 
 
