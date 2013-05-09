@@ -1,4 +1,5 @@
 from neo4j import Neo4JDriver
+from local_pygraph import PygraphDriver
 import bl.vl.kb.config as vlconf
 
 
@@ -10,10 +11,11 @@ def build_driver(kb=None):
         return d
 
     def build_local_memory_driver(kb):
-        raise NotImplementedError()
+        d = PygraphDriver(kb, kb.logger)
+        return d
 
     drivers_map = {
         'neo4j': build_neo4j_driver,
-        'local_memory': build_local_memory_driver,
+        'pygraph': build_local_memory_driver,
     }
     return drivers_map[vlconf.GRAPH_ENGINE_DRIVER](kb)
