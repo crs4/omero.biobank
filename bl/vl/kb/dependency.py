@@ -1,4 +1,4 @@
-from bl.vl.kb.drivers.graph import build_driver
+from bl.vl.graph import build_driver
 
 
 class BlockedCallbackError(Exception):
