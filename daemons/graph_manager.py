@@ -1,6 +1,6 @@
 from bl.vl.kb.messages import EventsConsumer
 from bl.vl.graph import build_driver
-from bl.vl.graph.neo4j import MissingEdgeError
+from bl.vl.graph.errors import MissingEdgeError
 from bl.vl.kb.events import decode_event, InvalidMessageError
 import sys
 import logging
