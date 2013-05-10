@@ -295,12 +295,20 @@ class OmeroWrapper(CoreOmeroWrapper):
     pass
 
   def __dump_to_graph__(self):
+    relationships = {
+        self.proxy.DataCollectionItem: 'dataSample',
+        self.proxy.VesselsCollectionItem: 'vessel',
+    }
     try:
       if hasattr(self, 'action'):
         self.proxy.dt.create_node(self)
         self.action.reload()
         if hasattr(self.action, 'target'):
-          self.proxy.dt.create_edge(self.action, self.action.target, self)
+          if type(self.action.target) not in relationships:
+            self.proxy.dt.create_edge(self.action, self.action.target, self)
+          else:
+            source = getattr(self.action.target, relationships[type(self.action.target)])
+            self.proxy.dt.create_edge(self.action, source, self)
     except AttributeError:
       # Not using Neo4J graph driver
       pass

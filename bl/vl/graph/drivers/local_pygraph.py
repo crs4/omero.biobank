@@ -27,7 +27,8 @@ class PygraphDriver(object):
             kb.LaneSlot,
         ]
         self.relationship = {
-            kb.DataCollectionItem: 'dataSample'
+            kb.DataCollectionItem: 'dataSample',
+            kb.VesselsCollectionItem: 'vessel',
         }
         self.graph = None
         self.objects_map_by_id = None
