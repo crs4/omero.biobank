@@ -1,4 +1,4 @@
-from bl.vl.kb.messages import EventsConsumer
+from bl.vl.kb.messages import get_events_consumer
 from bl.vl.graph import build_driver
 from bl.vl.graph.errors import MissingEdgeError
 from bl.vl.kb.events import decode_event, InvalidMessageError
@@ -30,7 +30,7 @@ class GraphManagerDaemon(object):
             self.logger.setLevel(getattr(logging, log_level))
         else:
             self.logger = self.__get_logger(log_file, log_level)
-        self.messages_consumer = EventsConsumer(self.logger)
+        self.messages_consumer = get_events_consumer(self.logger)
         self.graph_driver = build_driver()
 
     def __get_logger(self, filename, log_level):

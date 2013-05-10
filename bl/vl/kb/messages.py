@@ -3,18 +3,46 @@ from bl.vl.utils import get_logger
 import config as vlconf
 
 
+def get_events_sender(logger=None):
+    if vlconf.MESSAGES_QUEUE_ENGINE_ENABLED:
+        return EventsSender(vlconf.MESSAGES_QUEUE_ENGINE_HOST,
+                            vlconf.MESSAGES_QUEUE_ENGINE_PORT,
+                            vlconf.MESSAGES_QUEUE_ENGINE_USERNAME,
+                            vlconf.MESSAGES_QUEUE_ENGINE_PASSWORD,
+                            vlconf.MESSAGES_QUEUE_ENGINE_QUEUE,
+                            logger)
+    else:
+        return None
+
+
+def get_events_consumer(logger=None):
+    return EventsConsumer(vlconf.MESSAGES_QUEUE_ENGINE_HOST,
+                          vlconf.MESSAGES_QUEUE_ENGINE_PORT,
+                          vlconf.MESSAGES_QUEUE_ENGINE_USERNAME,
+                          vlconf.MESSAGES_QUEUE_ENGINE_PASSWORD,
+                          vlconf.MESSAGES_QUEUE_ENGINE_QUEUE,
+                          logger)
+
+
+class MessagesEngineConfigurationError(Exception):
+    pass
+
+
 class MessagesHandler(object):
     
-    def __init__(self, logger=None):
+    def __init__(self, host, port=None, user=None, password=None,
+                 queue=None, logger=None):
         self.logger = logger or get_logger('messages-handler')
-        self.host = vlconf.QUEUE_MANAGER_ENGINE_HOST
-        self.port = vlconf.QUEUE_MANAGER_ENGINE_PORT
-        self.user = vlconf.QUEUE_MANAGER_ENGINE_USERNAME
-        self.passwd = vlconf.QUEUE_MANAGER_ENGINE_PASSWORD
-        self.queue = vlconf.QUEUE_MANAGER_ENGINE_QUEUE
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = password
+        self.queue = queue
         self.exchange_name = 'exch_%s' % self.queue
         self.connection = None
         self.channel = None
+        if self.host is None or self.queue is None:
+            raise MessagesEngineConfigurationError('Check configuration values for HOST and QUEUE')
 
     def __get_connection_params(self):
         self.conn_params = pika.ConnectionParameters()
@@ -24,9 +52,9 @@ class MessagesHandler(object):
             self.conn_params.host = self.host
         if self.port:
             self.conn_params.port = self.port
-        if self.user and self.passwd:
+        if self.user and self.password:
             credentials = pika.PlainCredentials(self.user,
-                                                self.passwd)
+                                                self.password)
             self.conn_params.credentials = credentials
         return self.conn_params
 
@@ -92,8 +120,10 @@ class MessagesHandler(object):
 
 class EventsSender(MessagesHandler):
 
-    def __init__(self, logger=None):
-        super(EventsSender, self).__init__(logger)
+    def __init__(self, host, port=None, user=None, password=None,
+                 queue=None, logger=None):
+        super(EventsSender, self).__init__(host, port, user, password,
+                                           queue, logger)
 
     def send_event(self, event):
         if not self.connection:
@@ -112,8 +142,10 @@ class EventsSender(MessagesHandler):
 
 class EventsConsumer(MessagesHandler):
 
-    def __init__(self, logger=None):
-        super(EventsConsumer, self).__init__(logger)
+    def __init__(self, host, port=None, user=None, password=None,
+                 queue=None, logger=None):
+        super(EventsConsumer, self).__init__(host, port, user, password,
+                                             queue, logger)
 
     def stop(self):
         self.logger.debug('Closing connection')

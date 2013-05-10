@@ -8,7 +8,8 @@ import itertools as it
 import omero.model as om
 
 import bl.vl.utils as vlu
-from bl.vl.kb.messages import EventsSender
+import bl.vl.kb.config as blconf
+from bl.vl.kb.messages import get_events_sender
 from bl.vl.kb.dependency import DependencyTree
 from bl.vl.kb import mimetypes
 
@@ -53,8 +54,7 @@ class Proxy(ProxyCore):
     self.madpt = ModelingAdapter(self)
     self.eadpt = EAVAdapter(self)
     self.admin = Admin(self)
-    #-- depencency_tree service
-    self.events_sender = EventsSender(self.logger)
+    self.events_sender = get_events_sender(self.logger)
     self.dt = DependencyTree(self)
 
   def __check_type(self, fname, ftype, val):
