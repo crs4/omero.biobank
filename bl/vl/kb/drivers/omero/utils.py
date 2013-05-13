@@ -20,7 +20,10 @@ def assign_vid_and_timestamp(conf, time_stamp_field='startDate'):
 
 def _ome_env_variable(name):
   try:
-    return os.environ[name]
+    if os.environ[name] == 'NONE':
+        return None
+    else:
+        return os.environ[name]
   except KeyError:
     raise ValueError("Can't find %r environment variable" % (name,))
 

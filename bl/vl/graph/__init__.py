@@ -1,13 +1,13 @@
 from drivers.neo4j import Neo4JDriver
 from drivers.local_pygraph import PygraphDriver
-import bl.vl.kb.config as vlconf
+import bl.vl.utils.graph as grconf
 
 
 def build_driver(kb=None):
 
     def build_neo4j_driver(kb):
-        d = Neo4JDriver(vlconf.GRAPH_ENGINE_URI, vlconf.GRAPH_ENGINE_USERNAME,
-                        vlconf.GRAPH_ENGINE_PASSWORD, kb)
+        d = Neo4JDriver(grconf.graph_uri(), grconf.graph_username(),
+                        grconf.graph_password(), kb)
         return d
 
     def build_local_memory_driver(kb):
@@ -18,4 +18,4 @@ def build_driver(kb=None):
         'neo4j': build_neo4j_driver,
         'pygraph': build_local_memory_driver,
     }
-    return drivers_map[vlconf.GRAPH_ENGINE_DRIVER](kb)
+    return drivers_map[grconf.graph_driver()](kb)

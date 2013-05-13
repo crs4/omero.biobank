@@ -1,26 +1,26 @@
 import pika
 from bl.vl.utils import get_logger
-import config as vlconf
+import bl.vl.utils.messages as msgconf
 
 
 def get_events_sender(logger=None):
-    if vlconf.MESSAGES_QUEUE_ENGINE_ENABLED:
-        return EventsSender(vlconf.MESSAGES_QUEUE_ENGINE_HOST,
-                            vlconf.MESSAGES_QUEUE_ENGINE_PORT,
-                            vlconf.MESSAGES_QUEUE_ENGINE_USERNAME,
-                            vlconf.MESSAGES_QUEUE_ENGINE_PASSWORD,
-                            vlconf.MESSAGES_QUEUE_ENGINE_QUEUE,
+    if msgconf.messages_engine_enabled():
+        return EventsSender(msgconf.messages_engine_host(),
+                            msgconf.messages_engine_port(),
+                            msgconf.messages_engine_username(),
+                            msgconf.messages_engine_password(),
+                            msgconf.messages_engine_queue(),
                             logger)
     else:
         return None
 
 
 def get_events_consumer(logger=None):
-    return EventsConsumer(vlconf.MESSAGES_QUEUE_ENGINE_HOST,
-                          vlconf.MESSAGES_QUEUE_ENGINE_PORT,
-                          vlconf.MESSAGES_QUEUE_ENGINE_USERNAME,
-                          vlconf.MESSAGES_QUEUE_ENGINE_PASSWORD,
-                          vlconf.MESSAGES_QUEUE_ENGINE_QUEUE,
+    return EventsConsumer(msgconf.messages_engine_host(),
+                          msgconf.messages_engine_port(),
+                          msgconf.messages_engine_username(),
+                          msgconf.messages_engine_password(),
+                          msgconf.messages_engine_queue(),
                           logger)
 
 
