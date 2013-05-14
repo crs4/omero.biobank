@@ -46,6 +46,7 @@ AUTHOR_INFO = [
   ]
 MAINTAINER_INFO = [
   ("Simone Leo", "simone.leo@crs4.it"),
+  ("Luca Lianas", "luca.lianas@crs4.it"),
   ]
 AUTHOR = ", ".join(t[0] for t in AUTHOR_INFO)
 AUTHOR_EMAIL = ", ".join("<%s>" % t[1] for t in AUTHOR_INFO)
@@ -134,5 +135,16 @@ setup(
     'bl.vl.app.snp_manager',
     'bl.vl.app.workflow_wrapper',
     ],
-  cmdclass={"sdist": sdist, "build_py": build_py},
-  )
+  cmdclass={
+      "sdist": sdist,
+      "build_py": build_py
+  },
+  requires=[
+    'omero',
+    'pygraph(>=1.8.0)',
+    'numpy',
+    'pika(>=0.9.12)',
+    'voluptuous(>=0.7.1)',
+    'bulbs(>=0.3)',
+  ],
+)
