@@ -23,7 +23,7 @@ class GraphDumper(object):
             kb.LaneSlot,
         ]
         self.relationship_classes = {
-            kb.ActionOnDataCollectionItem: 'dataSample',
+            kb.DataCollectionItem: 'dataSample',
             kb.VesselsCollectionItem: 'vessel',
         }
 
