@@ -19,7 +19,6 @@ class GraphDumper(object):
             kb.Vessel,
             kb.DataSample,
             kb.VLCollection,
-            kb.DataCollectionItem,
             kb.LaneSlot,
         ]
         self.relationship_classes = {
