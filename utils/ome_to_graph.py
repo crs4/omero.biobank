@@ -39,7 +39,13 @@ class GraphDumper(object):
     def __get_edges__(self, nodes):
         edges = []
         self.logger.info('Loading actions')
-        acts = self.kb.get_objects(self.kb.Action)
+        try:
+            acts = self.kb.get_objects(self.kb.Action)
+        except Exception:
+            # Ice memory error
+            self.kb.disconnect()
+            self.kb.connect()
+            acts = [n.action for n in nodes if hasattr(n.action, 'target')]
         self.logger.info('Loaded %d actions' % len(acts))
         self.logger.info('Building edges data')
         for n in nodes:
