@@ -1,5 +1,5 @@
 import bl.vl.kb.config as blconf
-from bl.vl.kb.drivers.omero.utils import _ome_env_variable
+from bl.vl.utils.ome_utils import _ome_env_variable
 
 
 def messages_engine_enabled():

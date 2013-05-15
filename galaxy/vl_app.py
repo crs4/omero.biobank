@@ -4,7 +4,7 @@ import os
 
 from galaxy.app import UniverseApplication as OrigUniverseApplication
 from bl.vl.kb import KnowledgeBase as KB
-import bl.vl.kb.drivers.omero.utils as vlu
+import bl.vl.utils.ome_utils as vlu
 
 class UniverseApplication(OrigUniverseApplication):
   

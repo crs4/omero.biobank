@@ -2,7 +2,7 @@ import csv, sys, argparse, logging
 from datetime import datetime
 
 from bl.vl.kb import KnowledgeBase as KB
-import bl.vl.kb.drivers.omero.utils as vlu
+import bl.vl.utils.ome_utils as vlu
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
