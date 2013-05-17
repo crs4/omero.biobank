@@ -25,6 +25,27 @@ LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
+def setup_logger(args):
+  log_level = getattr(logging, args.loglevel)
+  kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
+  if args.logfile:
+    kwargs['filename'] = args.logfile
+  logging.basicConfig(**kwargs)
+  return logging.getLogger()
+
+
+def get_login_info(args, logger):
+  try:
+    host = args.host or vlu.ome_host()
+    user = args.user or vlu.ome_user()
+    passwd = args.passwd or vlu.ome_passwd()
+  except ValueError as e:
+    logger.critical(e)
+    sys.exit(e)
+  else:
+    return host, user, passwd
+
+
 def get_msets(kb, args, logger):
   msets = [kb.get_snp_markers_set(label=label) for label in args.ms_labels]
   for ms, label in zip(msets, args.ms_labels):
@@ -57,31 +78,22 @@ def make_parser():
 def main(argv):
   parser = make_parser()
   args = parser.parse_args(argv)
-  #-- FIXME --
   if len(args.ms_labels) != 2:
     sys.exit("Sorry, only two marker sets are currently supported")
-  #-----------
-  log_level = getattr(logging, args.loglevel)
-  kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
-  if args.logfile:
-    kwargs['filename'] = args.logfile
-  logging.basicConfig(**kwargs)
-  logger = logging.getLogger()
-  #--
-  try:
-    host = args.host or vlu.ome_host()
-    user = args.user or vlu.ome_user()
-    passwd = args.passwd or vlu.ome_passwd()
-  except ValueError as e:
-    logger.critical(e)
-    sys.exit(e)
-  #--
+  logger = setup_logger(args)
+  host, user, passwd = get_login_info(args, logger)
   kb = KB(driver="omero")(host, user, passwd)
   ms1, ms2 = get_msets(kb, args, logger)
   idx1, idx2 = kb.SNPMarkersSet.intersect(ms1, ms2)
   assert idx1.size == idx2.size
   logger.info("intersection size: %d" % idx1.size)
-  # TODO: apply filters to common SNPs
+  logger.info("getting gdo iterator")
+  gdo_iterator = kb.get_gdo_iterator(ms1, indices=idx1)
+  #-- FIXME: this is a speed test --
+  logger.info("getting records")
+  for i, r in enumerate(gdo_iterator):
+    logger.debug("processing item #%d" % i)
+  #--
 
 
 if __name__ == "__main__":
