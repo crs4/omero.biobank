@@ -76,7 +76,11 @@ class Neo4JDriver(object):
             raise DependencyTreeError('Multiple nodes with hash %s' % node_hash)
 
     def __get_edge_by_hash__(self, edge_hash):
-        edges = list(self.graph.produces.index.lookup(act_hash=edge_hash))
+        try:
+            edges = list(self.graph.produces.index.lookup(act_hash=edge_hash))
+        except TypeError:
+            # self.graph.produces.index.lookup(act_hash=edge_hash return None
+            return None
         if len(edges) == 1:
             return edges[0]
         elif len(edges) == 0:
