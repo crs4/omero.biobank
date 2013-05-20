@@ -13,7 +13,8 @@ then apply further selections to the remaining SNPs based on common
 measures such as the MAF.
 """
 
-import sys, argparse, logging
+import sys, os, argparse, logging, csv, itertools as it
+import numpy as np
 
 from bl.vl.kb import KBError, KnowledgeBase as KB
 import bl.vl.kb.drivers.omero.utils as vlu
@@ -26,7 +27,7 @@ LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
 def setup_logger(args):
-  log_level = getattr(logging, args.loglevel)
+  log_level = logging.DEBUG if args.debug else getattr(logging, args.loglevel)
   kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
   if args.logfile:
     kwargs['filename'] = args.logfile
@@ -58,13 +59,73 @@ def get_msets(kb, args, logger):
   return msets
 
 
+def get_average_confs(kb, msets, indices, logger, debug=False):
+  if debug:
+    kwargs = {"batch_size": 3}
+    break_at_first_batch = True
+  else:
+    kwargs = {}
+    break_at_first_batch = False
+  logger.info("getting GDO iterators")
+  logger.debug(
+    "kwargs = %r, break_at_first_batch = %r" % (kwargs, break_at_first_batch)
+    )
+  gdo_iterators = [kb.get_gdo_iterator(ms, indices=idx, **kwargs)
+                   for ms, idx in it.izip(msets, indices)]
+  logger.info("computing average confidence for all marker sets")
+  conf_sums, n = [], 0
+  for records in it.izip(*gdo_iterators):
+    n += 1
+    if not conf_sums:
+      conf_sums = [r["confidence"] for r in records]
+    else:
+      for s, r in it.izip(conf_sums, records):
+        s += r["confidence"]
+    if break_at_first_batch:
+      break
+  for s in conf_sums:
+    s /= n
+  return conf_sums
+
+
+def save_confs(labels, confs, logger):
+  for label, conf in it.izip(labels, confs):
+    logger.info("saving average confs for {0} to {0}.npy".format(label))
+    np.save(label, conf)
+
+
+def select_snps(msets, indices, confs, max_conf=0.1):
+  condition = (confs[0] < max_conf) & (confs[1] < max_conf)
+  selections = [idx[condition] for idx in indices]
+  snp_lists = [ms.markers['label'][s] for ms, s in it.izip(msets, selections)]
+  conf_mu = (.5*(confs[0]+confs[1]))[condition]
+  assert len(snp_lists[0]) == len(snp_lists[1]) == conf_mu.size
+  return snp_lists, conf_mu
+
+
+def write_output(snp_lists, mean_conf, args, logger):
+  logger.info("writing %s" % args.output_file)
+  with open(args.output_file, "w") as fo:
+    writer = csv.writer(fo, delimiter="\t", lineterminator=os.linesep)
+    writer.writerow([args.ms_labels[0], args.ms_labels[1], "mean_conf"])
+    for (l1, l2), c in it.izip(it.izip(*snp_lists), mean_conf):
+      writer.writerow([l1, l2, "%.3f" % c])
+
+
 def make_parser():
-  description = __doc__.lstrip().splitlines()[0]
-  parser = argparse.ArgumentParser(description=description)
+  parser = argparse.ArgumentParser(
+    description=__doc__.lstrip().splitlines()[0],
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
   parser.add_argument('ms_labels', metavar='MS_LABEL', nargs='+',
                       help='marker set label (one or more)')
   parser.add_argument('--ref-genome', metavar="STRING",
                       help="reference genome", default="hg19")
+  parser.add_argument('--max-conf', type=float, metavar="FLOAT", default=0.1,
+                      help="filter out SNPs with confidence >= this value")
+  parser.add_argument('-o', '--output-file', metavar="STRING",
+                      help="output file", default="ref_panel.tsv")
+  parser.add_argument('-d', '--debug', action="store_true", help="debug mode")
   #--
   parser.add_argument('-H', '--host', type=str, help='omero hostname')
   parser.add_argument('-U', '--user', type=str, help='omero user')
@@ -82,18 +143,18 @@ def main(argv):
     sys.exit("Sorry, only two marker sets are currently supported")
   logger = setup_logger(args)
   host, user, passwd = get_login_info(args, logger)
+  logger.info("connecting to %s" % host)
   kb = KB(driver="omero")(host, user, passwd)
-  ms1, ms2 = get_msets(kb, args, logger)
-  idx1, idx2 = kb.SNPMarkersSet.intersect(ms1, ms2)
-  assert idx1.size == idx2.size
-  logger.info("intersection size: %d" % idx1.size)
-  logger.info("getting gdo iterator")
-  gdo_iterator = kb.get_gdo_iterator(ms1, indices=idx1)
-  #-- FIXME: this is a speed test --
-  logger.info("getting records")
-  for i, r in enumerate(gdo_iterator):
-    logger.debug("processing item #%d" % i)
   #--
+  msets = get_msets(kb, args, logger)
+  indices = kb.SNPMarkersSet.intersect(*msets)
+  assert indices[0].size == indices[1].size
+  logger.info("intersection size: %d" % indices[0].size)
+  av_confs = get_average_confs(kb, msets, indices, logger, debug=args.debug)
+  save_confs(args.ms_labels, av_confs, logger)
+  snp_lists, mean_conf = select_snps(msets, indices, av_confs, args.max_conf)
+  write_output(snp_lists, mean_conf, args, logger)
+  logger.info("all_done")
 
 
 if __name__ == "__main__":
