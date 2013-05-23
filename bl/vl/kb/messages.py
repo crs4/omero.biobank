@@ -1,4 +1,5 @@
 import pika
+from pika.exceptions import ConnectionClosed
 from bl.vl.utils import get_logger
 import bl.vl.utils.messages as msgconf
 
@@ -25,6 +26,10 @@ def get_events_consumer(logger=None):
 
 
 class MessagesEngineConfigurationError(Exception):
+    pass
+
+
+class MessagesEngineAuthenticationError(Exception):
     pass
 
 
@@ -61,7 +66,14 @@ class MessagesHandler(object):
     def connect(self):
         if not self.connection:
             conn_params = self.__get_connection_params()
-            self.connection = pika.BlockingConnection(conn_params)
+            try:
+                self.connection = pika.BlockingConnection(conn_params)
+            except ConnectionClosed:
+                if not self.user or not self.password:
+                    msg = 'Unable to connect to RabbitMQ, authentication required'
+                else:
+                    msg = 'Unable to connect to RabbitMQ, wrong username and\or password'
+                raise MessagesEngineAuthenticationError(msg)
             self.channel = self.connection.channel()
             self.__setup_network()
             self.logger.info('connection established')
