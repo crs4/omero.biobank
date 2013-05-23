@@ -12,3 +12,7 @@ class MissingEdgeError(Exception):
 
 class GraphOutOfSyncError(Exception):
     pass
+
+
+class GraphAuthenticationError(Exception):
+    pass

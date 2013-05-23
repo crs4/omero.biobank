@@ -8,7 +8,7 @@ from bl.vl.utils import get_logger
 from bl.vl.utils.ome_utils import ome_hash
 import bl.vl.kb.events as events
 from bl.vl.graph.errors import DependencyTreeError, MissingEdgeError,\
-    MissingNodeError, GraphOutOfSyncError
+    MissingNodeError, GraphOutOfSyncError, GraphAuthenticationError
 
 
 class OME_Object(Node):
@@ -34,6 +34,7 @@ class OME_Action(Relationship):
     def __hash__(self):
         return self.eid
 
+
 class Neo4JDriver(object):
 
     BLOCKED_PROXY_CALLBACKS = (
@@ -55,9 +56,18 @@ class Neo4JDriver(object):
             for h in bulbs_log.root.handlers:
                 bulbs_log.root.removeHandler(h)
         except httplib2.ServerNotFoundError:
-            raise DependencyTreeError('Unable to find Neo4J server at %s' % uri)
+            raise DependencyTreeError('Unable to find Neo4j server at %s' % uri)
         except httplib2.socket.error:
-            raise DependencyTreeError('Connection refused by Neo4J server')
+            raise DependencyTreeError('Connection refused by Neo4j server')
+        except TypeError:
+            # Using plugin from https://github.com/neo4j-contrib/authentication-extension to manage authentication
+            # will produce a TypeError if no username and password are given or if given authentication credentials
+            # are wrong
+            if not username or not password:
+                msg = 'Unable to connect to Neo4j server, authentication required'
+            else:
+                msg = 'Unable to connect to Neo4j server, wrong username and\or password'
+            raise GraphAuthenticationError(msg)
         self.graph.add_proxy('ome_objects', OME_Object)
         self.graph.add_proxy('produces', OME_Action)
         self.kb = kb
