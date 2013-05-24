@@ -1,5 +1,6 @@
 import pika
-from pika.exceptions import ConnectionClosed
+from pika.exceptions import ConnectionClosed, ChannelClosed, \
+    AMQPConnectionError
 from bl.vl.utils import get_logger
 import bl.vl.utils.messages as msgconf
 
@@ -30,6 +31,10 @@ class MessagesEngineConfigurationError(Exception):
 
 
 class MessagesEngineAuthenticationError(Exception):
+    pass
+
+
+class MessageEngineConnectionError(Exception):
     pass
 
 
@@ -68,6 +73,9 @@ class MessagesHandler(object):
             conn_params = self.__get_connection_params()
             try:
                 self.connection = pika.BlockingConnection(conn_params)
+            except AMQPConnectionError:
+                msg = 'Error while connection to RabbitMQ server, unable to contact the server'
+                raise MessageEngineConnectionError(msg)
             except ConnectionClosed:
                 if not self.user or not self.password:
                     msg = 'Unable to connect to RabbitMQ, authentication required'
@@ -86,9 +94,14 @@ class MessagesHandler(object):
                 self.connection.close()
                 self.channel = None
                 self.connection = None
+            except ChannelClosed:
+                self.channel = None
+                self.connection = None
+                pass
             except Exception, e:
                 self.logger.error('exception raised when closing connection')
                 self.logger.exception(e)
+                raise e
 
     def __setup_network(self):
         self.__declare_exchange()
@@ -173,6 +186,9 @@ class EventsConsumer(MessagesHandler):
             self.logger.info('Start consuming messages')
         except KeyboardInterrupt:
             self.logger.info('Captured keyboard interrupt, stopping')
+        except ChannelClosed:
+            msg = 'Connection to RabbitMQ closed unexpectedly'
+            raise MessageEngineConnectionError(msg)
         except Exception, e:
             self.logger.critical('Exception captured: %s' % e)
             raise e
