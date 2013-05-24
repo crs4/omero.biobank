@@ -153,16 +153,19 @@ class EventsSender(MessagesHandler):
     def send_event(self, event):
         if not self.connection:
             self.connect()
-
-        self.channel.basic_publish(
-            exchange=self.exchange_name,
-            routing_key='%s.%s' % (self.queue, event.event_type),
-            body=event.msg,
-            properties=pika.BasicProperties(
-                delivery_mode=2,  # persistent messages
-                content_type='text/plain'
+        try:
+            self.channel.basic_publish(
+                exchange=self.exchange_name,
+                routing_key='%s.%s' % (self.queue, event.event_type),
+                body=event.msg,
+                properties=pika.BasicProperties(
+                    delivery_mode=2,  # persistent messages
+                    content_type='text/plain'
+                )
             )
-        )
+        except ChannelClosed:
+            msg = 'Connection to RabbitMQ server closed unexpectedly'
+            raise MessageEngineConnectionError(msg)
 
 
 class EventsConsumer(MessagesHandler):
@@ -187,7 +190,7 @@ class EventsConsumer(MessagesHandler):
         except KeyboardInterrupt:
             self.logger.info('Captured keyboard interrupt, stopping')
         except ChannelClosed:
-            msg = 'Connection to RabbitMQ closed unexpectedly'
+            msg = 'Connection to RabbitMQ server closed unexpectedly'
             raise MessageEngineConnectionError(msg)
         except Exception, e:
             self.logger.critical('Exception captured: %s' % e)
