@@ -2,6 +2,10 @@ class DependencyTreeError(Exception):
     pass
 
 
+class GraphConnectionError(Exception):
+    pass
+
+
 class MissingNodeError(Exception):
     pass
 

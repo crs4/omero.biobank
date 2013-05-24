@@ -8,7 +8,8 @@ from bl.vl.utils import get_logger
 from bl.vl.utils.ome_utils import ome_hash
 import bl.vl.kb.events as events
 from bl.vl.graph.errors import DependencyTreeError, MissingEdgeError,\
-    MissingNodeError, GraphOutOfSyncError, GraphAuthenticationError
+    MissingNodeError, GraphOutOfSyncError, GraphAuthenticationError, \
+    GraphConnectionError
 
 
 class OME_Object(Node):
@@ -56,9 +57,9 @@ class Neo4JDriver(object):
             for h in bulbs_log.root.handlers:
                 bulbs_log.root.removeHandler(h)
         except httplib2.ServerNotFoundError:
-            raise DependencyTreeError('Unable to find Neo4j server at %s' % uri)
+            raise GraphConnectionError('Unable to find Neo4j server at %s' % uri)
         except httplib2.socket.error:
-            raise DependencyTreeError('Connection refused by Neo4j server')
+            raise GraphConnectionError('Connection refused by Neo4j server')
         except TypeError:
             # Using plugin from https://github.com/neo4j-contrib/authentication-extension to manage authentication
             # will produce a TypeError if no username and password are given or if given authentication credentials
@@ -77,7 +78,10 @@ class Neo4JDriver(object):
             self.logger = get_logger('neo4j-driver')
 
     def __get_node_by_hash__(self, node_hash):
-        nodes = list(self.graph.ome_objects.index.lookup(obj_hash=node_hash))
+        try:
+            nodes = list(self.graph.ome_objects.index.lookup(obj_hash=node_hash))
+        except httplib2.socket.error:
+            raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         if len(nodes) == 1:
             return nodes[0]
         elif len(nodes) == 0:
@@ -88,6 +92,8 @@ class Neo4JDriver(object):
     def __get_edge_by_hash__(self, edge_hash):
         try:
             edges = list(self.graph.produces.index.lookup(act_hash=edge_hash))
+        except httplib2.socket.error:
+            raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         except TypeError:
             # self.graph.produces.index.lookup(act_hash=edge_hash return None
             return None
@@ -103,8 +109,11 @@ class Neo4JDriver(object):
         self.kb.events_sender.send_event(event)
 
     def save_node(self, node_conf):
-        node = self.graph.ome_objects.get_or_create('obj_hash', node_conf['obj_hash'],
-                                                    node_conf)
+        try:
+            node = self.graph.ome_objects.get_or_create('obj_hash', node_conf['obj_hash'],
+                                                        node_conf)
+        except httplib2.socket.error:
+            raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         return node.eid
 
     def create_edge(self, act, source, dest):
@@ -122,7 +131,10 @@ class Neo4JDriver(object):
             dest_node = self.__get_node_by_hash__(dest_hash)
             if not dest_node:
                 raise MissingNodeError('No node with hash %s' % dest_hash)
-            edge = self.graph.produces.create(src_node, dest_node, action_conf)
+            try:
+                edge = self.graph.produces.create(src_node, dest_node, action_conf)
+            except httplib2.socket.error:
+                raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         return edge.eid
 
     def destroy_node(self, obj):
@@ -132,7 +144,10 @@ class Neo4JDriver(object):
     def delete_node(self, node_hash):
         node = self.__get_node_by_hash__(node_hash)
         if node:
-            self.graph.vertices.delete(node.eid)
+            try:
+                self.graph.vertices.delete(node.eid)
+            except httplib2.socket.error:
+                raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         else:
             raise MissingNodeError('Unable to find node with hash %s. Delete failed.' % node_hash)
 
@@ -143,7 +158,10 @@ class Neo4JDriver(object):
     def delete_edge(self, edge_hash):
         edge = self.__get_edge_by_hash__(edge_hash)
         if edge:
-            self.graph.edges.delete(edge.eid)
+            try:
+                self.graph.edges.delete(edge.eid)
+            except httplib2.socket.error:
+                raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         else:
             raise MissingEdgeError('Unable to find edge with hash %s. Delete failed.' % edge_hash)
 
@@ -162,7 +180,10 @@ class Neo4JDriver(object):
         return self.__get_node_by_hash__(ome_hash(obj.ome_obj))
 
     def __get_node_by_hash__(self, node_hash):
-        nodes = list(self.graph.ome_objects.index.lookup(obj_hash=node_hash))
+        try:
+            nodes = list(self.graph.ome_objects.index.lookup(obj_hash=node_hash))
+        except httplib2.socket.error:
+            raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         if len(nodes) == 1:
             return nodes[0]
         elif len(nodes) == 0:
@@ -209,12 +230,15 @@ class Neo4JDriver(object):
         if depth == 0:
             visited_nodes.add(node)
             return visited_nodes
-        if direction == self.DIRECTION_INCOMING:
-            connected = list(node.inV('produces'))
-        elif direction == self.DIRECTION_OUTGOING:
-            connected = list(node.outV('produces'))
-        elif direction == self.DIRECTION_BOTH:
-            connected = list(node.bothV('produces'))
+        try:
+            if direction == self.DIRECTION_INCOMING:
+                connected = list(node.inV('produces'))
+            elif direction == self.DIRECTION_OUTGOING:
+                connected = list(node.outV('produces'))
+            elif direction == self.DIRECTION_BOTH:
+                connected = list(node.bothV('produces'))
+        except httplib2.socket.error:
+            raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         visited_nodes.add(node)
         connected = set(connected) - visited_nodes
         if len(connected) == 0:
