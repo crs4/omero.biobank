@@ -1,6 +1,8 @@
-from bl.vl.kb.messages import get_events_consumer
+from bl.vl.kb.messages import get_events_consumer, MessagesEngineAuthenticationError, \
+    MessageEngineConnectionError
 from bl.vl.graph import build_driver
-from bl.vl.graph.errors import MissingEdgeError
+from bl.vl.graph.errors import MissingEdgeError, GraphAuthenticationError, \
+    GraphConnectionError
 from bl.vl.kb.events import decode_event, InvalidMessageError
 import sys
 import logging
@@ -30,8 +32,12 @@ class GraphManagerDaemon(object):
             self.logger.setLevel(getattr(logging, log_level))
         else:
             self.logger = self.__get_logger(log_file, log_level)
-        self.messages_consumer = get_events_consumer(self.logger)
-        self.graph_driver = build_driver()
+        try:
+            self.messages_consumer = get_events_consumer(self.logger)
+            self.graph_driver = build_driver()
+        except GraphAuthenticationError, gr_auth_error:
+            self.logger.critical(gr_auth_error.message)
+            sys.exit(gr_auth_error.message)
 
     def __get_logger(self, filename, log_level):
         logger = logging.getLogger(self.LOGGER_LABEL)
@@ -62,13 +68,23 @@ class GraphManagerDaemon(object):
             # deleted as well. Log the event as warning, send an ack and continue
             self.logger.warning('Unable to find edge for message %r, sending ack for message' % event.data)
             channel.basic_ack(delivery_tag=method.delivery_tag)
+        except GraphConnectionError, gre:
+            self.logger.error(gre.message)
+            channel.basic_nack(delivery_tag=method.delivery_tag)
         except Exception, e:
             self.logger.exception(e)
             channel.basic_nack(delivery_tag=method.delivery_tag)
 
     def start_consume(self):
         self.logger.info('Connecting to messages queue')
-        self.messages_consumer.connect()
+        try:
+            self.messages_consumer.connect()
+        except MessageEngineConnectionError, me_conn_error:
+            self.logger.critical(me_conn_error.message)
+            sys.exit(me_conn_error.message)
+        except MessagesEngineAuthenticationError, me_auth_error:
+            self.logger.critical(me_auth_error.message)
+            sys.exit(me_auth_error.message)
         self.logger.info('Start consuming messages')
         self.messages_consumer.run(self.consume_message)
 
