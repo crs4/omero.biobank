@@ -93,8 +93,9 @@ class Recorder(core.Core):
         yield records[offset:offset+batch_size]
         offset += batch_size
     if not records:
-      self.logger.warn('no records')
-      return
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     self.container_klass = self.find_container_klass(records)
     self.preload_containers()
     if self.container_klass == self.kb.Lane:
@@ -105,7 +106,9 @@ class Recorder(core.Core):
     if blocking_validation and len(bad_records) >= 1:
       raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     if len(records) == 0:
-      return
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     study = self.find_study(records)
     device = self.get_device(label='importer-%s.titer_plate' % version,
                              maker='CRS4', model='importer', release=version)

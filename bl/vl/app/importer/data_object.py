@@ -46,8 +46,9 @@ class Recorder(core.Core):
         yield records[offset:offset+batch_size]
         offset += batch_size
     if not records:
-      self.logger.warn('no records')
-      return
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     study = self.find_study(records)
     self.preload_data_samples()
     self.preload_data_objects()
@@ -56,6 +57,10 @@ class Recorder(core.Core):
       rtsv.writerow(br)
     if blocking_validation and len(bad_records) >= 1:
       raise core.ImporterValidationError('%d invalid records' % len(bad_records))
+    if not records:
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(otsv, c, study)

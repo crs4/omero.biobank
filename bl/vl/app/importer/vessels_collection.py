@@ -60,8 +60,9 @@ class Recorder(core.Core):
         vc_conf = {'label' : label, 'action': action}
         return self.kb.factory.create(self.kb.VesselsCollection, vc_conf)
     if len(records) == 0:
-      self.logger.warn('no records')
-      return
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     study = self.find_study(records)
     self.vessel_klass = self.find_vessel_klass(records)
     self.preload_vessels()
@@ -92,10 +93,10 @@ class Recorder(core.Core):
         self.kb.delete(action)
         raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     records = sum(sub_records, [])
-    if len(records) == 0:
-      self.logger.warn('no records')
-      self.kb.delete(action)
-      return
+    if not records:
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       vc = vessels_collections[k]

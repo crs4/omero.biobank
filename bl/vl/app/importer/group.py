@@ -51,8 +51,9 @@ class Recorder(core.Core):
         yield records[offset:offset+batch_size]
         offset += batch_size
     if len(records) == 0:
-      self.logger.warn('no records')
-      return
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     self.preload_groups()
     self.preload_individuals()
     def keyfunc(r): return r['group']
@@ -62,8 +63,9 @@ class Recorder(core.Core):
       sub_records.append(self.do_consistency_checks(k, list(g)))
     records = sum(sub_records, [])
     if len(records) == 0:
-      self.logger.warn('no records')
-      return
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       group_conf = {'label': k}
