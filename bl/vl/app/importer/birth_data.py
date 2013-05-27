@@ -56,8 +56,9 @@ class Recorder(core.Core):
                 yield records[offset:offset + batch_size]
                 offset += batch_size
         if not records:
-            self.logger.warning('no records')
-            return
+            msg = 'No records are going to be imported'
+            self.logger.critical(msg)
+            raise core.ImporterValidationError(msg)
         self.preload_individuals()
         self.preload_birth_data_records()
         self.preload_locations()
@@ -65,9 +66,9 @@ class Recorder(core.Core):
         for br in bad_records:
             rtsv.writerow(br)
         if len(records) == 0:
-            msg = 'No records left, nothing to do'
+            msg = 'No records are going to be imported'
             self.logger.critical(msg)
-            sys.exit(msg)
+            raise core.ImporterValidationError(msg)
         study = self.find_study(records)
         device_label = 'importer.birth_data-%s' % (version)
         device = self.get_device(label = device_label,

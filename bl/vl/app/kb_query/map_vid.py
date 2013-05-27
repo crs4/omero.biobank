@@ -9,11 +9,15 @@ Reads an input tsv file, replaces labels with VIDs for the specified
 columns and outputs a new tsv files with the VIDs.
 """
 
-import csv, argparse, copy
+import csv, argparse, sys
 import itertools as it
 
 from bl.vl.app.importer.core import Core
 from bl.vl.kb.drivers.omero.utils import make_unique_key
+
+
+class MappingError(Exception):
+  pass
 
 
 class MapVIDApp(Core):
@@ -133,7 +137,8 @@ class MapVIDApp(Core):
       return self.resolve_mapping_object(source_type, labels)
 
   def dump(self, ifile, source_type_label,
-           column_label, transformed_column_label, ofile):
+           column_label, transformed_column_label, ofile,
+           strict_mapping):
     def get_out_writer(ofile, fieldnames, old_column_label, new_column_label):
         old_column_index = fieldnames.index(old_column_label)
         fieldnames.remove(old_column_label)
@@ -153,10 +158,11 @@ class MapVIDApp(Core):
     self.logger.info('done reading %s' % ifile.name)
     o = get_out_writer(ofile, f.fieldnames, column_label, transformed_column_label)
     if len(records) == 0:
-      self.logger.info('file %s is empty.' % ifile.name)
       ifile.close()
       ofile.close()
-      return
+      msg = 'No records are going to be mapped'
+      self.logger.critical(msg)
+      sys.exit(msg)
     if source_type == self.kb.Individual and self.default_study:
       labels = ['%s:%s' % (self.default_study.label, r[column_label])
                 for r in records]
@@ -165,6 +171,7 @@ class MapVIDApp(Core):
     mapping = self.resolve_mapping(source_type, labels)
     self.logger.debug('mapped %d records' % len(mapping))
     self.logger.info('start writing %s' % ofile.name)
+    mapped_records = []
     for r in records:
       if source_type == self.kb.Individual and self.default_study:
         field = '%s:%s' % (self.default_study.label, r[column_label])
@@ -172,7 +179,13 @@ class MapVIDApp(Core):
         field = r[column_label]
       if field in mapping:
         r[transformed_column_label] = mapping[field]
-        o.writerow(r)
+        mapped_records.append(r)
+    if strict_mapping and len(records) != len(mapped_records):
+        msg = '%d unmapped records' % (len(records) - len(mapped_records))
+        self.logger.critical(msg)
+        raise MappingError(msg)
+    for r in mapped_records:
+      o.writerow(r)
     ifile.close()
     ofile.close()
     self.logger.info('done writing %s' % ofile.name)
@@ -206,6 +219,8 @@ def make_parser(parser):
     the set of input labels to map, while the second one, which
     defaults to 'source', will be used for mapped output values""")
   parser.add_argument('--study', metavar="STRING", help="study label")
+  parser.add_argument('--strict-mapping', action='store_true',
+                      help='raise an exception if one or more records are not mapped')
 
 
 def implementation(logger, host, user, passwd, args):
@@ -213,7 +228,8 @@ def implementation(logger, host, user, passwd, args):
                   keep_tokens=args.keep_tokens,
                   study_label=args.study, logger=logger)
   app.dump(args.ifile, args.source_type,
-           args.column[0], args.column[1], args.ofile)
+           args.column[0], args.column[1], args.ofile,
+           args.strict_mapping)
 
 
 def do_register(registration_list):

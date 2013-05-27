@@ -244,7 +244,9 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   records = [r for r in f]
   if len(records) == 0:
-    return
+    msg = 'No records are going to be imported'
+    logger.critical(msg)
+    raise core.ImporterValidationError(msg)
   canonizer = core.RecordCanonizer(['study'], args)
   canonizer.canonize_list(records)
   study_label = records[0]['study']
