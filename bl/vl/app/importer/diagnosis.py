@@ -49,12 +49,17 @@ class Recorder(core.Core):
         yield records[offset:offset+batch_size]
         offset += batch_size
     if not records:
-      self.logger.warn('no records')
-      return
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     self.preload_individuals()
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
+    if not records:
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     study = self.find_study(records)
     device_label = 'importer.ehr.diagnosis-%s' %  (version)
     device = self.get_device(label=device_label,

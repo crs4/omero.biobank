@@ -60,8 +60,9 @@ class Recorder(core.Core):
         dc_conf = {'label' : label, 'action': action}
         return self.kb.factory.create(self.kb.DataCollection, dc_conf)
     if len(records) == 0:
-      self.logger.warn('no records')
-      return
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     study = self.find_study(records)
     self.data_sample_klass = self.find_data_sample_klass(records)
     self.preload_data_samples()
@@ -93,9 +94,10 @@ class Recorder(core.Core):
         raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     records = sum(sub_records, [])
     if len(records) == 0:
-      self.logger.warn('no records')
       self.kb.delete(action)
-      return
+      msg = 'No records are going to be imported'
+      self.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       dc = data_collections[k]

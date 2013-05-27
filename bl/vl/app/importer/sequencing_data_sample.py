@@ -51,8 +51,9 @@ class Recorder(core.Core):
                 yield records[offset : offset + batch_size]
                 offset += batch_size
         if len(records) == 0:
-            self.logger.warn('no records')
-            return
+          msg = 'No records are going to be imported'
+          self.logger.critical(msg)
+          raise core.ImporterValidationError(msg)
         study = self.find_study(records)
         self.source_klass = self.find_source_klass(records)
         self.seq_sample_klass = self.find_seq_sample_klass(records)
@@ -68,8 +69,9 @@ class Recorder(core.Core):
         if blocking_validation and len(bad_records) >= 1:
             raise core.ImporterValidationError('%d invalid records' % len(bad_records))
         if len(records) == 0:
-            self.logger.warning('No records')
-            return
+          msg = 'No records are going to be imported'
+          self.logger.critical(msg)
+          raise core.ImporterValidationError(msg)
         act_setups = set((r['source'], r.get('device', None),
                           Recorder.get_action_setup_options(r, self.action_setup_conf,
                                                             self.history))
