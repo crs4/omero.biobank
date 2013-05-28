@@ -239,28 +239,25 @@ def implementation(logger, host, user, passwd, args):
     records = [r for r in f]
     canonizer = RecordCanonizer(fields_to_canonize, args)
     canonizer.canonize_list(records)
-    if len(records) > 0:
-        o = csv.DictWriter(args.ofile,
-                           fieldnames = ['study', 'lane', 'tag', 'vid'],
-                           delimiter='\t', lineterminator = os.linesep)
-        o.writeheader()
-        report_fnames = copy.deepcopy(f.fieldnames)
-        report_fnames.append('error')
-        report = csv.DictWriter(args.report_file, report_fnames,
-                                delimiter='\t', lineterminator=os.linesep,
-                                extrasaction='ignore')
-        report.writeheader()
-        try:
-            recorder.record(records, o, report,
-                            args.blocking_validator)
-        except core.ImporterValidationError, ve:
-            args.ifile.close()
-            args.ofile.close()
-            args.report_file.close()
-            recorder.logger.critical(ve.message)
-            raise ve
-    else:
-        recorder.logger.info('empty file')
+    o = csv.DictWriter(args.ofile,
+                       fieldnames = ['study', 'lane', 'tag', 'vid'],
+                       delimiter='\t', lineterminator = os.linesep)
+    o.writeheader()
+    report_fnames = copy.deepcopy(f.fieldnames)
+    report_fnames.append('error')
+    report = csv.DictWriter(args.report_file, report_fnames,
+                            delimiter='\t', lineterminator=os.linesep,
+                            extrasaction='ignore')
+    report.writeheader()
+    try:
+        recorder.record(records, o, report,
+                        args.blocking_validator)
+    except core.ImporterValidationError, ve:
+        args.ifile.close()
+        args.ofile.close()
+        args.report_file.close()
+        recorder.logger.critical(ve.message)
+        raise ve
     args.ifile.close()
     args.ofile.close()
     args.report_file.close()
