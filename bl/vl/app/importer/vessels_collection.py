@@ -85,10 +85,10 @@ class Recorder(core.Core):
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       vessels_collections[k] = get_vessels_collection(k, action)
-      good_records, bad_records = self.do_consistency_checks(vessels_collection[k], list(g))
+      good_records, bad_records = self.do_consistency_checks(vessels_collections[k], list(g))
       sub_records.append(good_records)
       for br in bad_records:
-        rstv.writerow(br)
+        rtsv.writerow(br)
       if blocking_validation and len(bad_records) >= 1:
         self.kb.delete(action)
         raise core.ImporterValidationError('%d invalid records' % len(bad_records))
@@ -149,7 +149,7 @@ class Recorder(core.Core):
         bad_records.append(bad_rec)
         continue
       if r['vessel'] in seen:
-        f = 'multiple copy of the same vessel %s in %s in this batch' % (r['vessel'], k)
+        f = 'multiple copy of the same vessel %s in %s in this batch' % (r['vessel'], i)
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
@@ -157,7 +157,7 @@ class Recorder(core.Core):
         continue
       key = build_key(vessels_collection, r)
       if key in self.preloaded_items:
-        f = 'vessel %s already in collection %s' % (r['vessel'], k)
+        f = 'vessel %s already in collection %s' % (r['vessel'], i)
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
