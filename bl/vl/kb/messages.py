@@ -1,8 +1,9 @@
-import pika
-from pika.exceptions import ConnectionClosed, ChannelClosed, \
-    AMQPConnectionError
-from bl.vl.utils import get_logger
 import bl.vl.utils.messages as msgconf
+if msgconf.messages_engine_enabled():
+    import pika
+    from pika.exceptions import ConnectionClosed, ChannelClosed, \
+        AMQPConnectionError
+from bl.vl.utils import get_logger
 
 
 def get_events_sender(logger=None):
