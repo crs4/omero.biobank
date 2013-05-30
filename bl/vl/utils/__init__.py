@@ -8,7 +8,7 @@ Generic Utilities
 Generic utilities used by other modules.
 """
 
-import uuid, hashlib
+import uuid, hashlib, logging
 
 
 DEFAULT_BUFSIZE = 16777216
@@ -31,3 +31,38 @@ def compute_sha1(fname, bufsize=DEFAULT_BUFSIZE):
       sha1.update(s)
       s = fi.read(bufsize)
   return sha1.hexdigest()
+
+
+def get_logger(logger_label):
+  logger = logging.getLogger(logger_label)
+  return logger
+
+
+# transform unicodes in list to strings
+def decode_list(data):
+    decoded = []
+    for item in data:
+        if isinstance(item, unicode):
+            item = item.encode('utf-8')
+        elif isinstance(item, list):
+            item = decode_list(item)
+        elif isinstance(item, dict):
+            item = decode_dict(item)
+        decoded.append(item)
+    return decoded
+
+
+# transform unicodes in dictionary to strings (both in keys and values)
+def decode_dict(data):
+    decoded = {}
+    for key, val in data.iteritems():
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
+        if isinstance(val, unicode):
+            val = val.encode('utf-8')
+        elif isinstance(val, list):
+            val = decode_list(val)
+        elif isinstance(val, dict):
+            val = decode_dict(val)
+        decoded[key] = val
+    return decoded

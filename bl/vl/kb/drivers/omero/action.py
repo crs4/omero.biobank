@@ -110,3 +110,11 @@ class Action(wp.OmeroWrapper):
 
   def __preprocess_conf__(self, conf):
     return assign_vid_and_timestamp(conf, time_stamp_field='beginTime')
+
+  def __cleanup__(self):
+    if hasattr(self, 'target'):
+      try:
+        self.proxy.dt.destroy_edge(self)
+      except AttributeError:
+        # Not using the Neo4J driver
+        pass

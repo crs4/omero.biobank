@@ -30,6 +30,9 @@ class ActionOnAction(Action):
   OME_TABLE = 'ActionOnAction'
   __fields__ = [('target', Action, 'required')]
 
+  def __cleanup__(self):
+    pass
+
 
 class ActionOnCollection(Action):
 

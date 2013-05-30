@@ -1,0 +1,46 @@
+import bl.vl.kb.config as blconf
+from bl.vl.utils.ome_utils import _ome_env_variable
+
+
+def graph_driver():
+    var = 'GRAPH_ENGINE_DRIVER'
+    try:
+        return _ome_env_variable(var)
+    except ValueError:
+        try:
+            return getattr(blconf, var)
+        except AttributeError:
+            raise ValueError("Cant't find config valuer for %s" % var)
+
+
+def graph_uri():
+    var = 'GRAPH_ENGINE_URI'
+    try:
+        return _ome_env_variable(var)
+    except ValueError:
+        try:
+            return getattr(blconf, var)
+        except AttributeError:
+            raise ValueError("Cant't find config valuer for %s" % var)
+
+
+def graph_username():
+    var = 'GRAPH_ENGINE_USERNAME'
+    try:
+        return _ome_env_variable(var)
+    except ValueError:
+        try:
+            return getattr(blconf, var)
+        except AttributeError:
+            raise ValueError("Cant't find config valuer for %s" % var)
+
+
+def graph_password():
+    var = 'GRAPH_ENGINE_PASSWORD'
+    try:
+        return _ome_env_variable(var)
+    except ValueError:
+        try:
+            return getattr(blconf, var)
+        except AttributeError:
+            raise ValueError("Cant't find config valuer for %s" % var)

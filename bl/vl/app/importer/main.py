@@ -26,7 +26,7 @@ should be able to use ``kb_query map_vid`` for this.
 
 import sys, argparse, logging, os
 from importlib import import_module
-import bl.vl.kb.drivers.omero.utils as vlu
+import bl.vl.utils.ome_utils as vlu
 
 SUBMOD_NAMES = [
   "study",

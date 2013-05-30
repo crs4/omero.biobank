@@ -105,8 +105,6 @@ class BuildPlateDataSamplesDetails(Core):
         return st_map
 
     def get_individual(self, plate_well):
-        if not self.kb.dt:
-            self.kb.update_dependency_tree()
         return self.kb.dt.get_connected(plate_well, self.kb.Individual)[0]
 
     def load_ehr_map(self):

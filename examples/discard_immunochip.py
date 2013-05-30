@@ -2,7 +2,7 @@ import sys, argparse, logging
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb import KBError
-import bl.vl.kb.drivers.omero.utils as vlu
+import bl.vl.utils.ome_utils as vlu
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
@@ -102,7 +102,7 @@ def main(argv):
             kb.save(disc)
         except KBError:
             logger.error('Can\'t save enrollment %s in study %s' % (disc.studyCode,
-                                                                    disct.study.label))
+                                                                    disc.study.label))
             continue
         disc_well = mark_invalid_well(disc, kb)
         if disc_well:

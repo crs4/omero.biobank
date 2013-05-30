@@ -16,7 +16,7 @@ that does not already have one.
 import sys, argparse, logging
 
 from bl.vl.kb import KBError, mimetypes, KnowledgeBase as KB
-import bl.vl.kb.drivers.omero.utils as vlu
+import bl.vl.utils.ome_utils as vlu
 from bl.vl.genotype.io import read_ssc
 from bl.vl.version import version
 

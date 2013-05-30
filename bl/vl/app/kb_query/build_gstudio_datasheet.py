@@ -3,6 +3,7 @@ import csv, argparse
 from bl.vl.app.importer.core import Core
 from bl.vl.kb.drivers.omero.ehr import EHR
 
+
 class BuildDatasheetApp(Core):
 
     DIAGNOSIS_ARCH = 'openEHR-EHR-EVALUATION.problem-diagnosis.v1'
@@ -35,15 +36,15 @@ class BuildDatasheetApp(Core):
         query = 'SELECT pl FROM TiterPlate pl WHERE pl.label = :pl_label'
         plate = self.kb.find_all_by_query(query, {'pl_label' : plate_label})
         return plate[0] if len(plate) > 0 else None
-
-    def get_wells_inds_lookup(self, individuals):
+                            
+    def get_wells_inds_lookup(self, wells):
         wi_lookup = {}
-        for i in individuals:
-            wells = self.kb.get_vessels_by_individual(i, 'PlateWell')
-            for w in wells:
-                wi_lookup.setdefault(w, set()).add(i)
-        for well, ind in wi_lookup.iteritems():
-            assert len(ind) == 1
+        for w in wells:
+            inds = self.kb.dt.get_connected(w, 'Individual')
+            wi_lookup[w] = set()
+            for i in inds:
+                wi_lookup[w].add(i)
+            assert len(wi_lookup[w]) == 1
         return wi_lookup
 
     def calculate_well_label(self, slot_position, plate_columns):
@@ -86,12 +87,8 @@ class BuildDatasheetApp(Core):
         return ehr_map
 
     def get_empty_record(self, plate, slot_index):
-        return { #'Sample_ID':'%s:%s' % (plate.barcode, self.calculate_well_label(slot_index,
-#                                                                                plate.columns)),
-#                'PLATE_barcode' : plate.barcode, 
+        return {  
                 'Sample_Plate' : plate.label,
-#                'Sample_Name':'%s:%s' % (plate.barcode, self.calculate_well_label(slot_index,
-#                plate.columns)),
                 'Sample_ID' : 'Empty',
                 'Sample_Name' : 'Empty',
                 'Gender' : 'Empty',
@@ -112,17 +109,8 @@ class BuildDatasheetApp(Core):
         wells = self.get_wells_by_plate(plate)
         self.logger.info('Loaded %d wells' % len(wells))
 
-        self.logger.info('Loading individuals')
-        inds = self.kb.get_objects(self.kb.Individual)
-        self.logger.info('Loaded %d individuals' % len(inds))
-
         self.logger.info('Building individuals-wells lookup table')
-        wells_lookup = self.get_wells_inds_lookup(inds)
-
-#        self.logger.info('Loading clinical records')
-#        ehr_records = self.kb.get_ehr_records()
-#        ehr_records_map = self.get_ehr_records_map(ehr_records)
-#        self.logger.info('Clinical record loaded')
+        wells_lookup = self.get_wells_inds_lookup(wells.values())
 
         self.logger.info('Writing output')
 
@@ -136,7 +124,6 @@ class BuildDatasheetApp(Core):
         headerWriter.writerow(['[Manifests]'])
         headerWriter.writerow(['A', manifest])
         headerWriter.writerow(['[Data]'])
-        #out_file.close()
 
         
         writer = csv.DictWriter(out_file, delimiter=';', restval='',
@@ -149,19 +136,12 @@ class BuildDatasheetApp(Core):
         last_slot = 0
         for slot, well in sorted(wells.iteritems()):
             self.logger.debug('WELL: %s --- SLOT: %d' % (well.label, slot))
-#            try:
-#                cl_records = ehr_records_map[list(wells_lookup[well])[0].id]
-#            except KeyError, ke:
-#                self.logger.warning('Individual %s has no clinical records' % ke)
-#                cl_records = []
-#            t1d, ms = self.get_affections(cl_records)
             while(last_slot != slot-1):
                 last_slot += 1
                 self.logger.info('No data for well %s, filling with dummy record' % 
                                  self.calculate_well_label(last_slot, plate.columns))
                 writer.writerow(self.get_empty_record(plate, last_slot))
             record = {'Sample_ID' : '%s:%s' % (plate.barcode, well.label),
-#                      'PLATE_barcode' : plate.barcode,
                       'Sample_Plate' : plate.label,
                       'Sample_Name' : '%s:%s' % (plate.barcode, well.label),
                       'Project' : '%s_%s' % (plate.label, plate.action.context.label),
@@ -169,11 +149,6 @@ class BuildDatasheetApp(Core):
                       'Sample_Well' : well.label,
                       'SentrixPosition_A' : self.calculate_sentrix_position(last_slot),
                       'Gender' : list(wells_lookup[well])[0].gender.enum_label().upper()}
-#                      'INDIVIDUAL_id' : list(wells_lookup[well])[0].id}
-#            if t1d:
-#                record['T1D_affected'] = t1d
-#            if ms:
-#                record['MS_affected'] = ms
             writer.writerow(record)
             last_slot = slot
         #Fill empty slots at the end of the plate
@@ -190,7 +165,7 @@ class BuildDatasheetApp(Core):
 
 help_doc = """
 Write GenomeStudio datasheet retrieving data related to the select
-plate
+plate (Neo4J version)
 """
 
 def make_parser(parser):

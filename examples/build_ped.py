@@ -10,7 +10,7 @@ import sys, argparse, logging
 from bl.vl.kb import KnowledgeBase as KB
 import bl.vl.individual.pedigree as ped
 from bl.vl.genotype.io import PedWriter
-import bl.vl.kb.drivers.omero.utils as vlu
+import bl.vl.utils.ome_utils as vlu
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
 LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
@@ -81,7 +81,6 @@ def main(argv):
   logger.info("found %d data samples for marker set %s" %
               (len(gds), args.marker_set))
   logger.info("updating dep tree")
-  kb.update_dependency_tree()
   individuals = [get_individual(kb, ds) for ds in gds]
   ds_by_ind_id = dict((i.id, ds) for i, ds in zip(individuals, gds))
   logger.info("getting families")
