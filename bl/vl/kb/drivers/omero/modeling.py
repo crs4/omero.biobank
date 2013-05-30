@@ -48,7 +48,12 @@ class ModelingAdapter(object):
     matches 'label'. A label 'foo:A1' is interpreted as well 'A1' of
     plate 'foo'.
     """
-    parts = label.split(':')
+    import re
+    if re.match(r'^.*::+.*$', label):
+      # Labels like SAMPLE::PROTOCOL must be considered as a single label
+      parts = [label]
+    else:
+      parts = label.split(':')
     if len(parts) == 1:
       query = 'select t from Tube t where t.label = :label'
       pars = self.kb.ome_query_params({'label': wp.ome_wrap(label, wp.STRING)})
