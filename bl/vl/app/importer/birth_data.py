@@ -65,10 +65,6 @@ class Recorder(core.Core):
         records, bad_records = self.do_consistency_checks(records)
         for br in bad_records:
             rtsv.writerow(br)
-        if len(records) == 0:
-            msg = 'No records are going to be imported'
-            self.logger.critical(msg)
-            raise core.ImporterValidationError(msg)
         study = self.find_study(records)
         device_label = 'importer.birth_data-%s' % (version)
         device = self.get_device(label = device_label,
