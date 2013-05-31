@@ -56,10 +56,6 @@ class Recorder(core.Core):
       self.report_stream.writerow(br)
     if blocking_validation and len(bad_records) >= 1:
       raise core.ImporterValidationError('%d invalid records' % len(bad_records))
-    if not records:
-      msg = 'No records are going to be imported'
-      self.logger.critical(msg)
-      raise core.ImporterValidationError(msg)
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(c)

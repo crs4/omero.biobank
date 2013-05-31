@@ -97,10 +97,6 @@ class Recorder(core.Core):
             rtsv.writerow(br)
         if blocking_validation and len(bad_records) >= 1:
             raise core.ImporterValidationError('%d invalid records' % len(bad_records))
-        if len(records) == 0:
-          msg = 'No records are going to be imported'
-          self.logger.critical(msg)
-          raise core.ImporterValidationError(msg)
         act_setups = set((r['source'], r.get('device', None),
                           Recorder.get_action_setup_options(r, self.action_setup_conf,
                                                             self.history))

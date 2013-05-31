@@ -105,10 +105,6 @@ class Recorder(core.Core):
       rtsv.writerow(br)
     if blocking_validation and len(bad_records) >= 1:
       raise core.ImporterValidationError('%d invalid records' % len(bad_records))
-    if len(records) == 0:
-      msg = 'No records are going to be imported'
-      self.logger.critical(msg)
-      raise core.ImporterValidationError(msg)
     study = self.find_study(records)
     device = self.get_device(label='importer-%s.titer_plate' % version,
                              maker='CRS4', model='importer', release=version)
