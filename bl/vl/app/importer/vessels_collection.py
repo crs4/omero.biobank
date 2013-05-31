@@ -93,10 +93,6 @@ class Recorder(core.Core):
         self.kb.delete(action)
         raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     records = sum(sub_records, [])
-    if not records:
-      msg = 'No records are going to be imported'
-      self.logger.critical(msg)
-      raise core.ImporterValidationError(msg)
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       vc = vessels_collections[k]

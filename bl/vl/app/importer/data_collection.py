@@ -24,7 +24,7 @@ ignored. It is not legal to use the importer to add items to a
 previously known collection.
 """
 
-import csv, json, time, os, copy
+import csv, json, time, os, copy, sys
 import itertools as it
 
 from bl.vl.kb.drivers.omero.utils import make_unique_key
@@ -96,8 +96,8 @@ class Recorder(core.Core):
     if len(records) == 0:
       self.kb.delete(action)
       msg = 'No records are going to be imported'
-      self.logger.critical(msg)
-      raise core.ImporterValidationError(msg)
+      self.logger.warning(msg)
+      sys.exit(0)
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       dc = data_collections[k]

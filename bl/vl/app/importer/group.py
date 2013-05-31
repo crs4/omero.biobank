@@ -62,10 +62,6 @@ class Recorder(core.Core):
     for k, g in it.groupby(records, keyfunc):
       sub_records.append(self.do_consistency_checks(k, list(g)))
     records = sum(sub_records, [])
-    if len(records) == 0:
-      msg = 'No records are going to be imported'
-      self.logger.critical(msg)
-      raise core.ImporterValidationError(msg)
     records = sorted(records, key=keyfunc)
     for k, g in it.groupby(records, keyfunc):
       group_conf = {'label': k}
