@@ -58,7 +58,7 @@ class BuildSeqRunResultsReport(Core):
                 # No read information
                 pass
             self.logger.debug('Dumping record %r' % record)
-            csv_writer.write_row(record)
+            csv_writer.writerow(record)
 
     def dump(self, run_id, out_file):
         self.logger.info('Starting job')
