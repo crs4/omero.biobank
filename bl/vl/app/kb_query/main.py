@@ -22,6 +22,7 @@ SUBMOD_NAMES = [
   "vessels_by_individual",
   "map_to_collection",
   "flowcell_samplesheet",
+  "seq_run_results",
   # "tabular",
   # "markers",
   # "ehr",
