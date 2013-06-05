@@ -46,6 +46,7 @@ class Recorder(core.Core):
         self.preloaded_sources = {}
         self.preloaded_laneslots = {}
         self.preloaded_lanes = {}
+        self.preloaded_studies = {}
 
     def record(self, records, otsv, rtsv, blocking_validation):
         def records_by_chunk(batch_size, records):
@@ -57,11 +58,11 @@ class Recorder(core.Core):
             msg = 'No records are going to be imported'
             self.logger.critical(msg)
             raise core.ImporterValidationError(msg)
-        study = self.find_study(records)
         self.source_klass = self.find_source_klass(records)
         self.preload_sources()
         self.preload_lanes()
         self.preload_laneslots()
+        self.preload_studies(self.preloaded_studies)
         records, bad_records = self.do_consistency_checks(records)
         for br in bad_records:
             rtsv.writerow(br)
@@ -80,7 +81,7 @@ class Recorder(core.Core):
             asetup[acts] = self.kb.save(setup)
         for i, c in enumerate(records_by_chunk(self.batch_size, records)):
             self.logger.info('start processing chunk %d' % i)
-            self.process_chunk(otsv, c, study, asetup, device)
+            self.process_chunk(otsv, c, asetup, device)
             self.logger.info('done processing chunk %d' % i)
 
     def find_source_klass(self, records):
@@ -112,6 +113,13 @@ class Recorder(core.Core):
             reject = 'Rejecting import of record %d: ' % i
             if self.missing_fields(mandatory_fields, r):
                 m = 'missing mandatory field'
+                self.logger.warning(reject + m)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = m
+                bad_records.append(bad_rec)
+                continue
+            if r['study'] not in self.preloaded_studies:
+                m = 'unknown study label %s' % r['study']
                 self.logger.warning(reject + m)
                 bad_rec = copy.deepcopy(r)
                 bad_rec['error'] = m
@@ -158,7 +166,7 @@ class Recorder(core.Core):
         self.logger.info('done consistency checks')
         return good_records, bad_records
 
-    def process_chunk(self, otsv, chunk, study, asetup, device):
+    def process_chunk(self, otsv, chunk, asetup, device):
         aklass = {
             self.kb.Individual: self.kb.ActionOnIndividual,
             self.kb.Tube: self.kb.ActionOnVessel,
@@ -172,7 +180,7 @@ class Recorder(core.Core):
                 'device': device,
                 'actionCategory': self.kb.ActionCategory.IMPORT,
                 'operator': self.operator,
-                'context': study,
+                'context': self.preloaded_studies[r['study']],
                 'target': target,
                 }
             actions.append(self.kb.factory.create(aklass[target.__class__], conf))
@@ -194,8 +202,9 @@ class Recorder(core.Core):
         assert len(laneslots) == len(chunk)
         self.kb.save_array(laneslots)
         for ls in laneslots:
+            ls.action.reload()
             otsv.writerow({
-                    'study': study.label,
+                    'study': ls.action.context.label,
                     'lane': ls.lane.label,
                     'tag': ls.tag if ls.tag else '',
                     'vid': ls.id,
