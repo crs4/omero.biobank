@@ -98,12 +98,15 @@ class Core(object):
         raise ValueError(m)
     return getattr(self.kb, o_type)
 
-  def preload_by_type(self, name, klass, preloaded):
-    self.logger.info('start preloading %s' % name)
+  def __preload_items__(self, key_field, klass, preloaded):
     objs = self.kb.get_objects(klass)
     for o in objs:
-      assert not o.id in preloaded
-      preloaded[o.id] = o
+      assert not getattr(o, key_field) in preloaded
+      preloaded[getattr(o, key_field)] = o
+
+  def preload_by_type(self, name, klass, preloaded):
+    self.logger.info('start preloading %s' % name)
+    self.__preload_items__('id', klass, preloaded)
     self.logger.info('done preloading %s' % name)
 
   def missing_fields(self, fields, r):
