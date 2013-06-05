@@ -109,6 +109,11 @@ class Core(object):
     self.__preload_items__('id', klass, preloaded)
     self.logger.info('done preloading %s' % name)
 
+  def preload_studies(self, preloaded):
+    self.logger.info('start preloading studies')
+    self.__preload_items__('label', self.kb.Study, preloaded)
+    self.logger.info('done preloading studies')
+
   def missing_fields(self, fields, r):
     for f in fields:
       if f not in r:
