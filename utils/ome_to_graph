@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Dumps OMERO.biobank data to the persistent graph engine
 # (this script is useless when your graph engine is "pygraph")
 
