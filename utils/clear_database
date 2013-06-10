@@ -55,7 +55,8 @@ def delete(kb, objects, actions, logger):
     undeleted_acts = []
     for a in actions:
         try:
-            kb.delete(a.setup)
+            if a.setup:
+                kb.delete(a.setup)
         except KBError:
             # different actions can have the same configuration objects, ignore if can't delete
             pass
