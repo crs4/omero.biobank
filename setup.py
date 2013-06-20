@@ -141,10 +141,10 @@ setup(
   },
   requires=[
     'omero',
-    'pygraph(>=1.8.0)',
+    'pygraph (>=1.8.0)',
     'numpy',
-    'pika(==0.9.12)',
-    'voluptuous(>=0.7.1)',
-    'bulbs(>=0.3)',
+    'pika (==0.9.12)',
+    'voluptuous (>=0.7.1)',
+    'bulbs (>=0.3)',
   ],
 )
