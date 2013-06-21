@@ -107,6 +107,8 @@ def main(argv):
             config[conf_details['kb_config_value']] = get_ome_var(
                 s, conf_details['ome_config_value'], conf_details['optional']
                 )
+            if config.get('GRAPH_ENGINE_DRIVER') == "pygraph":
+                CONFIG_VALUES[1]["optional"] = True
         if args.python:
             out_fn = os.path.join(BIOBANK_ROOT, "bl/vl/kb/config.py")
             with open(out_fn, 'w') as ofile:
