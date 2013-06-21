@@ -3,12 +3,13 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-OME_HOST = 'localhost'
-OME_USER = 'root'
-OME_PASS = 'romeo'
-
-import sys
+import sys, os
 from bl.vl.kb import KnowledgeBase
+
+OME_HOST = os.getenv('OME_HOST', 'localhost')
+OME_USER = os.getenv('OME_USER', 'root')
+OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
+
 
 BaseProxy = KnowledgeBase(driver='omero')
 
@@ -16,7 +17,7 @@ class Proxy(BaseProxy):
   def get_objects_dict(self, klass):
     return dict((o.label, o) for o in super(Proxy, self).get_objects(klass))
 
-kb = Proxy(OME_HOST, OME_USER, OME_PASS)
+kb = Proxy(OME_HOST, OME_USER, OME_PASSWD)
 
 def cleanup():
   print "# disconnecting the kb"
@@ -26,6 +27,7 @@ sys.exitfunc = cleanup
 
 print
 print "### KB ENV PRELOADED ###"
+print "# connected to %s" % OME_HOST
 print "# knowledge base: kb"
 print "# extra method: kb.get_objects_dict"
 print "########################"
