@@ -71,22 +71,6 @@ The one shown above is a general pattern for object creation:
 
  #. Use the ``save`` method of the object to save it to the backend.
 
-
-In the case of an OMERO backend, trying to save the same object twice
-results in an error:
-
-.. code-block:: python
-
-  >>> s.save()
-  ERROR:proxy_core:omero.ValidationException: could not insert:
-  [ome.model.vl.Study]; SQL [insert into study (description,
-  creation_id, external_id, group_id, owner_id, permissions,
-  update_id, endDate, label, startDate, version, vid, id) values (?,
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]; constraint [study_label_key];
-  nested exception is
-  org.hibernate.exception.ConstraintViolationException: could not
-  insert: [ome.model.vl.Study] ...
-
 The clean way to get the available classes is to look up the model
 definitions. A quick trick to get them by introspection is:
 
