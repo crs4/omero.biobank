@@ -5,12 +5,12 @@ from bl.vl.utils.ome_utils import _ome_env_variable
 def messages_engine_enabled():
     var = 'MESSAGES_QUEUE_ENGINE_ENABLED'
     try:
-        return eval(_ome_env_variable(var))
+        return bool(_ome_env_variable(var))
     except ValueError:
         try:
             return getattr(blconf, var)
         except AttributeError:
-            raise ValueError("Cant't find config valuer for %s" % var)
+            raise ValueError("Cant't find config value for %s" % var)
 
 
 def messages_engine_queue():
@@ -21,7 +21,7 @@ def messages_engine_queue():
         try:
             return getattr(blconf, var)
         except AttributeError:
-            raise ValueError("Cant't find config valuer for %s" % var)
+            raise ValueError("Cant't find config value for %s" % var)
 
 
 def messages_engine_host():
@@ -32,7 +32,7 @@ def messages_engine_host():
         try:
             return getattr(blconf, var)
         except AttributeError:
-            raise ValueError("Cant't find config valuer for %s" % var)
+            raise ValueError("Cant't find config value for %s" % var)
 
 
 def messages_engine_port():
@@ -43,7 +43,7 @@ def messages_engine_port():
         try:
             return getattr(blconf, var)
         except AttributeError:
-            raise ValueError("Cant't find config valuer for %s" % var)
+            raise ValueError("Cant't find config value for %s" % var)
 
 
 def messages_engine_username():
@@ -54,7 +54,7 @@ def messages_engine_username():
         try:
             return getattr(blconf, var)
         except AttributeError:
-            raise ValueError("Cant't find config valuer for %s" % var)
+            raise ValueError("Cant't find config value for %s" % var)
 
 
 def messages_engine_password():
@@ -65,4 +65,4 @@ def messages_engine_password():
         try:
             return getattr(blconf, var)
         except AttributeError:
-            raise ValueError("Cant't find config valuer for %s" % var)
+            raise ValueError("Cant't find config value for %s" % var)
