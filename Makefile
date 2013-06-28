@@ -43,7 +43,7 @@ clean:
 	find . -regex '.*\(\.pyc\|\.pyo\|~\|\.so\)' -exec rm -fv {} \;
 
 distclean: clean
-	rm -rf $(EXPORT_DIR) dist
+	rm -rf $(EXPORT_DIR) dist docs/_build
 
 uninstall_user:
 	rm -rf ~/.local/lib/python$(PY_V)/site-packages/bl/vl

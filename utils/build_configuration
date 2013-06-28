@@ -18,41 +18,71 @@ class BoolStr(object):
 
 
 CONFIG_VALUES = [
-    {'ome_config_value': 'omero.biobank.graph.engine',
-     'kb_config_value': 'GRAPH_ENGINE_DRIVER',
-     'optional': False, 'type': str},
-    {'ome_config_value': 'omero.biobank.graph.uri',
-     'kb_config_value': 'GRAPH_ENGINE_URI',
-     'optional': False, 'type': str},
-    {'ome_config_value': 'omero.biobank.graph.user',
-     'kb_config_value': 'GRAPH_ENGINE_USERNAME',
-     'optional': True, 'type': str},
-    {'ome_config_value': 'omero.biobank.graph.password',
-     'kb_config_value': 'GRAPH_ENGINE_PASSWORD',
-     'optional': True, 'type': str},
-    {'ome_config_value': 'omero.biobank.messages_queue.enabled',
-     'kb_config_value': 'MESSAGES_QUEUE_ENGINE_ENABLED',
-     'optional': False, 'type': BoolStr},
-    {'ome_config_value': 'omero.biobank.messages_queue.host',
-     'kb_config_value': 'MESSAGES_QUEUE_ENGINE_HOST',
-     'optional': True, 'type': str},
-    {'ome_config_value': 'omero.biobank.messages_queue.port',
-     'kb_config_value': 'MESSAGES_QUEUE_ENGINE_PORT',
-     'optional': True, 'type': int},
-    {'ome_config_value': 'omero.biobank.messages_queue.queue',
-     'kb_config_value': 'MESSAGES_QUEUE_ENGINE_QUEUE',
-     'optional': True, 'type': str},
-    {'ome_config_value': 'omero.biobank.messages_queue.user',
-     'kb_config_value': 'MESSAGES_QUEUE_ENGINE_USERNAME',
-     'optional': True, 'type': str},
-    {'ome_config_value': 'omero.biobank.messages_queue.password',
-     'kb_config_value': 'MESSAGES_QUEUE_ENGINE_PASSWORD',
-     'optional': True, 'type': str}
+    {
+        'ome_config_value': 'omero.biobank.graph.engine',
+        'kb_config_value': 'GRAPH_ENGINE_DRIVER',
+        'type': str,
+        'default': "pygraph",
+        },
+    {
+        'ome_config_value': 'omero.biobank.graph.uri',
+        'kb_config_value': 'GRAPH_ENGINE_URI',
+        'type': str,
+        'default': None,
+        },
+    {
+        'ome_config_value': 'omero.biobank.graph.user',
+        'kb_config_value': 'GRAPH_ENGINE_USERNAME',
+        'type': str,
+        'default': None,
+        },
+    {
+        'ome_config_value': 'omero.biobank.graph.password',
+        'kb_config_value': 'GRAPH_ENGINE_PASSWORD',
+        'type': str,
+        'default': None,
+        },
+    {
+        'ome_config_value': 'omero.biobank.messages_queue.enabled',
+        'kb_config_value': 'MESSAGES_QUEUE_ENGINE_ENABLED',
+        'type': BoolStr,
+        'default': False,
+        },
+    {
+        'ome_config_value': 'omero.biobank.messages_queue.host',
+        'kb_config_value': 'MESSAGES_QUEUE_ENGINE_HOST',
+        'type': str,
+        'default': None,
+        },
+    {
+        'ome_config_value': 'omero.biobank.messages_queue.port',
+        'kb_config_value': 'MESSAGES_QUEUE_ENGINE_PORT',
+        'type': int,
+        'default': None,
+        },
+    {
+        'ome_config_value': 'omero.biobank.messages_queue.queue',
+        'kb_config_value': 'MESSAGES_QUEUE_ENGINE_QUEUE',
+        'type': str,
+        'default': None,
+        },
+    {
+        'ome_config_value': 'omero.biobank.messages_queue.user',
+        'kb_config_value': 'MESSAGES_QUEUE_ENGINE_USERNAME',
+        'type': str,
+        'default': None,
+        },
+    {
+        'ome_config_value': 'omero.biobank.messages_queue.password',
+        'kb_config_value': 'MESSAGES_QUEUE_ENGINE_PASSWORD',
+        'type': str,
+        'default': None,
+        }
     ]
 
 
 def make_parser():
-    parser = argparse.ArgumentParser('Build bl-vl config file')
+    parser = argparse.ArgumentParser('Build the biobank config file')
     parser.add_argument('-H', '--host', type=str, help='omero hostname',
                         required=True)
     parser.add_argument('-U', '--user', type=str, help='omero user',
@@ -60,74 +90,62 @@ def make_parser():
     parser.add_argument('-P', '--passwd', type=str, help='omero password',
                         required=True)
     parser.add_argument('--python', action='store_true',
-                        help='build the bl/vl/kb/config.py file')
+                        help='build bl/vl/kb/config.py')
     parser.add_argument('--profile', action='store_true',
-                        help='build the bash profile file')
+                        help='build a .sh file in the current dir')
     return parser
 
 
 def get_ome_var(ome_config, conf_details):
     k = conf_details['ome_config_value']
-    error_msg = 'Missing required parameter %s, check server config' % k
     v = ome_config.getConfigValue(k)
-    if not v:
-        if conf_details['optional']:
-            return None
-        else:
-            raise ValueError(error_msg)
-    return conf_details['type'](v)
+    return conf_details['default'] if not v else conf_details['type'](v)
 
 
-def dump_python_conf_values(output_file, config_values):
-    output_file.write('# %s\n' % GENERATED_BY_MSG)
-    for k, v in config_values.iteritems():
-        output_file.write('%s = %r\n' % (k, v))
+def get_config(ome_session):
+    config = {}
+    ome_config = ome_session.getConfigService()
+    for d in CONFIG_VALUES:
+        config[d['kb_config_value']] = get_ome_var(ome_config, d)
+    if config.get('GRAPH_ENGINE_DRIVER') == "neo4j":
+        if not config.get('GRAPH_ENGINE_URI'):
+            raise ValueError("graph URI required for neo4j driver")
+    return config
 
 
-def dump_profile_conf_values(output_file, config_values):
-    output_file.write('# %s\n' % GENERATED_BY_MSG)
-    for k, v in config_values.iteritems():
-        if v:
-            output_file.write('export %s="%s"\n' % (k.upper().replace('.', '_'), v))
-        else:
-            output_file.write('export %s="NONE"\n' % k.upper().replace('.', '_'))
+def dump_config(output_fn, config, fmt="python"):
+    order = [d['kb_config_value'] for d in CONFIG_VALUES]
+    with open(output_fn, "w") as f:
+        f.write('# %s\n' % GENERATED_BY_MSG)
+        for k in order:
+            v = config.get(k)
+            if fmt == "profile":
+                k = k.upper().replace('.', '_')
+                entry = 'export %s="%s"' % (k, v or "NONE")
+            else:
+                entry = '%s = %r' % (k, v)
+            f.write("%s\n" % entry)
+    print "wrote %s" % output_fn
 
 
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
-
     c = omero.client(args.host)
-
-    if not args.python and not args.profile:
-        msg = 'No output selected, check the program help to know how to enable output options'
-        sys.exit(msg)
-
     try:
         s = c.createSession(args.user, args.passwd)
-        ome_config = s.getConfigService()
-        config = {}
-        for conf_details in CONFIG_VALUES:
-            config[conf_details['kb_config_value']] = get_ome_var(
-                ome_config, conf_details
-                )
-            if config.get('GRAPH_ENGINE_DRIVER') == "pygraph":
-                CONFIG_VALUES[1]["optional"] = True
-        if args.python:
-            out_fn = os.path.join(BIOBANK_ROOT, "bl/vl/kb/config.py")
-            with open(out_fn, 'w') as ofile:
-                dump_python_conf_values(ofile, config)
+        config = get_config(s)
         if args.profile:
+            out_fmt = "profile"
             out_fn = "%s.biobank.profile" % args.host
-            with open(out_fn, 'w') as ofile:
-                dump_profile_conf_values(ofile, config)
-    except omero.SecurityViolation, sv:
-        print 'ERROR: unable to build configuration file, the specified account does not belong to your OMERO.biobank SYSTEM users'
-    except ValueError, ve:
-        print ve.message
-    except Exception, e:
-        print 'ERROR: Unable to build configuration file'
-        print e
+        else:
+            out_fmt = "python"
+            out_fn = os.path.join(BIOBANK_ROOT, "bl/vl/kb/config.py")
+        dump_config(out_fn, config, fmt=out_fmt)
+    except omero.SecurityViolation:
+        print 'ERROR: %s is not an OMERO.biobank SYSTEM user' % args.user
+    except ValueError as e:
+        print 'ERROR: %s' % e
     finally:
         c.closeSession()
 
