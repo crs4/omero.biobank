@@ -20,7 +20,7 @@ from distutils.dep_util import newer
 
 
 CURRENT_YEAR = datetime.datetime.now().year
-DESCRIPTION, LONG_DESCRIPTION = __doc__.split("\n", 1)
+DESCRIPTION, LONG_DESCRIPTION = __doc__.strip().split("\n", 1)
 LONG_DESCRIPTION = LONG_DESCRIPTION.strip()
 URL = "http://biobank.sourceforge.net"
 # DOWNLOAD_URL = ""
@@ -68,15 +68,6 @@ def write_authors(filename="AUTHORS"):
       f.write(" * %s <%s>\n" % (name, email))
 
 
-def write_readme(filename="README"):
-  if not newer(__file__, filename):
-    return
-  with open(filename, "w") as f:
-    f.write("%s\n" % DESCRIPTION)
-    f.write("%s\n\n" % ("=" * len(DESCRIPTION)))
-    f.write("Copyright %d CRS4. Docs are in docs/html.\n" % CURRENT_YEAR)
-
-
 def write_version(filename="bl/vl/version.py"):
   if not newer("VERSION", filename):
     return
@@ -88,7 +79,6 @@ def write_version(filename="bl/vl/version.py"):
 class build_py(du_build_py):
   def run(self):
     write_version()
-    write_readme()
     du_build_py.run(self)
 
 
