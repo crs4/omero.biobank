@@ -16,7 +16,9 @@ from distutils.core import setup
 from distutils.errors import DistutilsSetupError
 from distutils.command.build_py import build_py as du_build_py
 from distutils.command.sdist import sdist as du_sdist
-from distutils.dep_util import newer
+from distutils.dep_util import newer, newer_group
+
+import build_configuration
 
 
 CURRENT_YEAR = datetime.datetime.now().year
@@ -76,9 +78,16 @@ def write_version(filename="bl/vl/version.py"):
     f.write("version='%s'\n" % VERSION)
 
 
+def write_config():
+  target = build_configuration.PYTHON_OUT_FN
+  if newer_group([__file__, build_configuration.__file__], target):
+    build_configuration.main([])
+
+
 class build_py(du_build_py):
   def run(self):
     write_version()
+    write_config()
     du_build_py.run(self)
 
 
