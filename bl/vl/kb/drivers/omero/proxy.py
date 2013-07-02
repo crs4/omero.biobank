@@ -2,7 +2,6 @@
 # END_COPYRIGHT
 
 import hashlib, time, pwd, json, os
-import itertools as it
 
 # This is actually used in the metaclass magic
 import omero.model as om
@@ -84,6 +83,9 @@ class Proxy(ProxyCore):
       raise ValueError("%d kb objects map to %s" % (len(res), vid))
     return res[0]
 
+  def create_global_tables(self, destructive=False):
+    self.eadpt.create_ehr_table(destructive=destructive)
+
   # Modeling-related utility functions
   # ==================================
 
@@ -138,66 +140,19 @@ class Proxy(ProxyCore):
   # Genotyping-related utility functions
   # ====================================
 
-  def delete_snp_marker_defitions_table(self):
-    self.delete_table(self.gadpt.SNP_MARKER_DEFINITIONS_TABLE)
-
-  def create_snp_marker_definitions_table(self):
-    self.gadpt.create_snp_marker_definitions_table()
-
-  def add_snp_marker_definitions(self, stream, action, batch_size=BATCH_SIZE):
-    """
-    Save a stream of marker definitions. For efficiency reasons,
-    markers are written in batches, whose size is controlled by
-    batch_size.
-
-    :param stream: a stream of dict objects
-    :type stream: generator
-
-    :param action: a valid action. For backward compatibility reasons, it can
-      also be a VID.
-    :type action: Action
-
-    :param batch_size: size of the batch to write
-    :type batch_size: positive int
-
-    :return: list of (<label>, <vid>) tuples
-    """
-    op_vid = self.__resolve_action_id(action)
-    return self.gadpt.add_snp_marker_definitions(stream, op_vid, batch_size)
-
-  def get_snp_marker_definitions(self, selector=None, col_names=None,
-                                 batch_size=BATCH_SIZE):
-    """
-    Return an array with the marker definitions that satisfy
-    selector. If selector is None, return all marker definitions. It
-    is possible to request only specific marker definition columns by
-    assigning to col_names a list with the names of the selected
-    columns.
-    """
-    return self.gadpt.get_snp_marker_definitions(selector, col_names,
-                                                 batch_size)
-
-  def get_snp_markers_by_source(self, source, context=None, release=None,
-                                batch_size=BATCH_SIZE):
-    return self.gadpt.get_snp_markers_by_source(
-      source, context, release, batch_size
-      )
-
-  def get_snp_markers(self, labels=None, rs_labels=None, vids=None,
-                      batch_size=BATCH_SIZE, col_names=None):
-    return self.gadpt.get_snp_markers(
-      labels, rs_labels, vids, batch_size, col_names
-      )
-
-  #--- snp_markers_set ---
   def create_snp_markers_set(self, label, maker, model, release,
                              N, stream, action):
     """
-    Given a stream of (marker_vid, marker_indx, allele_flip) tuples,
+    Given a stream of (label, mask, index, allele_flip) tuples,
     build and save a new marker set.
     """
     assert type(N) == int and N > 0
+    stream_header = "label", "mask", "index", "allele_flip"
+    def mod_stream():
+      for tuple_ in stream:
+        yield dict(zip(stream_header, tuple_))
     set_vid = vlu.make_vid()
+    op_vid = self.__resolve_action_id(action)
     conf = {
       'label': label,
       'maker': maker,
@@ -208,22 +163,21 @@ class Proxy(ProxyCore):
       }
     mset = self.factory.create(self.SNPMarkersSet, conf)
     mset.save()
-    def gen(stream):
-      for t in stream:
-        yield {'marker_vid': t[0], 'marker_indx': t[1], 'allele_flip': t[2]}
     # TODO: add better exception handling to the following code
     try:
       self.gadpt.create_snp_markers_set_tables(mset.id, N)
-      counted = self.gadpt.define_snp_markers_set(set_vid, gen(stream),
-                                                  action.id)
-      if counted != N:
+      count = self.gadpt.define_snp_markers_set(set_vid, mod_stream(), op_vid)
+      if count != N:
         raise ValueError('there are %d records in stream (expected %d)' %
-                         (counted, N))
+                         (count, N))
     except:
-      self.gadpt.delete_snp_markers_set_tables(mset.id)
-      self.delete(mset)
+      self.delete_snp_markers_set(mset)
       raise
     return mset
+
+  def delete_snp_markers_set(self, mset):
+    self.gadpt.delete_snp_markers_set_tables(mset.id)
+    self.delete(mset)
 
   def align_snp_markers_set(self, mset, ref_genome, stream, action):
     """
@@ -340,12 +294,6 @@ class Proxy(ProxyCore):
                           maker=None, model=None, release=None):
     return self.madpt.get_snp_markers_set(label, maker, model, release)
 
-  def snp_markers_set_exists(self, label, maker, model, release):
-    """
-    DEPRECATED
-    """
-    return not self.get_snp_markers_set(label, maker, model, release) is None
-
 
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
@@ -409,34 +357,6 @@ class Proxy(ProxyCore):
       }
     device = self.factory.create(self.Device, conf).save()
     return device
-
-  def create_markers(self, source, context, release,
-                     ref_rs_genome, dbsnp_build, stream, action):
-    """
-    Given a stream of (label, rs_label, mask) tuples, create and save
-    Marker objects and return the (label, vid) associations as a list
-    of tuples.
-    """
-    # FIXME this is extremely inefficient
-    marker_defs = [t for t in stream]
-    marker_labels = [t[0] for t in marker_defs]
-    if len(marker_labels) > len(set(marker_labels)):
-      raise ValueError('duplicate marker definitions in stream')
-    def generator(mdefs):
-      for t in mdefs:
-        yield {
-          'source': source,
-          'context' :context,
-          'release': release,
-          'ref_rs_genome': ref_rs_genome,
-          'dbSNP_build': dbsnp_build,
-          'label': t[0],
-          'rs_label': t[1],
-          'mask': convert_to_top(t[2]),
-          }
-    label_vid_list = self.add_snp_marker_definitions(generator(marker_defs),
-                                                     action)
-    return label_vid_list
 
   def get_individuals(self, group):
     """
@@ -557,15 +477,8 @@ class Proxy(ProxyCore):
     laneslots = self.find_all_by_query(query, {'l_vid' : lane.vid})
     return (ls for ls in laneslots)
 
-
   # EVA-related utility functions
   # =============================
-
-  def create_ehr_tables(self):
-    self.eadpt.create_ehr_table()
-
-  def delete_ehr_tables(self):
-    self.delete_table(self.eadpt.EAV_EHR_TABLE)
 
   def add_ehr_record(self, action, timestamp, archetype, rec):
     """
