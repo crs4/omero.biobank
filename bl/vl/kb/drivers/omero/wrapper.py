@@ -315,7 +315,8 @@ class OmeroWrapper(CoreOmeroWrapper):
 
   def __cleanup__(self):
     try:
-      self.proxy.dt.destroy_node(self)
+      if hasattr(self, 'action'):
+        self.proxy.dt.destroy_node(self)
     except AttributeError:
       # Not using Neo4J graph driver
       pass
