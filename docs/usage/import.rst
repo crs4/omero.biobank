@@ -9,7 +9,7 @@ The import tool
 
 .. automodule:: bl.vl.app.importer.biosample
 
-.. automodule:: bl.vl.app.importer.titer_plate
+.. automodule:: bl.vl.app.importer.samples_container
 
 .. automodule:: bl.vl.app.importer.device
 

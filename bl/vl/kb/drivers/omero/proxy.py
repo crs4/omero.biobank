@@ -147,6 +147,8 @@ class Proxy(ProxyCore):
     build and save a new marker set.
     """
     assert type(N) == int and N > 0
+    if not action.is_loaded():
+      action.reload()
     stream_header = "label", "mask", "index", "allele_flip"
     def mod_stream():
       for tuple_ in stream:
