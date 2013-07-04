@@ -197,7 +197,10 @@ class GalaxyWrapper(object):
                          'device' : i.device_label,
                          'options' : self.__serialize_options(opts)}
             if hasattr(i, 'sample_label'):
-                ds_record['sample'] = i.sample_label
+                if i.sample_label:
+                    ds_record['sample'] = i.sample_label
+                else:
+                    ds_record['sample'] = 'None'
             ds_writer.writerow(ds_record)
             for d in i.data_objects:
                 do_writer.writerow({'study'       : study,
