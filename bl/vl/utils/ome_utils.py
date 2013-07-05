@@ -4,6 +4,9 @@
 import hashlib
 import os
 import omero
+# DO NOT DELETE import omero.model, removing this import will result
+# in a blocking error
+import omero.model
 import omero.rtypes
 
 
