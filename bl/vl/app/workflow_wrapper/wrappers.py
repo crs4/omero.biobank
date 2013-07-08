@@ -17,10 +17,10 @@ def get_logger(log_format, log_date_format, log_level,
     return logger
 
 
-def run_datasets_import(history, items, action_context, async = False,
-                        driver = 'galaxy', conf = None,
-                        delete_history = False, purge_history = False,
-                        logger = None):
+def run_datasets_import(history, items, action_context, no_dataobjects=False,
+                        async=False, driver='galaxy', conf=None,
+                        delete_history=False, purge_history=False,
+                        logger=None):
     if not logger:
         logger = get_logger(LOG_FORMAT, LOG_DATEFMT, 'INFO')
     # Consistency check for items
@@ -37,7 +37,8 @@ def run_datasets_import(history, items, action_context, async = False,
             raise ValueError(msg)
     if driver == 'galaxy':
         gw = GalaxyWrapper(conf, logger)
-        history_details = gw.run_datasets_import(history, items, action_context, async)
+        history_details = gw.run_datasets_import(history, items, action_context,
+                                                 no_dataobjects, async)
         if delete_history and not async:
             gw.delete_history(history_details['history'], purge_history)
     else:

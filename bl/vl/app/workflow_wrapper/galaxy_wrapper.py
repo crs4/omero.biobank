@@ -18,6 +18,10 @@ class GalaxyWrapper(object):
     #     history_dataset_label: label_into_the_worflow
     #     dsamples_dataset_label: label_into_the_worflow
     #     dobjects_dataset_label: label_into_the_worflow
+    #   seq_data_sample_intermediate_importer_workflow:
+    #     label: workflow_label
+    #     history_dataset_label: label_into_the_worflow
+    #     dsamples_dataset_label: label_into_the_worflow
     #   seq_data_sample_importer_workflow:
     #     label: worflow_label
     #     history_dataset_label: label_into_the_worflow
@@ -36,6 +40,7 @@ class GalaxyWrapper(object):
                                      galaxy_conf_values['api_key'])
             self.seq_out_workflow_conf = galaxy_conf_values['sequencer_output_importer_workflow']
             self.seq_ds_workflow_conf = galaxy_conf_values['seq_data_sample_importer_workflow']
+            self.seq_ds_intermediate_workflow_conf = galaxy_conf_values['seq_data_sample_intermediate_importer_workflow']
             self.smpsh_to_fc_workflow_conf = galaxy_conf_values['flowcell_from_samplesheet_importer_workflow']
         else:
             msg = 'Invalid configuration'
@@ -192,7 +197,10 @@ class GalaxyWrapper(object):
                          'device' : i.device_label,
                          'options' : self.__serialize_options(opts)}
             if hasattr(i, 'sample_label'):
-                ds_record['sample'] = i.sample_label
+                if i.sample_label:
+                    ds_record['sample'] = i.sample_label
+                else:
+                    ds_record['sample'] = 'None'
             ds_writer.writerow(ds_record)
             for d in i.data_objects:
                 do_writer.writerow({'study'       : study,
@@ -229,7 +237,7 @@ class GalaxyWrapper(object):
     # automatically selects proper workflow by checking object type
     # of 'items' elements
     def run_datasets_import(self, history, items, action_context,
-                            async = False):
+                            no_dataobjects=False, async=False):
         self.logger.info('Running datasets import')
         history_dataset = self.__dump_history_details(history)
         dsamples_dataset, dobjects_dataset = self.__dump_ds_do_datasets(items,
@@ -238,21 +246,35 @@ class GalaxyWrapper(object):
         folder_id = self.__create_folder('dataset_import', lib_id)
         hdset_id = self.__upload_to_library(history_dataset, lib_id, folder_id)
         dsset_id = self.__upload_to_library(dsamples_dataset, lib_id, folder_id)
-        doset_id = self.__upload_to_library(dobjects_dataset, lib_id, folder_id)
+        if not no_dataobjects:
+          doset_id = self.__upload_to_library(dobjects_dataset, lib_id, folder_id)
+        else:
+          doset_id = None
         if type(items[0]) == SequencerOutputItem:
             wf_conf = self.seq_out_workflow_conf
         elif type(items[0]) == SeqDataSampleItem:
-            wf_conf = self.seq_ds_workflow_conf
+            if not no_dataobjects:
+                wf_conf = self.seq_ds_workflow_conf
+            else:
+                wf_conf = self.seq_ds_intermediate_workflow_conf
         else:
             raise RuntimeError('Unable to run workflow for type %r' % type(items[0]))
         # Preparing dataset map
-        ds_map = {wf_conf['history_dataset_label']: { 'id' :
-                      hdset_id, 'src' : 'ld' },
-                  wf_conf['dsamples_dataset_label']: { 'id' :
-                      dsset_id, 'src' : 'ld' },
-                  wf_conf['dobjects_dataset_label']: { 'id' :
-                      doset_id, 'src' : 'ld' }
-                  }
+        ds_map = {
+            wf_conf['history_dataset_label']: {
+                'id': hdset_id,
+                'src': 'ld'
+            },
+            wf_conf['dsamples_dataset_label']: {
+                'id': dsset_id,
+                'src': 'ld'
+            }
+        }
+        if not no_dataobjects:
+            ds_map[wf_conf['dobjects_dataset_label']] = {
+                'id': doset_id,
+                'src': 'ld'
+            }
         hist_details = self.__run_workflow(self.__get_workflow_id(wf_conf['label']),
                                            ds_map, 'seq_datasets_import')
         self.logger.info('Workflow running')

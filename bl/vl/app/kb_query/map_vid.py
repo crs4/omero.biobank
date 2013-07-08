@@ -187,6 +187,9 @@ class MapVIDApp(Core):
       if field in mapping:
         r[transformed_column_label] = mapping[field]
         mapped_records.append(r)
+      elif field == 'None':
+        r[transformed_column_label] = field
+        mapped_records.append(r)
     if strict_mapping and len(records) != len(mapped_records):
         msg = '%d unmapped records' % (len(records) - len(mapped_records))
         self.logger.critical(msg)
