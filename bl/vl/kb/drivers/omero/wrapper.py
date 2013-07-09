@@ -294,14 +294,15 @@ class OmeroWrapper(CoreOmeroWrapper):
   def __update_constraints__(self):
     pass
 
-  def __dump_to_graph__(self):
+  def __dump_to_graph__(self, is_update):
     relationships = {
         self.proxy.DataCollectionItem: 'dataSample',
         self.proxy.VesselsCollectionItem: 'vessel',
     }
     try:
       if hasattr(self, 'action'):
-        self.proxy.dt.create_node(self)
+        if not is_update:
+          self.proxy.dt.create_node(self)
         self.action.reload()
         if hasattr(self.action, 'target'):
           if type(self.action.target) not in relationships:
@@ -317,6 +318,8 @@ class OmeroWrapper(CoreOmeroWrapper):
     try:
       if hasattr(self, 'action'):
         self.proxy.dt.destroy_node(self)
+        # also delete the edge that connects the object to its source
+        self.proxy.dt.destroy_edge(self, self.action.target)
     except AttributeError:
       # Not using Neo4J graph driver
       pass

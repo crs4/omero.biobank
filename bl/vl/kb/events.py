@@ -2,6 +2,7 @@ import json
 from voluptuous import Schema, MultipleInvalid, Invalid
 from bl.vl.utils import decode_dict
 from bl.vl.utils.ome_utils import ome_hash
+from bl.vl.utils.graph import build_edge_id
 
 
 def build_event(event_cls, event_conf):
@@ -20,6 +21,8 @@ def build_event(event_cls, event_conf):
         return {
             'action': 'EDGE_CREATE',
             'details': {
+                'edge_id': build_edge_id(ome_hash(conf['bl_src_obj'].ome_obj),
+                                         ome_hash(conf['bl_dest_obj'].ome_obj)),
                 'act_type': type(conf['bl_act']).__name__,
                 'act_id': conf['bl_act'].id,
                 'act_hash': ome_hash(conf['bl_act'].ome_obj)
@@ -37,6 +40,13 @@ def build_event(event_cls, event_conf):
     def get_edge_deletion_data(conf):
         return {
             'action': 'EDGE_DELETE',
+            'target': build_edge_id(ome_hash(conf['src'].ome_obj),
+                                    ome_hash(conf['dest'].ome_obj))
+        }
+
+    def get_edges_deletion_data(conf):
+        return {
+            'action': 'EDGES_DELETE',
             'target': ome_hash(conf['bl_act'].ome_obj)
         }
 
@@ -58,6 +68,7 @@ def build_event(event_cls, event_conf):
         EdgeCreationEvent: get_edge_creation_data,
         NodeDeletionEvent: get_node_deletion_data,
         EdgeDeletionEvent: get_edge_deletion_data,
+        EdgesDeletionEvent: get_edges_deletion_data,
         EdgeUpdateEvent: get_edge_update_data,
     }
 
@@ -72,6 +83,7 @@ def decode_event(routing_key, msg_body):
         'graph.edge.create': EdgeCreationEvent,
         'graph.node.delete': NodeDeletionEvent,
         'graph.edge.delete': EdgeDeletionEvent,
+        'graph.edges.delete': EdgesDeletionEvent,
         'graph.edge.update': EdgeUpdateEvent,
     }
     decode_key = '.'.join(routing_key.split('.')[-3:])
@@ -130,6 +142,7 @@ class EdgeCreationEvent(BasicEvent):
             {
                 'action': 'EDGE_CREATE',
                 'details': {
+                    'edge_id': str,
                     'act_type': str,
                     'act_id': str,
                     'act_hash': int
@@ -165,10 +178,25 @@ class EdgeDeletionEvent(BasicEvent):
         schema = Schema(
             {
                 'action': 'EDGE_DELETE',
-                'target': int
+                'target': str
             }
         )
         super(EdgeDeletionEvent, self).validate(schema)
+
+
+class EdgesDeletionEvent(BasicEvent):
+
+    def __init__(self, data):
+        super(EdgesDeletionEvent, self).__init__('graph.edges.delete', data)
+
+    def validate(self):
+        schema = Schema(
+            {
+                'action': 'EDGES_DELETE',
+                'target': int
+            }
+        )
+        super(EdgesDeletionEvent, self).validate(schema)
 
 
 class EdgeUpdateEvent(BasicEvent):

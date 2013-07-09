@@ -6,6 +6,7 @@ import httplib2
 import time
 from bl.vl.utils import get_logger
 from bl.vl.utils.ome_utils import ome_hash
+from bl.vl.utils.graph import build_edge_id
 import bl.vl.kb.events as events
 from bl.vl.graph.errors import DependencyTreeError, MissingEdgeError,\
     MissingNodeError, GraphOutOfSyncError, GraphAuthenticationError, \
@@ -28,6 +29,7 @@ class OME_Action(Relationship):
 
     label = 'produces'
 
+    edge_id = String(nullable=False)
     act_type = String(nullable=False)
     act_id = String(nullable=False)
     act_hash = String(nullable=False)
@@ -89,20 +91,34 @@ class Neo4JDriver(object):
         else:
             raise DependencyTreeError('Multiple nodes with hash %s' % node_hash)
 
-    def __get_edge_by_hash__(self, edge_hash):
+    def __get_edges_by_hash__(self, edge_hash):
         try:
             edges = list(self.graph.produces.index.lookup(act_hash=edge_hash))
         except httplib2.socket.error:
             raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         except TypeError:
-            # self.graph.produces.index.lookup(act_hash=edge_hash return None
             return None
-        if len(edges) == 1:
-            return edges[0]
-        elif len(edges) == 0:
+        if len(edges) == 0:
             return None
         else:
-            raise DependencyTreeError('Multiple edges with hash %s' % edge_hash)
+            return edges
+
+    def __get_edge_by_id__(self, edge_id):
+        try:
+            edges = list(self.graph.produces.index(edge_id=edge_id))
+        except httplib2.socket.error:
+            raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
+        except TypeError:
+            return None
+        if len(edges) == 0:
+            return None
+        elif len(edges) == 1:
+            return edges[0]
+        else:
+            raise DependencyTreeError('Multiple edges with ID %s' % edge_id)
+
+    def __get_edge_by_nodes__(self, src_node_hash, dest_node_hash):
+        return self.__get_edge_by_id__(build_edge_id(src_node_hash, dest_node_hash))
 
     def create_node(self, obj):
         event = events.build_event(events.NodeCreationEvent, {'bl_obj': obj})
@@ -123,7 +139,7 @@ class Neo4JDriver(object):
         self.kb.events_sender.send_event(event)
 
     def save_edge(self, action_conf, source_hash, dest_hash):
-        edge = self.__get_edge_by_hash__(action_conf['act_hash'])
+        edge = self.__get_edge_by_nodes__(source_hash, dest_hash)
         if not edge:
             src_node = self.__get_node_by_hash__(source_hash)
             if not src_node:
@@ -151,19 +167,32 @@ class Neo4JDriver(object):
         else:
             raise MissingNodeError('Unable to find node with hash %s. Delete failed.' % node_hash)
 
-    def destroy_edge(self, act):
-        event = events.build_event(events.EdgeDeletionEvent, {'bl_act': act})
+    def destroy_edge(self, src, dest):
+        event = events.build_event(events.EdgeDeletionEvent, {'src': src,
+                                                              'dest': dest})
         self.kb.events_sender.send_event(event)
 
-    def delete_edge(self, edge_hash):
-        edge = self.__get_edge_by_hash__(edge_hash)
+    def delete_edge(self, edge_id):
+        edge = self.__get_edge_by_id__(edge_id)
         if edge:
             try:
                 self.graph.edges.delete(edge.eid)
             except httplib2.socket.error:
                 raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         else:
-            raise MissingEdgeError('Unable to find edge with hash %s. Delete failed.' % edge_hash)
+            raise MissingEdgeError('Unable to find edge with ID %s. Delete failed.' % edge_id)
+
+    def destroy_edges(self, act):
+        event = events.build_event(events.EdgesDeletionEvent, {'bl_act': act})
+        self.kb.events_sender.send_event(event)
+
+    def delete_edges(self, edge_hash):
+        edges = self.__get_edges_by_hash__(edge_hash)
+        if edges:
+            for e in edges:
+                self.graph.edges.delete(e.eid)
+        else:
+            raise MissingEdgeError('Unable to find edges with hash %s. Delete failed.' % edge_hash)
 
     def modify_edge(self, act, source=None, dest=None):
         if source is None and dest is None:
