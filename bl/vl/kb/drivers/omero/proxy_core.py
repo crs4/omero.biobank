@@ -201,6 +201,8 @@ class ProxyCore(object):
     Save and return a KB object.
     """
     try:
+      # check if we are saving a new object or if we are updating an existing one
+      obj_update = obj.is_mapped()
       result = self.ome_operation("getUpdateService", "saveAndReturnObject",
                                   obj.ome_obj)
     except omero.ValidationException, e:
@@ -210,7 +212,7 @@ class ProxyCore(object):
       raise kb.KBError(msg)
     obj.ome_obj = result
     self.store_to_cache(obj)
-    obj.__dump_to_graph__()
+    obj.__dump_to_graph__(obj_update)
     return obj
 
   def save_array(self, array):

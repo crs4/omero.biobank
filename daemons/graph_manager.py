@@ -24,6 +24,7 @@ class GraphManagerDaemon(object):
             'EDGE_CREATE': self.create_edge,
             'NODE_DELETE': self.delete_node,
             'EDGE_DELETE': self.delete_edge,
+            'EDGES_DELETE': self.delete_edges,
             'EDGE_UPDATE': self.update_edge,
         }
 
@@ -104,6 +105,10 @@ class GraphManagerDaemon(object):
     def delete_edge(self, msg):
         self.graph_driver.delete_edge(msg['target'])
         self.logger.info('Edge successfully deleted')
+
+    def delete_edges(self, msg):
+        self.graph.driver.delete_edges(msg['target'])
+        self.logger.info('Edges successfully deleted')
 
     def update_edge(self, msg):
         raise NotImplementedError()
