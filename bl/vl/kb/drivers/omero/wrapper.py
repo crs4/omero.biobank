@@ -7,7 +7,7 @@ import omero.rtypes as ort
 import bl.vl.utils as vlu
 import bl.vl.utils.ome_utils as vluo
 from bl.vl.kb import KBError
-
+from bl.vl.utils.graph import graph_driver
 
 REQUIRED = 'required'
 OPTIONAL = 'optional'
@@ -296,33 +296,25 @@ class OmeroWrapper(CoreOmeroWrapper):
 
   def __dump_to_graph__(self, is_update):
     relationships = {
-        self.proxy.DataCollectionItem: 'dataSample',
-        self.proxy.VesselsCollectionItem: 'vessel',
+      self.proxy.DataCollectionItem: 'dataSample',
+      self.proxy.VesselsCollectionItem: 'vessel',
     }
-    try:
-      if hasattr(self, 'action'):
-        if not is_update:
-          self.proxy.dt.create_node(self)
-        self.action.reload()
-        if hasattr(self.action, 'target'):
-          if type(self.action.target) not in relationships:
-            self.proxy.dt.create_edge(self.action, self.action.target, self)
-          else:
-            source = getattr(self.action.target, relationships[type(self.action.target)])
-            self.proxy.dt.create_edge(self.action, source, self)
-    except AttributeError:
-      # Not using Neo4J graph driver
-      pass
+    if hasattr(self, 'action'):
+      if not is_update:
+        self.proxy.dt.create_node(self)
+      self.action.reload()
+      if hasattr(self.action, 'target'):
+        if type(self.action.target) not in relationships:
+          self.proxy.dt.create_edge(self.action, self.action.target, self)
+        else:
+          source = getattr(self.action.target, relationships[type(self.action.target)])
+          self.proxy.dt.create_edge(self.action, source, self)
 
   def __cleanup__(self):
-    try:
-      if hasattr(self, 'action'):
-        self.proxy.dt.destroy_node(self)
-        # also delete the edge that connects the object to its source
-        self.proxy.dt.destroy_edge(self, self.action.target)
-    except AttributeError:
-      # Not using Neo4J graph driver
-      pass
+    if hasattr(self, 'action'):
+      self.proxy.dt.destroy_node(self)
+      # also delete the edge that connects the object to its source
+      self.proxy.dt.destroy_edge(self, self.action.target)
 
   def configure(self, conf):
     self.__config__(self.ome_obj, conf)

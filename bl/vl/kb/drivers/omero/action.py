@@ -7,6 +7,7 @@ import omero.rtypes as ort
 from utils import assign_vid_and_timestamp
 import wrapper as wp
 from genotyping import SNPMarkersSet
+from bl.vl.utils.graph import graph_driver
 
 
 class OriginalFile(wp.OmeroWrapper):
@@ -112,10 +113,6 @@ class Action(wp.OmeroWrapper):
     return assign_vid_and_timestamp(conf, time_stamp_field='beginTime')
 
   def __cleanup__(self):
-    if hasattr(self, 'target'):
-      try:
-        # destroy all the edges related to this action
-        self.proxy.dt.destroy_edges(self)
-      except AttributeError:
-        # Not using the Neo4J driver
-        pass
+    if graph_driver() == 'neo4j':
+      # destroy all the edges related to this action
+      self.proxy.dt.destroy_edges(self)
