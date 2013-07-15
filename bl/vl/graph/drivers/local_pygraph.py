@@ -102,3 +102,15 @@ class PygraphDriver(object):
                     if self.objects_map_by_id[k].__class__ == aklass]
         else:
             return [self.objects_map_by_id[k] for k in st.keys()]
+
+    def create_node(self, obj):
+        pass
+
+    def create_edge(self, act, source, dest):
+        pass
+
+    def destroy_node(self, obj):
+        pass
+
+    def destroy_edge(self, src, dest):
+        pass
