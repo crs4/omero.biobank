@@ -84,10 +84,11 @@ class Neo4JDriver(object):
             nodes = list(self.graph.ome_objects.index.lookup(obj_hash=node_hash))
         except httplib2.socket.error:
             raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
+        except TypeError:
+            # no node was fetched
+            return None
         if len(nodes) == 1:
             return nodes[0]
-        elif len(nodes) == 0:
-            return None
         else:
             raise DependencyTreeError('Multiple nodes with hash %s' % node_hash)
 
