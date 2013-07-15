@@ -208,18 +208,6 @@ class Neo4JDriver(object):
     def __get_node__(self, obj):
         return self.__get_node_by_hash__(ome_hash(obj.ome_obj))
 
-    def __get_node_by_hash__(self, node_hash):
-        try:
-            nodes = list(self.graph.ome_objects.index.lookup(obj_hash=node_hash))
-        except httplib2.socket.error:
-            raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
-        if len(nodes) == 1:
-            return nodes[0]
-        elif len(nodes) == 0:
-            return None
-        else:
-            raise DependencyTreeError('Multiple nodes with obj_hash %s' % node_hash)
-
     def __get_ome_obj__(self, node):
         try:
             return self.kb._CACHE[node.obj_hash]
