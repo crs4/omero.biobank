@@ -219,6 +219,7 @@ class ProxyCore(object):
     """
     Save and return an array of KB objects.
     """
+    update = [obj.is_mapped() for obj in array]
     try:
       result = self.ome_operation("getUpdateService", "saveAndReturnArray",
                                   [obj.ome_obj for obj in array])
@@ -228,10 +229,10 @@ class ProxyCore(object):
       raise kb.KBError(msg)
     if len(result) != len(array):
       raise kb.KBError('bad return array len')
-    for o, v in it.izip(array, result):
+    for o, v, u in it.izip(array, result, update):
       o.ome_obj = v
       self.store_to_cache(o)
-      o.__dump_to_graph__()
+      o.__dump_to_graph__(u)
     return array
 
   def delete(self, kb_obj):
