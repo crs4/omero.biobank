@@ -153,7 +153,7 @@ def make_parser(parser):
                       help="reference genome, e.g., hg19")
 
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
   fields_to_canonize = ['study', 'ref_genome']
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
@@ -173,8 +173,7 @@ def implementation(logger, host, user, passwd, args):
                           extrasaction='ignore')
   report.writeheader()
   recorder.record(records, report)
-  args.ifile.close()
-  args.report_file.close()
+  close_handles(args)
   recorder.logger.info('done processing file %s' % args.ifile.name)
 
 def do_register(registration_list):

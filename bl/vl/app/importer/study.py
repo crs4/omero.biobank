@@ -137,7 +137,7 @@ class RecordCanonizer(core.RecordCanonizer):
     r.setdefault('description', DEFAULT_DESCRIPTION)
 
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
@@ -157,15 +157,11 @@ def implementation(logger, host, user, passwd, args):
                       keep_tokens=args.keep_tokens, logger=logger)
   try:
     recorder.record(records, args.blocking_validator)
-  except core.ImporterValidationError, ve:
-    args.ifile.close()
-    args.ofile.close()
-    args.report_file.close()
+  except core.ImporterValidationError as ve:
     logger.critical(ve.message)
-    raise ve
-  args.ifile.close()
-  args.ofile.close()
-  args.report_file.close()
+    raise
+  finally:
+    close_handles(args)
   logger.info('done processing file %s' % args.ifile.name)
 
 

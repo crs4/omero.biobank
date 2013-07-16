@@ -156,7 +156,7 @@ def make_parser(parser):
                       help="overrides the study column value")
 
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
                       host=host, user=user, passwd=passwd,
@@ -174,8 +174,7 @@ def implementation(logger, host, user, passwd, args):
                           extrasaction='ignore')
   report.writeheader()
   recorder.record(records, report)
-  args.ifile.close()
-  args.report_file.close()
+  close_handles(args)
   logger.info('done processing file %s' % args.ifile.name)
 
 

@@ -134,7 +134,7 @@ def make_parser(parser):
                       help="overrides the group column value")
 
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(host=host, user=user, passwd=passwd,
                       operator=args.operator,
@@ -142,7 +142,6 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   canonizer = core.RecordCanonizer(["group"], args)
   canonizer.canonize_list(records)
   o = csv.DictWriter(args.ofile,
@@ -150,7 +149,7 @@ def implementation(logger, host, user, passwd, args):
                      delimiter='\t', lineterminator=os.linesep)
   o.writeheader()
   recorder.record(records, o)
-  args.ofile.close()
+  close_handles(args)
   logger.info('done processing file %s' % args.ifile.name)
 
 

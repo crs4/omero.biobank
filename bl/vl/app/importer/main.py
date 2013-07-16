@@ -93,6 +93,11 @@ class App(object):
     self.parser = parser
     return parser
 
+def close_handles(args):
+  for f in args.ifile, args.ofile, args.report_file:
+      if f.fileno() > 2:
+        f.close()
+
 def main(argv=None):
   app = App()
   parser = app.make_parser()
@@ -112,4 +117,4 @@ def main(argv=None):
   except ValueError, ve:
     logger.critical(ve)
     sys.exit(ve)
-  args.func(logger, host, user, passwd, args)
+  args.func(logger, host, user, passwd, args, close_handles)

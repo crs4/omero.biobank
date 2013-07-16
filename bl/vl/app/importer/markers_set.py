@@ -182,7 +182,7 @@ def make_parser(parser):
                       help="markers_set release")
 
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
                       host=host, user=user, passwd=passwd,
@@ -214,9 +214,7 @@ def implementation(logger, host, user, passwd, args):
     recorder.record(records, o, report)
   else:
     logger.info('empty file')
-  args.ifile.close()
-  args.ofile.close()
-  args.report_file.close()
+  close_handles(args)
   logger.info('done processing file %s' % args.ifile.name)
 
 

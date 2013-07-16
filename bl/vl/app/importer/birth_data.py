@@ -195,7 +195,7 @@ def make_parser(parser):
     parser.add_argument('--study', metavar='STRING',
                         help='overrides the study column value')
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
     action_setup_conf = Recorder.find_action_setup_conf(args)
     recorder = Recorder(args.study, host = host, user = user,
                         passwd = passwd, operator = args.operator,
@@ -204,7 +204,6 @@ def implementation(logger, host, user, passwd, args):
     f = csv.DictReader(args.ifile, delimiter='\t')
     logger.info('start processing file %s' % args.ifile.name)
     records = [r for r in f]
-    args.ifile.close()
     canonizer = core.RecordCanonizer(['study'], args)
     canonizer.canonize_list(records)
     report_fnames = copy.deepcopy(f.fieldnames)
@@ -214,8 +213,7 @@ def implementation(logger, host, user, passwd, args):
                             extrasaction='ignore')
     report.writeheader()
     recorder.record(records, report)
-    args.ifile.close()
-    args.report_file.close()
+    close_handles(args)
     logger.info('done processing file %s' % args.ifile.name)
 
 def do_register(registration_list):

@@ -412,7 +412,7 @@ def make_parser(parser):
                       when importing FlowCell type containers""")
 
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
   if args.plate_shape:
     args.rows, args.columns = args.plate_shape
   fields_to_canonize = [
@@ -429,7 +429,6 @@ def implementation(logger, host, user, passwd, args):
   f = csv.DictReader(args.ifile, delimiter='\t')
   recorder.logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  args.ifile.close()
   if args.container_type == 'TiterPlate':
     fields_to_canonize.extend(['rows', 'columns'])
   elif args.container_type == 'FlowCell':
@@ -447,17 +446,12 @@ def implementation(logger, host, user, passwd, args):
                           extrasaction='ignore')
   report.writeheader()
   try:
-    recorder.record(records, o, report,
-                    args.blocking_validator)
-  except core.ImporterValidationError, ve:
-    args.ifile.close()
-    args.ofile.close()
-    args.report_file.close()
+    recorder.record(records, o, report, args.blocking_validator)
+  except core.ImporterValidationError as ve:
     logger.critical(ve.message)
-    raise ve
-  args.ifile.close()
-  args.ofile.close()
-  args.report_file.close()
+    raise
+  finally:
+    close_handles(args)
   logger.info('done processing file %s' % args.ifile.name)
 
 

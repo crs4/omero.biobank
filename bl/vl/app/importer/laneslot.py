@@ -228,7 +228,7 @@ def make_parser(parser):
                         help='overrides the source_type column value',
                         choices=Recorder.SOURCE_TYPE_CHOICES)
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
     fields_to_canonize = [
         'study', 
         'content',
@@ -255,21 +255,16 @@ def implementation(logger, host, user, passwd, args):
                             extrasaction='ignore')
     report.writeheader()
     try:
-        recorder.record(records, o, report,
-                        args.blocking_validator)
-    except core.ImporterValidationError, ve:
-        args.ifile.close()
-        args.ofile.close()
-        args.report_file.close()
+        recorder.record(records, o, report, args.blocking_validator)
+    except core.ImporterValidationError as ve:
         recorder.logger.critical(ve.message)
-        raise ve
-    args.ifile.close()
-    args.ofile.close()
-    args.report_file.close()
+        raise
+    finally:
+        close_handles(args)
     recorder.logger.info('done processing file %s' % args.ifile.name)
 
 help_doc = """
-import ney lane slots.
+import lane slots.
 """
 
 def do_register(registration_list):

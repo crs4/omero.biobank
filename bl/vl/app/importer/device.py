@@ -213,7 +213,7 @@ def make_parser(parser):
     )
 
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
   fields_to_canonize = ['study', 'maker', 'model', 'release', 'device_type']
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(args.study,
@@ -239,15 +239,11 @@ def implementation(logger, host, user, passwd, args):
   try:
     recorder.record(records, o, report,
                     args.blocking_validator)
-  except core.ImporterValidationError, ve:
-    args.ifile.close()
-    args.ofile.close()
-    args.report_file.close()
+  except core.ImporterValidationError as ve:
     logger.critical(ve.message)
-    raise ve
-  args.ifile.close()
-  args.ofile.close()
-  args.report_file.close()
+    raise
+  finally:
+    close_handles(args)
   logger.info('done processing file %s' % args.ifile.name)
 
 

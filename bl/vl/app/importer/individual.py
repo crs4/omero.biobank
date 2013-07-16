@@ -239,45 +239,43 @@ def make_parser(parser):
                       help="n. of objects to be processed at a time")
 
 
-def implementation(logger, host, user, passwd, args):
+def implementation(logger, host, user, passwd, args, close_handles):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   f = csv.DictReader(args.ifile, delimiter='\t')
   records = [r for r in f]
-  if len(records) == 0:
-    msg = 'No records are going to be imported'
-    logger.critical(msg)
-    raise core.ImporterValidationError(msg)
-  canonizer = core.RecordCanonizer(['study'], args)
-  canonizer.canonize_list(records)
-  study_label = records[0]['study']
-  o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
-                     delimiter='\t', lineterminator=os.linesep)
-  recorder = Recorder(o, study_label, host, user, passwd,
-                      args.keep_tokens, args.batch_size,
-                      operator=args.operator,
-                      action_setup_conf=action_setup_conf, logger=logger)
-  report_fnames = copy.deepcopy(f.fieldnames)
-  report_fnames.append('error')
-  report = csv.DictWriter(args.report_file, report_fnames,
-                          delimiter='\t', lineterminator=os.linesep,
-                          extrasaction='ignore')
-  report.writeheader()
-  records, bad_records = recorder.do_consistency_checks(records)
-  for br in bad_records:
-    report.writerow(br)
-  if args.blocking_validator and len(bad_records) >= 1:
-    args.ofile.close()
-    args.ifile.close()
-    args.report_file.close()
-    msg = '%d invalid records' % len(bad_records)
-    recorder.logger.critical(msg)
-    raise core.ImporterValidationError(msg)
-  by_label = make_ind_by_label(records)
-  import_pedigree(recorder, by_label.itervalues())
-  recorder.clean_up()
-  args.ofile.close()
-  args.ifile.close()
-  args.report_file.close()
+  try:
+    if len(records) == 0:
+      msg = 'No records are going to be imported'
+      logger.critical(msg)
+      raise core.ImporterValidationError(msg)
+    canonizer = core.RecordCanonizer(['study'], args)
+    canonizer.canonize_list(records)
+    study_label = records[0]['study']
+    o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
+                       delimiter='\t', lineterminator=os.linesep)
+    recorder = Recorder(o, study_label, host, user, passwd,
+                        args.keep_tokens, args.batch_size,
+                        operator=args.operator,
+                        action_setup_conf=action_setup_conf, logger=logger)
+    report_fnames = copy.deepcopy(f.fieldnames)
+    report_fnames.append('error')
+    report = csv.DictWriter(args.report_file, report_fnames,
+                            delimiter='\t', lineterminator=os.linesep,
+                            extrasaction='ignore')
+    report.writeheader()
+    records, bad_records = recorder.do_consistency_checks(records)
+    for br in bad_records:
+      report.writerow(br)
+    if args.blocking_validator and len(bad_records) >= 1:
+      msg = '%d invalid records' % len(bad_records)
+      recorder.logger.critical(msg)
+      raise core.ImporterValidationError(msg)
+    by_label = make_ind_by_label(records)
+    import_pedigree(recorder, by_label.itervalues())
+    recorder.clean_up()
+  finally:
+    close_handles(args)
+  logger.info('done processing file %s' % args.ifile.name)
 
 
 def do_register(registration_list):
