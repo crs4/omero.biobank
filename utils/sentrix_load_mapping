@@ -126,7 +126,8 @@ class ingestor(object):
             for r in cf:
                 r['Chip_Type'] = chip_type
                 r['Date'] = date
-                r['Sample_Plate']  = r['Project'].split('_')[0]
+                if not r.haskey('Sample_Plate'):
+                    r['Sample_Plate']  = r['Project'].split('_')[:-1]
                 yield map(r.__getitem__,
                           map(lambda x: x[0], self.SUMMARY_FIELDS))
 
