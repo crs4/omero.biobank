@@ -23,14 +23,16 @@ beadchip meta files.
 #-----------------------------------------------------------------
 import logging, time
 
+default_logging_level=logging.DEBUG
+
 LOG_FILENAME = 'sentrix_load_mapping.log'
 logging.basicConfig(
     filename=LOG_FILENAME,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO)
+    level=default_logging_level)
 logger = logging.getLogger()
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(default_logging_level)
 formatter = logging.Formatter(
     fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
@@ -76,18 +78,23 @@ class ingestor(object):
     def __init__(self, dbname):
         logger.info('setting dbname to {}'.format(dbname))
         self.dbname = dbname
+        self.initialize_db(rebuild=False)
+
 
     def create_table(self, cursor, tname, field_descs):
         fields = ','.join(map(' '.join, field_descs))
-        logger.debug('{}'.format(sql_cmd))
         sql_cmd = 'CREATE TABLE {} ({})'.format(tname, fields)
+        logger.debug('{}'.format(sql_cmd))
         cursor.execute(sql_cmd)
 
-    def initialize_db(self):
-        logger.info('reinitializing db file {}'.format(self.dbname))
+    def initialize_db(self, rebuild=True):
+        logger.info('initializing db file {}'.format(self.dbname))
         if os.path.exists(self.dbname):
-            logger.info('removing exisiting db file {}'.format(self.dbname))
-            os.unlink(self.dbname)
+            if rebuild:
+                logger.info('removing exisiting db file {}'.format(self.dbname))
+                os.unlink(self.dbname)
+            else:
+                return
         conn = sqlite3.connect(self.dbname)
         c = conn.cursor()
         self.create_table(c, self.SUMMARY_TABLE, self.SUMMARY_FIELDS)
@@ -120,7 +127,8 @@ class ingestor(object):
                 r['Chip_Type'] = chip_type
                 r['Date'] = date
                 r['Sample_Plate']  = r['Project'].split('_')[0]
-                yield map(r.__getitem__, self.mapped_fields)
+                yield map(r.__getitem__,
+                          map(lambda x: x[0], self.SUMMARY_FIELDS))
 
     def ingest_summary(self, fname):
         logger.info('ingesting data from {}'.format(fname))
@@ -129,7 +137,7 @@ class ingestor(object):
         c = conn.cursor()
         for r in stream:
             sql_stat = "INSERT INTO {} VALUES {}".format(
-                self.SUMMARY_TABLE.
+                self.SUMMARY_TABLE,
                 str(tuple(map(lambda x: "%s" % x, r))))
             logger.debug(sql_stat)
             c.execute(sql_stat)
