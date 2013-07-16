@@ -92,15 +92,15 @@ class Recorder(core.Core):
       while len(records[offset:]) > 0:
         yield records[offset:offset+batch_size]
         offset += batch_size
-    if not records:
-      msg = 'No records are going to be imported'
-      self.logger.critical(msg)
-      raise core.ImporterValidationError(msg)
     self.container_klass = self.find_container_klass(records)
     self.preload_containers()
     if self.container_klass == self.kb.Lane:
       self.preload_flowcells()
     records, bad_records = self.do_consistency_checks(records)
+    if len(records) == 0:
+      if not blocking_validation:  # with blocking val it will break later
+        self.logger.error('None of the records passed validation checks')
+        return
     for br in bad_records:
       rtsv.writerow(br)
     if blocking_validation and len(bad_records) >= 1:
@@ -429,23 +429,27 @@ def implementation(logger, host, user, passwd, args, close_handles):
   f = csv.DictReader(args.ifile, delimiter='\t')
   recorder.logger.info('start processing file %s' % args.ifile.name)
   records = [r for r in f]
-  if args.container_type == 'TiterPlate':
-    fields_to_canonize.extend(['rows', 'columns'])
-  elif args.container_type == 'FlowCell':
-    fields_to_canonize.append('number_of_slots')
-  canonizer = RecordCanonizer(fields_to_canonize, args)
-  canonizer.canonize_list(records)
-  o = csv.DictWriter(args.ofile,
-                     fieldnames=['study', 'label', 'type', 'vid'],
-                     delimiter='\t', lineterminator=os.linesep)
-  o.writeheader()
-  report_fnames = copy.deepcopy(f.fieldnames)
-  report_fnames.append('error')
-  report = csv.DictWriter(args.report_file, report_fnames,
-                          delimiter='\t', lineterminator=os.linesep,
-                          extrasaction='ignore')
-  report.writeheader()
   try:
+    if len(records) == 0:
+      msg = 'No records are going to be imported'
+      logger.critical(msg)
+      raise core.ImporterValidationError(msg)
+    if args.container_type == 'TiterPlate':
+      fields_to_canonize.extend(['rows', 'columns'])
+    elif args.container_type == 'FlowCell':
+      fields_to_canonize.append('number_of_slots')
+    canonizer = RecordCanonizer(fields_to_canonize, args)
+    canonizer.canonize_list(records)
+    o = csv.DictWriter(args.ofile,
+                       fieldnames=['study', 'label', 'type', 'vid'],
+                       delimiter='\t', lineterminator=os.linesep)
+    o.writeheader()
+    report_fnames = copy.deepcopy(f.fieldnames)
+    report_fnames.append('error')
+    report = csv.DictWriter(args.report_file, report_fnames,
+                            delimiter='\t', lineterminator=os.linesep,
+                            extrasaction='ignore')
+    report.writeheader()
     recorder.record(records, o, report, args.blocking_validator)
   except core.ImporterValidationError as ve:
     logger.critical(ve.message)
