@@ -1,0 +1,181 @@
+#!/usr/bin/env python
+
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
+import sqlite3
+import csv, os
+from bs4 import BeautifulSoup
+
+
+"""
+
+Illumina Sentrix Meta data utility
+==================================
+
+The purpose of this utility is to extract information from Illumina
+beadchip meta files.
+
+   bash$ FIXME
+
+"""
+
+#-----------------------------------------------------------------
+import logging, time
+
+LOG_FILENAME = 'sentrix_load_mapping.log'
+logging.basicConfig(
+    filename=LOG_FILENAME,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO)
+logger = logging.getLogger()
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+#---------------------------------------------------------------------
+import argparse
+
+DEFAULT_DB_NAME='illumina_chips.db'
+
+def cmd_parser():
+    parser = argparse.ArgumentParser(description="""
+    gather meta information from illumina beadchip files""")
+    parser.add_argument("--db-file", type=str, default=DEFAULT_DB_NAME,
+                        help="name of the db file that should be used")
+
+    parser.add_argument("--reset", action='store_true',
+                        help="reset db")
+    parser.add_argument("--sdfs", type=argparse.FileType('r'),
+                        help="file with sdf file paths (one per line)")
+    parser.add_argument("--sdf", type=str,
+                        help="a sdf file")
+    parser.add_argument("--csvs", type=argparse.FileType('r'),
+                        help="file with summary file paths (one per line)")
+    parser.add_argument("--csv", type=str,
+                        help="a summary file")
+    return parser
+
+#----------------------------------------------------------------------------
+
+
+summary_fields = "Chip_Type Date Sample_ID Sample_Plate Sample_Well Sample_Name Project AMP_Plate SentrixBarcode_A SentrixPosition_A Scanner Date_Scan".split()
+
+sentrix_fields = "SentrixBarcode_A Type Class Assay_Type Rows Cols".split()
+
+class ingestor(object):
+    SUMMARY_FIELDS = zip(summary_fields, ['text'] * len(summary_fields))
+    SENTRIX_FIELDS = zip(sentrix_fields,
+                         ['text'] * (len(sentrix_fields) - 2) + ['integer'] * 2)
+    SUMMARY_TABLE  = 'summaries'
+    SENTRIX_TABLE  = 'sentrix'
+
+    def __init__(self, dbname):
+        logger.info('setting dbname to {}'.format(dbname))
+        self.dbname = dbname
+
+    def create_table(self, cursor, tname, field_descs):
+        fields = ','.join(map(' '.join, field_descs))
+        logger.debug('{}'.format(sql_cmd))
+        sql_cmd = 'CREATE TABLE {} ({})'.format(tname, fields)
+        cursor.execute(sql_cmd)
+
+    def initialize_db(self):
+        logger.info('reinitializing db file {}'.format(self.dbname))
+        if os.path.exists(self.dbname):
+            logger.info('removing exisiting db file {}'.format(self.dbname))
+            os.unlink(self.dbname)
+        conn = sqlite3.connect(self.dbname)
+        c = conn.cursor()
+        self.create_table(c, self.SUMMARY_TABLE, self.SUMMARY_FIELDS)
+        self.create_table(c, self.SENTRIX_TABLE, self.SENTRIX_FIELDS)
+        conn.commit()
+        conn.close()
+        logger.info('done reinitializing db file')
+
+    def build_summary_stream(self, fname):
+        def get_field(f, field_name):
+            l = f.readline()
+            parts = l.split(',')
+            assert parts[0] == field_name
+            return parts[1].strip()
+        def get_header(f):
+            for x in ["[Header]", "Investigator Name",
+                      "Project Name", "Experiment Name"]:
+                get_field(f, x)
+            date = get_field(f, 'Date')
+            get_field(f, '[Manifests]')
+            # FIXME we have seen only single manifests files thus far...
+            chip_type = get_field(f, 'A')
+            get_field(f, '[Data]')
+            return date, chip_type
+
+        with open(fname) as f:
+            date, chip_type = get_header(f)
+            cf = csv.DictReader(f)
+            for r in cf:
+                r['Chip_Type'] = chip_type
+                r['Date'] = date
+                r['Sample_Plate']  = r['Project'].split('_')[0]
+                yield map(r.__getitem__, self.mapped_fields)
+
+    def ingest_summary(self, fname):
+        logger.info('ingesting data from {}'.format(fname))
+        stream = self.build_summary_stream(fname)
+        conn = sqlite3.connect(self.dbname)
+        c = conn.cursor()
+        for r in stream:
+            sql_stat = "INSERT INTO {} VALUES {}".format(
+                self.SUMMARY_TABLE.
+                str(tuple(map(lambda x: "%s" % x, r))))
+            logger.debug(sql_stat)
+            c.execute(sql_stat)
+        conn.commit()
+        conn.close()
+        logger.info('done ingesting data from {}'.format(fname))
+
+    def ingest_sdf(self, fname):
+        logger.info('ingesting data from {}'.format(fname))
+        sdf_barcode, ext = os.path.basename(fname).split('.')
+        s = BeautifulSoup(open(fname))
+        sdf_name = str(s.find_all('name')[0].text)
+        sdf_class= str(s.find_all('class')[0].text)
+        sdf_assay_type = str(s.find_all('assaytype')[0].text)
+        # quick and dirty
+        rows, cols = s.samplelabels.find_all('string')[-1].text.split('C')
+        rows, cols = int(rows[1:]), int(cols)
+        sql_stat = "INSERT INTO {} VALUES {}".format(
+            self.SENTRIX_TABLE,
+            tuple([sdf_barcode, sdf_name, sdf_class, sdf_assay_type,
+                   rows,cols]))
+        logger.debug(sql_stat)
+        conn = sqlite3.connect(self.dbname)
+        c = conn.cursor()
+        c.execute(sql_stat)
+        conn.commit()
+        conn.close()
+        logger.info('done ingesting data from {}'.format(fname))
+
+
+if __name__ == '__main__':
+    parser = cmd_parser()
+    args = parser.parse_args()
+    ing = ingestor(args.db_file)
+    if args.reset:
+        ing.initialize_db()
+    if args.sdf:
+        ing.ingest_sdf(args.sdf)
+    if args.sdfs:
+        for l in args.sdf:
+            ing.ingest_sdf(l.strip())
+    if args.csv:
+        ing.ingest_summary(args.csv)
+    if args.csvs:
+        for l in args.csvs:
+            ing.ingest_summary(l.strip())
+
+
+
