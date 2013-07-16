@@ -81,9 +81,13 @@ class ingestor(object):
         self.initialize_db(rebuild=False)
 
 
-    def create_table(self, cursor, tname, field_descs):
+    def create_table(self, cursor, tname, field_descs, unique_cols=None):
         fields = ','.join(map(' '.join, field_descs))
-        sql_cmd = 'CREATE TABLE {} ({})'.format(tname, fields)
+        if unique_cols:
+            unique_bit = ', UNIQUE ({})'.format(','.join(unique_cols))
+        else:
+            unique_bit = ''
+        sql_cmd = 'CREATE TABLE {} ({} {})'.format(tname, fields, unique_bit)
         logger.debug('{}'.format(sql_cmd))
         cursor.execute(sql_cmd)
 
@@ -97,8 +101,12 @@ class ingestor(object):
                 return
         conn = sqlite3.connect(self.dbname)
         c = conn.cursor()
-        self.create_table(c, self.SUMMARY_TABLE, self.SUMMARY_FIELDS)
-        self.create_table(c, self.SENTRIX_TABLE, self.SENTRIX_FIELDS)
+
+        u_cols = "SentrixBarcode_A SentrixPosition_A".split()
+        self.create_table(c, self.SUMMARY_TABLE, self.SUMMARY_FIELDS, u_cols)
+
+        u_cols = ["SentrixBarcode_A"]
+        self.create_table(c, self.SENTRIX_TABLE, self.SENTRIX_FIELDS, u_cols)
         conn.commit()
         conn.close()
         logger.info('done reinitializing db file')
@@ -126,7 +134,7 @@ class ingestor(object):
             for r in cf:
                 r['Chip_Type'] = chip_type
                 r['Date'] = date
-                if not r.haskey('Sample_Plate'):
+                if not r.has_key('Sample_Plate'):
                     r['Sample_Plate']  = r['Project'].split('_')[:-1]
                 yield map(r.__getitem__,
                           map(lambda x: x[0], self.SUMMARY_FIELDS))
