@@ -15,6 +15,10 @@ DEFAULT_BUFSIZE = 16777216
 DEFAULT_PREFIX = 'V'
 DEFAULT_DIGIT = '0'
 
+LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
+LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
+LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+
 
 def make_vid(prefix=DEFAULT_PREFIX, digit=DEFAULT_DIGIT):
   return '%s%s%s' % (prefix, digit, uuid.uuid4().hex.upper())
@@ -33,8 +37,21 @@ def compute_sha1(fname, bufsize=DEFAULT_BUFSIZE):
   return sha1.hexdigest()
 
 
-def get_logger(logger_label):
-  logger = logging.getLogger(logger_label)
+def get_logger(name, level="WARNING", filename=None, mode="a"):
+  logger = logging.getLogger(name)
+  if not isinstance(level, int):
+    try:
+      level = getattr(logging, level)
+    except AttributeError:
+      raise ValueError("unsupported literal log level: %s" % level)
+    logger.setLevel(level)
+  if filename:
+    handler = logging.FileHandler(filename, mode=mode)
+  else:
+    handler = logging.StreamHandler()
+  formatter = logging.Formatter(LOG_FORMAT, datefmt=LOG_DATEFMT)
+  handler.setFormatter(formatter)
+  logger.addHandler(handler)
   return logger
 
 

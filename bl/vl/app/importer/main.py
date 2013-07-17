@@ -26,7 +26,10 @@ should be able to use ``kb_query map_vid`` for this.
 
 import sys, argparse, logging, os
 from importlib import import_module
+
 import bl.vl.utils.ome_utils as vlu
+from bl.vl.utils import LOG_LEVELS, get_logger
+
 
 SUBMOD_NAMES = [
   "study",
@@ -49,12 +52,9 @@ SUBMOD_NAMES = [
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 class App(object):
-  
+
   def __init__(self):
     self.supported_submodules = []
     for m in SUBMODULES:
@@ -82,7 +82,7 @@ class App(object):
     parser.add_argument('--operator', metavar="STRING",
                         help='operator identifier', required=True)
     parser.add_argument('--blocking-validator', action='store_true',
-                        help='block import if at least one record doesn\'t pass data validation')
+                        help='break if there is at least one invalid record')
     parser.add_argument('-K', '--keep-tokens', type=int,
                         default=1, help='OMERO tokens for open session')
     subparsers = parser.add_subparsers()
@@ -93,28 +93,23 @@ class App(object):
     self.parser = parser
     return parser
 
+
 def close_handles(args):
   for f in args.ifile, args.ofile, args.report_file:
       if f.fileno() > 2:
         f.close()
 
+
 def main(argv=None):
   app = App()
   parser = app.make_parser()
   args = parser.parse_args(argv)
-  loglevel  = getattr(logging, args.loglevel)
-  kwargs = {'format'  : LOG_FORMAT,
-            'datefmt' : LOG_DATEFMT,
-            'level'   : loglevel}
-  if args.logfile:
-    kwargs['filename'] = args.logfile
-  logging.basicConfig(**kwargs)
-  logger = logging.getLogger()
+  logger = get_logger("main", level=args.loglevel, filename=args.logfile)
   try:
     host = args.host or vlu.ome_host()
     user = args.user or vlu.ome_user()
     passwd = args.passwd or vlu.ome_passwd()
-  except ValueError, ve:
+  except ValueError as ve:
     logger.critical(ve)
     sys.exit(ve)
   args.func(logger, host, user, passwd, args, close_handles)
