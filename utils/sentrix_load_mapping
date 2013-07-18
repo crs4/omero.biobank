@@ -145,6 +145,9 @@ class ingestor(object):
         conn = sqlite3.connect(self.dbname)
         c = conn.cursor()
         for r in stream:
+            if r[8].strip () == '':  #'SentrixBarcode_A'
+                logger.error('file: {}, record: {} -- BAD SentrixBarcode_A'.format(fname, r))
+                continue
             sql_stat = "INSERT INTO {} VALUES {}".format(
                 self.SUMMARY_TABLE,
                 str(tuple(map(lambda x: "%s" % x, r))))
