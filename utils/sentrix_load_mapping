@@ -171,8 +171,11 @@ class ingestor(object):
         logger.debug(sql_stat)
         conn = sqlite3.connect(self.dbname)
         c = conn.cursor()
-        c.execute(sql_stat)
-        conn.commit()
+        try:
+            c.execute(sql_stat)
+            conn.commit()
+        except sqlite3.IntegrityError, e:
+            logger.error('integrity fail on {}'.format(fname))
         conn.close()
         logger.info('done ingesting data from {}'.format(fname))
 
