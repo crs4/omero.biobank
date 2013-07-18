@@ -4,7 +4,7 @@
 # END_COPYRIGHT
 
 import sqlite3
-import csv, os
+import csv, os, sys, re
 from bs4 import BeautifulSoup
 
 
@@ -114,9 +114,11 @@ class ingestor(object):
     def build_summary_stream(self, fname):
         def get_field(f, field_name):
             l = f.readline()
-            parts = l.split(',')
-            assert parts[0] == field_name
-            return parts[1].strip()
+            parts = re.split('[,;]', l)
+            if not parts[0].startswith(field_name):
+                logger.error('missing field: {} in {}'.format(field_name, l))
+                sys.exit(1)
+            return '' if len(parts) == 1 else parts[1].strip()
         def get_header(f):
             for x in ["[Header]", "Investigator Name",
                       "Project Name", "Experiment Name"]:
@@ -128,9 +130,14 @@ class ingestor(object):
             get_field(f, '[Data]')
             return date, chip_type
 
+        s = csv.Sniffer()
         with open(fname) as f:
             date, chip_type = get_header(f)
-            cf = csv.DictReader(f)
+            pos = f.tell()
+            d = s.sniff(f.readline())
+            f.seek(pos)
+            cf = csv.DictReader(f, dialect=d)
+            print cf.fieldnames
             for r in cf:
                 r['Chip_Type'] = chip_type
                 r['Date'] = date
