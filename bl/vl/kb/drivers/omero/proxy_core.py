@@ -3,7 +3,6 @@
 
 from bl.vl.utils import get_logger
 
-import time
 import itertools as it
 import numpy as np
 
