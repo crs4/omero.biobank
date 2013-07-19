@@ -199,7 +199,7 @@ if __name__ == '__main__':
     if args.sdf:
         ing.ingest_sdf(args.sdf)
     if args.sdfs:
-        for l in args.sdf:
+        for l in args.sdfs:
             ing.ingest_sdf(l.strip())
     if args.csv:
         ing.ingest_summary(args.csv)
