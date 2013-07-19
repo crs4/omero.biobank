@@ -7,18 +7,16 @@ Replaces the individual label with the platewell VID in the 'source'
 column of the tsv input files for DataSample(s) produced by
 write_immuno_dataset.py
 """
-import sys, os, argparse, csv, logging
+import sys, os, argparse, csv
 from contextlib import nested
 try:
   from collections import Counter
 except ImportError:
   sys.exit("ERROR: This script needs python >=2.7")
+
+from bl.vl.utils import LOG_LEVELS, get_logger
 from bl.vl.kb import KnowledgeBase as KB
 import bl.vl.utils.ome_utils as vlu
-
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
 STUDY = "IMMUNOCHIP"
@@ -90,12 +88,8 @@ def make_parser():
 def main(argv):
   parser = make_parser()
   args = parser.parse_args(argv)
-  log_level = getattr(logging, args.loglevel)
-  kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
-  if args.logfile:
-    kwargs['filename'] = args.logfile
-  logging.basicConfig(**kwargs)
-  logger = logging.getLogger()
+  logger = get_logger("main", level=args.loglevel, filename=args.logfile)
+
   with nested(open(args.input_file), open(args.output_file, "w")) as (f, fo):
     reader = csv.DictReader(f, delimiter="\t")
     writer = csv.DictWriter(fo, reader.fieldnames, delimiter="\t",

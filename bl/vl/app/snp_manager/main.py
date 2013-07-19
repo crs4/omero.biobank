@@ -10,13 +10,12 @@ Its main features are:
 * data conversion to/from formats used by the BWA sequence aligner
 """
 
-import argparse, logging
+import argparse
 from importlib import import_module
 
+from bl.vl.utils import LOG_LEVELS, get_logger
 
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+
 SUBMOD_NAMES = [
   "convert_dbsnp",
   "convert_affy",
@@ -56,10 +55,5 @@ def main(argv=None):
   app = App()
   parser = app.make_parser()
   args = parser.parse_args(argv)
-  log_level = getattr(logging, args.loglevel)
-  kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
-  if args.logfile:
-    kwargs['filename'] = args.logfile
-  logging.basicConfig(**kwargs)
-  logger = logging.getLogger()
+  logger = get_logger("main", level=args.loglevel, filename=args.logfile)
   args.func(logger, args)

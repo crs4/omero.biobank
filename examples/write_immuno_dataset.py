@@ -27,7 +27,7 @@ spaces represent tabs)::
   SoftwareProgram  Illumina-GenomeStudio-1.8.4  Illumina  GenomeStudio  1.8.4
 
 """
-import sys, os, argparse, csv, logging
+import sys, os, argparse, csv
 from collections import OrderedDict
 from contextlib import nested
 
@@ -35,13 +35,10 @@ from bl.core.io.illumina import GenomeStudioFinalReportReader as DataReader
 from bl.core.io.illumina import IllSNPReader
 from bl.core.io import MessageStreamWriter
 import bl.core.gt.messages.SnpCall as SnpCall
+
 from bl.vl.kb import mimetypes
-from bl.vl.utils import compute_sha1
+from bl.vl.utils import compute_sha1, LOG_LEVELS, get_logger
 
-
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 DS_FN = "import_data_sample.tsv"
 DO_FN = "import_data_object.tsv"
@@ -174,12 +171,7 @@ def main(argv):
   if not args.input_list and not args.ifiles:
     sys.exit("ERROR: no input source has been specified")
 
-  log_level = getattr(logging, args.loglevel)
-  kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
-  if args.logfile:
-    kwargs['filename'] = args.logfile
-  logging.basicConfig(**kwargs)
-  logger = logging.getLogger()
+  logger = get_logger("main", level=args.loglevel, filename=args.logfile)
 
   if args.input_list:
     input_map = get_input_map(args.input_list)

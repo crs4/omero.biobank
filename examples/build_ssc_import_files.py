@@ -22,15 +22,11 @@ TSV mapping file must be like::
   ...
 
 """
-import sys, os, argparse, csv, logging
+import sys, os, argparse, csv
 from contextlib import nested
 
-from bl.vl.utils import compute_sha1
+from bl.vl.utils import LOG_LEVELS, get_logger, compute_sha1
 from bl.vl.kb import mimetypes
-
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 DS_FN = 'import_data_sample.tsv'
 DO_FN = 'import_data_object.tsv'
@@ -77,15 +73,7 @@ def make_parser():
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
-
-    log_level = getattr(logging, args.loglevel)
-    kwargs = {'format': LOG_FORMAT,
-              'datefmt': LOG_DATEFMT,
-              'level': log_level}
-    if args.logfile:
-        kwargs['filename'] = args.logfile
-    logging.basicConfig(**kwargs)
-    logger = logging.getLogger()
+    logger = get_logger("main", level=args.loglevel, filename=args.logfile)
 
     # Get all sources mapped into a dict
     with open(args.map_file) as mapfile:

@@ -1,14 +1,12 @@
 # This script takes as input the file produced by get_birth_data.py
 # and prepares the input file for the importer birth_data tool
 
-import csv, sys, argparse, logging, time
+import csv, sys, argparse, time
 
+from bl.vl.utils import LOG_LEVELS, get_logger
 from bl.vl.kb import KnowledgeBase as KB
 import bl.vl.utils.ome_utils as vlu
 
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 def make_parser():
     parser = argparse.ArgumentParser(description='prepares importer birth_data input file using the get_birth_data.py output')
@@ -36,15 +34,7 @@ def get_enrollments_lookup(kb, logger):
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
-
-    log_level = getattr(logging, args.loglevel)
-    kwargs = {'format'  : LOG_FORMAT,
-              'datefmt' : LOG_DATEFMT,
-              'level'   : log_level}
-    if args.logfile:
-        kwargs['filename'] = args.logfile
-    logging.basicConfig(**kwargs)
-    logger = logging.getLogger()
+    logger = get_logger("main", level=args.loglevel, filename=args.logfile)
 
     try:
         host = args.host or vlu.ome_host()

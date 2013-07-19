@@ -1,12 +1,10 @@
-import sys, argparse, logging
+import sys, argparse
 
+from bl.vl.utils import LOG_LEVELS, get_logger
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb import KBError
 import bl.vl.utils.ome_utils as vlu
 
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 def make_parser():
     parser = argparse.ArgumentParser(description='move an immunochip related enrollment to "discarded" study and mark related wells as unusable',
@@ -25,8 +23,7 @@ def make_parser():
                         help='file containing the list of enrollments that will be discarded')
     return parser
 
-def mark_invalid_well(enrollment, kb):
-    logger = logging.getLogger()
+def mark_invalid_well(enrollment, kb, logger):
     wells = kb.get_vessels_by_individual(enrollment.individual, 'PlateWell')
     wells = [w for w in wells]
     logger.info('Retrieved %d well(s) for %s' % (len(wells), enrollment.studyCode))
@@ -50,15 +47,7 @@ def mark_invalid_well(enrollment, kb):
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
-
-    log_level = getattr(logging, args.loglevel)
-    kwargs = {'format' : LOG_FORMAT,
-              'datefmt' : LOG_DATEFMT,
-              'level' : log_level}
-    if args.logfile:
-        kwargs['filename'] = args.logfile
-    logging.basicConfig(**kwargs)
-    logger = logging.getLogger()
+    logger = get_logger("main", level=args.loglevel, filename=args.logfile)
 
     try:
         host = args.host or vlu.ome_host()
@@ -104,10 +93,10 @@ def main(argv):
             logger.error('Can\'t save enrollment %s in study %s' % (disc.studyCode,
                                                                     disc.study.label))
             continue
-        disc_well = mark_invalid_well(disc, kb)
+        disc_well = mark_invalid_well(disc, kb, logger)
         if disc_well:
             kb.save(disc_well)
-            pass
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])

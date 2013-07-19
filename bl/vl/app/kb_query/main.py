@@ -6,9 +6,11 @@
 from the Knowledge Base (KB).
 """
 
-import sys, argparse, logging, os
+import sys, argparse
 from importlib import import_module
+
 import bl.vl.utils.ome_utils as vlu
+from bl.vl.utils import LOG_LEVELS, get_logger
 
 
 SUBMOD_NAMES = [
@@ -29,9 +31,6 @@ SUBMOD_NAMES = [
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 class App(object):
   
@@ -45,7 +44,7 @@ class App(object):
     parser.add_argument('--logfile', metavar="FILE",
                         help='log file, defaults to stderr')
     parser.add_argument('--loglevel', metavar="STRING",
-                        choices=['DEBUG', 'INFO', 'WARNING', 'CRITICAL'],
+                        choices=LOG_LEVELS,
                         help='logging level', default='INFO')
     parser.add_argument('-o', '--ofile', type=argparse.FileType('w'),
                         help='output tsv file', default=sys.stdout)
@@ -71,14 +70,7 @@ def main(argv=None):
   app = App()
   parser = app.make_parser()
   args = parser.parse_args(argv)
-  loglevel  = getattr(logging, args.loglevel)
-  kwargs = {'format'  : LOG_FORMAT,
-            'datefmt' : LOG_DATEFMT,
-            'level'   : loglevel}
-  if args.logfile:
-    kwargs['filename'] = args.logfile
-  logging.basicConfig(**kwargs)
-  logger = logging.getLogger()
+  logger = get_logger("main", level=args.loglevel, filename=args.logfile)
   try:
     host = args.host or vlu.ome_host()
     user = args.user or vlu.ome_user()

@@ -15,14 +15,11 @@ At the moment it is hardwired to IMMUNOCHIP study
 
 """
 
-import logging, csv, argparse, sys, os
+import csv, argparse, sys, os
 
+from bl.vl.utils import LOG_LEVELS, get_logger
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb.drivers.omero.ehr import EHR
-
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 DIAGNOSIS_ARCH = 'openEHR-EHR-EVALUATION.problem-diagnosis.v1'
 DIAGNOSIS_FIELD = 'at0002.1'
@@ -102,8 +99,7 @@ def get_affections(clinical_records):
         ms = 'False'
     return t1d, ms
 
-def get_ichip_sample_code(enrollments, plate_barcode):
-    logger = logging.getLogger()
+def get_ichip_sample_code(enrollments, plate_barcode, logger):
     if len(enrollments) == 1:
         return enrollments[0].studyCode.split('|')[0]
     else:
@@ -122,15 +118,7 @@ def map_gender(individual):
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
-    
-    log_level = getattr(logging, args.loglevel)
-    kwargs = {'format' : LOG_FORMAT,
-              'datefmt' : LOG_DATEFMT,
-              'level' : log_level}
-    if args.logfile:
-        kwargs['filename'] = args.logfile
-    logging.basicConfig(**kwargs)
-    logger = logging.getLogger()
+    logger = get_logger("main", level=args.loglevel, filename=args.logfile)
 
     kb = KB(driver='omero')(args.host, args.user, args.passwd)
     
@@ -183,7 +171,7 @@ def main(argv):
                                      'T1D_affected' : 'X',
                                      'MS_affected' : 'X'})
                     
-                writer.writerow({'Sample_ID' : get_ichip_sample_code(wells_lookup[well], pl.barcode),
+                writer.writerow({'Sample_ID' : get_ichip_sample_code(wells_lookup[well], pl.barcode, logger),
                                  'PLATE_barcode' : pl.barcode,
                                  'PLATE_name' : pl.label,
                                  'WELL_label' : well.label,

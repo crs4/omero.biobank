@@ -1,11 +1,9 @@
-import sys, argparse, logging
+import sys, argparse
 
+from bl.vl.utils import LOG_LEVELS, get_logger
 import bl.vl.utils.ome_utils as vlu
 from bl.vl.kb import KnowledgeBase as KB
 
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 def make_parser():
     parser = argparse.ArgumentParser(description = 'This tool will find identical EHR records for all the individuals in the system and will invalidate all the duplicated')
@@ -24,15 +22,7 @@ def get_ehr_key(ehr_record):
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
-
-    log_level = getattr(logging, args.loglevel)
-    kwargs = {'format' : LOG_FORMAT,
-              'datefmt' : LOG_DATEFMT,
-              'level' : log_level}
-    if args.logfile:
-        kwargs['filename'] = args.logfile
-    logging.basicConfig(**kwargs)
-    logger = logging.getLogger()
+    logger = get_logger("main", level=args.loglevel, filename=args.logfile)
 
     try:
         host = args.host or vlu.ome_host()
@@ -44,9 +34,9 @@ def main(argv):
 
     kb = KB(driver='omero')(host, user, passwd)
 
-    logging.info('Loading EHR records')
+    logger.info('Loading EHR records')
     ehr_records = kb.get_ehr_records()
-    logging.info('Loaded %d EHR records' % len(ehr_records))
+    logger.info('Loaded %d EHR records' % len(ehr_records))
 
     ehr_lookup = {}
     for rec in ehr_records:

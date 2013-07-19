@@ -13,26 +13,13 @@ then apply further selections to the remaining SNPs based on common
 measures such as the MAF.
 """
 
-import sys, os, argparse, logging, csv, itertools as it
+import sys, os, argparse, csv, itertools as it
 import numpy as np
 
+from bl.vl.utils import LOG_LEVELS, get_logger
 from bl.vl.kb import KBError, KnowledgeBase as KB
-import bl.vl.kb.drivers.omero.utils as vlu
+import bl.vl.utils.ome_utils as vlu
 #import bl.vl.genotype.algo as algo
-
-
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-
-
-def setup_logger(args):
-  log_level = logging.DEBUG if args.debug else getattr(logging, args.loglevel)
-  kwargs = {'format': LOG_FORMAT, 'datefmt': LOG_DATEFMT, 'level': log_level}
-  if args.logfile:
-    kwargs['filename'] = args.logfile
-  logging.basicConfig(**kwargs)
-  return logging.getLogger()
 
 
 def get_login_info(args, logger):
@@ -141,7 +128,9 @@ def main(argv):
   args = parser.parse_args(argv)
   if len(args.ms_labels) != 2:
     sys.exit("Sorry, only two marker sets are currently supported")
-  logger = setup_logger(args)
+  if args.debug:
+    args.loglevel = 'DEBUG'
+  logger = get_logger("main", level=args.loglevel, filename=args.logfile)
   host, user, passwd = get_login_info(args, logger)
   logger.info("connecting to %s" % host)
   kb = KB(driver="omero")(host, user, passwd)

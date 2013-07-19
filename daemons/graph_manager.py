@@ -8,13 +8,12 @@ import sys
 import logging
 import argparse
 from logging.handlers import RotatingFileHandler
+from bl.vl.utils import LOG_FORMAT, LOG_DATEFMT
 
 
 class GraphManagerDaemon(object):
 
     LOGGER_LABEL = 'graph_manager_daemon'
-    LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-    LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
     LOG_MAX_SIZE = 100*1024*1024
     LOG_BACKUP_COUNT = 3
 
@@ -46,7 +45,7 @@ class GraphManagerDaemon(object):
         handler = RotatingFileHandler(filename, maxBytes=self.LOG_MAX_SIZE,
                                       backupCount=self.LOG_BACKUP_COUNT)
         handler.setLevel(getattr(logging, log_level))
-        formatter = logging.Formatter(self.LOG_FORMAT, datefmt=self.LOG_DATEFMT)
+        formatter = logging.Formatter(LOG_FORMAT, datefmt=LOG_DATEFMT)
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         return logger

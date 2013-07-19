@@ -3,14 +3,11 @@
 # the enrollments importer tool in order to import new OMNIEXPRESS
 # enrollments into the system.
 
-import csv, sys, argparse, logging
+import csv, sys, argparse
 
+from bl.vl.utils import LOG_LEVELS, get_logger
 from bl.vl.kb import KnowledgeBase as KB
 import bl.vl.utils.ome_utils as vlu
-
-LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
-LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 OE_STCODE_PATTERN = 'OE_%010d'
 OE_LABEL_PREFIX = 'OE_'
@@ -45,15 +42,7 @@ def get_omniexpress_plates(kb):
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
-
-    log_level = getattr(logging, args.loglevel)
-    kwargs = {'format'  : LOG_FORMAT,
-              'datefmt' : LOG_DATEFMT,
-              'level'   : log_level}
-    if args.logfile:
-        kwargs['filename'] = args.logfile
-    logging.basicConfig(**kwargs)
-    logger = logging.getLogger()
+    logger = get_logger("main", level=args.loglevel, filename=args.logfile)
 
     try:
         host   = args.host or vlu.ome_host()
