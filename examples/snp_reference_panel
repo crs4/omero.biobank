@@ -66,12 +66,12 @@ def get_average_confs(kb, msets, indices, logger, debug=False):
     if not conf_sums:
       conf_sums = [r["confidence"] for r in records]
     else:
-      for s, r in it.izip(conf_sums, records):
-        s += r["confidence"]
+      for i, (s, r) in enumerate(it.izip(conf_sums, records)):
+        conf_sums[i] += r["confidence"]
     if break_at_first_batch:
       break
-  for s in conf_sums:
-    s /= n
+  for i, s in enumerate(conf_sums):
+    conf_sums[i] = s / n
   return conf_sums
 
 
