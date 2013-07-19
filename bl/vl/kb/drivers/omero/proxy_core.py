@@ -7,6 +7,7 @@ import itertools as it
 import numpy as np
 
 import omero
+from omero_version import omero_version
 import omero.rtypes as ort
 import omero_sys_ParametersI as osp
 import omero_ServerErrors_ice  # magically adds exceptions to the omero module
@@ -96,7 +97,18 @@ class ProxyCore(object):
   def clear_cache(self):
     self.__class__._CACHE.clear()
 
-  def __init__(self, host, user, passwd, group=None, session_keep_tokens=1):
+  def __check_omero_version(self):
+    s = self.connect()
+    conf = s.getConfigService()
+    server_version = conf.getConfigValue('omero.version')
+    client_version = omero_version
+    self.disconnect()
+    if server_version != client_version:
+      raise kb.KBError('OMERO client version %s doesn\'t match server version %s' %
+                       (client_version, server_version))
+
+  def __init__(self, host, user, passwd, group=None, session_keep_tokens=1,
+               check_ome_version=True):
     self.logger = get_logger('bl.vl.kb.drivers.omero.proxy_core')
     self.user = user
     self.passwd = passwd
@@ -107,6 +119,8 @@ class ProxyCore(object):
     self.session_keep_tokens = session_keep_tokens
     self.transaction_tokens = 0
     self.current_session = None
+    if check_ome_version:
+        self.__check_omero_version()
 
   def __del__(self):
     if self.current_session:
