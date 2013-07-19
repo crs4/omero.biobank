@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+
+import argparse, os, sys
+import xml.etree.ElementTree as ET
+from hashlib import md5
+
+from bl.vl.utils import LOG_LEVELS, get_logger
+
+BIOBANK_TAG_PROPERTY='biobank.models.version'
+BIOBANK_TAG = '-bb${%s}' % BIOBANK_TAG_PROPERTY
+OME_ANT_BUILD_XML = 'build.xml'
+ANT_RESOURCES_FILE = 'components/antlib/resources/global.xml'
+
+
+def make_parser():
+    parser = argparse.ArgumentParser('Patch OMERO server configuration files in order to add OMERO.biobank version TAG')
+    parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
+    parser.add_argument('--loglevel', default='INFO',
+                        help='logging level', choices=LOG_LEVELS)
+    parser.add_argument('--ome-home', type=str, help='OMERO server HOME directory',
+                        required=True)
+    parser.add_argument('--models-repository', type=str, help='OMERO.biobank models repository',
+                        default='../models/')
+    return parser
+
+
+def get_models_hash(models_repository, logger, digest_length=8):
+    if not os.path.exists(models_repository):
+        msg = 'Directory "%s" does not exist' % models_repository
+        logger.critical(msg)
+        raise ValueError(msg)
+    MD5hasher = md5()
+    for fname in os.listdir(models_repository):
+        if fname.endswith('.ome.xml'):
+            with open(os.path.join(models_repository, fname), 'rw') as f:
+                logger.info('Hashing file %s' % os.path.join(models_repository, fname))
+                MD5hasher.update(f.read())
+        else:
+            logger.warning('Skipping file %s' % os.path.join(models_repository, fname))
+    return MD5hasher.hexdigest()[:digest_length]
+
+
+def patch_build_file(build_file, logger):
+    with open(build_file) as f:
+        tree = ET.parse(f)
+    root = tree.getroot()
+    for tag in root.findall('target'):
+        if tag.get('name') == 'version':
+            echo_tag = tag.find('echo')
+            if echo_tag.text.endswith(BIOBANK_TAG):
+                logger.info('** build.xml file already patched')
+            else:
+                echo_tag.text = '%s%s' % (echo_tag.text, BIOBANK_TAG)
+                with open(build_file, 'w') as f:
+                    tree.write(f)
+                logger.info('** build.xml file patched successfully')
+
+
+def patch_ant_resources_file(ant_res_file, models_hash, logger):
+    with open(ant_res_file) as f:
+        tree = ET.parse(f)
+    root = tree.getroot()
+    update = False
+    for tag in root.findall('property'):
+        if tag.get('name') == BIOBANK_TAG_PROPERTY:
+            logger.info('** biobank tag already exists, updating it')
+            tag.set('value', models_hash)
+            update = True
+    if not update:
+        logger.info('** patching ant resources file')
+        ET.SubElement(root, 'property', attrib={'name': BIOBANK_TAG_PROPERTY,
+                                                'value': models_hash})
+    with open(ant_res_file, 'w') as f:
+        tree.write(f)
+
+
+def apply_patch(ome_server_home, models_hash, logger):
+    if not os.path.exists(ome_server_home):
+        msg = 'Directory "%s" does not exists' % ome_server_home
+        logger.critical(msg)
+        raise ValueError(msg)
+    patch_build_file(os.path.join(ome_server_home, OME_ANT_BUILD_XML), logger)
+    patch_ant_resources_file(os.path.join(ome_server_home, ANT_RESOURCES_FILE),
+                             models_hash, logger)
+
+
+def main(argv):
+    parser = make_parser()
+    args = parser.parse_args(argv)
+
+    logger = get_logger('main', level=args.loglevel, filename=args.logfile)
+    logger.info('--- Starting job ---')
+    logger.info('Getting models MD5 hash')
+    models_hash = get_models_hash(args.models_repository, logger)
+    logger.info('Applying patch to OMERO server')
+    apply_patch(args.ome_home, models_hash, logger)
+
+    logger.info('--- Job completed ---')
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

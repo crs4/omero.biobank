@@ -39,8 +39,10 @@ class Proxy(ProxyCore):
   """
   An OMERO driver for the knowledge base.
   """
-  def __init__(self, host, user, passwd, group=None, session_keep_tokens=1):
-    super(Proxy, self).__init__(host, user, passwd, group, session_keep_tokens)
+  def __init__(self, host, user, passwd, group=None, session_keep_tokens=1,
+               check_ome_version=True):
+    super(Proxy, self).__init__(host, user, passwd, group, session_keep_tokens,
+                                check_ome_version)
     self.factory = ObjectFactory(proxy=self)
     #-- learn
     for k in KOK:
