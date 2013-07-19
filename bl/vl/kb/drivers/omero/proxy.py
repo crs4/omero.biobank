@@ -574,7 +574,7 @@ class Proxy(ProxyCore):
     if timestamp:
       selector.append('(timestamp == %d)' % timestamp)
     if action_id:
-      selector.append('(a_vid == "%s")' % archetype_id)
+      selector.append('(a_vid == "%s")' % action_id)
     if grouper_id:
       selector.append('(g_vid == "%s")' % grouper_id)
     if not valid is None:
@@ -621,5 +621,5 @@ class Proxy(ProxyCore):
     if not get_invalid:
       recs = self.get_ehr_records(selector='(i_vid=="%s") & (valid == True)' % individual.id)
     else:
-      recs = selg.get_ehr_records(selector='(i_vid=="%s")' % individual.id)
+      recs = self.get_ehr_records(selector='(i_vid=="%s")' % individual.id)
     return EHR(recs)
