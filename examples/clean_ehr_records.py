@@ -1,6 +1,6 @@
 import sys, argparse, logging
 
-import bl.vl.kb.driver.omero.utils as vlu
+import bl.vl.utils.ome_utils as vlu
 from bl.vl.kb import KnowledgeBase as KB
 
 LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
