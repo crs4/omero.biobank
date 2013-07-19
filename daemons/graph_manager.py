@@ -107,7 +107,7 @@ class GraphManagerDaemon(object):
         self.logger.info('Edge successfully deleted')
 
     def delete_edges(self, msg):
-        self.graph.driver.delete_edges(msg['target'])
+        self.graph_driver.delete_edges(msg['target'])
         self.logger.info('Edges successfully deleted')
 
     def update_edge(self, msg):
