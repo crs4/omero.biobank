@@ -19,18 +19,10 @@ FIXME extend example with age at onset.
 
 """
 
+import sys, argparse
 from bl.vl.kb import KnowledgeBase as KB
-import numpy as np
-
-import argparse
-import os, sys
-import time
-import itertools as it
-import logging
-logging.basicConfig(level=logging.INFO)
 
 
-#------------------------------------------------------------------------------
 def make_parser():
   parser = argparse.ArgumentParser(description="Basic computations example")
   parser.add_argument('-H', '--host', type=str,
@@ -42,7 +34,7 @@ def make_parser():
   parser.add_argument('-P', '--passwd', type=str,
                       help='omero user passwd')
   return parser
-#------------------------------------------------------------------------------
+
 
 DIAGNOSIS = 'openEHR-EHR-EVALUATION.problem-diagnosis.v1'
 DIAGNOSIS_TERM = 'at0002.1'
@@ -51,13 +43,13 @@ DIABETES_TYPE_1 = 'icd10-cm:E10'
 EXCLUSION = 'openEHR-EHR-EVALUATION.exclusion-problem_diagnosis.v1'
 EXCLUSION_FIELD = 'at0002.1'
 
+
 class App(object):
 
   def __init__(self, host, user, passwd):
     self.kb = KB(driver='omero')(host, user, passwd)
     #FIXME we need to do this to sync with the DB idea of the enums.
     self.kb.Gender.map_enums_values(self.kb)
-    self.logger = logging.getLogger()
 
   def get_ehr_iterator(self):
     inds = self.kb.get_objects(self.kb.Individual)
@@ -96,6 +88,7 @@ class App(object):
     print ('there are %d affected [%d male] with E10'
            % (len(affected), self.count_males(affected)))
 
+
 def main():
   parser = make_parser()
   args = parser.parse_args()
@@ -105,6 +98,7 @@ def main():
 
   app = App(args.host, args.user, args.passwd)
   app.do_enrollment()
+
 
 if __name__ == "__main__":
     main()

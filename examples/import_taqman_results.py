@@ -39,7 +39,7 @@ Usage:
                                 --ifile data/file_list.lst --run-id foobar
 
 """
-import sys, os, argparse, logging, csv, urllib2
+import sys, os, argparse, csv, urllib2
 from datetime import datetime
 
 from BeautifulSoup import BeautifulSoup
@@ -49,16 +49,15 @@ from bl.core.io import MessageStreamWriter
 from bl.core.seq.utils import reverse_complement as rc
 import bl.core.gt.messages.SnpCall as SnpCall
 
-from bl.vl.kb import KnowledgeBase as KB
-from bl.vl.utils import compute_sha1
-from bl.vl.utils.snp import split_mask, approx_equal_masks, convert_to_top
+from bl.vl.kb import mimetypes, KnowledgeBase as KB
+from bl.vl.utils import LOG_LEVELS, get_logger, compute_sha1
+from bl.vl.utils.snp import split_mask
 
 
 ABI_SOURCE = 'ABI'
 ABI_CONTEXT = 'TaqMan-SNP_Genotyping_Assays'
 ABI_RELEASE = '12/12/2009' # arbitrary date
 
-logger = None
 
 """ ..
 
@@ -68,9 +67,10 @@ in the Applied Biosystems markers database.
 """
 
 class ABISnpService(object):
-  SERVER='https://products.appliedbiosystems.com/'
-  DOC_BASE='ab/en/US/adirect/'
-  QUERY_FORM= (SERVER + DOC_BASE +
+
+  SERVER = 'https://products.appliedbiosystems.com/'
+  DOC_BASE = 'ab/en/US/adirect/'
+  QUERY_FORM = (SERVER + DOC_BASE +
                'ab?cmd=ABAssayDetailDisplay&assayID=%s&Fs=y')
 
   def __init__(self):
@@ -92,7 +92,7 @@ class ABISnpService(object):
     return mark_def
 
 
-def get_markers_definition(found_markers, sds, abi_service):
+def get_markers_definition(found_markers, sds, abi_service, logger):
   for m,v in sds.header['markers_info'].iteritems():
     if m in found_markers:
       logger.critical('the same marker (%s) is appearing twice' % m)
@@ -236,8 +236,7 @@ def make_parser():
   parser = argparse.ArgumentParser(description="Define Taq Markers in Omero/VL")
   parser.add_argument('--logfile', type=str,
                       help='logfile. Will write to stderr if not specified')
-  parser.add_argument('--loglevel', type=str,
-                      choices=['DEBUG', 'INFO', 'WARNING', 'CRITICAL'],
+  parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
                       help='logging level', default='INFO')
   parser.add_argument('--ifile', type=argparse.FileType('r'),
                       help='file with the list of files',
@@ -263,17 +262,9 @@ def make_parser():
 
 
 def main(argv):
-  global logger
   parser = make_parser()
   args = parser.parse_args(argv)
-  logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  loglevel  = getattr(logging, args.loglevel)
-  if args.logfile:
-    logging.basicConfig(filename=args.logfile, format=logformat, level=loglevel)
-  else:
-    logging.basicConfig(format=logformat, level=loglevel)
-  logger = logging.getLogger()
-
+  logger = get_logger("main", level=args.loglevel, filename=args.logfile)
   abi_service = ABISnpService()
   found_markers = {}
   data = {}
@@ -286,13 +277,12 @@ def main(argv):
     min_datetime = min(min_datetime, sds.datetime)
     max_datetime = max(max_datetime, sds.datetime)
 
-    get_markers_definition(found_markers, sds, abi_service)
+    get_markers_definition(found_markers, sds, abi_service, logger)
 
     for r in sds:
       data.setdefault(r['Sample Name'], []).append(r)
 
   kb = KB(driver='omero')(args.host, args.user, args.passwd)
-  logger.info('qui - main')
   missing_kb_markers = add_kb_marker_objects(kb, found_markers)
 
   if missing_kb_markers:

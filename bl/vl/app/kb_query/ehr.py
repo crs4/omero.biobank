@@ -6,8 +6,9 @@ Extract in tabular form EHR data from KB
 ========================================
 """
 
-import os, csv, logging
+import os, csv
 
+from bl.core.utils import NullLogger
 from bl.vl.app.importer.core import Core
 
 
@@ -18,9 +19,9 @@ class EHR(Core):
   ATYPE_DIAGNOSIS = 'openEHR-EHR-EVALUATION.problem-diagnosis.v1'
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
-               batch_size = 100, operator='Alfred E. Neumann'):
-    self.logger = logging.getLogger()
+               batch_size = 100, operator='Alfred E. Neumann', logger=None):
     super(EHR, self).__init__(host, user, passwd, keep_tokens=keep_tokens)
+    self.logger = logger or NullLogger()
     self.batch_size = batch_size
 
   def load_enrollments(self):

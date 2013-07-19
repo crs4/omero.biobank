@@ -1,9 +1,7 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import os, unittest, time, logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger()
+import os, unittest, time
 
 from bl.vl.kb import KnowledgeBase as KB
 from kb_object_creator import KBObjectCreator
@@ -21,17 +19,13 @@ class TestKB(KBObjectCreator):
     self.kill_list = []
 
   def setUp(self):
-    logger.info('start setup')
     self.kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
-    logger.info('done with setup')
 
   def tearDown(self):
-    logger.info('start tear-down')
     self.kill_list.reverse()
     for x in self.kill_list:
       self.kb.delete(x)
     self.kill_list = []
-    logger.info('done with tear-down')
 
   def create_archetype_record(self):
     terminology = 'terminology://apps.who.int/classifications/apps/'
@@ -44,10 +38,8 @@ class TestKB(KBObjectCreator):
     return archetype, rec, selector
 
   def test_ehr_record(self):
-    logger.info('creating ActionOnIndividual')
     conf, action = self.create_action_on_individual()
     self.kill_list.append(action.save())
-    logger.info('done creating ActionOnIndividual')
     archetype, fields, selector = self.create_archetype_record()
     # FIXME there should be a function for this...
     timestamp = int(time.time() * 1000)

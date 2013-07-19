@@ -1,10 +1,9 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
+# pylint: disable=E1101
+
 import unittest, time
-import logging
-logging.basicConfig(level=logging.WARN)
-logger = logging.getLogger()
 
 
 class KBObjectCreator(unittest.TestCase):
@@ -16,7 +15,6 @@ class KBObjectCreator(unittest.TestCase):
 
   def configure_object(self, o, conf):
     for k in conf.keys():
-      logger.debug('o[%s] setting %s to %s' % (o.id, k, conf[k]))
       setattr(o, k, conf[k])
     conf['id'] = o.id
 
@@ -33,17 +31,6 @@ class KBObjectCreator(unittest.TestCase):
             'model' : 'foomodel',
             'release' : '%f' % time.time()}
     device = self.kb.factory.create(self.kb.Device, conf)
-    conf['id'] = device.id
-    return conf, device
-
-  def create_hardware_device(self):
-    conf = {'label' : 'foo-%f' % time.time(),
-            'maker' : 'foomaker',
-            'model' : 'foomodel',
-            'release' : '%f' % time.time(),
-            'barcode' : '%f' % time.time(),
-            'physicalLocation' : 'HERE_THERE_EVERYWHERE'}
-    device = self.kb.factory.create(self.kb.HardwareDevice, conf)
     conf['id'] = device.id
     return conf, device
 

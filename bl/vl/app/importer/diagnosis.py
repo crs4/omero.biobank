@@ -17,9 +17,7 @@ where the diagnosis column contains `openEHR
 <http://www.openehr.org>`_ diagnosis codes.
 """
 
-import logging, os, copy, csv, json, time
-logger = logging.getLogger()
-import itertools as it
+import os, copy, csv, json, time, itertools as it
 
 import core
 from version import version

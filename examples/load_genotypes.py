@@ -35,22 +35,22 @@ Basic usage example::
 
 """
 
-import logging
-logging.basicConfig(level=logging.INFO)
+import sys, time, argparse, itertools as it
 
-import argparse
-
+from bl.core.utils import NullLogger
+from bl.vl.utils import LOG_LEVELS, get_logger
 import bl.vl.genotype.io as io
 from bl.vl.kb import KnowledgeBase as KB
 
-import os, sys, time
-import itertools as it
-
 import numpy as np
 
-#------------------------------------------------------------------------------
+
 def make_parser():
   parser = argparse.ArgumentParser(description="Load genotype data")
+  parser.add_argument('--logfile', metavar="FILE",
+                      help='log file, defaults to stderr')
+  parser.add_argument('--loglevel', metavar="STRING",
+                      choices=LOG_LEVELS, help='logging level', default='INFO')
   parser.add_argument('--pedfile', type=argparse.FileType('r'),
                       help='the input pedfile')
   parser.add_argument('--datfile', type=argparse.FileType('r'),
@@ -73,7 +73,7 @@ def make_parser():
                       help='omero user passwd')
   return parser
 
-#----------------------------------------------------------------------------
+
 class PedReader(object):
   def __init__(self, pedfile, datfile, conf_value=1.0):
     self.ped_file = pedfile
@@ -109,16 +109,15 @@ class PedReader(object):
     c  = np.zeros((nd.shape[1],), dtype=np.float32)
     c[:] = self.conf_value
     return {'label' : fam_id, 'sample_label' : p_id, 'probs' : nd, 'confs' : c}
-#----------------------------------------------------------------------------
+
 
 class App(object):
 
-  def __init__(self, host, user, passwd,
-               study_label,
-               maker, model, release):
+  def __init__(self, host, user, passwd, study_label, maker, model, release,
+               logger=None):
+    self.logger = logger or NullLogger()
     self.kb = KB(driver='omero')(host, user, passwd)
     self.mset = self.kb.get_snp_markers_set(maker, model, release)
-    self.logger = logging.getLogger()
     if not self.mset:
       raise ValueError('SNPMarkersSet[%s,%s,%s] has not been defined.'
                        % (maker, model, release))
@@ -198,16 +197,11 @@ def main():
           and args.maker and args.model and args.release and args.study):
     parser.print_help()
     sys.exit(1)
-
-  app = App(args.host, args.user, args.passwd,
-            args.study,
-            args.maker, args.model, args.release)
+  logger = get_logger("main", level=args.loglevel, filename=args.logfile)
+  app = App(args.host, args.user, args.passwd, args.study, args.maker,
+            args.model, args.release, logger=logger)
   app.load(args.pedfile, args.datfile)
+
 
 if __name__ == "__main__":
     main()
-
-
-# Local Variables: **
-# mode: python **
-# End: **

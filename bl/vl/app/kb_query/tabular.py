@@ -6,8 +6,9 @@ Extract data in tabular form from KB
 ====================================
 """
 
-import os, csv, logging
+import os, csv
 
+from bl.core.utils import NullLogger
 from bl.vl.kb.dependency import DependencyTree
 from bl.vl.app.importer.core import Core
 
@@ -19,8 +20,9 @@ class Tabular(Core):
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None, data_collection_label=None,
-               preferred_data_protocol=None, operator='Alfred E. Neumann'):
-    self.logger = logging.getLogger()
+               preferred_data_protocol=None, operator='Alfred E. Neumann',
+               logger=None):
+    self.logger = logger or NullLogger()
     super(Tabular, self).__init__(host, user, passwd, keep_tokens=keep_tokens)
     self.default_study = None
     if study_label:

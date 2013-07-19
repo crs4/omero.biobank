@@ -6,14 +6,12 @@ Genotyping-related I/O
 ======================
 """
 
-import array, struct, logging
-LOGGER = logging.getLogger('bl.vl.genotype.io')
-import numpy as np
-import itertools as it
-import datetime
-
+import array, struct, datetime, itertools as it
 from collections import Counter
 
+import numpy as np
+
+from bl.core.utils import NullLogger
 from bl.core.seq.utils import reverse_complement as rev_compl
 from bl.vl.utils.snp import split_mask
 from bl.core.io import MessageStreamReader
@@ -366,7 +364,7 @@ class PedWriter(object):
     self.ped_file = None
 
 
-def read_ssc(fn, mset):
+def read_ssc(fn, mset, logger=None):
   """
   Read a file with mimetypes.SSC_FILE mimetype and return the prob and
   conf arrays for a given SNPMarkersSet mset.
@@ -377,6 +375,8 @@ def read_ssc(fn, mset):
   :param mset: a reference markers set
   :type mset: SNPMarkersSet
   """
+  if logger is None:
+    logger = NullLogger()
   ct = Counter()
   if not mset.has_markers():
     mset.load_markers()
@@ -401,18 +401,18 @@ def read_ssc(fn, mset):
       probs[0,idx] = p_AA
       probs[1,idx] = p_BB
     except ZeroDivisionError:
-      LOGGER.warning(
+      logger.warning(
         'read_ssc:\tZeroDivisionError raised while parsing file %s' % fn
         )
-      LOGGER.debug('read_ssc:\tsnp_label = %s -- w_AA, w_AB, w_BB = %r' % (
+      logger.debug('read_ssc:\tsnp_label = %s -- w_AA, w_AB, w_BB = %r' % (
         snp_label, (w_AA, w_AB, w_BB)
         ))
-      LOGGER.debug('read_ssc:\tusing default probs %r' % (
+      logger.debug('read_ssc:\tusing default probs %r' % (
         (probs[0,idx], probs[1,idx]),
         ))
       ct['outliers'] += 1
     confs[idx] = conf
-  LOGGER.info('read_scc:\tfound %d suspected outliers in %s' % (
+  logger.info('read_scc:\tfound %d suspected outliers in %s' % (
     ct['outliers'], fn
     ))
   return probs, confs

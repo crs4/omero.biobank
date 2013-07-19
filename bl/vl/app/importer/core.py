@@ -1,8 +1,9 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import json, logging
+import json
 
+from bl.core.utils import NullLogger
 from bl.vl.kb import KnowledgeBase as KB
 
 class ImporterValidationError(Exception):
@@ -13,7 +14,7 @@ class Core(object):
   def __init__(self, host=None, user=None, passwd=None, group=None,
                keep_tokens=1, study_label=None, logger=None):
     self.kb = KB(driver='omero')(host, user, passwd, group, keep_tokens)
-    self.logger = logger if logger else logging.getLogger()
+    self.logger = logger or NullLogger()
     self.record_counter = 0
     self.default_study = None
     if study_label:
