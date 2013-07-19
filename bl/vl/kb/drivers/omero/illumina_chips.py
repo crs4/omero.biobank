@@ -1,0 +1,62 @@
+import omero.model as om
+import omero.rtypes as ort
+
+import wrapper as wp
+from vessels import VesselContent
+from objects_collections import IlluminaArrayOfArrays
+
+class IlluminaBeadChipAssayType(wp.OmeroWrapper):
+
+  OME_TABLE = "IlluminaAssayType"
+  __enums__ = ["ALS_iSelect_272541_A",
+        "CVDSNP55v1_A", "Cardio_Metabo_Chip_11395247_A", "Human1M_Duov3_B",
+        "Human610_Quadv1_B", "Human660W_Quad_v1_A", "HumanCNV370_Quadv3_C",
+        "HumanCNV370v1", "HumanExome_12v1_A", "HumanHap250Sv1.0",
+        "HumanHap300v1.1", "HumanHap300v2.0", "HumanHap550v1.1",
+        "HumanHap550v3.0", "HumanHap650Yv1.0", "HumanHap650Yv3.0",
+        "HumanOmni1_Quad_v1_0_B", "HumanOmni1_Quad_v1_0_C",
+        "HumanOmni2.5_4v1_B", "HumanOmni2.5_4v1_D", "HumanOmni2.5_4v1_H",
+        "HumanOmni25Exome_8v1_A", "HumanOmni5_4v1_B",
+        "HumanOmniExpressExome_8v1_A", "HumanOmniExpress_12v1_C",
+        "HumanOmniExpress_12v1_Multi_H", "ILLUMINA_Human_1M",
+        "ILLUMINA_Human_1M_2", "ILMN_Human_1", "Immuno_BeadChip_11419691_B",
+        "Linkage_12", "UNKNOWN"]
+
+
+class IlluminaBeadChipArray(wp.OmeroWrapper):
+
+  OME_TABLE = "IlluminaBeadChipArray"
+
+  __fields__ = [('label', wp.STRING, wp.REQUIRED),
+                ('content', VesselContent, wp.REQUIRED),
+                ('assayType', IlluminaAssayType, wp.REQUIRED),
+                ('slot', wp.INT, wp.REQUIRED),
+                ('container', IlluminaArrayOfArrays, wp.REQUIRED),
+                ('containerSlotLabelUK', wp.STRING, wp.REQUIRED),
+                ('containerSlotIndexUK', wp.STRING, wp.REQUIRED),
+                ('action', Action, wp.REQUIRED),
+                ('lastUpdate', Action, wp.OPTIONAL)]
+
+  def __preprocess_conf__(self, conf):
+    super(PlateWell, self).__preprocess_conf__(conf)
+    if not 'containerSlotLabelUK' in conf:
+      clabel = conf['container'].label
+      label   = conf['label']
+      conf['containerSlotLabelUK'] = make_unique_key(clabel, label)
+    if not 'containerSlotIndexUK' in conf:
+      clabel = conf['container'].label
+      slot   = conf['slot']
+      conf['containerSlotIndexUK'] = make_unique_key(clabel, '%04d' % slot)
+    return conf
+
+  def __update_constraints__(self):
+    csl_uk = make_unique_key(self.container.label, self.label)
+    setattr(self.ome_obj, 'containerSlotLabelUK',
+            self.to_omero(self.__fields__['containerSlotLabelUK'][0], csl_uk))
+    csi_uk = make_unique_key(self.container.label, '%04d' % self.slot)
+    setattr(self.ome_obj, 'containerSlotIndexUK',
+            self.to_omero(self.__fields__['containerSlotIndexUK'][0], csi_uk))
+
+
+
+
