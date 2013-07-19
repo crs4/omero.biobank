@@ -82,7 +82,7 @@ def write_output(out_file_name, seqs_to_append):
     with open(out_file_name, 'w') as f:
         f.write('\n'.join(seqs_to_append))
 #---------------------------
-# Perfmorma  deeper check for the given statement
+# Perform a deeper check for the given statement
 def deep_check(statement, old_sql):
     stat = statement.replace('\n\n', '\n')
     st_lines = stat.split('\n')
