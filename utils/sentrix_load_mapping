@@ -137,7 +137,6 @@ class ingestor(object):
             d = s.sniff(f.readline())
             f.seek(pos)
             cf = csv.DictReader(f, dialect=d)
-            print cf.fieldnames
             for r in cf:
                 r['Chip_Type'] = chip_type
                 r['Date'] = date
