@@ -1,8 +1,0 @@
-device_type	label	barcode	maker	model	release	location
-Scanner	pula01	8989898	Affymetrix	GeneChip Scanner 3000	7G	Pula Ed.5
-Chip	chip001	8329482	Affymetrix	Genome-Wide Human SNP Array	6.0	None
-Chip	chip002	8329483	Affymetrix	Genome-Wide Human SNP Array	6.0	None
-Chip	chip003	8329484	Affymetrix	Genome-Wide Human SNP Array	6.0	None
-Chip	chip004	8329485	Affymetrix	Genome-Wide Human SNP Array	6.0	None
-Chip	chip005	8329486	Affymetrix	Genome-Wide Human SNP Array	6.0	None
-Chip	chip006	8329487	Affymetrix	Genome-Wide Human SNP Array	6.0	None

@@ -1,7 +1,0 @@
-study	label	gender	father	mother
-TEST01	I001	male	None	None
-TEST01	I002	female	None	None
-TEST01	I003	male	I001	I002
-TEST01	I004	female	I001	I002
-TEST01	I005	male	I003	I004
-TEST01	I006	male	I003	I004
