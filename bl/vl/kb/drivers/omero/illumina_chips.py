@@ -9,7 +9,8 @@ class IlluminaBeadChipAssayType(wp.OmeroWrapper):
 
   OME_TABLE = "IlluminaAssayType"
   __enums__ = ["ALS_iSelect_272541_A",
-        "CVDSNP55v1_A", "Cardio_Metabo_Chip_11395247_A", "Human1M_Duov3_B",
+        "CVDSNP55v1_A", "Cardio_Metabo_Chip_11395247_A",
+        "Human1M","Human1M_2",  "Human1M_Duov3_B",
         "Human610_Quadv1_B", "Human660W_Quad_v1_A", "HumanCNV370_Quadv3_C",
         "HumanCNV370v1", "HumanExome_12v1_A", "HumanHap250Sv1.0",
         "HumanHap300v1.1", "HumanHap300v2.0", "HumanHap550v1.1",
@@ -18,8 +19,7 @@ class IlluminaBeadChipAssayType(wp.OmeroWrapper):
         "HumanOmni2.5_4v1_B", "HumanOmni2.5_4v1_D", "HumanOmni2.5_4v1_H",
         "HumanOmni25Exome_8v1_A", "HumanOmni5_4v1_B",
         "HumanOmniExpressExome_8v1_A", "HumanOmniExpress_12v1_C",
-        "HumanOmniExpress_12v1_Multi_H", "ILLUMINA_Human_1M",
-        "ILLUMINA_Human_1M_2", "ILMN_Human_1", "Immuno_BeadChip_11419691_B",
+        "HumanOmniExpress_12v1_Multi_H", "Immuno_BeadChip_11419691_B",
         "Linkage_12", "UNKNOWN"]
 
 
