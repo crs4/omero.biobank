@@ -64,6 +64,7 @@ END_COPYRIGHT
            containerSlotLabelUK. -->
       <required name="label" type="string"/>
       <required name="content" type="ome.model.vl.VesselContent"/>
+      <required name="status" type="ome.model.vl.VesselStatus"/>
       <required name="assayType" type="ome.model.vl.IlluminaAssayType"/>
       <!-- FIXME we are not using row, column probably only for
            historical reasons. -->
