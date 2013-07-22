@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+BEGIN_COPYRIGHT
+END_COPYRIGHT
+-->
+
+<types>
+
+  <enum id="ome.model.vl.IlluminaAssayType">
+    <entry name="ALS_iSelect_272541_A"/>
+    <entry name="CVDSNP55v1_A"/>
+    <entry name="Cardio_Metabo_Chip_11395247_A"/>
+    <entry name="Human1M"/>
+    <entry name="Human1M_2"/>
+    <entry name="Human1M_Duov3_B"/>
+    <entry name="Human610_Quadv1_B"/>
+    <entry name="Human660W_Quad_v1_A"/>
+    <entry name="HumanCNV370_Quadv3_C"/>
+    <entry name="HumanCNV370v1"/>
+    <entry name="HumanExome_12v1_A"/>
+    <entry name="HumanHap250Sv1.0"/>
+    <entry name="HumanHap300v1.1"/>
+    <entry name="HumanHap300v2.0"/>
+    <entry name="HumanHap550v1.1"/>
+    <entry name="HumanHap550v3.0"/>
+    <entry name="HumanHap650Yv1.0"/>
+    <entry name="HumanHap650Yv3.0"/>
+    <entry name="HumanOmni1_Quad_v1_0_B"/>
+    <entry name="HumanOmni1_Quad_v1_0_C"/>
+    <entry name="HumanOmni2.5_4v1_B"/>
+    <entry name="HumanOmni2.5_4v1_D"/>
+    <entry name="HumanOmni2.5_4v1_H"/>
+    <entry name="HumanOmni25Exome_8v1_A"/>
+    <entry name="HumanOmni5_4v1_B"/>
+    <entry name="HumanOmniExpressExome_8v1_A"/>
+    <entry name="HumanOmniExpress_12v1_C"/>
+    <entry name="HumanOmniExpress_12v1_Multi_H"/>
+    <entry name="Immuno_BeadChip_11419691_B"/>
+    <entry name="Linkage_12"/>
+    <entry name="UNKNOWN"/>
+  </enum>
+
+  <!-- type id="ome.model.vl.IlluminaBeadChipAssay"
+	superclass="ome.model.vl.MicroArrayMeasure">
+    <properties>
+      <required name="assayType" type="ome.model.vl.IlluminaBeadChipAssayType"/>
+    </properties>
+  </type -->
+
+  <type id="ome.model.vl.IlluminaArrayOfArrays"
+	superclass="ome.model.vl.SlottedContainer">
+    <properties>
+      <required name="rows" type="int"/>
+      <required name="columns" type="int"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.IlluminaBeadChipArray">
+    <properties>
+      <required name="vid" type="string"/>
+      <!-- note that label is expected to be unique within a plate,
+           e.g., A05. The actual constraint is imposed by
+           containerSlotLabelUK. -->
+      <required name="label" type="string"/>
+      <required name="content" type="ome.model.vl.VesselContent"/>
+      <required name="assayType" type="ome.model.vl.IlluminaAssayType"/>
+      <!-- FIXME we are not using row, column probably only for
+           historical reasons. -->
+      <required name="slot" type="int"/>
+      <required name="container" type="ome.model.vl.IlluminaArrayOfArrays"/>
+      <!-- container.label, label -->
+      <required name="containerSlotLabelUK" type="string" unique="true"/>
+      <!-- container.label, slot -->
+      <required name="containerSlotIndexUK" type="string" unique="true"/>
+      <required name="action" type="ome.model.vl.Action"/>
+      <optional name="lastUpdate" type="ome.model.vl.Action"/>
+    </properties>
+  </type>
+</types>
