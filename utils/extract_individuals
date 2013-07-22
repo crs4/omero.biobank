@@ -3,38 +3,29 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-"""
+# pylint: disable=W0311
 
-Extracts records for individuals from a 'Ilena format' tsv file.
+"""
+Extracts records for individuals from a tsv file.
 
 It will map parents to 'None' if their label is referring to an
 unknown individual.
-
 """
-#---------------------------------------------------------------
-import logging, time
+
+import argparse, csv, sys, random, logging
 LOG_FILENAME = 'extract_individuals.log'
-logging.basicConfig(filename=LOG_FILENAME,
-                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    level=logging.DEBUG)
-
+logging.basicConfig(
+  filename=LOG_FILENAME,
+  format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+  level=logging.DEBUG
+  )
 logger = logging.getLogger()
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
-
 formatter = logging.Formatter(fmt="%(levelname)s - %(message)s")
-
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
 
-#-------------------------------------------------------------------------
-
-import argparse
-import csv
-import sys
-import random
 
 study = 'TEST01'
 

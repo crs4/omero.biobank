@@ -3,9 +3,10 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-"""
+# pylint: disable=W0311
 
-Extracts sample records from a 'Ilena format' tsv file.
+"""
+Extracts sample records from a tsv file.
 
 from one row, it will generate:
 
@@ -17,30 +18,23 @@ from one row, it will generate:
 all records will be linked together using (study, label)
 tuples.
 
-To accomodate ''importer'' importing strategy, we will split the
-output in 'per sample type' files.
-
+Output is split into per-sample-type files.
 """
-#---------------------------------------------------------------
-import logging, time
+
+import sys, argparse, csv, logging
 LOG_FILENAME = 'extract_samples.log'
-logging.basicConfig(filename=LOG_FILENAME,
-                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    level=logging.DEBUG)
-
+logging.basicConfig(
+  filename=LOG_FILENAME,
+  format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+  level=logging.DEBUG
+  )
 logger = logging.getLogger()
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 formatter = logging.Formatter(fmt="%(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-#-------------------------------------------------------------------------
-
-import argparse
-import csv
-import sys
 
 def individual_conversion_rule(study, x):
   y= {'study' : study}
@@ -70,7 +64,7 @@ def dna_sample_conversion_rule(study, s, x):
   barcode_counter += 1
   return [y]
 
-#----------------------------------------
+
 row_counters = {}
 column_counters = {}
 max_columns = 12
@@ -114,30 +108,28 @@ def plate_well_conversion_rule(study, dna, x):
   samples = {}
 
   if not x['Affymetrix_Plate_Pula'] == 'x':
-    samples['Affy_Pula']= plate_well_conversion_rule_helper(study, dna,
-                                                            'PULA-' + x['Affymetrix_Plate_Pula'],
-                                                            x['Well_Pula'])
+    samples['Affy_Pula']= plate_well_conversion_rule_helper(
+      study, dna, 'PULA-' + x['Affymetrix_Plate_Pula'], x['Well_Pula']
+      )
   if not x['Affymetrix_Plate_Lanusei'] == 'x':
-    samples['Affy_Lanusei'] = plate_well_conversion_rule_helper(study, dna,
-                                                                'LANUSEI-' + x['Affymetrix_Plate_Lanusei'],
-                                                                x['Well_Lanusei'])
+    samples['Affy_Lanusei'] = plate_well_conversion_rule_helper(
+      study, dna, 'LANUSEI-' + x['Affymetrix_Plate_Lanusei'], x['Well_Lanusei']
+      )
   if not x['Affymetrix_Plate_USA'] == 'x':
-    samples['Affy_USA'] = plate_well_conversion_rule_helper(study, dna,
-                                                            'USA-' + x['Affymetrix_Plate_USA'],
-                                                            x['Well_USA'])
+    samples['Affy_USA'] = plate_well_conversion_rule_helper(
+      study, dna, 'USA-' + x['Affymetrix_Plate_USA'], x['Well_USA']
+      )
   if not x['Illumina_Plate'] == 'x':
-    samples['Illumina'] = plate_well_conversion_rule_helper(study, dna,
-                                                            x['Illumina_Plate'],
-                                                            'TBF')
+    samples['Illumina'] = plate_well_conversion_rule_helper(
+      study, dna, x['Illumina_Plate'], 'TBF'
+      )
   if not x['Illumina_dup_Plate'] == 'x':
-    samples['Illumina_dup'] = plate_well_conversion_rule_helper(study, dna,
-                                                                x['Illumina_dup_Plate'],
-                                                                'TBF')
-
+    samples['Illumina_dup'] = plate_well_conversion_rule_helper(
+      study, dna, x['Illumina_dup_Plate'], 'TBF'
+      )
   return samples
 
 
-#-------------------------------------------------------------------------
 def titer_plate_conversion_rule_helper(study, label):
   global barcode_counter
   rows, columns = row_counters[label] + 1, column_counters[label] + 1
@@ -151,19 +143,18 @@ def titer_plate_conversion_rule_helper(study, label):
 
   print 'plate %s rows: %s columns:%s' % (label, rows, columns)
   y = {'study' : study, 'label' : label, 'barcode' : barcode_counter,
-       'rows' : rows, 'columns' : columns, 'maker' : 'CRS4', 'model' : 'virtual'}
+       'rows' : rows, 'columns' : columns, 'maker' : 'CRS4',
+       'model' : 'virtual'}
   barcode_counter += 1
   return y
 
 def titer_plate_conversion_rule(study):
-  pfields = ['Affymetrix_Plate_Pula', 'Affymetrix_Plate_Lanusei', 'Affymetrix_Plate_USA',
-             'Illumina_Plate', 'Illumina_dup_Plate']
+  pfields = ['Affymetrix_Plate_Pula', 'Affymetrix_Plate_Lanusei',
+             'Affymetrix_Plate_USA', 'Illumina_Plate', 'Illumina_dup_Plate']
   tps = []
   for label in row_counters.keys():
     tps.append(titer_plate_conversion_rule_helper(study, label))
   return tps
-#-------------------------------------------------------------------------
-
 
 
 def data_sample_conversion_rule_helper(study,
@@ -188,70 +179,57 @@ def data_sample_conversion_rule_helper(study,
 def data_sample_conversion_rule_driver(study, dna_sample, plate_wells, x):
   samples = []
   if not x['Illumina_1M'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study,
-                                                      x['Illumina_Plate'],
-                                                      plate_wells['Illumina'],
-                                                      x['Illumina_1M'],
-                                                      'Illumina', 'Human1M', '1.0',
-                                                      'PortoConte-1'))
-
+    samples.append(data_sample_conversion_rule_helper(
+      study, x['Illumina_Plate'], plate_wells['Illumina'], x['Illumina_1M'],
+      'Illumina', 'Human1M', '1.0', 'PortoConte-1'
+      ))
   if not x['Illumina_1M_duplicates'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study,
-                                                      x['Illumina_dup_Plate'],
-                                                      plate_wells['Illumina_dup'],
-                                                      x['Illumina_1M_duplicates'],
-                                                      'Illumina', 'Human1M', '1.0',
-                                                      'PortoConte-1'))
-
+    samples.append(data_sample_conversion_rule_helper(
+      study, x['Illumina_dup_Plate'], plate_wells['Illumina_dup'],
+      x['Illumina_1M_duplicates'], 'Illumina', 'Human1M', '1.0', 'PortoConte-1'
+      ))
   if not x['Affy_Pula'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study,
-                                                      'PULA-' + x['Affymetrix_Plate_Pula'],
-                                                      plate_wells['Affy_Pula'],
-                                                      x['Affy_Pula'],
-                                                      'Affymetrix', 'GenomeWideSNP_6', '1.0',
-                                                      'Pula-1',
-                                                      specific={'contrastQC' : x['cQC_Pula']}))
-
+    samples.append(data_sample_conversion_rule_helper(
+      study, 'PULA-' + x['Affymetrix_Plate_Pula'], plate_wells['Affy_Pula'],
+      x['Affy_Pula'], 'Affymetrix', 'GenomeWideSNP_6', '1.0', 'Pula-1',
+      specific={'contrastQC' : x['cQC_Pula']}
+      ))
   if not x['Affy_Lanusei'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study,
-                                                      'LANUSEI-' + x['Affymetrix_Plate_Lanusei'],
-                                                      plate_wells['Affy_Lanusei'],
-                                                      x['Affy_Lanusei'],
-                                                      'Affymetrix', 'GenomeWideSNP_6', '1.0',
-                                                      'Lanusei-1',
-                                                      specific={'contrastQC' : x['cQC_Lanusei']}))
+    samples.append(data_sample_conversion_rule_helper(
+      study, 'LANUSEI-' + x['Affymetrix_Plate_Lanusei'],
+      plate_wells['Affy_Lanusei'], x['Affy_Lanusei'], 'Affymetrix',
+      'GenomeWideSNP_6', '1.0', 'Lanusei-1',
+      specific={'contrastQC' : x['cQC_Lanusei']}
+      ))
   if not x['Affy_USA'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study,
-                                                      'USA-' + x['Affymetrix_Plate_USA'],
-                                                      plate_wells['Affy_USA'],
-                                                      x['Affy_USA'],
-                                                      'Affymetrix', 'GenomeWideSNP_6', '1.0',
-                                                      'Affymetrix-inc-X',
-                                                      specific={'contrastQC' : x['cQC_USA']}))
+    samples.append(data_sample_conversion_rule_helper(
+      study, 'USA-' + x['Affymetrix_Plate_USA'], plate_wells['Affy_USA'],
+      x['Affy_USA'], 'Affymetrix', 'GenomeWideSNP_6', '1.0',
+      'Affymetrix-inc-X', specific={'contrastQC' : x['cQC_USA']}
+      ))
   if not x['Solexa_Sequencing_ID'] == 'x':
-    samples.append(data_sample_conversion_rule_helper(study,
-                                                      None,
-                                                      dna_sample,
-                                                      x['Solexa_Sequencing_ID'],
-                                                      'Illumina', 'HiSeq_2000', '1.0',
-                                                      'Pula-hiseq-1'))
+    samples.append(data_sample_conversion_rule_helper(
+      study, None, dna_sample, x['Solexa_Sequencing_ID'], 'Illumina',
+      'HiSeq_2000', '1.0', 'Pula-hiseq-1'
+      ))
   if not x['Sanger_Sequencing_ID'] == 'x':
-     samples.append(data_sample_conversion_rule_helper(study,
-                                                       None,
-                                                       dna_sample,
-                                                       x['Sanger_Sequencing_ID'],
-                                                       'Applied Biosystems', 'Prism_XXX', '50.0',
-                                                       'PortoConte-sanger-1'))
+     samples.append(data_sample_conversion_rule_helper(
+       study, None, dna_sample, x['Sanger_Sequencing_ID'],
+       'Applied Biosystems', 'Prism_XXX', '50.0', 'PortoConte-sanger-1'
+       ))
   return samples
 
 
 def data_sample_conversion_rule(study, dna_sample, plate_wells, x):
   try:
-    samples = data_sample_conversion_rule_driver(study, dna_sample, plate_wells, x)
+    samples = data_sample_conversion_rule_driver(
+      study, dna_sample, plate_wells, x
+      )
   except KeyError, e:
     logger.error('missing sample information (%s) in record %s' % (e, x))
     samples = []
   return samples
+
 
 def make_parser():
   parser = argparse.ArgumentParser(description="""
@@ -265,10 +243,9 @@ def make_parser():
                         default='extracted-')
   parser.add_argument('-s', '--study', type=str,
                         help='study label')
-  parser.add_argument('-p', '--patch-missing-plate-info', action='store_true', default=False,
-                      help="""if set, it will add fictitious TiterPlates and wells when needed to
-                      mantain the dependency chain""")
-
+  parser.add_argument('-p', '--patch-missing-plate-info', action='store_true',
+                      default=False,
+                      help="add dummy objects to mantain the dependency chain")
   return parser
 
 
@@ -279,10 +256,11 @@ def patch_missing_plate_info(x):
   if not x['Affy_Pula'] == 'x' and x['Affymetrix_Plate_Pula'] == 'x':
     x['Affymetrix_Plate_Pula'] = 'fake-plate-%03d' % plate_counter
     x['Well_Pula'] = 'A01'
-    logger.warn('patched record [%s:%s] to %s[%s]' % (x['Fam_ID'], x['ID'],
-                                                      x['Affymetrix_Plate_Pula'],
-                                                      x['Well_Pula']))
+    logger.warn('patched record [%s:%s] to %s[%s]' % (
+      x['Fam_ID'], x['ID'], x['Affymetrix_Plate_Pula'], x['Well_Pula']
+      ))
     plate_counter += 1
+
 
 def is_worth_analyzing(x):
   has_data = False
@@ -297,6 +275,7 @@ def is_worth_analyzing(x):
       has_data = True
   return has_data
 
+
 def normalizer(args, x):
   if x.has_key(None):
     del x[None]
@@ -310,6 +289,7 @@ def normalizer(args, x):
     x['Affy_USA'] = x['Affy_USA'] + '.CEL' if not x['Affy_USA'].upper().endswith('.CEL') else ''
   return x
 
+
 def dump_(fname, objs, fieldnames=None):
   if not objs:
     return
@@ -320,6 +300,7 @@ def dump_(fname, objs, fieldnames=None):
     tsv.writeheader()
     for x in objs:
       tsv.writerow(x)
+
 
 def main():
   parser = make_parser()
@@ -405,6 +386,7 @@ def main():
         map(patch_affy, affy_cels),
         fieldnames='study label sample_label device_label options'.split())
   #--
+
 
 #   dump_(args.ofile_root + 'illumina_hu1M.tsv',
 #         [x for x in data_samples

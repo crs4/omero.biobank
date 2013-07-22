@@ -3,37 +3,32 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
+# pylint: disable=W0311
+
 """
+Extracts diagnosis records from a tsv file.
 
-Extracts diagnosis records from a 'Ilena pheno format' tsv file.
-
-from one row, it will generate as many as needed records with the
+from one row, it will generate as many records as needed with the
 following structure::
 
-   study  individual_label diagnosis_term
-   ASTUDY 899              terminology://apps.who.int/classifications/apps/icd/icd10online/gE10.htm#E10
-
+  study individual_label diagnosis_term
+  ASTUDY 899 terminology://apps.who.int/classifications/apps/icd/icd10online/gE10.htm#E10
 """
-#---------------------------------------------------------------
-import logging, time
+
+import sys, csv, argparse, time, logging
 LOG_FILENAME = 'extract_diagnosis.log'
-logging.basicConfig(filename=LOG_FILENAME,
-                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    level=logging.DEBUG)
-
+logging.basicConfig(
+  filename=LOG_FILENAME,
+  format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+  level=logging.DEBUG
+  )
 logger = logging.getLogger()
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 formatter = logging.Formatter(fmt="%(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-#-------------------------------------------------------------------------
-
-import argparse
-import csv
-import sys
 
 def dv_coded_text(terminology, term):
   return ':'.join([terminology, term])

@@ -3,13 +3,10 @@
 # Dumps OMERO.biobank data to the persistent graph engine
 # (this script is useless when your graph engine is "pygraph")
 
-import sys
 import argparse
-import logging
 
+from bl.vl.utils import LOG_LEVELS, get_logger
 from bl.vl.kb import KnowledgeBase as KB
-
-LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
 class GraphDumper(object):
@@ -87,24 +84,6 @@ class GraphDumper(object):
         self.logger.info('Done saving edges')
 
 
-def make_logger(level='INFO', logfile=None):
-    log_formatter = logging.Formatter(
-        fmt='%(asctime)s|%(levelname)-8s|%(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-    )
-    logger = logging.getLogger(__name__)
-    for h in logger.handlers:
-        logger.removeHandler(h)
-    if logfile:
-        handler = logging.FileHandler(logfile, 'w')
-    else:
-        handler = logging.StreamHandler()
-    handler.setFormatter(log_formatter)
-    logger.addHandler(handler)
-    logger.setLevel(getattr(logging, level))
-    return logger
-
-
 def make_parser():
     parser = argparse.ArgumentParser(description='Load existing data from an OMERO server and dump to its graph engine')
     parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
@@ -119,11 +98,11 @@ def make_parser():
     return parser
 
 
-def main(argv):
+def main():
     parser = make_parser()
     args = parser.parse_args()
 
-    logger = make_logger(args.loglevel, args.logfile)
+    logger = get_logger(__name__, level=args.loglevel, filename=args.logfile)
 
     kb = KB(driver='omero')(args.host, args.user, args.passwd)
 
@@ -131,5 +110,6 @@ def main(argv):
     nodes = dumper.save_nodes()
     dumper.save_edges(nodes)
 
+
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
