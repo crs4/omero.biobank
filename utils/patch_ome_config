@@ -30,7 +30,7 @@ def get_models_hash(models_repository, logger, digest_length=8):
         logger.critical(msg)
         raise ValueError(msg)
     MD5hasher = md5()
-    for fname in os.listdir(models_repository):
+    for fname in sorted(os.listdir(models_repository)):
         if fname.endswith('.ome.xml'):
             with open(os.path.join(models_repository, fname), 'rw') as f:
                 logger.info('Hashing file %s' % os.path.join(models_repository, fname))
