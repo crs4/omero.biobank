@@ -39,18 +39,27 @@ class IlluminaBeadChipArray(wp.OmeroWrapper):
                 ('action', Action, wp.REQUIRED),
                 ('lastUpdate', Action, wp.OPTIONAL)]
 
+
+  def _slot_from_label(self, label, rows, cols):
+    m = re.match('^R(\d{2})C(\d{2})$', label)
+    if not m:
+      raise ValueError('label [%s] not in the form R%02dC%02d' % label)
+    row, col = map(int, m.groups())
+    if row >= rows or col >= cols:
+      raise ValueError('label [%s] out of range', label)
+    return (row - 1) * cols + (col - 1)
+
+  def _label_from_slot(self, slot, rows, cols):
+    row, col = (slot / cols),  (slot % cols)
+    label = 'R%02dC%02d' % (row + 1, col + 1)
+    return label
+
+
   def __preprocess_conf__(self, conf):
     super(IlluminaBeadChipArray, self).__preprocess_conf__(conf)
     rows, cols = conf['container'].rows, conf['container'].cols
     if not 'slot' in conf:
-      label = conf['label']
-      m = re.match('^R(\d{2})C(\d{2})$', label)
-      if not m:
-        raise ValueError('label [%s] not in the form R%02dC%02d' % label)
-      row, col = map(int, m.groups())
-      if row >= rows or col >= cols:
-        raise ValueError('label [%s] out of range', label)
-      self.slot = (row - 1) * cols + (col - 1)
+      self.slot = self._slot_from_label(conf['label'], rows, cols)
     else:
       slot = conf['slot']
       row, col = (slot / cols),  (slot % cols)
