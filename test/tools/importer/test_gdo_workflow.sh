@@ -8,7 +8,7 @@ export OME_USER=${OME_USER:="root"}
 export OME_PASSWD=${OME_PASSWD:="romeo"}
 
 export BASEDIR=$(cd $(dirname ${BASH_SOURCE}); pwd; cd - >/dev/null)
-export WORK=${BASEDIR}/work
+export WORK=${BASEDIR}/test_gdo_workflow
 
 TMP_DIR=/var/tmp
 
@@ -21,6 +21,11 @@ STUDY_LABEL=GDO_TEST_STUDY
 MS_LABEL=GDO_TEST_MS
 DEVICE_LABEL=GDO_TEST_DEVICE
 
+
+if [ "$1" == "--clean" ]; then
+    rm -rfv ${WORK}
+    exit 0
+fi
 
 mkdir -p ${WORK}
 

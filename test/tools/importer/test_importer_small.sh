@@ -8,12 +8,18 @@ export OME_USER=${OME_USER:="root"}
 export OME_PASSWD=${OME_PASSWD:="romeo"}
 
 export BASEDIR=$(cd $(dirname ${BASH_SOURCE}); pwd; cd - >/dev/null)
-export WORK=${BASEDIR}/work/test_importer
+export WORK=${BASEDIR}/test_importer
 
 IMPORTER='../../../tools/importer --operator aen'
 KB_QUERY='../../../tools/kb_query --operator aen'
 CREATE_TABLES='../../../tools/create_tables'
 STUDY_LABEL=IMPORTER_TEST_STUDY
+
+
+if [ "$1" == "--clean" ]; then
+    rm -rfv ${WORK}
+    exit 0
+fi
 
 mkdir -p ${WORK}
 ${CREATE_TABLES}
@@ -121,7 +127,7 @@ Chip	chip004	8329485	Affymetrix	Genome-Wide Human SNP Array	6.0	None
 Chip	chip005	8329486	Affymetrix	Genome-Wide Human SNP Array	6.0	None
 Chip	chip006	8329487	Affymetrix	Genome-Wide Human SNP Array	6.0	None
 EOF
-${IMPORTER} -i ${WORK}/devices.tsv -o devices_map.tsv device \
+${IMPORTER} -i ${WORK}/devices.tsv -o ${WORK}/device_map.tsv device \
     --study ${STUDY_LABEL} || die "import device failed"
 
 cat <<EOF >${WORK}/data_samples.tsv
@@ -144,7 +150,7 @@ ${KB_QUERY} -o ${WORK}/data_sample_vids_2.tsv map_vid \
     --study ${STUDY_LABEL} || die "map data sample vid 2 failed"
 
 SCANNER=$(python -c "from bl.vl.kb import KnowledgeBase as KB; kb = KB(driver='omero')('${OME_HOST}', '${OME_USER}', '${OME_PASSWD}'); print kb.get_device('pula01').id")
-${IMPORTER} -i ${WORK}/data_sample_vids_2.tsv -o data_sample_map.tsv \
+${IMPORTER} -i ${WORK}/data_sample_vids_2.tsv -o ${WORK}/data_sample_map.tsv \
     data_sample --study ${STUDY_LABEL} --source-type PlateWell \
     --device-type Chip --scanner ${SCANNER} || die "import data sample failed"
 
@@ -163,7 +169,7 @@ ${KB_QUERY} -o ${WORK}/data_object_vids.tsv map_vid \
     --column data_sample_label,data_sample --source-type DataSample \
     --study ${STUDY_LABEL} || die "map data object vid failed"
 
-${IMPORTER} -i ${WORK}/data_object_vids.tsv -o data_object_map.tsv \
+${IMPORTER} -i ${WORK}/data_object_vids.tsv -o ${WORK}/data_object_map.tsv \
     data_object --study ${STUDY_LABEL} \
     --mimetype=x-vl/affymetrix-cel || die "import data object failed"
 
@@ -183,8 +189,8 @@ ${KB_QUERY} -o ${WORK}/data_collection_vids.tsv map_vid \
     --column data_sample_label,data_sample --source-type DataSample \
     --study ${STUDY_LABEL} || die "map data collection vid failed"
 
-${IMPORTER} -i ${WORK}/data_collection_vids.tsv -o data_collection_map.tsv \
-    data_collection \
+${IMPORTER} -i ${WORK}/data_collection_vids.tsv \
+    -o ${WORK}/data_collection_map.tsv data_collection \
     --study ${STUDY_LABEL} || die "import data collection failed"
 
 cat <<EOF >${WORK}/diagnosis.tsv

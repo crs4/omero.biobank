@@ -13,4 +13,3 @@ Contents:
    genotyping_technology
    chipal_run
    test_importer
-
