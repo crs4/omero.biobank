@@ -5,6 +5,8 @@ import wrapper as wp
 from vessels import VesselContent
 from objects_collections import IlluminaArrayOfArrays
 
+import re
+
 class IlluminaBeadChipAssayType(wp.OmeroWrapper):
 
   OME_TABLE = "IlluminaAssayType"
@@ -38,7 +40,29 @@ class IlluminaBeadChipArray(wp.OmeroWrapper):
                 ('lastUpdate', Action, wp.OPTIONAL)]
 
   def __preprocess_conf__(self, conf):
-    super(PlateWell, self).__preprocess_conf__(conf)
+    super(IlluminaBeadChipArray, self).__preprocess_conf__(conf)
+    rows, cols = conf['container'].rows, conf['container'].cols
+    if not 'slot' in conf:
+      label = conf['label']
+      m = re.match('^R(\d{2})C(\d{2})$', label)
+      if not m:
+        raise ValueError('label [%s] not in the form R%02dC%02d' % label)
+      row, col = map(int, m.groups())
+      if row >= rows or col >= cols:
+        raise ValueError('label [%s] out of range', label)
+      self.slot = (row - 1) * cols + (col - 1)
+    else:
+      slot = conf['slot']
+      row, col = (slot / cols),  (slot % cols)
+      if 'label' in conf:
+        label = conf['label']
+        rlabel = 'R%02dC%02d' % (row + 1, col + 1)
+        if label != rlabel:
+          raise ValueError('label [%s] inconsistent with slot [%d]'
+                           % (label, slot))
+        else:
+          conf['label'] = rlabel
+
     if not 'containerSlotLabelUK' in conf:
       clabel = conf['container'].label
       label   = conf['label']
@@ -53,6 +77,8 @@ class IlluminaBeadChipArray(wp.OmeroWrapper):
     csl_uk = make_unique_key(self.container.label, self.label)
     setattr(self.ome_obj, 'containerSlotLabelUK',
             self.to_omero(self.__fields__['containerSlotLabelUK'][0], csl_uk))
+    if self.slot > 9999:
+      raise ValueError('slot value %s is out of range' % self.slot)
     csi_uk = make_unique_key(self.container.label, '%04d' % self.slot)
     setattr(self.ome_obj, 'containerSlotIndexUK',
             self.to_omero(self.__fields__['containerSlotIndexUK'][0], csi_uk))

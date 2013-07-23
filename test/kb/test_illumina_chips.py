@@ -44,26 +44,34 @@ class TestKB(KBObjectCreator):
       pass
 
   def test_illumina_array_of_arrays(self):
-    conf, a = self.create_illumina_array_of_arrays()
+    conf, a = self.create_illumina_array_of_arrays(rows=6, cols=2)
     self.kill_list.append(a.save())
     self.check_object(a, conf, self.kb.IlluminaArrayOfArrays)
 
   def test_illumina_bead_chip_array(self):
-    conf, a = self.create_illumina_array_of_arrays()
+    conf, a = self.create_illumina_array_of_arrays(rows=6, cols=2)
     self.kill_list.append(a.save())
     conf, c = self.create_illumina_bead_chip_array(label="R03C02",
                                                    array_of_arrays=a)
     self.kill_list.append(c.save())
     self.check_object(c, conf, self.kb.IlluminaBeadChipArray)
+    conf, c = self.create_illumina_bead_chip_array(label="R03C02",
+                                                   array_of_arrays=a)
+    self.kill_list.append(c.save())
 
+    self.assertRaises(ValueError, self.create_illumina_bead_chip_array,
+                      ("R03C02x", a))
+    self.assertRaises(ValueError, self.create_illumina_bead_chip_array,
+                      ("R03C03", a))
+    self.assertRaises(ValueError, self.create_illumina_bead_chip_array,
+                      ("R22C03", a))
+    self.assertRaises(ValueError, self.create_illumina_bead_chip_array,
+                      ("R01C01", a, 12))
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(TestKB('test_data_sample'))
-  suite.addTest(TestKB('test_affymetrix_cel'))
-  suite.addTest(TestKB('test_snp_markers_set'))
-  suite.addTest(TestKB('test_genotype_data_sample'))
-  suite.addTest(TestKB('test_data_object'))
+  suite.addTest(TestKB('test_illumina_array_of_arrays'))
+  suite.addTest(TestKB('test_illumina_bead_chip_array'))
   return suite
 
 
