@@ -10,6 +10,5 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   genotyping_technology
    chipal_run
    test_importer

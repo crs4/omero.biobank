@@ -3,15 +3,25 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Biobank's documentation!
-===================================
+OMERO.biobank documentation
+===========================
+
+Welcome to the documentation for OMERO.biobank |release|.
+OMERO.biobank is a framework built upon `OMERO
+<http://www.openmicroscopy.org/site/products/omero>`_ that provides
+compact and efficient ways to deal with the computational challenges
+brought about by large scale biomedical studies.  The framework
+provides models for entities such as laboratory samples, genotyping
+and sequencing datasets, EHR archetypes and many more, together with
+data structures and patterns for tracking the chains of actions that
+link one entity to another.
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-   introduction
+   genotyping
    usage/index
    api_tour/index
    dev_manual/index
