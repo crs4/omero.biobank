@@ -113,6 +113,5 @@ class Action(wp.OmeroWrapper):
     return assign_vid_and_timestamp(conf, time_stamp_field='beginTime')
 
   def __cleanup__(self):
-    if graph_driver() == 'neo4j':
-      # destroy all the edges related to this action
-      self.proxy.dt.destroy_edges(self)
+    # destroy all the edges related to this action
+    self.proxy.dt.destroy_edges(self)
