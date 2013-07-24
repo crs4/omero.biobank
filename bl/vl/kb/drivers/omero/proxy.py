@@ -23,12 +23,16 @@ import individual
 import location
 import demographic
 import sequencing
+import illumina_chips
+
 from genotyping import GenotypingAdapter
 from modeling import ModelingAdapter
 from eav import EAVAdapter
 from ehr import EHR
 from genotyping import Marker
+
 from admin import Admin
+
 
 
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
@@ -189,7 +193,7 @@ class Proxy(ProxyCore):
     of markers wrt a reference genome.
 
     Tuple elements are, respectively:
-    
+
       #. the marker vid;
       #. the chromosome number (23=X, 24=Y, 25=XY, 26=MT);
       #. the position within the chromosome;
@@ -397,7 +401,7 @@ class Proxy(ProxyCore):
 
   def get_genotype_data_samples(self, individual, markers_set):
     """
-    Syntactic sugar to simplify the looping on GenotypeDataSample(s) related to a 
+    Syntactic sugar to simplify the looping on GenotypeDataSample(s) related to a
     specific technology (or markers set) connected to an individual.
 
     :param individual: the root individual object

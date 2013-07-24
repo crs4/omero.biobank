@@ -7,7 +7,7 @@ import unittest, time
 
 
 class KBObjectCreator(unittest.TestCase):
-  
+
   def __init__(self, label):
     self.kb = 'THIS_IS_A_DUMMY'
     self.kill_list = 'THIS_IS_A_DUMMY'
@@ -234,6 +234,14 @@ class KBObjectCreator(unittest.TestCase):
             'dataCollection' : data_collection}
     dci = self.kb.factory.create(self.kb.DataCollectionItem, conf)
     return conf, dci
+
+  def create_plate_well(self, titer_plate, slot=1, action=None):
+    conf = self.create_vessel_conf_helper(action)
+    conf['label'] = 'A01'
+    conf['slot'] = slot
+    conf['container'] = titer_plate
+    w = self.kb.factory.create(self.kb.PlateWell, conf)
+    return conf, w
 
   def create_individual(self, action=None, gender=None, father=None,
                         mother=None):

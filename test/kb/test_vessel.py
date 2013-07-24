@@ -54,11 +54,19 @@ class TestKB(KBObjectCreator):
     self.kill_list.append(v.save())
     self.check_object(v, conf, self.kb.Tube)
 
+  def test_plate_well(self):
+    conf, p = self.create_titer_plate()
+    self.kill_list.append(p.save())
+    conf, v = self.create_plate_well(p)
+    self.kill_list.append(v.save())
+    self.check_object(v, conf, self.kb.PlateWell)
+
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_vessel'))
   suite.addTest(TestKB('test_tube'))
+  suite.addTest(TestKB('test_plate_well'))
   return suite
 
 
