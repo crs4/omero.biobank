@@ -314,7 +314,8 @@ class OmeroWrapper(CoreOmeroWrapper):
     if hasattr(self, 'action'):
       self.proxy.dt.destroy_node(self)
       # also delete the edge that connects the object to its source
-      self.proxy.dt.destroy_edge(self, self.action.target)
+      if hasattr(self.action, 'target'):
+        self.proxy.dt.destroy_edge(self, self.action.target)
 
   def configure(self, conf):
     self.__config__(self.ome_obj, conf)
