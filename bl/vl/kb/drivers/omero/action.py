@@ -114,4 +114,5 @@ class Action(wp.OmeroWrapper):
 
   def __cleanup__(self):
     # destroy all the edges related to this action
-    self.proxy.dt.destroy_edges(self)
+    if hasattr(self, 'target'):
+      self.proxy.dt.destroy_edges(self)
