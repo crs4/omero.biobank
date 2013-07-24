@@ -6,6 +6,8 @@ import logging
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger()
 
+from kb_object_creator import KBObjectCreator
+
 class KBICObjectCreator(KBObjectCreator):
   def create_illumina_array_of_arrays(self, action=None, rows=8, cols=2):
     conf = self.create_collection_conf_helper(action)
@@ -23,7 +25,7 @@ class KBICObjectCreator(KBObjectCreator):
     conf = {
       'content'       : self.kb.VesselContent.DNA,
       'status'        : self.kb.VesselStatus.CONTENTUSABLE,
-      'assayType'     : self.kb.IlluminaAssayType.HumanOmniExpress_12v1_C
+      'assayType'     : self.kb.IlluminaAssayType.HumanOmniExpress_12v1_C,
       'action'        : action
       }
     return conf

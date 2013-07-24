@@ -12,7 +12,7 @@ OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
 
-class TestKB(KBObjectCreator):
+class TestKB(KBICObjectCreator):
 
   def __init__(self, name):
     super(TestKB, self).__init__(name)
@@ -55,10 +55,13 @@ class TestKB(KBObjectCreator):
                                                    array_of_arrays=a)
     self.kill_list.append(c.save())
     self.check_object(c, conf, self.kb.IlluminaBeadChipArray)
+
+  def test_illumina_bead_chip_array_errors(self):
+    conf, a = self.create_illumina_array_of_arrays(rows=6, cols=2)
+    self.kill_list.append(a.save())
     conf, c = self.create_illumina_bead_chip_array(label="R03C02",
                                                    array_of_arrays=a)
     self.kill_list.append(c.save())
-
     self.assertRaises(ValueError, self.create_illumina_bead_chip_array,
                       ("R03C02x", a))
     self.assertRaises(ValueError, self.create_illumina_bead_chip_array,

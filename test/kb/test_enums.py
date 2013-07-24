@@ -24,7 +24,7 @@ class TestKB(KBObjectCreator):
 
   def test_enums(self):
     for ename in ['ContainerStatus', 'AffymetrixCelArrayType',
-                  'IlluminaBeadChipAssayType', 'DataSampleStatus',
+                  'IlluminaAssayType', 'DataSampleStatus',
                   'ActionCategory', 'Gender', 'VesselContent']:
       enum_klass = getattr(self.kb, ename)
       enum_klass.map_enums_values(self.kb)
