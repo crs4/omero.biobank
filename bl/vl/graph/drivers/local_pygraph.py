@@ -114,3 +114,9 @@ class PygraphDriver(object):
 
     def destroy_edge(self, src, dest):
         pass
+
+    def destroy_edges(self, act):
+        pass
+
+    def modify_edge(self, act, source, dest):
+        pass
