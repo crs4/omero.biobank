@@ -62,19 +62,20 @@ class TestKB(KBICObjectCreator):
     conf, c = self.create_illumina_bead_chip_array(label="R03C02",
                                                    array_of_arrays=a)
     self.kill_list.append(c.save())
-    self.assertRaises(ValueError, self.create_illumina_bead_chip_array,
-                      ("R03C02x", a))
-    self.assertRaises(ValueError, self.create_illumina_bead_chip_array,
-                      ("R03C03", a))
-    self.assertRaises(ValueError, self.create_illumina_bead_chip_array,
-                      ("R22C03", a))
-    self.assertRaises(ValueError, self.create_illumina_bead_chip_array,
-                      ("R01C01", a, 12))
+    with self.assertRaises(ValueError):
+      self.create_illumina_bead_chip_array("R03C02x", a)
+    with self.assertRaises(ValueError):
+        self.create_illumina_bead_chip_array("R03C03", a)
+    with self.assertRaises(ValueError):
+        self.create_illumina_bead_chip_array("R22C03", a)
+    with self.assertRaises(ValueError):
+        self.create_illumina_bead_chip_array("R01C01", a, 12)
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_illumina_array_of_arrays'))
   suite.addTest(TestKB('test_illumina_bead_chip_array'))
+  suite.addTest(TestKB('test_illumina_bead_chip_array_errors'))
   return suite
 
 
