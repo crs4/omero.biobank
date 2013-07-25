@@ -14,9 +14,7 @@ Illumina Sentrix Meta data utility
 ==================================
 
 The purpose of this utility is to extract information from Illumina
-beadchip meta files.
-
-   bash$ FIXME
+beadchip meta files. The results are accumulated in a sqlite3 file.
 
 """
 
@@ -59,6 +57,8 @@ def cmd_parser():
                         help="file with summary file paths (one per line)")
     parser.add_argument("--csv", type=str,
                         help="a summary file")
+    parser.add_argument("--check-consistency", action='store_true',
+                        help="check sentrix slots mapping")
     return parser
 
 #----------------------------------------------------------------------------
@@ -188,6 +188,56 @@ class ingestor(object):
         conn.close()
         logger.info('done ingesting data from {}'.format(fname))
 
+    def get_summary_by_barcode(self):
+        sql_stat = "select Sample_ID, Sample_plate, Sample_Well, SentrixBarcode_A, SentrixPosition_A from {};".format(
+            self.SUMMARY_TABLE)
+        logger.debug(sql_stat)
+        conn = sqlite3.connect(self.dbname)
+        c = conn.cursor()
+        try:
+            c.execute(sql_stat)
+            res = c.fetchall()
+        except sqlite3.OperationalError, e:
+            logger.error('error: {}'.format(e))
+        conn.close()
+        by_barcode = {}
+        for r in res:
+            by_barcode.setdefault(r[3], []).append(r)
+        return by_barcode
+
+    def get_sentrix_by_barcode(self):
+        sql_stat = "select SentrixBarcode_A, Rows, Cols from {};".format(
+            self.SENTRIX_TABLE)
+        logger.debug(sql_stat)
+        conn = sqlite3.connect(self.dbname)
+        c = conn.cursor()
+        try:
+            c.execute(sql_stat)
+            res = c.fetchall()
+        except sqlite3.OperationalError, e:
+            logger.error('error: {}'.format(e))
+        conn.close()
+        by_barcode = {}
+        for r in res:
+            by_barcode.setdefault(r[0], []).append(r)
+        return by_barcode
+
+    def check_consistency(self):
+        logger.info('checking data consistency')
+        summary_by_barcode = self.get_summary_by_barcode()
+        sentrix_by_barcode = self.get_sentrix_by_barcode()
+
+        m = max(map(lambda x: len(x), sentrix_by_barcode.values()))
+        if m > 1:
+            for k in sentrix_by_barcode:
+                if len(sentrix_by_barcode[k]) > 1:
+                    print k, len(sentrix_by_barcode[k])
+        for k in summary_by_barcode:
+            if not sentrix_by_barcode.has_key(k):
+                print 'undefined key {}'.format(k)
+
+        logger.info('done checking.')
+
 
 if __name__ == '__main__':
     parser = cmd_parser()
@@ -206,5 +256,7 @@ if __name__ == '__main__':
         for l in args.csvs:
             ing.ingest_summary(l.strip())
 
+    if args.check_consistency:
+        ing.check_consistency()
 
 
