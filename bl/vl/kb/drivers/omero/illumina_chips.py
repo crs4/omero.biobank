@@ -58,7 +58,7 @@ class IlluminaBeadChipArray(wp.OmeroWrapper):
   def _slot_from_label(self, label, rows, cols):
     m = re.match('^R(\d{2})C(\d{2})$', label)
     if not m:
-      raise ValueError('label [%s] not in the form R%02dC%02d' % label)
+      raise ValueError('label [%s] not in the form R%%02dC%%02d' % label)
     row, col = map(int, m.groups())
     row -= 1
     col -= 1
