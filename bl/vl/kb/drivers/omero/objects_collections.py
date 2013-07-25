@@ -53,19 +53,6 @@ class TiterPlate(SlottedContainer):
       conf['numberOfSlots'] = conf['rows'] * conf['columns']
     return super(TiterPlate, self).__preprocess_conf__(conf)
 
-class IlluminaArrayOfArrays(SlottedContainer):
-
-  OME_TABLE = 'IlluminaArrayOfArrays'
-  __fields__ = [('rows', wp.INT, wp.REQUIRED),
-                ('columns', wp.INT, wp.REQUIRED)]
-
-  def __preprocess_conf__(self, conf):
-    if not 'numberOfSlots' in conf:
-      conf['numberOfSlots'] = conf['rows'] * conf['columns']
-    return super(IlluminaArrayOfArrays, self).__preprocess_conf__(conf)
-
-
-
 
 class FlowCell(SlottedContainer):
 

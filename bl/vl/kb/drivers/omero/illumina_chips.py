@@ -4,7 +4,7 @@ import omero.rtypes as ort
 import wrapper as wp
 from action import Action
 from vessels import VesselContent, VesselStatus
-from objects_collections import IlluminaArrayOfArrays
+from objects_collections import SlottedContainer
 
 from utils import assign_vid, make_unique_key
 
@@ -27,6 +27,16 @@ class IlluminaAssayType(wp.OmeroWrapper):
         "HumanOmniExpress_12v1_Multi_H", "Immuno_BeadChip_11419691_B",
         "Linkage_12", "UNKNOWN"]
 
+class IlluminaArrayOfArrays(SlottedContainer):
+
+  OME_TABLE = 'IlluminaArrayOfArrays'
+  __fields__ = [('rows', wp.INT, wp.REQUIRED),
+                ('columns', wp.INT, wp.REQUIRED)]
+
+  def __preprocess_conf__(self, conf):
+    if not 'numberOfSlots' in conf:
+      conf['numberOfSlots'] = conf['rows'] * conf['columns']
+    return super(IlluminaArrayOfArrays, self).__preprocess_conf__(conf)
 
 class IlluminaBeadChipArray(wp.OmeroWrapper):
 
