@@ -108,8 +108,8 @@ To check that it's actually been deleted:
   True
 
 
-Usage examples
---------------
+Working with KB objects
+-----------------------
 
 Import an Individual:
 
@@ -151,7 +151,3 @@ Check which individuals are enrolled in a specific study:
   True
   >>> v[0].studyCode
   'I001'
-
-.. todo::
-
-  Add more examples.
