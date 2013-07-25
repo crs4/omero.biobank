@@ -21,7 +21,7 @@ beadchip meta files. The results are accumulated in a sqlite3 file.
 #-----------------------------------------------------------------
 import logging, time
 
-default_logging_level=logging.DEBUG
+default_logging_level=logging.INFO
 
 LOG_FILENAME = 'sentrix_load_mapping.log'
 logging.basicConfig(
