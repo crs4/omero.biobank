@@ -6,6 +6,8 @@ logging.basicConfig(level=logging.ERROR)
 
 from bl.vl.kb import KnowledgeBase as KB
 from illumina_chips_creator import KBICObjectCreator
+from enum_base import EnumBase
+
 
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
@@ -19,7 +21,9 @@ class TestKB(KBICObjectCreator):
     self.kill_list = []
 
   def setUp(self):
-    self.kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
+    self.kb = KB(driver='omero')(
+      OME_HOST, OME_USER, OME_PASS, extra_modules=["illumina_chips"]
+      )
 
   def tearDown(self):
     self.kill_list.reverse()
@@ -71,11 +75,29 @@ class TestKB(KBICObjectCreator):
     with self.assertRaises(ValueError):
         self.create_illumina_bead_chip_array("R01C01", a, 12)
 
+
+class TestEnums(EnumBase):
+
+  def __init__(self, name):
+    super(TestEnums, self).__init__(name)
+    self.kill_list = []
+    self.enum_names = [
+      'IlluminaAssayType',
+      ]
+
+  def setUp(self):
+    self.kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASS)
+
+  def test_enums(self):
+    self._check_enums()
+
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_illumina_array_of_arrays'))
   suite.addTest(TestKB('test_illumina_bead_chip_array'))
   suite.addTest(TestKB('test_illumina_bead_chip_array_errors'))
+  suite.addTest(TestEnums('test_enums'))
   return suite
 
 
