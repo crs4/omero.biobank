@@ -1,7 +1,8 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import hashlib, time, pwd, json, os
+import hashlib, time, pwd, json, os, warnings
+from importlib import import_module
 
 # This is actually used in the metaclass magic
 import omero.model as om
@@ -23,7 +24,6 @@ import individual
 import location
 import demographic
 import sequencing
-import illumina_chips
 
 from genotyping import GenotypingAdapter
 from modeling import ModelingAdapter
@@ -44,9 +44,19 @@ class Proxy(ProxyCore):
   An OMERO driver for the knowledge base.
   """
   def __init__(self, host, user, passwd, group=None, session_keep_tokens=1,
-               check_ome_version=True):
+               check_ome_version=True, extra_modules=None):
     super(Proxy, self).__init__(host, user, passwd, group, session_keep_tokens,
                                 check_ome_version)
+    if extra_modules is not None:
+      if isinstance(extra_modules, basestring):
+        extra_modules = [extra_modules]
+      for name in extra_modules:
+        if "." not in name:
+          name = "%s.%s" % (__package__, name)
+        try:
+          import_module(name)
+        except ImportError:
+          warnings.warn("'import %s' failed" % name)
     self.factory = ObjectFactory(proxy=self)
     #-- learn
     for k in KOK:
