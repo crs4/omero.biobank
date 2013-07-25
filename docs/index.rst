@@ -21,11 +21,11 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   installation
    genotyping
    usage/index
    api_tour/index
    dev_manual/index
-   installation
 
 
 Indices and tables
