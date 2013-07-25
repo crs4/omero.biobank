@@ -79,7 +79,10 @@ class BuildFlowCellSamplesheetApp(Core):
         if not remove_namespaces:
             return obj.label
         else:
-            return self.NAMESPACE_DELIMITER.join(obj.label.split(self.NAMESPACE_DELIMITER)[1:])
+            if self.NAMESPACE_DELIMITER in obj.label:
+                return self.NAMESPACE_DELIMITER.join(obj.label.split(self.NAMESPACE_DELIMITER)[1:])
+            else:
+                return obj.label
 
     def __dump_record(self, csv_writer, laneslot, remove_namespaces, add_sample_label):
         record = {'FCID'     : self.__get_label(laneslot.lane.flowCell, remove_namespaces),
