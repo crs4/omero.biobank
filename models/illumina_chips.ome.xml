@@ -58,7 +58,6 @@ END_COPYRIGHT
 	superclass="ome.model.vl.PlateWell">
     <properties>
       <required name="assayType" type="ome.model.vl.IlluminaAssayType"/>
-      <required name="container" type="ome.model.vl.IlluminaArrayOfArrays"/>
     </properties>
   </type>
 </types>
