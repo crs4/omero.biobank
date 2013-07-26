@@ -3,8 +3,8 @@ import omero.rtypes as ort
 
 import wrapper as wp
 from action import Action
-from vessels import VesselContent, VesselStatus
-from objects_collections import SlottedContainer
+from vessels import PlateWell
+from objects_collections import TiterPlate
 
 from utils import assign_vid, make_unique_key
 
@@ -27,33 +27,20 @@ class IlluminaAssayType(wp.OmeroWrapper):
         "HumanOmniExpress_12v1_Multi_H", "Immuno_BeadChip_11419691_B",
         "Linkage_12", "UNKNOWN"]
 
-class IlluminaArrayOfArrays(SlottedContainer):
+class IlluminaArrayOfArrays(TiterPlate):
 
   OME_TABLE = 'IlluminaArrayOfArrays'
-  __fields__ = [('rows', wp.INT, wp.REQUIRED),
-                ('columns', wp.INT, wp.REQUIRED)]
+  __fields__ = []
 
   def __preprocess_conf__(self, conf):
-    if not 'numberOfSlots' in conf:
-      conf['numberOfSlots'] = conf['rows'] * conf['columns']
     return super(IlluminaArrayOfArrays, self).__preprocess_conf__(conf)
 
-class IlluminaBeadChipArray(wp.OmeroWrapper):
+class IlluminaBeadChipArray(PlateWell):
 
   OME_TABLE = "IlluminaBeadChipArray"
 
-  __fields__ = [('vid', wp.VID, wp.REQUIRED),
-                ('label', wp.STRING, wp.REQUIRED),
-                ('content', VesselContent, wp.REQUIRED),
-                ('status', VesselStatus, wp.REQUIRED),
-                ('assayType', IlluminaAssayType, wp.REQUIRED),
-                ('slot', wp.INT, wp.REQUIRED),
-                ('container', IlluminaArrayOfArrays, wp.REQUIRED),
-                ('containerSlotLabelUK', wp.STRING, wp.REQUIRED),
-                ('containerSlotIndexUK', wp.STRING, wp.REQUIRED),
-                ('action', Action, wp.REQUIRED),
-                ('lastUpdate', Action, wp.OPTIONAL)]
-
+  __fields__ = [('assayType', IlluminaAssayType, wp.REQUIRED),
+                ('container', IlluminaArrayOfArrays, wp.REQUIRED)]
 
   def _slot_from_label(self, label, rows, cols):
     m = re.match('^R(\d{2})C(\d{2})$', label)
@@ -71,9 +58,10 @@ class IlluminaBeadChipArray(wp.OmeroWrapper):
     label = 'R%02dC%02d' % (row + 1, col + 1)
     return label
 
-
   def __preprocess_conf__(self, conf):
-    super(IlluminaBeadChipArray, self).__preprocess_conf__(conf)
+    # to pacify Vessel constructor
+    conf['initialVolume'] = 0.0
+    conf['currentVolume'] = 0.0
     rows, cols = conf['container'].rows, conf['container'].columns
     if not 'slot' in conf:
       conf['slot'] = self._slot_from_label(conf['label'], rows, cols)
@@ -87,25 +75,12 @@ class IlluminaBeadChipArray(wp.OmeroWrapper):
                            % (label, slot))
       else:
           conf['label'] = rlabel
-    if not 'containerSlotLabelUK' in conf:
-      clabel = conf['container'].label
-      label   = conf['label']
-      conf['containerSlotLabelUK'] = make_unique_key(clabel, label)
-    if not 'containerSlotIndexUK' in conf:
-      clabel = conf['container'].label
-      slot   = conf['slot']
-      conf['containerSlotIndexUK'] = make_unique_key(clabel, '%04d' % slot)
-    return assign_vid(conf)
+    return super(IlluminaBeadChipArray, self).__preprocess_conf__(conf)
+
 
   def __update_constraints__(self):
-    csl_uk = make_unique_key(self.container.label, self.label)
-    setattr(self.ome_obj, 'containerSlotLabelUK',
-            self.to_omero(self.__fields__['containerSlotLabelUK'][0], csl_uk))
-    if self.slot > 9999:
-      raise ValueError('slot value %s is out of range' % self.slot)
-    csi_uk = make_unique_key(self.container.label, '%04d' % self.slot)
-    setattr(self.ome_obj, 'containerSlotIndexUK',
-            self.to_omero(self.__fields__['containerSlotIndexUK'][0], csi_uk))
+    super(IlluminaBeadChipArray, self).__update_constraints__(conf)
+
 
 
 
