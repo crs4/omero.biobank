@@ -12,9 +12,9 @@ OMERO.biobank is a framework built upon `OMERO
 compact and efficient ways to deal with the computational challenges
 brought about by large scale biomedical studies.  The framework
 provides models for entities such as laboratory samples, genotyping
-and sequencing datasets, EHR archetypes and many more, together with
-data structures and patterns for tracking the chains of actions that
-link one entity to another.
+and sequencing datasets and many more, together with data structures
+and patterns for tracking the chains of actions that link one entity
+to another.
 
 Contents:
 

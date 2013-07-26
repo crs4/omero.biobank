@@ -8,6 +8,3 @@ Contents:
 
    omero
    api_ref
-.. openehr
-.. galaxy
-.. examples

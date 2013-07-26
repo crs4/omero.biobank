@@ -33,10 +33,6 @@ Omero driver
    :members:
    :undoc-members:
 
-.. automodule:: bl.vl.kb.drivers.omero.ehr
-   :members:
-   :undoc-members:
-
 .. automodule:: bl.vl.kb.drivers.omero.eav
    :members:
    :undoc-members:
