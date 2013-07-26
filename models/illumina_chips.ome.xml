@@ -49,33 +49,16 @@ END_COPYRIGHT
   </type -->
 
   <type id="ome.model.vl.IlluminaArrayOfArrays"
-	superclass="ome.model.vl.SlottedContainer">
+	superclass="ome.model.vl.TiterPlate">
     <properties>
-      <required name="rows" type="int"/>
-      <required name="columns" type="int"/>
     </properties>
   </type>
 
-  <type id="ome.model.vl.IlluminaBeadChipArray">
+  <type id="ome.model.vl.IlluminaBeadChipArray"
+	superclass="ome.model.vl.PlateWell">
     <properties>
-      <required name="vid" type="string"/>
-      <!-- note that label is expected to be unique within a plate,
-           e.g., A05. The actual constraint is imposed by
-           containerSlotLabelUK. -->
-      <required name="label" type="string"/>
-      <required name="content" type="ome.model.vl.VesselContent"/>
-      <required name="status" type="ome.model.vl.VesselStatus"/>
       <required name="assayType" type="ome.model.vl.IlluminaAssayType"/>
-      <!-- FIXME we are not using row, column probably only for
-           historical reasons. -->
-      <required name="slot" type="int"/>
       <required name="container" type="ome.model.vl.IlluminaArrayOfArrays"/>
-      <!-- container.label, label -->
-      <required name="containerSlotLabelUK" type="string" unique="true"/>
-      <!-- container.label, slot -->
-      <required name="containerSlotIndexUK" type="string" unique="true"/>
-      <required name="action" type="ome.model.vl.Action"/>
-      <optional name="lastUpdate" type="ome.model.vl.Action"/>
     </properties>
   </type>
 </types>
