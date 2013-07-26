@@ -20,7 +20,7 @@ def make_parser():
     parser.add_argument('--ome-home', type=str, help='OMERO server HOME directory',
                         required=True)
     parser.add_argument('--models-repository', type=str, help='OMERO.biobank models repository',
-                        default='../models/')
+                        required=True)
     return parser
 
 
