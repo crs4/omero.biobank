@@ -5,9 +5,10 @@
 
 """ ..
 
-This example shows how to handle genetic marker data.  It assumes that
-the KB already contains a set of individuals enrolled in a study
-labeled ``KB_EXAMPLES`` (see the example on creating individuals).
+This example shows how to handle genetic marker data.
+
+**NOTE:** the example assumes that the KB already contains all objects
+created by the example on importing individuals.
 
 Suppose you have run a series of genotyping assays where the DNA
 sample in each well of a titer plate has been associated to a
@@ -24,6 +25,8 @@ OME_HOST = os.getenv('OME_HOST', 'localhost')
 OME_USER = os.getenv('OME_USER', 'test')
 OME_PASSWD = os.getenv('OME_PASSWD', 'test')
 STUDY_LABEL = 'KB_EXAMPLES'
+MSET_LABEL = 'DUMMY_MS'
+REF_GENOME = 'DUMMY_GENOME'
 
 kb = KB(driver='omero')(OME_HOST, OME_USER, OME_PASSWD)
 marker_defs = [
@@ -49,10 +52,10 @@ study = kb.get_study(STUDY_LABEL)
 if study is None:
     sys.exit("ERROR: study '%s' not found" % STUDY_LABEL)
 action = kb.create_an_action(study)
-label, maker, model, release = (uuid.uuid4().hex for _ in xrange(4))
+maker, model, release = (uuid.uuid4().hex for _ in xrange(3))
 N, stream = len(marker_defs), iter(marker_defs)
 mset = kb.create_snp_markers_set(
-    label, maker, model, release, N, stream, action
+    MSET_LABEL, maker, model, release, N, stream, action
     )
 
 """ ..
@@ -70,8 +73,7 @@ will auto-generate dummy alignment info for all markers in the set:
 mset.load_markers()
 aligns = [(m['vid'], i+1, (i+1)*1000, True, 'A' if (i%2)== 0 else 'B', 1)
           for i, m in enumerate(mset.markers)]
-ref_genome = 'dummy'
-kb.align_snp_markers_set(mset, ref_genome, iter(aligns), action)
+kb.align_snp_markers_set(mset, REF_GENOME, iter(aligns), action)
 
 """ ...
 

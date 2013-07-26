@@ -1,197 +1,107 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
+# pylint: disable=W0105, C0103
+
 """ ..
 
-Genomic data set manipulations
-------------------------------
+This example shows how to manipulate genomic data stored in the KB and
+perform basic QC measures.
 
-.. todo::
-
-  We are missing some sort of introduction.
-
-FIXME: Here goes a general intro. Points to touch:
- * A major complication is to decide what stays in memory and what
-   should be projected in db.
- * For the time being, we try to be clear first and efficient second.
- * Explanations concerning how to open a connection to a KnowledgeBase
-   and what it is are left to other, antecedent, parts of the
-   documentation.
+**NOTE:** the example assumes that the KB already contains all objects
+created by the examples on importing individuals and marker sets.
 
 """
 
 import os
-import itertools as it
 from bl.vl.kb import KnowledgeBase as KB
 import bl.vl.genotype.algo as algo
 
-OME_HOST   = os.getenv('OME_HOST', 'localhost')
-OME_USER   = os.getenv('OME_USER', 'test')
+OME_HOST = os.getenv('OME_HOST', 'localhost')
+OME_USER = os.getenv('OME_USER', 'test')
 OME_PASSWD = os.getenv('OME_PASSWD', 'test')
+STUDY_LABEL = 'KB_EXAMPLES'
+MSET_LABEL = 'DUMMY_MS'
+REF_GENOME = 'DUMMY_GENOME'
 
 kb = KB(driver="omero")(OME_HOST, OME_USER, OME_PASSWD)
+mset = kb.get_snp_markers_set(label=MSET_LABEL)
+mset.load_markers()
 
 """ ..
 
-The first thing we will do is to select a markers set. See FIXME:XXX
-for its definition. We will first obtain an handle to it, and then
-invoke a '.load_markers()' that will bring in memory the actual definition
-data.
+The following snippet shows how to use part of a marker set's interface:
 
 """
 
-mset_name = 'FakeTaqSet01'
-mset0 = kb.get_snp_markers_set(label=mset_name)
-mset0.load_markers()
+print "%s: %s (%d markers)" % (mset.__class__.__name__, mset.label, len(mset))
+for k, m in enumerate(mset):
+    print "%s #%d: label=%s, mask=%s. pos=%r" % (
+        m.__class__.__name__, k, m.label, m.mask, m.position
+        )
 
 """ ..
 
-For the time being, we can think the SNPMarkerSet mset0 as analogous to an array
-of markers. The following is a list of expressions that are expected
-to be legal.
+Now we will build a list of all data samples that refer to ``mset``
+and are linked to an individual enrolled in a specific study.  To keep
+things simple, for each individual we will select the first known data
+sample that refers to ``mset``; if no such data sample exist, we will
+skip the individual.
 
 """
-len(mset0)
-mset0[0::10]
-mset0[11]
-mset0[1].label
-mset0[1].rs_label
+
+def extract_data_samples(study, marker_set, class_name):
+    by_individual = {}
+    for i in kb.get_individuals(study):
+        gds_i = [ds for ds in kb.get_data_samples(i, class_name)
+                 if ds.snpMarkersSet == marker_set]
+        if len(gds_i) < 1:
+            continue
+        by_individual[i.id] = gds_i[0]
+    return by_individual
+
+test_study = kb.get_study(label=STUDY_LABEL)
+gds_by_individual = extract_data_samples(test_study, mset, 'GenotypeDataSample')
 
 """ ..
 
-Note that, apart from the len(mset0), all this information will not
-be available unless one requests a '.load_markers()', see above. The latter,
-however, is a rather expensive operation that could take a
-considerable time and require large amounts of memory. E.g., a 1M
-markers set, will result in an object of about (48+32+133) * 1M bytes.
-
-Now we will build a list of all the GenotypeDataSample objects
-supported on mset0, linked to an individual contained in a given
-group. Just to keep things simple, we will select, for each
-individual, the first of the list of known GenotypeDataSample for that
-mset, if there is at least one, otherwise we will skip the individual.
+Now we can perform QC on data objects available for the selected data samples:
 
 """
-def extract_data_sample(group, mset, dsample_name):
-  by_individual = {}
-  for i in kb.get_individuals(group):
-    gds = filter(lambda x: x.snpMarkersSet == mset,
-                 kb.get_data_samples(i, dsample_name))
-    assert(len(gds) == 1)
-    by_individual[i.id] = gds[0]
-  return by_individual
 
-group = kb.get_study(label='TEST01')
-gds0_by_individual = extract_data_sample(group, mset0, 'GenotypeDataSample')
-
-""" ..
-
-Note that what we have now is a dictionary that maps individual ids to
-GenotypeDataSample objects  and the latter are only handlers to get to
-the actual genotyping data, not the data itself.
-
-We can, now, do a global check on data quality.
-
-"""
 def do_check(s):
-  counts = algo.count_homozygotes(s)
-  mafs = algo.maf(None, counts)
-  hwe  = algo.hwe(None, counts)
-  return mafs, hwe
+    counts = algo.count_homozygotes(s)
+    return algo.maf(None, counts), algo.hwe(None, counts)
 
-gds0_data_samples = gds0_by_individual.values()
-s = kb.get_gdo_iterator(mset0, data_samples=gds0_data_samples)
-mafs, hwe = do_check(s)
+gds = gds_by_individual.values()
+stream = kb.get_gdo_iterator(mset, data_samples=gds)
+mafs, hwe = do_check(stream)
 
 """ ..
 
-Similar to above, but now we subselect on a slice of the markers
+Same as above, but on an arbitrary subset of the marker set:
 
 """
 
-s = kb.get_gdo_iterator(mset0, indices=slice(1, len(mset0)-1),
-                        data_samples=gds0_data_samples)
-mafs, hwe = do_check(s)
+stream = kb.get_gdo_iterator(
+    mset, data_samples=gds, indices=slice(1, len(mset)-1)
+    )
+mafs, hwe = do_check(stream)
 
 """ ..
 
-Same as above, but now we work on a subset of possible markers
-selected as the one that have genomic coordinates in the interval
-defined as from gc_begin (included) to gc_end (excluded).
+Same as above, but on a subset of the marker set based on the genomic
+coordinates of the markers.
 
 """
 
-ref_genome = 'fake19'
-begin_chrom = 10
-begin_pos = 63000000
-end_chrom = 10
-end_pos = 116000000
-
-gc_begin=(begin_chrom, begin_pos)
-gc_end  =(end_chrom, end_pos)
-
-mset0.load_alignments(ref_genome)
-indices = kb.SNPMarkersSet.define_range_selector(mset0,
-                                                 gc_range=(gc_begin, gc_end))
-
-""" ..
-
-this subranging will clearly fail if the markers in mset0 have not
-been aligned against the reference genome.
-
-"""
-
-s = kb.get_gdo_iterator(mset0, indices=indices, data_samples=gds0_data_samples)
-mafs, hwe = do_check(s)
-
-""" ..
-
-Let's now suppose that we have obtained genotyping data with two
-different technologies ('foo' and 'bar') and we would like to compare
-results on the shared markers.
-
-"""
-
-mset1 = kb.get_snp_markers_set(label="bar")
-gds1_by_individual = extract_data_sample(group, mset1, 'GenotypeDataSample')
-
-data_sample_0 = []
-data_sample_1 = []
-for k in gds0_by_individual:
-  if k in gds1_by_individual:
-    data_sample_0.append(gds0_by_individual[k])
-    data_sample_1.append(gds1_by_individual[k])
-
-# FIXME: there is no intersect method yet
-
-""" ..
-
-Operations on markers_set(s) are tricky, since they are reference genome dependent.
-
-In principle, we could use, for a given reference genome, the alligned
-positions, so the basic operation cycle would be: load in memory
-alignments; do compare; generate selection maps. It follows that
-extracting from db an aligment map should be a resonably fast
-operation.
-
-"""
-indices_0, indices_1 = kb.SNPMarkersSet.intersect(mset0, mset1, ref_genome)
-
-""" ..
-
-To compare we use a suitable function such as the following:
-
-.. todo::
-
-   TBD
-
-"""
-
-def compare(a, b):
-  pass
-
-for (a, b) in it.izip(kb.get_gdo_iterator(mset0, indices=indices_0,
-                                          data_samples=data_sample_0),
-                      kb.get_gdo_iterator(mset1, indices=indices_1,
-                                          data_samples=data_sample_1)):
-  compare(a, b)
+mset.load_alignments(REF_GENOME)
+chrom_start = chrom_end = 10
+start, end = 63000000, 116000000
+indices = kb.SNPMarkersSet.define_range_selector(
+    mset, gc_range=((chrom_start, start), (chrom_end, end))
+    )
+stream = kb.get_gdo_iterator(
+    mset, indices=indices, data_samples=gds
+    )
+mafs, hwe = do_check(stream)
