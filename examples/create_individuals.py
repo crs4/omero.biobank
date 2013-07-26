@@ -43,7 +43,7 @@ the study's label has not been assigned to any other existing study.
 
 """
 
-config = {'label': 'TEST_INDIVIDUALS', 'description': 'dummy'}
+config = {'label': 'KB_EXAMPLES', 'description': 'dummy'}
 study = kb.factory.create(kb.Study, config).save()
 
 """ ..

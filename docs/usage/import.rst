@@ -1,3 +1,5 @@
+.. _import_tool:
+
 The import tool
 ===============
 
