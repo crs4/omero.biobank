@@ -111,7 +111,10 @@ To check that it's actually been deleted:
 Working with KB objects
 -----------------------
 
-Import an Individual:
+The following code snippet shows how to create and manipulate basic KB
+objects; specifically, it shows how to import an individual and enroll
+it in a study.  More details on individual and enrollments can be
+found in the :ref:`examples <kb_examples>`.
 
 .. code-block:: python
 
@@ -125,23 +128,10 @@ Import an Individual:
   >>> i = kb.factory.create(kb.Individual, conf)
   >>> i.save()
   <bl.vl.kb.drivers.omero.individual.Individual object at 0x90fef2c>
-
-Note that an Individual (in general, any object that has a physical
-counterpart) needs an ``action`` to be created.
-
-Enroll an individual into a study:
-
-.. code-block:: python
-
   >>> conf = {'study': s, 'individual': i, 'studyCode': 'I001'}
   >>> e = kb.factory.create(kb.Enrollment, conf)
   >>> e.save()
   <bl.vl.kb.drivers.omero.individual.Enrollment object at 0x91df30c>
-  
-Check which individuals are enrolled in a specific study:
-
-.. code-block:: python
-
   >>> v = kb.get_enrolled(s)
   >>> v
   [<bl.vl.kb.drivers.omero.individual.Enrollment object at 0x911018c>]

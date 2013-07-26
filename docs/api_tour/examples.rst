@@ -1,3 +1,5 @@
+.. _kb_examples:
+
 A collection of examples
 ========================
 
