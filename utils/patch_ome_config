@@ -4,6 +4,9 @@ import argparse, os, sys
 import xml.etree.ElementTree as ET
 from hashlib import md5
 
+sys.path.insert(
+    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
+    )
 from bl.vl.utils import LOG_LEVELS, get_logger
 
 BIOBANK_TAG_PROPERTY='biobank.models.version'

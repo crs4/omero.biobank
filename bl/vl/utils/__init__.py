@@ -8,6 +8,8 @@ Generic Utilities
 Generic utilities used by other modules.
 """
 
+# DEV NOTE: this module must NOT use other OMERO.biobank modules.
+
 import uuid, hashlib, logging
 
 
