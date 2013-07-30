@@ -1,0 +1,11 @@
+--- build.py	2013-07-29 11:32:32.777144970 +0200
++++ build.py.update	2013-07-29 11:33:13.209146387 +0200
+@@ -69,7 +69,7 @@
+     return "java"
+ 
+ def calculate_memory_args():
+-    return "-Xmx600M -Djavac.maxmem.default=750M -Djavadoc.maxmem.default=750M -XX:MaxPermSize=256m".split(" ")
++    return "-Xmx600M -Djavac.maxmem.default=1024M -Djavadoc.maxmem.default=750M -XX:MaxPermSize=256m".split(" ")
+ 
+ def choose_omero_version():
+     """

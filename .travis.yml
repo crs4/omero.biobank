@@ -1,0 +1,92 @@
+language: python
+python:
+  - "2.7"
+
+jdk:
+  - oraclejdk7
+  
+services:
+  - neo4j
+  - rabbitmq
+
+env:
+  global:
+    - OME_HOST=localhost
+    - OME_USER=root
+    - OME_PASS=omero
+
+before_install:
+  # prepare the DB
+  - psql -c "CREATE USER omero WITH PASSWORD 'omero';" -U postgres
+  - sudo -u postgres createdb -O omero omero
+  # Install OMERO server
+  # ** install OMERO dependencies
+  - sudo apt-get -qq update
+  - sudo apt-get install -qq zeroc-ice34 python-zeroc-ice ice34-services
+  # add Python Ice modules to PYTHONPATH
+  - export PYTHONPATH="/usr/lib/pymodules/python2.7/:$PYTHONAPTH"
+  - sudo apt-get install -qq python-imaging python-numpy python-tables python-genshi
+  # ** we are into the omero.biobank directory, exit before cloning
+  - cd ..
+  - git clone --recursive git://github.com/openmicroscopy/openmicroscopy.git ./omero
+  - cd ./omero
+  - git checkout -b master origin/master
+  - git reset --hard v.4.4.8
+  - git submodule update
+  # ** copy OMERO.biobank models
+  - cp ../omero.biobank/models/*.ome.xml ./components/model/resources/mappings/
+  # ** create the omero.data.directory
+  - mkdir ./ome_data
+  # ** patching OMERO server version
+  - cd ../omero.biobank
+  - ./utils/patch_ome_config --ome-home ../omero --models-repository ./models
+  # ** Neo4j and RabbitMQ setup
+  - cd ../omero
+  - echo "" >> etc/omero.properties
+  - echo "omero.biobank.graph.engine=neo4j" >> etc/omero.properties
+  - echo "omero.biobank.graph.uri=http://localhost:7474/db/data/" >> etc/omero.properties
+  - echo "omero.biobank.messages_queue.enabled=True" >> etc/omero.properties
+  - echo "omero.biobank.messages_queue.host=localhost" >> etc/omero.properties
+  - echo "omero.biobank.messages_queue.queue=bb-travis-ci" >> etc/omero.properties
+  # ** patch the build.py script in order to avoid JavaOutOfMemory exception
+  #    when compiling models
+  - patch ./build.py < ../omero.biobank/.travis-data/build.py.patch
+  # ** build the server
+  - ./build.py -quiet
+  - export PYTHONPATH="/home/travis/build/lucalianas/omero/dist/lib/python/:$PYTHONPATH"
+  - ./build.py -quiet build-schema -Domero.db.dialect=org.hibernate.dialect.PostgreSQLDialect
+  # build and deploy the DB
+  - ./dist/bin/omero db script OMERO4.4 0 $OME_PASS
+  - psql -h localhost -U omero omero < OMERO4.4__0.sql
+  # create and configure the omero.data.dir
+  - mkdir ./omero_data
+  - ./dist/bin/omero config set omero.data.dir ./omero_data
+  # start the server
+  - ./dist/bin/omero admin start
+
+  # Install biodoop-core
+  - cd ..
+  - sudo apt-get install -qq protobuf-compiler
+  - git clone https://github.com/crs4/biodoop-core.git
+  - cd ./biodoop-core
+  - make
+  - python setup.py install
+
+install:
+  - cd ../omero.biobank
+  - pip install pika==0.9.12
+  - pip install bulbs
+  - pip install voluptuous
+  # retrieve neo4j and rabbitmq config parameters
+  - python ./build_configuration.py -H localhost -U ${OME_USER} -P ${OME_PASS} --python
+  - python setup.py install
+  #  start the graph_manager daemon
+  - python ./daemons/graph_manager.py --logfile /tmp/graph_manager.log &
+  # move to test directory in order to avoid PYTHONPATH problems
+  - cd ./test
+  
+script:
+  - python ./kb/test_action.py
+  - python ./kb/test_individual.py
+  - python ./kb/test_vessel.py
+  
