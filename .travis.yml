@@ -53,7 +53,7 @@ before_install:
   - patch ./build.py < ../omero.biobank/.travis-data/build.py.patch
   # ** build the server
   - ./build.py -quiet
-  - export PYTHONPATH="/home/travis/build/lucalianas/omero/dist/lib/python/:$PYTHONPATH"
+  - export PYTHONPATH="/home/travis/build/crs4/omero/dist/lib/python/:$PYTHONPATH"
   - ./build.py -quiet build-schema -Domero.db.dialect=org.hibernate.dialect.PostgreSQLDialect
   # build and deploy the DB
   - ./dist/bin/omero db script OMERO4.4 0 $OME_PASS
