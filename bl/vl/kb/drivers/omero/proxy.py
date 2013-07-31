@@ -1,7 +1,7 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import hashlib, time, pwd, json, os, warnings
+import hashlib, time, pwd, json, os
 from importlib import import_module
 
 # This is actually used in the metaclass magic
@@ -56,7 +56,7 @@ class Proxy(ProxyCore):
         try:
           import_module(name)
         except ImportError:
-          warnings.warn("'import %s' failed" % name)
+          raise ImportError('Optional module "%s" not available' % name)
     self.factory = ObjectFactory(proxy=self)
     #-- learn
     for k in KOK:
