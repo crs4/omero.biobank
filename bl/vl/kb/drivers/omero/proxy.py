@@ -38,7 +38,7 @@ from admin import Admin
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 BATCH_SIZE = 5000
 
-ENV_VARIABLE='omero.biobank.extra_modules'
+ENV_VARIABLE='OMERO_BIOBANK_EXTRA_MODULES'
 
 class Proxy(ProxyCore):
   """
@@ -48,7 +48,7 @@ class Proxy(ProxyCore):
                check_ome_version=True, extra_modules=None):
     super(Proxy, self).__init__(host, user, passwd, group, session_keep_tokens,
                                 check_ome_version)
-    if (extra_modules is None
+    if (not extra_modules
         and os.environ.has_key(ENV_VARIABLE)):
       extra_modules = os.environ[ENV_VARIABLE].split(',')
     if extra_modules is not None:
