@@ -89,4 +89,4 @@ script:
   - python ./kb/test_action.py
   - python ./kb/test_individual.py
   - python ./kb/test_vessel.py
-  
+  - python ./kb/test_illumina_chips.py  
