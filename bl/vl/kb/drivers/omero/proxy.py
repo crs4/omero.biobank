@@ -34,11 +34,10 @@ from genotyping import Marker
 from admin import Admin
 
 
-
+EXTRA_MODULES_ENV='OMERO_BIOBANK_EXTRA_MODULES'
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 BATCH_SIZE = 5000
 
-ENV_VARIABLE='OMERO_BIOBANK_EXTRA_MODULES'
 
 class Proxy(ProxyCore):
   """
@@ -48,12 +47,10 @@ class Proxy(ProxyCore):
                check_ome_version=True, extra_modules=None):
     super(Proxy, self).__init__(host, user, passwd, group, session_keep_tokens,
                                 check_ome_version)
-    if (not extra_modules
-        and os.environ.has_key(ENV_VARIABLE)):
-      extra_modules = os.environ[ENV_VARIABLE].split(',')
-    if extra_modules is not None:
+    extra_modules = extra_modules or os.getenv(EXTRA_MODULES_ENV)
+    if extra_modules:
       if isinstance(extra_modules, basestring):
-        extra_modules = [extra_modules]
+        extra_modules = extra_modules.split(",")
       for name in extra_modules:
         if "." not in name:
           name = "%s.%s" % (__package__, name)
