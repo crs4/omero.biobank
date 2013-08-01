@@ -10,8 +10,6 @@ OME_HOST = os.getenv('OME_HOST', 'localhost')
 OME_USER = os.getenv('OME_USER', 'root')
 OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
 
-#EXTRA_MODULES = ["illumina_chips"]
-EXTRA_MODULES = []
 CHECK_OME_VERSION = False
 
 BaseProxy = KnowledgeBase(driver='omero')
@@ -20,9 +18,7 @@ class Proxy(BaseProxy):
   def get_objects_dict(self, klass):
     return dict((o.label, o) for o in super(Proxy, self).get_objects(klass))
 
-kb = Proxy(OME_HOST, OME_USER, OME_PASSWD,
-           check_ome_version=CHECK_OME_VERSION,
-           extra_modules=EXTRA_MODULES)
+kb = Proxy(OME_HOST, OME_USER, OME_PASSWD, check_ome_version=CHECK_OME_VERSION)
 
 def cleanup():
   print "# disconnecting the kb"
