@@ -49,11 +49,6 @@ class TestKB(KBObjectCreator):
     self.kill_list.append(ds.save())
     self.check_object(ds, conf, self.kb.DataSample)
 
-  def test_affymetrix_cel(self):
-    conf, ds = self.create_affymetrix_cel()
-    self.kill_list.append(ds.save())
-    self.check_object(ds, conf, self.kb.AffymetrixCel)
-
   def test_snp_markers_set(self):
     conf, sms = self.create_snp_markers_set()
     self.kill_list.append(sms.save())
@@ -73,7 +68,6 @@ class TestKB(KBObjectCreator):
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_data_sample'))
-  suite.addTest(TestKB('test_affymetrix_cel'))
   suite.addTest(TestKB('test_snp_markers_set'))
   suite.addTest(TestKB('test_genotype_data_sample'))
   suite.addTest(TestKB('test_data_object'))

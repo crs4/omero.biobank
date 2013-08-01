@@ -41,13 +41,6 @@ END_COPYRIGHT
     <entry name="UNKNOWN"/>
   </enum>
 
-  <!-- type id="ome.model.vl.IlluminaBeadChipAssay"
-	superclass="ome.model.vl.MicroArrayMeasure">
-    <properties>
-      <required name="assayType" type="ome.model.vl.IlluminaBeadChipAssayType"/>
-    </properties>
-  </type -->
-
   <type id="ome.model.vl.IlluminaArrayOfArrays"
 	superclass="ome.model.vl.TiterPlate">
     <properties>
@@ -60,4 +53,21 @@ END_COPYRIGHT
       <required name="assayType" type="ome.model.vl.IlluminaAssayType"/>
     </properties>
   </type>
+
+  <type id="ome.model.vl.IlluminaBeadChipMeasure"
+	superclass="ome.model.vl.MicroArrayMeasure">
+    <properties>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.IlluminaBeadChipMeasures"
+	superclass="ome.model.vl.DataCollection">
+    <properties>
+      <required name="redChannel"
+		type="ome.model.vl.IlluminaBeadChipMeasure"/>
+      <required name="greenChannel"
+		type="ome.model.vl.IlluminaBeadChipMeasure"/>
+    </properties>
+  </type>
+
 </types>

@@ -147,12 +147,6 @@ class KBObjectCreator(unittest.TestCase):
     ds = self.kb.factory.create(self.kb.DataSample, conf)
     return conf, ds
 
-  def create_affymetrix_cel(self, action=None):
-    conf = self.create_data_sample_conf_helper(action)
-    conf['arrayType'] = self.kb.AffymetrixCelArrayType.GENOMEWIDESNP_6
-    ds = self.kb.factory.create(self.kb.AffymetrixCel, conf)
-    return conf, ds
-
   def create_snp_markers_set(self):
     conf = {'label' : 'label-%s' % time.time(),
             'maker' : 'maker-%s' % time.time(),

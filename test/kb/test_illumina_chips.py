@@ -22,8 +22,7 @@ class TestKB(KBICObjectCreator):
 
   def setUp(self):
     self.kb = KB(driver='omero')(
-      OME_HOST, OME_USER, OME_PASS, extra_modules=["illumina_chips"]
-      )
+      OME_HOST, OME_USER, OME_PASS, extra_modules="illumina_chips")
 
   def tearDown(self):
     self.kill_list.reverse()
@@ -51,6 +50,17 @@ class TestKB(KBICObjectCreator):
     conf, a = self.create_illumina_array_of_arrays(rows=6, cols=2)
     self.kill_list.append(a.save())
     self.check_object(a, conf, self.kb.IlluminaArrayOfArrays)
+
+  def test_illumina_bead_chip_measures(self):
+    channels = {}
+    for c in ['red_channel', 'green_channel']:
+      conf, m = self.create_illumina_bead_chip_measure()
+      self.kill_list.append(m.save())
+      self.check_object(m, conf, self.kb.IlluminaBeadChipMeasure)
+      channels[c] = m
+    conf, ms = self.create_illumina_bead_chip_measures(**channels)
+    self.kill_list.append(ms.save())
+    self.check_object(ms, conf, self.kb.IlluminaBeadChipMeasures)
 
   def test_illumina_bead_chip_array(self):
     conf, a = self.create_illumina_array_of_arrays(rows=6, cols=2)
@@ -97,6 +107,7 @@ def suite():
   suite.addTest(TestKB('test_illumina_array_of_arrays'))
   suite.addTest(TestKB('test_illumina_bead_chip_array'))
   suite.addTest(TestKB('test_illumina_bead_chip_array_errors'))
+  suite.addTest(TestKB('test_illumina_bead_chip_measures'))
   suite.addTest(TestEnums('test_enums'))
   return suite
 

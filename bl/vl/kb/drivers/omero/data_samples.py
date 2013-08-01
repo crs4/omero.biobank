@@ -43,20 +43,6 @@ class MicroArrayMeasure(DataSample):
   __fields__ = []
 
 
-class AffymetrixCelArrayType(wp.OmeroWrapper):
-
-  OME_TABLE="AffymetrixCelArrayType"
-  __enums__ = ["UNKNOWN", "GENOMEWIDESNP_6"]
-
-
-class AffymetrixCel(MicroArrayMeasure):
-
-  OME_TABLE = 'AffymetrixCel'
-  __fields__ = [('arrayType', AffymetrixCelArrayType, wp.REQUIRED),
-                ('celID',     wp.STRING,              wp.OPTIONAL)]
-
-
-
 class GenotypeDataSample(DataSample):
 
   OME_TABLE = 'GenotypeDataSample'
