@@ -4,7 +4,8 @@ import omero.rtypes as ort
 import wrapper as wp
 from action import Action
 from vessels import PlateWell
-from objects_collections import TiterPlate
+from objects_collections import TiterPlate, DataCollection
+from data_samples import MicroArrayMeasure
 
 from utils import assign_vid, make_unique_key
 
@@ -81,6 +82,20 @@ class IlluminaBeadChipArray(PlateWell):
   def __update_constraints__(self):
     super(IlluminaBeadChipArray, self).__update_constraints__(conf)
 
+
+class IlluminaBeadChipMeasure(MicroArrayMeasure):
+
+  OME_TABLE = "IlluminaBeadChipMeasure"
+
+  __fields__ = []
+
+
+class IlluminaBeadChipMeasures(DataCollection):
+
+  OME_TABLE = "IlluminaBeadChipMeasures"
+
+  __fields__ = [('redChannel',   IlluminaBeadChipMeasure, wp.REQUIRED),
+                ('greenChannel', IlluminaBeadChipMeasure, wp.REQUIRED)]
 
 
 
