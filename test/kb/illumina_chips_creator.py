@@ -40,6 +40,27 @@ class KBICObjectCreator(KBObjectCreator):
     a = self.kb.factory.create(self.kb.IlluminaBeadChipArray, conf)
     return conf, a
 
+  def create_illumina_bead_chip_measure(self, action=None):
+    conf = self.create_data_sample_conf_helper(action)
+    m = self.kb.factory.create(self.kb.IlluminaBeadChipMeasure, conf)
+    return conf, m
+
+  def create_illumina_bead_chip_measures(self, red_channel=None,
+                                         green_channel=None,
+                                         action=None):
+    conf = self.create_collection_conf_helper(action)
+    conf['status']  = self.kb.ContainerStatus.READY
+    if green_channel is None:
+      _, green_channel = self.create_illumina_bead_chip_measure(action)
+      self.kill_list.append(green_channel.save())
+    if red_channel is None:
+      _, red_channel =  self.create_illumina_bead_chip_measure(action)
+      self.kill_list.append(red_channel.save())
+    conf['greenChannel'] = green_channel
+    conf['redChannel'] = red_channel
+    m = self.kb.factory.create(self.kb.IlluminaBeadChipMeasures, conf)
+    return conf, m
+
 
 
 
