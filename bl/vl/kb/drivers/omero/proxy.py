@@ -34,7 +34,9 @@ from genotyping import Marker
 from admin import Admin
 
 
-EXTRA_MODULES_ENV='OMERO_BIOBANK_EXTRA_MODULES'
+EXTRA_MODULES_ENV = 'OMERO_BIOBANK_EXTRA_MODULES'
+NO_VCHECK_ENV = 'OMERO_BIOBANK_NO_VCHECK'
+
 KOK = MetaWrapper.__KNOWN_OME_KLASSES__
 BATCH_SIZE = 5000
 
@@ -45,6 +47,8 @@ class Proxy(ProxyCore):
   """
   def __init__(self, host, user, passwd, group=None, session_keep_tokens=1,
                check_ome_version=True, extra_modules=None):
+    if os.getenv(NO_VCHECK_ENV):
+      check_ome_version = False
     super(Proxy, self).__init__(host, user, passwd, group, session_keep_tokens,
                                 check_ome_version)
     extra_modules = extra_modules or os.getenv(EXTRA_MODULES_ENV)
