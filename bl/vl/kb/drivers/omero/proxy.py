@@ -104,6 +104,28 @@ class Proxy(ProxyCore):
       raise ValueError("%d kb objects map to %s" % (len(res), vid))
     return res[0]
 
+  def get_by_vids(self, klass, vids, batch_size=240):
+    def get_by_vids_helper(bvids):
+      template = "from %s o where o.vid in (%s)"
+      query = template % (klass.get_ome_table(),
+                          ','.join(map(lambda x: "'%s'" % x, bvids)))
+      params = {}
+      res = self.find_all_by_query(query, params)
+      if len(res) != len(bvids):
+        raise ValueError("%d kb objects map to %d vids"
+                         % (len(res), len(bvids)))
+      return res
+    def vids_by_chunk():
+      offset = 0
+      while len(vids[offset:]) > 0:
+        yield vids[offset:offset+batch_size]
+        offset += batch_size
+    if batch_size == 0:
+      return get_by_vids_helper(vids)
+    else:
+      return sum(map(get_by_vids_helper, vids_by_chunk()), [])
+
+
   def create_global_tables(self, destructive=False):
     self.eadpt.create_ehr_table(destructive=destructive)
 
