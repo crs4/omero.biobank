@@ -58,10 +58,29 @@ class TestKB(KBObjectCreator):
     self.kb.save_array(people)
     print' \n\ttime needed to save %s object: %s' % (N, time.time() - start)
 
+  def test_get_by_vids(self):
+    aconf, action = self.create_action()
+    self.kill_list.append(action.save())
+    N = 1000
+    C = 200
+    people = []
+    for i in range(N):
+      conf, i = self.create_individual(action=action,
+                                       gender=self.kb.Gender.MALE)
+      self.kill_list.append(i)
+      people.append(i)
+    start =  time.time()
+    self.kb.save_array(people)
+    vids = map(lambda x:  x.id, people)
+    npeople = self.kb.get_by_vids(self.kb.Individual, vids, batch_size=C)
+    for p in npeople:
+      self.assertTrue(p.id in vids)
+
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestKB('test_parallel_save'))
+  suite.addTest(TestKB('test_get_by_vids'))
   return suite
 
 
