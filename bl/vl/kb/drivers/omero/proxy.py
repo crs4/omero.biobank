@@ -104,27 +104,45 @@ class Proxy(ProxyCore):
       raise ValueError("%d kb objects map to %s" % (len(res), vid))
     return res[0]
 
-  def get_by_vids(self, klass, vids, batch_size=240):
-    def get_by_vids_helper(bvids):
-      template = "from %s o where o.vid in (%s)"
+  def get_by_field(self, klass, field_name, values, batch_size=240):
+    """
+    FIXME returns a dictionary that map all v in values
+    for which exists an object o of class klass such that o.field_name == v
+    to o.
+    """
+    def get_by_field_helper(values):
+      template = "from %s o where o.{} in (%s)".format(field_name)
       query = template % (klass.get_ome_table(),
-                          ','.join(map(lambda x: "'%s'" % x, bvids)))
+                          ','.join(map(lambda x: "'%s'" % x, values)))
       params = {}
       res = self.find_all_by_query(query, params)
-      if len(res) != len(bvids):
-        raise ValueError("%d kb objects map to %d vids"
-                         % (len(res), len(bvids)))
-      return res
-    def vids_by_chunk():
+      return dict(map(lambda o: (getattr(o, field_name), o), res))
+    def values_by_chunk():
       offset = 0
-      while len(vids[offset:]) > 0:
-        yield vids[offset:offset+batch_size]
+      while len(values[offset:]) > 0:
+        yield values[offset:offset+batch_size]
         offset += batch_size
     if batch_size == 0:
-      return get_by_vids_helper(vids)
+      return get_by_field_helper(values)
     else:
-      return sum(map(get_by_vids_helper, vids_by_chunk()), [])
+      return reduce(lambda x, y: x.update(y) or x,
+                    map(get_by_field_helper, values_by_chunk()))
 
+  def get_by_vids(self, klass, vids, batch_size=240):
+    """
+    FIXME Given a list of vids, returns a dictionary that map all vid
+    in vids for which exists an object o of class klass such that o.vid == vid
+    to o.
+    """
+    return self.get_by_field(klass, 'vid', vids, batch_size)
+
+  def get_by_labels(self, klass, labels, batch_size=240):
+    """
+    FIXME Given a list of labels, returns a dictionary that map all
+    label in labels for which exists an object o of class klass such
+    that o.label == label, to o.
+    """
+    return self.get_by_field(klass, 'label', labels, batch_size)
 
   def create_global_tables(self, destructive=False):
     self.eadpt.create_ehr_table(destructive=destructive)
