@@ -41,9 +41,27 @@ END_COPYRIGHT
     <entry name="UNKNOWN"/>
   </enum>
 
+  <enum id="ome.model.vl.IlluminaArrayOfArraysType">
+    <entry name="BeadChip_12x1Q"/>
+    <entry name="UNKNOWN"/>
+  </enum>
+
+  <enum id="ome.model.vl.IlluminaArrayOfArraysClass">
+    <entry name="Slide"/>
+    <entry name="UNKNOWN"/>
+  </enum>
+
+  <enum id="ome.model.vl.IlluminaArrayOfArraysAssayType">
+    <entry name="Infinium_HD"/>
+    <entry name="UNKNOWN"/>
+  </enum>
+
   <type id="ome.model.vl.IlluminaArrayOfArrays"
 	superclass="ome.model.vl.TiterPlate">
     <properties>
+      <required name="type" type="ome.model.vl.IlluminaArrayOfArraysType"/>
+      <required name="arrayClass" type="ome.model.vl.IlluminaArrayOfArraysClass"/>
+      <required name="assayType" type="ome.model.vl.IlluminaArrayOfArraysAssayType"/>
     </properties>
   </type>
 

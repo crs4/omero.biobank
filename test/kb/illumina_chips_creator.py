@@ -14,6 +14,9 @@ class KBICObjectCreator(KBObjectCreator):
     conf['rows'] =  rows
     conf['columns'] =  cols
     conf['barcode'] =  '9898989-%s' % time.time()
+    conf['type'] = self.kb.IlluminaArrayOfArraysType.BeadChip_12x1Q
+    conf['arrayClass'] = self.kb.IlluminaArrayOfArraysClass.Slide
+    conf['assayType'] = self.kb.IlluminaArrayOfArraysAssayType.Infinium_HD
     conf['status']  = self.kb.ContainerStatus.READY
     c = self.kb.factory.create(self.kb.IlluminaArrayOfArrays, conf)
     return conf, c

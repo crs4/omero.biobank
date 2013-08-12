@@ -28,10 +28,25 @@ class IlluminaAssayType(wp.OmeroWrapper):
         "HumanOmniExpress_12v1_Multi_H", "Immuno_BeadChip_11419691_B",
         "Linkage_12", "UNKNOWN"]
 
+class IlluminaArrayOfArraysType(wp.OmeroWrapper):
+  OME_TABLE = "IlluminaArrayOfArraysType"
+  __enums__ = ["BeadChip_12x1Q", "UNKNOWN"]
+
+class IlluminaArrayOfArraysClass(wp.OmeroWrapper):
+  OME_TABLE = "IlluminaArrayOfArraysClass"
+  __enums__ = ["Slide", "UNKNOWN"]
+
+class IlluminaArrayOfArraysAssayType(wp.OmeroWrapper):
+  OME_TABLE = "IlluminaArrayOfArraysAssayType"
+  __enums__ = ["Infinium_HD", "UNKNOWN"]
+
+
 class IlluminaArrayOfArrays(TiterPlate):
 
   OME_TABLE = 'IlluminaArrayOfArrays'
-  __fields__ = []
+  __fields__ = [('type', IlluminaArrayOfArraysType, wp.REQUIRED),
+                ('arrayClass', IlluminaArrayOfArraysClass, wp.REQUIRED),
+                ('assayType', IlluminaArrayOfArraysAssayType, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
     return super(IlluminaArrayOfArrays, self).__preprocess_conf__(conf)
