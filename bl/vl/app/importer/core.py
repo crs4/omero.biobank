@@ -73,6 +73,13 @@ class Core(object):
       asetup = self.kb.factory.create(self.kb.ActionSetup, kb_conf).save()
     return asetup
 
+  def get_action_class_by_target(self, target):
+    for K in self.kb.Action.__subclasses__():
+      if isinstance(target, K.__fields__['target'][0]):
+        return K
+    else:
+      raise ValueError('Cannot find an action for target %s.' % target)
+
   def get_study(self, label):
     if self.default_study:
       return self.default_study
@@ -131,7 +138,7 @@ class RecordCanonizer(object):
       if v is not None:
         overrides[f] = v
     self.overrides = overrides
-  
+
   def canonize(self, r):
     r.update(self.overrides)
 

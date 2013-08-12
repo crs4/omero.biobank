@@ -49,6 +49,7 @@ SUBMOD_NAMES = [
   "birth_data",
   "laneslot",
   "sequencing_data_sample",
+  "agnostic",
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 
