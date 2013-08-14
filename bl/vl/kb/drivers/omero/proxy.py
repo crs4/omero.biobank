@@ -122,6 +122,9 @@ class Proxy(ProxyCore):
       while len(values[offset:]) > 0:
         yield values[offset:offset+batch_size]
         offset += batch_size
+
+    if len(values) == 0:
+      return {}
     if batch_size == 0:
       return get_by_field_helper(values)
     else:
