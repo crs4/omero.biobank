@@ -118,6 +118,7 @@ setup(
     'bl.vl.kb',
     'bl.vl.kb.drivers',
     'bl.vl.kb.drivers.omero',
+    'bl.vl.serialize',
     'bl.vl.individual',
     'bl.vl.genotype',
     'bl.vl.graph',
