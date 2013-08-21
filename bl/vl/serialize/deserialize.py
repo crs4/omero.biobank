@@ -1,6 +1,8 @@
 """
-Knoledge base deserializer
-==========================
+Deserialize yaml streams to biobank objects
+==========================================
+
+
 
 """
 from bl.vl.utils import LOG_LEVELS, get_logger
@@ -103,7 +105,7 @@ class ObjectsLimbo(object):
 
 def deserialize_stream(kb, stream, logger=None):
     """Deserialize a stream of yaml encoded objects to a stream of
-    (oref, KB object) pairs."""
+       KB objects."""
     logger = logger if logger \
       else get_logger("deserialize_stream")
     
