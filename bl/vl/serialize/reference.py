@@ -2,9 +2,21 @@
 A simple smart pointer object.
 
 """
+
+from bl.vl.serialize.utils import DuplicateKey
+
 class Reference(object):
     "A simple, but very specialized, pointer like object"
     known_references = {'by_ref' : {}, 'by_label' : {}, 'by_vid' : {}}
+
+    @classmethod
+    def get(cls, object_type, ref_desc):
+        ref_type = ref_desc.keys()[0]
+        ref_id = ref_desc[ref_type]
+        if ref_id in cls.known_references[ref_type]:
+            return cls.known_references[ref_type][ref_id]
+        else:
+            return Reference(object_type, ref_desc)
 
     @classmethod
     def reset(cls):
@@ -38,11 +50,10 @@ class Reference(object):
                     ref.object = known_objs.get(i, None)
 
     def __init__(self, object_type, reference):
-        self.object_type = object_type
         self.ref_type = reference.keys()[0]
         self.reference = reference[self.ref_type]
+        self.object_type = object_type
         self.object = None
-        assert not self.known_references[self.ref_type].has_key(self.reference)
         self.known_references[self.ref_type][self.reference] = self
 
     def is_internal(self):
@@ -56,5 +67,22 @@ class Reference(object):
     def is_resolved(self):
         """Is this reference resolved to an actual KB object? """
         return not self.object is None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
