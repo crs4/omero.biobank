@@ -14,6 +14,7 @@ from bl.vl.serialize.utils import UnknownKey, UnresolvedDependency
 from pygraph.classes.digraph import digraph
 
 import yaml
+import itertools as it
 
 class ObjectProxy(object):
     """(Almost) all you need to known to create an object"""
@@ -76,20 +77,31 @@ class ObjectsLimbo(object):
             oconf = description['configuration']
             self.objects[oid] = ObjectProxy(otype, oconf)
         except UnknownKey, e:
-            self.logger.error('Unknown key %s in %s from %r'
-                              % (e.key, e.obj, description))
+            self.logger.error('Unknown key[%s] %s'
+                              % (e.args, e.message))
 
     def itervalues(self):
         for oid, o in self.iteritems():
             yield o
 
     def iteritems(self):
-        Reference.resolve_external_references(self.kb.get_by_field)
-        oids = self.get_object_oids_sorted_by_dependency()
-        for oid in oids:
+        for t, group in self.groupbytype():
+            for oid, o in group:
+                yield oid, o
+
+    def groupbytype(self):
+        def fix_deps(oid):
             o = self.objects[oid].create(self.kb.factory)
             Reference.resolve_internal_reference(oid, o)
-            yield oid, o
+            return oid, o
+        self.logger.debug('resolve_external_references start.')
+        Reference.resolve_external_references(self.kb.get_by_field)
+        self.logger.debug('resolve_external_references done.')        
+        oids = self.get_object_oids_sorted_by_dependency()
+        self.logger.debug('objects sorting done.')
+        grouped = it.groupby(oids, lambda oid: self.objects[oid].type.OME_TABLE)
+        for t, group in grouped:
+            yield t, it.imap(fix_deps, group)
             
     def get_object_oids_sorted_by_dependency(self):
         gr = digraph()
