@@ -7,105 +7,30 @@ logging.basicConfig(level=logging.ERROR)
 
 from bl.vl.kb import KnowledgeBase as KB
 import bl.vl.serialize.deserialize as ds
+import bl.vl.serialize.writers as writers
+import uuid
 
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
+def write_action(ostream, oid, target=None, target_class=None, vid=None):
+      asetup_label  = str(uuid.uuid1())
+      adevice_label = str(uuid.uuid1())
+      astudy_label = str(uuid.uuid1())
+      
+      writers.write_action_setup(ostream, asetup_label, asetup_label)
+      writers.write_device(ostream, adevice_label, adevice_label, 
+                           'maker_01', 'model_01', 'release_01')
+      writers.write_study(ostream, astudy_label, astudy_label)
+      writers.write_action(ostream, oid, 
+                           writers.by_ref(asetup_label), 
+                           writers.by_ref(adevice_label), 
+                           "IMPORT", "Alfred E. Neumann",
+                           writers.by_ref(astudy_label),
+                           target=target, target_class=target_class,
+                           vid=vid)
 
-STUDY_YML = """
-study_001:
-  type: Study
-  configuration:
-    label: "A001"
-    description: "Study 001"
-
-study_002:
-  type: Study
-  configuration:
-    label: "A002"
-    description: "Study 002"
-"""
-
-ACTION_YML = """
-action_0001:
-  type: Action
-  configuration:
-    vid: V0D3A0DADA687147BDABD32E6784FFA8D6
-    setup: {by_ref: setup_0001}
-    device: {by_ref: device_0001}
-    actionCategory: IMPORT
-    operator: "Alfred E. Neumann"
-    context: {by_ref: study_0001}
-    description: some sort of description
-
-setup_0001:
-  type: ActionSetup
-  configuration:
-    label: asetup-label-0001
-    conf: {param1: "foo", param2: "fii", param3: "foom"}
-
-device_0001:
-  type: Device
-  configuration:
-    label: device_0001_label
-    maker: maker0001
-    model: model0001
-    release: release0001
-
-study_0001:
-  type: Study
-  configuration:
-    label: study_0001_label
-    description: No description
-"""
-
-TUBE_YML = """
-tube_0001:
-  type: Tube
-  configuration:
-    label: tube_0001_label
-    barcode: 93209409239402
-    status: CONTENTUSABLE
-    content: DNA
-    currentVolume: 1.0
-    initialVolume: 1.0
-    action: {by_vid: V0D3A0DADA687147BDABD32E6784FFA8D6}
-"""
-
-PLATE_WELL_YML = """
-action_on_vessel_0001:
-  type: ActionOnVessel
-  configuration:  
-    setup: {by_label: asetup-label-0001}
-    device: {by_label: device_0001_label}
-    actionCategory: IMPORT
-    operator: "Alfred E. Neumann"
-    context: {by_label: study_0001_label}
-    target: {by_label: tube_0001_label}
-    description: some sort of description
-
-plate_well_0001:
-  type: PlateWell
-  configuration:
-    label: A05
-    container: {by_ref: titer_plate_0001}
-    status: CONTENTUSABLE
-    content: DNA
-    currentVolume: 1.0
-    initialVolume: 1.0
-    action: {by_ref: action_on_vessel_0001}
-    
-titer_plate_0001:
-  type: TiterPlate
-  configuration:
-    label: titer_plate_0001
-    barcode: 320904932049320
-    status: INPREPARATION
-    rows: 12
-    columns: 8
-    action: {by_vid: V0D3A0DADA687147BDABD32E6784FFA8D6}    
-"""
 
 YMLS_DIR='./ymls'
 
@@ -142,9 +67,7 @@ class TestDeserialize(unittest.TestCase):
     except:
       pass
 
-  def read_defs(self, fname, yml):
-    with open(fname, 'w') as f:
-      f.write(yml)
+  def read_defs(self, fname):
     with open(fname) as f:
       for o in ds.deserialize_stream(self.kb, f):
         print 'o:', o
@@ -153,25 +76,52 @@ class TestDeserialize(unittest.TestCase):
     
   def test_simple(self):
     fname = os.path.join(YMLS_DIR, 'study.yml')
-    self.read_defs(fname, STUDY_YML)
+    with open(fname, 'w') as o:
+      writers.write_study(o, 'study_001', 'study_001')
+      writers.write_study(o, 'study_002', 'study_002')      
+    self.read_defs(fname)
 
   def test_internal_refs(self):
     fname = os.path.join(YMLS_DIR, 'action.yml')
-    self.read_defs(fname, ACTION_YML)
+    with open(fname, 'w') as o:
+      write_action(o, 'act_01')
+    self.read_defs(fname)
 
   def test_external_refs_by_vid(self):
     fname = os.path.join(YMLS_DIR, 'action.yml')
-    self.read_defs(fname, ACTION_YML)
+    with open(fname, 'w') as o:
+      write_action(o, 'act_01', vid='V0D3A0DADA687147BDABD32E6784FFA8D6')
+    self.read_defs(fname)
     fname = os.path.join(YMLS_DIR, 'tube.yml')
-    self.read_defs(fname, TUBE_YML)
+    with open(fname, 'w') as o:
+      writers.write_tube(o, 'tube_01', 'tube_01', '90909090', 'DNA',
+                         'CONTENTUSABLE',
+                         writers.by_vid('V0D3A0DADA687147BDABD32E6784FFA8D6'))
+      writers.write_tube(o, 'tube_02', 'tube_02', '90909091', 'DNA',
+                         'CONTENTUSABLE',
+                         writers.by_vid('V0D3A0DADA687147BDABD32E6784FFA8D6'))
+    self.read_defs(fname)
 
   def test_external_refs_by_label(self):
-    fname = os.path.join(YMLS_DIR, 'action.yml')
-    self.read_defs(fname, ACTION_YML)
-    fname = os.path.join(YMLS_DIR, 'tube.yml')
-    self.read_defs(fname, TUBE_YML)
+    fname = os.path.join(YMLS_DIR, 'external_refs_by_label.yml')
+    with open(fname, 'w') as o:
+      write_action(o, 'act_01', vid='V0D3A0DADA687147BDABD32E6784FFA8D6')
+      writers.write_tube(o, 'tube_01', 'tube_01', '90909090', 'DNA',
+                         'CONTENTUSABLE',
+                         writers.by_ref('act_01'))
+    self.read_defs(fname)      
     fname = os.path.join(YMLS_DIR, 'plate_well.yml')
-    self.read_defs(fname, PLATE_WELL_YML)
+    with open(fname, 'w') as o:
+      writers.write_titer_plate(o, 'titer_plate_01', 'titer_plate_01', 
+                                '9090909', 'READY', 8, 12, 
+                                writers.by_vid('V0D3A0DADA687147BDABD32E6784FFA8D6'))
+      write_action(o, 'act_02', 
+                   target=writers.by_label('tube_01'), target_class='Vessel')
+      writers.write_plate_well(o, 'titer_plate_01:A02', 'A02', 
+                               writers.by_ref('titer_plate_01'),
+                               'DNA', 'CONTENTUSABLE',
+                               writers.by_ref('act_02'))
+    self.read_defs(fname)
         
 def suite():
   suite = unittest.TestSuite()
