@@ -6,8 +6,8 @@ logging.basicConfig(level=logging.ERROR)
 
 
 from bl.vl.kb import KnowledgeBase as KB
-import bl.vl.serialize.deserialize as ds
-import bl.vl.serialize.writers as writers
+import bl.vl.kb.serialize.deserialize as ds
+import bl.vl.kb.serialize.writers as writers
 import uuid
 
 OME_HOST = os.getenv("OME_HOST", "localhost")

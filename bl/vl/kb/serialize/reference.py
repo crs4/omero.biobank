@@ -3,7 +3,7 @@ A simple smart pointer object.
 
 """
 
-from bl.vl.serialize.utils import DuplicateKey
+from bl.vl.kb.serialize.utils import DuplicateKey
 
 class Reference(object):
     "A simple, but very specialized, pointer like object"

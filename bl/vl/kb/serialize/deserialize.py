@@ -6,10 +6,10 @@ Deserialize yaml streams to biobank objects
 """
 from bl.vl.utils import LOG_LEVELS, get_logger
 
-from bl.vl.serialize.reference import Reference
-from bl.vl.serialize.utils import is_a_kb_object, dewrap, sort_by_dependency
-from bl.vl.serialize.utils import get_attribute, get_field_descriptor
-from bl.vl.serialize.utils import UnknownKey, UnresolvedDependency
+from bl.vl.kb.serialize.reference import Reference
+from bl.vl.kb.serialize.utils import is_a_kb_object, dewrap, sort_by_dependency
+from bl.vl.kb.serialize.utils import get_attribute, get_field_descriptor
+from bl.vl.kb.serialize.utils import UnknownKey, UnresolvedDependency
 
 from pygraph.classes.digraph import digraph
 
