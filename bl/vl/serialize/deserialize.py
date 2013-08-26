@@ -36,7 +36,7 @@ class ObjectProxy(object):
             value_type, value_use = get_field_descriptor(self.type, key)
             if is_a_kb_object(value_type):
                 return \
-                  Reference(value_type, value) if not value_type.is_enum()\
+                  Reference.get(value_type, value) if not value_type.is_enum()\
                   else get_attribute(value_type, value)
             else:
                 return dewrap(value_type, value)
