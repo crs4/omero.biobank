@@ -102,14 +102,29 @@ class ObjectsLimbo(object):
                 gr.add_edge((j, i))
         return sort_by_dependency(gr)
 
-def deserialize_stream(kb, stream, logger=None):
-    """Deserialize a stream of yaml encoded objects to a stream of
-       KB objects."""
+def deserialize_streams(kb, streams, logger=None):
+    """Deserialize objects contained in streams, an iterable of yaml
+       encoded stream(s) to a iterator of KB objects not yet saved in
+       the biobank.
+
+       .. code-block:: python
+
+       with open('a.yml') as f, open('b.yml') as g:
+          for o in deserialize_streams(kb, [f, g], kb.logger):
+              o.save()
+              print 'saved %s with id: %s' % (o, o.id)
+    """
     logger = logger if logger \
       else get_logger("deserialize_stream")
     
     limbo = ObjectsLimbo(kb, logger)
-    for ref, conf in yaml.load(stream).iteritems():
-        limbo.add_object(ref, conf)
+    for stream in streams:
+        for ref, conf in yaml.load(stream).iteritems():
+            limbo.add_object(ref, conf)
     return limbo.itervalues()
+
+def deserialize_stream(kb, stream, logger=None):
+    """Deserialize a stream of yaml encoded objects to a stream of
+       KB objects not yet saved in the biobank."""
+    return deserialize_streams(kb, [stream], logger)
 
