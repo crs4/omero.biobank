@@ -46,19 +46,23 @@ def sort_by_dependency(graph):
 
 class Error(Exception):
     """Base class for exceptions in this module."""
-    pass
+    def __init__(self, *args):
+        super(Error, self).__init__(*args)    
+
 
 class UnresolvedDependency(Error):
     """Exception raised when an object has an unresolved dependency"""
-    def __init__(self, obj, key):
-        self.obj = obj
-        self.key = key
+    pass
 
 class UnknownKey(Error):
     """Exception raised when encountering an unknown key."""
-    def __init__(self, obj, key):
-        self.obj = obj
-        self.key = key
+    pass
+
+class DuplicateKey(Error):
+    """Exception raised when encountering a duplicate key."""
+    pass    
+        
+
 
 def get_attribute(obj, key):
     if hasattr(obj, key):
