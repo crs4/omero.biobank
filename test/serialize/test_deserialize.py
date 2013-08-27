@@ -14,23 +14,6 @@ OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
-def write_action(ostream, oid, target=None, target_class=None, vid=None):
-      asetup_label  = str(uuid.uuid1())
-      adevice_label = str(uuid.uuid1())
-      astudy_label = str(uuid.uuid1())
-      
-      writers.write_action_setup(ostream, asetup_label, asetup_label)
-      writers.write_device(ostream, adevice_label, adevice_label, 
-                           'maker_01', 'model_01', 'release_01')
-      writers.write_study(ostream, astudy_label, astudy_label)
-      writers.write_action(ostream, oid, 
-                           writers.by_ref(asetup_label), 
-                           writers.by_ref(adevice_label), 
-                           "IMPORT", "Alfred E. Neumann",
-                           writers.by_ref(astudy_label),
-                           target=target, target_class=target_class,
-                           vid=vid)
-
 
 YMLS_DIR='./ymls'
 
@@ -84,13 +67,14 @@ class TestDeserialize(unittest.TestCase):
   def test_internal_refs(self):
     fname = os.path.join(YMLS_DIR, 'action.yml')
     with open(fname, 'w') as o:
-      write_action(o, 'act_01')
+      writers.write_action_pack(o, 'act_01')
     self.read_defs(fname)
 
   def test_external_refs_by_vid(self):
     fname = os.path.join(YMLS_DIR, 'action.yml')
     with open(fname, 'w') as o:
-      write_action(o, 'act_01', vid='V0D3A0DADA687147BDABD32E6784FFA8D6')
+      writers.write_action_pack(o, 'act_01', 
+                                vid='V0D3A0DADA687147BDABD32E6784FFA8D6')
     self.read_defs(fname)
     fname = os.path.join(YMLS_DIR, 'tube.yml')
     with open(fname, 'w') as o:
@@ -105,7 +89,8 @@ class TestDeserialize(unittest.TestCase):
   def test_external_refs_by_label(self):
     fname = os.path.join(YMLS_DIR, 'external_refs_by_label.yml')
     with open(fname, 'w') as o:
-      write_action(o, 'act_01', vid='V0D3A0DADA687147BDABD32E6784FFA8D6')
+      writers.write_action_pack(o, 'act_01', 
+                                vid='V0D3A0DADA687147BDABD32E6784FFA8D6')
       writers.write_tube(o, 'tube_01', 'tube_01', '90909090', 'DNA',
                          'CONTENTUSABLE',
                          writers.by_ref('act_01'))
@@ -115,8 +100,9 @@ class TestDeserialize(unittest.TestCase):
       writers.write_titer_plate(o, 'titer_plate_01', 'titer_plate_01', 
                                 '9090909', 'READY', 8, 12, 
                                 writers.by_vid('V0D3A0DADA687147BDABD32E6784FFA8D6'))
-      write_action(o, 'act_02', 
-                   target=writers.by_label('tube_01'), target_class='Vessel')
+      writers.write_action_pack(o, 'act_02', 
+                                target=writers.by_label('tube_01'), 
+                                target_class='Vessel')
       writers.write_plate_well(o, 'titer_plate_01:A02', 'A02', 
                                writers.by_ref('titer_plate_01'),
                                'DNA', 'CONTENTUSABLE',

@@ -1,3 +1,5 @@
+import uuid
+
 def by_ref(ref):
     return {'by_ref': ref}
 
@@ -82,5 +84,24 @@ def write_illumina_bead_chip_array(ostream, oid, label, container,
                   'currentVolume': 1.0, 'initialVolume': 1.0,
                   'content': content, 'status': status, 'assayType': assay_type,
                   'action': action}, vid=vid)
+
+    
+def write_action_pack(ostream, oid, target=None, target_class=None, vid=None):
+      asetup_label  = str(uuid.uuid1())
+      adevice_label = str(uuid.uuid1())
+      astudy_label = str(uuid.uuid1())
+      amaker_label = str(uuid.uuid1())
+      
+      write_action_setup(ostream, asetup_label, asetup_label)
+      write_device(ostream, adevice_label, adevice_label, 
+                   amaker_label, 'amodel', 'arelease')
+      write_study(ostream, astudy_label, astudy_label)
+      write_action(ostream, oid, 
+                   by_ref(asetup_label), 
+                   by_ref(adevice_label), 
+                   "IMPORT", "Alfred E. Neumann",
+                   by_ref(astudy_label),
+                   target=target, target_class=target_class,
+                   vid=vid)
 
     
