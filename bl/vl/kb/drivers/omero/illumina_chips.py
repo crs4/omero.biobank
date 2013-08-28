@@ -58,21 +58,21 @@ class IlluminaBeadChipArray(PlateWell):
   __fields__ = [('assayType', IlluminaAssayType, wp.REQUIRED),
                 ('container', IlluminaArrayOfArrays, wp.REQUIRED)]
 
-  def _slot_from_label(self, label, rows, cols):
-    m = re.match('^R(\d{2})C(\d{2})$', label)
-    if not m:
-      raise ValueError('label [%s] not in the form R%%02dC%%02d' % label)
-    row, col = map(int, m.groups())
-    row -= 1
-    col -= 1
-    if row >= rows or col >= cols:
-      raise ValueError('label [%s] out of range', label)
-    return row * cols + col
+  def _is_a_legal_label(self, label):
+    return re.match('^R(\d{2})C(\d{2})$', label)
 
-  def _label_from_slot(self, slot, rows, cols):
-    row, col = (slot / cols),  (slot % cols)
-    label = 'R%02dC%02d' % (row + 1, col + 1)
-    return label
+  def _ibca_slot_from_label(self, label, rows, cols):
+    m = re.match('^R(\d{2})C(\d{2})$', label)
+    if m:
+      row, col = map(lambda x: int(x) - 1, m.groups())
+      if row >= rows or col >= cols:
+        raise ValueError('label [%s] out of range', label)
+      return row * cols + col
+    elif super(IlluminaBeadChipArray, self)._is_a_legal_label(label):
+      return super(IlluminaBeadChipArray, self)\
+                 ._ibca_slot_from_label(label, rows, cols)
+    else:
+      raise ValueError('label [%s] not in a legal form' % label)
 
   def __preprocess_conf__(self, conf):
     # to pacify Vessel constructor
@@ -80,19 +80,17 @@ class IlluminaBeadChipArray(PlateWell):
     conf['currentVolume'] = 0.0
     rows, cols = conf['container'].rows, conf['container'].columns
     if not 'slot' in conf:
-      conf['slot'] = self._slot_from_label(conf['label'], rows, cols)
+      conf['slot'] = self._ibca_slot_from_label(conf['label'], rows, cols)
     else:
-      slot = conf['slot']
-      rlabel = self._label_from_slot(slot, rows, cols)
       if 'label' in conf:
-        label = conf['label']
-        if label != rlabel:
-          raise ValueError('label [%s] inconsistent with slot [%d]'
-                           % (label, slot))
-      else:
-          conf['label'] = rlabel
+        slot = self._ibca_slot_from_label(conf['label'], rows, cols)
+        if slot != conf['slot']:
+          raise ValueError('label [%s] inconsistent with slot [%d] conf: %r'
+                           % (conf['label'], conf['slot'], conf))
+    # normalize to a standard PlateWell label format
+    conf['label'] = super(IlluminaBeadChipArray, self)\
+                    ._label_from_slot(conf['slot'], rows, cols)
     return super(IlluminaBeadChipArray, self).__preprocess_conf__(conf)
-
 
   def __update_constraints__(self):
     super(IlluminaBeadChipArray, self).__update_constraints__(conf)
