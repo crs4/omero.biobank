@@ -68,6 +68,13 @@ summary_fields = "Chip_Type Date Sample_ID Sample_Plate Sample_Well Sample_Name 
 
 sentrix_fields = "SentrixBarcode_A Type Class Assay_Type Rows Cols".split()
 
+def normalize(label):
+    m = re.match('^([A-Z])(\d+)$', label.upper())
+    if not m:
+      raise ValueError('label [%s] not in the form A1' % label)
+    return '%s%d' % (m.groups()[0], int(m.groups()[1]))
+    
+
 class ingestor(object):
     SUMMARY_FIELDS = zip(summary_fields, ['text'] * len(summary_fields))
     SENTRIX_FIELDS = zip(sentrix_fields,
@@ -95,7 +102,7 @@ class ingestor(object):
         logger.info('initializing db file {}'.format(self.dbname))
         if os.path.exists(self.dbname):
             if rebuild:
-                logger.info('removing exisiting db file {}'.format(self.dbname))
+                logger.info('removing existing db file {}'.format(self.dbname))
                 os.unlink(self.dbname)
             else:
                 return
@@ -127,6 +134,8 @@ class ingestor(object):
             get_field(f, '[Manifests]')
             # FIXME we have seen only single manifests files thus far...
             chip_type = get_field(f, 'A')
+            # convert to string compatible with the kb enum.
+            chip_type = chip_type.replace('.bpm', '').replace('-', '_')
             get_field(f, '[Data]')
             return date, chip_type
 
@@ -142,6 +151,7 @@ class ingestor(object):
                 r['Date'] = date
                 if r['Sample_Plate'] == '':
                     r['Sample_Plate']  = '_'.join(r['Project'].split('_')[:-1])
+                r['Sample_Well'] = normalize(r['Sample_Well'])
                 yield map(r.__getitem__,
                           map(lambda x: x[0], self.SUMMARY_FIELDS))
 
