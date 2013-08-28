@@ -53,9 +53,9 @@ class TestDeserialize(unittest.TestCase):
   def read_defs(self, fname):
     with open(fname) as f:
       for o in ds.deserialize_stream(self.kb, f):
-        print 'o:', o
+        #print 'o:', o
         self.kill_list.append(o.save())
-        print 'id: {}'.format(o.id)
+        #print 'id: {}'.format(o.id)
     
   def test_simple(self):
     fname = os.path.join(YMLS_DIR, 'study.yml')
