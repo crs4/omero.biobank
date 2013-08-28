@@ -71,7 +71,7 @@ class PlateWell(Vessel):
 
   def __label_from_slot(self, slot, rows, cols):
     row, col = (slot / cols),  (slot % cols)
-    label = '%s%02d' % (chr(ord('A') + row), col + 1)
+    label = '%s%d' % (chr(ord('A') + row), col + 1)
     return label
 
   def __preprocess_conf__(self, conf):
@@ -80,15 +80,13 @@ class PlateWell(Vessel):
     if not 'slot' in conf:
       conf['slot'] = self.__slot_from_label(conf['label'], rows, cols)
     else:
-      slot = conf['slot']
-      rlabel = self.__label_from_slot(slot, rows, cols)
       if 'label' in conf:
-        label = conf['label']
-        if label.upper() != rlabel:
-          raise ValueError('label [%s] inconsistent with slot [%d]'
-                           % (label, slot))
-        else:
-          conf['label'] = rlabel
+        slot = self.__slot_from_label(conf['label'], rows, cols)
+        if slot != conf['slot']:
+          raise ValueError('label [%s] inconsistent with slot [%d] conf: %r'
+                           % (conf['label'], conf['slot'], conf))
+    # normalize to a standard label format
+    conf['label'] = self.__label_from_slot(conf['slot'], rows, cols)
     if not 'containerSlotLabelUK' in conf:
       clabel = conf['container'].label
       label   = conf['label']
