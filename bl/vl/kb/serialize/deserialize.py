@@ -105,14 +105,14 @@ class ObjectsLimbo(object):
             
     def get_object_oids_sorted_by_dependency(self):
         gr = digraph()
-        for i in self.objects:
+        for i, v in self.objects.iteritems():
             self.logger.debug('adding node %s' % i)
-            gr.add_node(i)
+            gr.add_node(i, attrs=[('color', v.type.OME_TABLE)])
         for i, o in self.objects.iteritems():
             for j in o.get_internal_references():
                 self.logger.debug('adding edge (%s, %s)' % (j, i))
                 gr.add_edge((j, i))
-        return sort_by_dependency(gr)
+        return sort_by_dependency(gr, sort=True)
 
 def deserialize_streams(kb, streams, logger=None):
     """Deserialize objects contained in streams, an iterable of yaml

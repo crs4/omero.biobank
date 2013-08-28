@@ -32,13 +32,19 @@ def dewrap(desc, value):
     """Apply type conversion required by desc to value and return result."""
     return DEWRAPPING[desc](value)
 
-def sort_by_dependency(graph):
-    """Return list of graph nodes sorted by ascending depth of dependency."""
+def sort_by_dependency(graph, sort=False):
+    """Return list of digraph nodes sorted by ascending depth of
+    dependency.  If sort is True, same depth nodes are sorted by the
+    value of their 'color' attributes.
+    """
+    def keyfunc(i):
+        return dict(graph.node_attributes(i))['color'] 
+        
     touched, nodes, ordered = set(), set(graph.nodes()), []
     while len(nodes) > 0:
         selected = [n for n in nodes
                     if set(graph.incidents(n)).issubset(touched)]
-        ordered += selected
+        ordered += sorted(selected, key=keyfunc) if sort else selected
         selected = set(selected)
         nodes -= selected
         touched |= selected
