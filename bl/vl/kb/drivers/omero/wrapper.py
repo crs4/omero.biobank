@@ -177,7 +177,6 @@ class MetaWrapper(type):
   def make_configurator(klass, base, fields):
     def configurator(self, ome_obj, conf):
       base.__config__(self, ome_obj, conf)
-      conf = self.__preprocess_conf__(conf)
       for k, t in fields.iteritems():
         if k is 'vid':
           setattr(ome_obj, k, self.to_omero(STRING, vlu.make_vid()))
@@ -317,5 +316,7 @@ class OmeroWrapper(CoreOmeroWrapper):
       if hasattr(self.action, 'target'):
         self.proxy.dt.destroy_edge(self, self.action.target)
 
+    
   def configure(self, conf):
+    conf = self.__preprocess_conf__(conf)
     self.__config__(self.ome_obj, conf)
