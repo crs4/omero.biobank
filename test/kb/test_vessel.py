@@ -61,6 +61,18 @@ class TestKB(KBObjectCreator):
     self.kill_list.append(v.save())
     self.check_object(v, conf, self.kb.PlateWell)
 
+    conf, v = self.create_plate_well(p, label='B01')
+    self.kill_list.append(v.save())
+    self.assertEqual(v.slot, p.columns)
+
+    conf, v = self.create_plate_well(p, label='A02')
+    self.kill_list.append(v.save())
+    self.assertEqual(v.slot, 1)
+
+    conf, v = self.create_plate_well(p, label='D3')
+    self.kill_list.append(v.save())
+    self.assertEqual(v.slot, 3*p.columns + 2)
+
 
 def suite():
   suite = unittest.TestSuite()
