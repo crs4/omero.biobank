@@ -50,8 +50,8 @@ with open(fname) as f:
                 kb.logger.info('reloading block')                
                 block = [x for x in it.imap(lambda x: x[1], 
                                             it.islice(group, 0, N))]
-    except Error, e:
-        print e, e.args
+    except Exception, e:
+        kb.logger.fatal('%s, %s' % (e, e.args))
     finally:
         clean_up()
 
