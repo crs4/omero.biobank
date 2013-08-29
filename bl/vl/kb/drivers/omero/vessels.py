@@ -9,6 +9,7 @@ from action import Action
 from utils import assign_vid_and_timestamp, make_unique_key, assign_vid
 from objects_collections import VLCollection, Lane, TiterPlate
 
+import re
 
 class VesselContent(wp.OmeroWrapper):
   
@@ -59,8 +60,36 @@ class PlateWell(Vessel):
                 ('containerSlotLabelUK', wp.STRING, wp.REQUIRED),
                 ('containerSlotIndexUK', wp.STRING, wp.REQUIRED)]
 
+  def _is_a_legal_label(self, label):
+    return re.match('^([A-Z])(\d{1,2})$', label.upper())
+    
+  def _slot_from_label(self, label, rows, cols):
+    m = re.match('^([A-Z])(\d{1,2})$', label.upper())
+    if not m:
+      raise ValueError('label [%s] not in the form A1' % label)
+    row, col = ord(m.groups()[0]) - ord('A'), int(m.groups()[1]) - 1
+    if row >= rows or col >= cols:
+      raise ValueError('label [%s] out of range', label)
+    return row * cols + col
+
+  def _label_from_slot(self, slot, rows, cols):
+    row, col = (slot / cols),  (slot % cols)
+    label = '%s%d' % (chr(ord('A') + row), col + 1)
+    return label
+
   def __preprocess_conf__(self, conf):
     super(PlateWell, self).__preprocess_conf__(conf)
+    rows, cols = conf['container'].rows, conf['container'].columns
+    if not 'slot' in conf:
+      conf['slot'] = self._slot_from_label(conf['label'], rows, cols)
+    else:
+      if 'label' in conf:
+        slot = self._slot_from_label(conf['label'], rows, cols)
+        if slot != conf['slot']:
+          raise ValueError('label [%s] inconsistent with slot [%d] conf: %r'
+                           % (conf['label'], conf['slot'], conf))
+    # normalize to a standard label format
+    conf['label'] = self._label_from_slot(conf['slot'], rows, cols)
     if not 'containerSlotLabelUK' in conf:
       clabel = conf['container'].label
       label   = conf['label']

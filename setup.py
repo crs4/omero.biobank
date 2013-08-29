@@ -116,6 +116,7 @@ setup(
     'bl.vl',
     'bl.vl.utils',
     'bl.vl.kb',
+    'bl.vl.kb.serialize',
     'bl.vl.kb.drivers',
     'bl.vl.kb.drivers.omero',
     'bl.vl.individual',
