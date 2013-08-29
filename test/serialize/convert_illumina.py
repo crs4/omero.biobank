@@ -79,7 +79,6 @@ with open(fname, "w") as o:
                                        slide['assayType'],
                                        by_ref('act_01'))
     for sample_oid, (slide_barcode, slide_well, well_type) in links:
-        print sample_oid, (slide_barcode, slide_well, well_type)
         aoid = sample_oid + '.action'
         oid = slide_barcode +':'+ slide_well
         write_action(o, aoid, setup=by_ref('asetup_01'), 
