@@ -60,11 +60,22 @@ def create_table(session, nrows, ncols):
     return table
 
 
-def open_table(session):
+def get_original_file(session, name):
     qs = session.getQueryService()
-    ofile = qs.findAllByString(
-        'OriginalFile', 'name', TABLE_NAME, True, None
-        )[0]  # first table with that name
+    ofile = qs.findByString('OriginalFile', 'name', name, None)
+    if ofile is None:
+        raise ValueError("no table found with name %r" % (TABLE_NAME,))
+    return ofile
+
+
+def get_table_path(session, ofile):
+    config = session.getConfigService()
+    d = config.getConfigValue("omero.data.dir")
+    return os.path.join(d, "Files", "%d" % ofile.id.val)
+
+
+def open_table(session):
+    ofile = get_original_file(session, TABLE_NAME)
     r = session.sharedResources()
     t = r.openTable(ofile)
     return t
@@ -90,7 +101,7 @@ def get_call_rate(table, threshold=0.05):
     print "confidence data read in %.3f s" % (time.time() - start)
     start = time.time()    
     col = data.columns[0]
-    s = sum(sum(x for x in row if x <= threshold) for row in col.values)
+    s = sum(sum(x <= threshold for x in row) for row in col.values)
     call_rate = s / (nrows * col.size)
     print "call rate computed in %.3f s" % (time.time() - start)
     return call_rate
@@ -104,7 +115,22 @@ def run_test(client):
     return r
 
 
-def run_on_server():
+def run_test_pytables(client, threshold=0.05):
+    import tables
+    session = client.getSession()
+    ofile = get_original_file(session, TABLE_NAME)
+    path = get_table_path(session, ofile)
+    print "reading from %r" % (path,)
+    start = time.time()
+    with tables.openFile(path) as f:
+        table = f.root.OME.Measurements
+        call_rate = sum((row["confidence"] <= threshold).mean()
+                        for row in table.iterrows()) / table.nrows
+    print "data read & call rate computed in %.3f s" % (time.time() - start)
+    return call_rate
+
+
+def run_on_server(pytables=False):
     import omero.scripts as scripts
     client = None
     try:
@@ -116,7 +142,10 @@ def run_on_server():
             )
         ## nrows = client.getInput("nrows").val
         ## ncols = client.getInput("ncols").val
-        r = run_test(client)
+        if pytables:
+            r = run_test_pytables(client)
+        else:
+            r = run_test(client)
         client.setOutput("callrate", omero.rtypes.rdouble(r))
     finally:
         if client is not None:
@@ -158,4 +187,4 @@ def run_on_client():
 
 
 if __name__ == '__main__':
-    run_on_server()
+    run_on_server(pytables=False)
