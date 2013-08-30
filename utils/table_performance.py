@@ -96,12 +96,12 @@ def _run_on_server():
             "table_performance.py", "check table performance",
             scripts.Long("nrows").inout(),
             scripts.Long("ncols").inout(),
-            scripts.Long("callrate").out(),
+            scripts.Double("callrate").out(),
             )
-        nrows = client.getInput("nrows")
-        ncols = client.getInput("ncols")
+        nrows = client.getInput("nrows").val
+        ncols = client.getInput("ncols").val
         r = run_test(client, nrows, ncols)
-        client.setOutput("callrate", r)
+        client.setOutput("callrate", omero.rtypes.rdouble(r))
     finally:
         if client is not None:
             client.closeSession()
@@ -131,7 +131,7 @@ def _run_on_client():
             drop_table(session)
         else:
             r = run_test(client, args.nrows, args.ncols)
-            print "callrate: %.3f" % r
+            print "callrate: %f" % r
     finally:
         if client is not None:
             client.closeSession()
@@ -139,4 +139,5 @@ def _run_on_client():
 
 if __name__ == '__main__':
     main = _run_on_client
+    ## main = _run_on_server
     main()
