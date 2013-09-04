@@ -128,7 +128,7 @@ def drop_table(session):
 
 
 #-- server-side execution --
-def get_script_text(path, func):
+def get_script_text(path, func, pytables):
     code = []
     #--
     with open(path) as f:
@@ -148,9 +148,12 @@ def get_script_text(path, func):
             '  client.getInput("ncols").val)',
             ])
     elif func is run_test:
+        if pytables:
+            code.append('  scripts.Bool("pytables"),')
         code.extend([
             '  scripts.Double("callrate").out())',
-            'r = run_test(client.getSession())',  # FIXME: add pytables switch
+            'r = run_test(client.getSession(),',
+            '  pytables=client.getInput("pytables").val)',
             'client.setOutput("callrate", omero.rtypes.rdouble(r))',
             ])
     else:
@@ -165,7 +168,7 @@ def get_script_text(path, func):
 def upload_and_run(client, args, wait_secs=3, block_secs=1):
     session = client.getSession()
     script_path = os.path.abspath(__file__)
-    script_text = get_script_text(script_path, args.func)
+    script_text = get_script_text(script_path, args.func, args.pytables)
     svc = session.getScriptService()
     script_id = svc.getScriptID(script_path)
     if script_id < 0:
@@ -179,7 +182,7 @@ def upload_and_run(client, args, wait_secs=3, block_secs=1):
     if args.func == create_table:
         remote_args = ['nrows=%s' % args.nrows, 'ncols=%s' % args.ncols]
     elif args.func == run_test:
-        remote_args = []  # FIXME: add the pytables switch
+        remote_args = ['pytables=%s' % args.pytables]
     else:
         remote_args = []
     m = scripts.parse_inputs(remote_args, params)
@@ -249,7 +252,7 @@ def main():
         elif args.func == drop_table:
             drop_table(session)
         else:
-            r = run_test(session, pytables=args.pytables)
+            r = run_test(session, pytables=False)
     print
     if r is not None:
         print "call rate: %f" % r
