@@ -1,5 +1,5 @@
 from __future__ import division
-import os, argparse, uuid, time
+import sys, os, argparse, uuid, time
 
 import omero
 import omero.model  # had to add this to prevent an error ---simleo
@@ -198,9 +198,13 @@ def upload_and_run(client, args, wait_secs=3, block_secs=1):
     try:
         r = rv['callrate'].val
     except KeyError:
-        print "no result from remote script"
         r = None
-    # FIXME: return stdout/err
+    for stream_name in "stdout", "stderr":
+        f = rv.get(stream_name)
+        if f and f.val:
+            print "\nremote script - %s:" % stream_name
+            stream = getattr(sys, stream_name)
+            client.download(ofile=f.val, filehandle=stream)
     return r
 #-- server-side execution --
 
@@ -246,8 +250,11 @@ def main():
             drop_table(session)
         else:
             r = run_test(session, pytables=args.pytables)
+    print
     if r is not None:
         print "call rate: %f" % r
+    else:
+        print "no result from remote script"
     client.closeSession()
 
 
