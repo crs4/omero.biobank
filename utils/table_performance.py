@@ -13,7 +13,9 @@ import numpy as np
 
 
 TABLE_NAME = 'ometable_test.h5'
+ROWS_PER_CHUNK = 10
 VID_SIZE = 34
+
 
 OME_HOST = os.getenv('OME_HOST', 'localhost')
 OME_USER = os.getenv('OME_USER', 'root')
@@ -110,20 +112,24 @@ class TableManager(object):
         self.table.addData(self.columns)
         self.table.close()
 
-    def __populate_table_pytables(self):
+    def __generate_rows(self, n):
+        return [(
+            make_a_vid(), make_a_vid(),
+            np.random.random(2*self.ncols).astype(np.float32),
+            np.random.random(self.ncols).astype(np.float32),
+            ) for _ in xrange(n)]
+
+    def __populate_table_pytables(self, rows_per_chunk=ROWS_PER_CHUNK):
         import tables
         self.table.close()
         path = get_table_path(self.session, self.table.getOriginalFile())
         with tables.openFile(path, "r+") as f:
             t = f.root.OME.Measurements
-            for _ in xrange(self.nrows):
-                t.append([(
-                    make_a_vid(),
-                    make_a_vid(),
-                    np.random.random(2*self.ncols).astype(np.float32),
-                    np.random.random(self.ncols).astype(np.float32),
-                    )])
-            # FIXME: use a chunk size > 1
+            n_chunks, rem = divmod(self.nrows, rows_per_chunk)
+            for _ in xrange(n_chunks):
+                t.append(self.__generate_rows(rows_per_chunk))
+            if rem:
+                t.append(self.__generate_rows(rem))
 
     def populate_table(self, pytables=False):
         start = time.time()
@@ -178,6 +184,7 @@ def generate_client_instantiation(func, pytables):
         code.append('  scripts.Double("callrate").out(),')
     code.append(')')
     return code
+
 
 def generate_subcommand_call(func, pytables):
     code = ['%s%s(client.getSession(),' %
@@ -256,7 +263,7 @@ def upload_and_run(client, args, wait_secs=3, block_secs=1):
             stream = getattr(sys, stream_name)
             client.download(ofile=f.val, filehandle=stream)
     return r
-#-- server-side execution --
+#---------------------------
 
 
 def build_parser():
