@@ -48,7 +48,7 @@ def open_table(session):
     return t
 
 
-def get_call_rate(session, threshold=0.05):
+def get_call_rates(session, threshold=0.05):
     table = open_table(session)
     nrows = table.getNumberOfRows()
     col_headers = [h.name for h in table.getHeaders()]
@@ -59,14 +59,13 @@ def get_call_rate(session, threshold=0.05):
     print "confidence data read in %.3f s" % (time.time() - start)
     start = time.time()
     col = data.columns[0]
-    s = sum(sum(x <= threshold for x in row) for row in col.values)
-    call_rate = s / (nrows * col.size)
+    r = [sum(x <= threshold for x in row) / col.size for row in col.values]
     table.close()
-    print "call rate computed in %.3f s" % (time.time() - start)
-    return call_rate
+    print "call rates computed in %.3f s" % (time.time() - start)
+    return r
 
 
-def get_call_rate_pytables(session, threshold=0.05):
+def get_call_rates_pytables(session, threshold=0.05):
     import tables
     ofile = get_original_file(session, TABLE_NAME)
     path = get_table_path(session, ofile)
@@ -74,10 +73,10 @@ def get_call_rate_pytables(session, threshold=0.05):
     start = time.time()
     with tables.openFile(path) as f:
         table = f.root.OME.Measurements
-        call_rate = sum((row["confidence"] <= threshold).mean()
-                        for row in table.iterrows()) / table.nrows
-    print "data read & call rate computed in %.3f s" % (time.time() - start)
-    return call_rate
+        call_rates = [(row["confidence"] <= threshold).mean()
+                      for row in table.iterrows()]
+    print "data read & call rates computed in %.3f s" % (time.time() - start)
+    return call_rates
 
 
 class TableManager(object):
@@ -151,9 +150,9 @@ def create_table(session, nrows, ncols, pytables=False):
 
 def run_test(session, pytables=False):
     if pytables:
-        r = get_call_rate_pytables(session)
+        r = get_call_rates_pytables(session)
     else:
-        r = get_call_rate(session)
+        r = get_call_rates(session)
     return r
 
 
@@ -181,7 +180,9 @@ def generate_client_instantiation(func, pytables):
     if (func is create_table or func is run_test) and pytables:
         code.append('  scripts.Bool("pytables"),')
     if func is run_test:
-        code.append('  scripts.Double("callrate").out(),')
+        code.append(
+            '  scripts.List("callrate").ofType(omero.rtypes.rdouble(0)).out(),'
+            )
     code.append(')')
     return code
 
@@ -211,7 +212,7 @@ def get_script_text(path, func, pytables):
     code.extend(generate_client_instantiation(func, pytables))
     code.extend(generate_subcommand_call(func, pytables))
     if func is run_test:
-        code.append('client.setOutput("callrate", omero.rtypes.rdouble(r))')
+        code.append('client.setOutput("callrate", omero.rtypes.wrap(r))')
     return "\n".join(code)
 
 
@@ -253,7 +254,7 @@ def upload_and_run(client, args, wait_secs=3, block_secs=1):
     finally:
         cb.close()
     try:
-        r = rv['callrate'].val
+        r = omero.rtypes.unwrap(rv['callrate'])
     except KeyError:
         r = None
     for stream_name in "stdout", "stderr":
@@ -309,7 +310,9 @@ def main():
             r = run_test(session, pytables=False)
     print
     if r is not None:
-        print "call rate: %f" % r
+        with open("call_rates.txt", "w") as fo:
+            fo.write("\n".join("%.3f" % _ for _ in r)+"\n")
+        print "call rates dumped to", fo.name
     else:
         print "no result from remote script"
     client.closeSession()
