@@ -20,7 +20,7 @@ OME_USER = os.getenv('OME_USER', 'root')
 OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
 
 
-#-- helper functions --
+#-- helper functions & classes --
 def make_a_vid():
     return "V0%s" % uuid.uuid4().hex.upper()
 
@@ -76,34 +76,71 @@ def get_call_rate_pytables(session, threshold=0.05):
                         for row in table.iterrows()) / table.nrows
     print "data read & call rate computed in %.3f s" % (time.time() - start)
     return call_rate
+
+
+class TableManager(object):
+
+    def __init__(self, session, nrows, ncols):
+        # pylint: disable=E1101
+        self.vids = omero.grid.StringColumn('vid', 'GDO VID', VID_SIZE)
+        self.op_vids = omero.grid.StringColumn('op_vid', 'op VID', VID_SIZE)
+        self.probs = omero.grid.FloatArrayColumn('probs', 'probs', 2*ncols)
+        self.confs = omero.grid.FloatArrayColumn('confidence', 'confs', ncols)
+        # pylint: enable=E1101
+        self.columns = [self.vids, self.op_vids, self.probs, self.confs]
+        self.table = None
+        self.session, self.nrows, self.ncols = session, nrows, ncols
+
+    def init_table(self):
+        start = time.time()
+        r = self.session.sharedResources()
+        m = r.repositories()
+        i = m.descriptions[0].id.val
+        self.table = r.newTable(i, TABLE_NAME)
+        self.table.initialize(self.columns)
+        print "table initialized in %.3f s" % (time.time() - start)
+
+    def __populate_table(self):
+        for col in self.vids, self.op_vids:
+            col.values = [make_a_vid() for _ in xrange(self.nrows)]
+        self.probs.values = [np.random.random(2*self.ncols).astype(np.float32)
+                             for _ in xrange(self.nrows)]
+        self.confs.values = [np.random.random(self.ncols).astype(np.float32)
+                             for _ in xrange(self.nrows)]
+        self.table.addData(self.columns)
+        self.table.close()
+
+    def __populate_table_pytables(self):
+        import tables
+        self.table.close()
+        path = get_table_path(self.session, self.table.getOriginalFile())
+        with tables.openFile(path, "r+") as f:
+            t = f.root.OME.Measurements
+            for _ in xrange(self.nrows):
+                t.append([(
+                    make_a_vid(),
+                    make_a_vid(),
+                    np.random.random(2*self.ncols).astype(np.float32),
+                    np.random.random(self.ncols).astype(np.float32),
+                    )])
+            # FIXME: use a chunk size > 1
+
+    def populate_table(self, pytables=False):
+        start = time.time()
+        if pytables:
+            self.__populate_table_pytables()
+        else:
+            self.__populate_table()
+        print "table populated in %.3f s" % (time.time() - start)
 #----------------------
 
 
 #-- sub-commands --
-def create_table(session, nrows, ncols):
-    # pylint: disable=E1101
-    vids = omero.grid.StringColumn('vid', 'GDO VID', VID_SIZE)
-    op_vids = omero.grid.StringColumn('op_vid', 'Last op VID', VID_SIZE)
-    probs = omero.grid.FloatArrayColumn('probs', 'Probs', 2*ncols)
-    confs = omero.grid.FloatArrayColumn('confidence', 'Confs', ncols)
-    # pylint: enable=E1101
+def create_table(session, nrows, ncols, pytables=False):
     print "creating %d by %d table" % (nrows, ncols)
-    start = time.time()
-    r = session.sharedResources()
-    m = r.repositories()
-    i = m.descriptions[0].id.val
-    table = r.newTable(i, TABLE_NAME)
-    table.initialize([vids, op_vids, probs, confs])
-    #--
-    for col in vids, op_vids:
-        col.values = [make_a_vid() for _ in xrange(nrows)]
-    probs.values = [np.random.random(2*ncols).astype(np.float32)
-                    for _ in xrange(nrows)]
-    confs.values = [np.random.random(ncols).astype(np.float32)
-                    for _ in xrange(nrows)]
-    table.addData([vids, op_vids, probs, confs])
-    table.close()
-    print "table created in %.3f s" % (time.time() - start)
+    tm = TableManager(session, nrows, ncols)
+    tm.init_table()
+    tm.populate_table(pytables=pytables)
 
 
 def run_test(session, pytables=False):
@@ -126,42 +163,48 @@ def drop_table(session):
         us.deleteObject(of)
 #------------------
 
+### DONT_CHANGE_THIS_LINE
 
 #-- server-side execution --
+def generate_client_instantiation(func, pytables):
+    code = [
+        'client = scripts.client("table_performance.py", "table performance",'
+        ]
+    if func is create_table:
+        code.append('  scripts.Long("nrows"), scripts.Long("ncols"),')
+    if (func is create_table or func is run_test) and pytables:
+        code.append('  scripts.Bool("pytables"),')
+    if func is run_test:
+        code.append('  scripts.Double("callrate").out(),')
+    code.append(')')
+    return code
+
+def generate_subcommand_call(func, pytables):
+    code = ['%s%s(client.getSession(),' %
+            ('r = ' if func is run_test else '', func.__name__)]
+    if func is create_table:
+        code.extend([
+            '  client.getInput("nrows").val,',
+            '  client.getInput("ncols").val,',
+            ])
+    if (func is create_table or func is run_test) and pytables:
+        code.append('  pytables=client.getInput("pytables").val,')
+    code.append(')')
+    return code
+
+
 def get_script_text(path, func, pytables):
     code = []
     #--
     with open(path) as f:
         for l in f:
-            if l.startswith("def get_script_text"):
+            if l.startswith("### DONT_CHANGE_THIS_LINE"):
                 break
             code.append(l.rstrip())
-    #--
-    code.append(
-        'client = scripts.client("table_performance.py", "table performance",'
-        )
-    if func is create_table:
-        code.extend([
-            '  scripts.Long("nrows"), scripts.Long("ncols"))',
-            'create_table(client.getSession(),'
-            '  client.getInput("nrows").val,',
-            '  client.getInput("ncols").val)',
-            ])
-    elif func is run_test:
-        if pytables:
-            code.append('  scripts.Bool("pytables"),')
-        code.extend([
-            '  scripts.Double("callrate").out())',
-            'r = run_test(client.getSession(),',
-            '  pytables=client.getInput("pytables").val)',
-            'client.setOutput("callrate", omero.rtypes.rdouble(r))',
-            ])
-    else:
-        code.extend([
-            ')',
-            'drop_table(client.getSession())',
-            ])
-    #--
+    code.extend(generate_client_instantiation(func, pytables))
+    code.extend(generate_subcommand_call(func, pytables))
+    if func is run_test:
+        code.append('client.setOutput("callrate", omero.rtypes.rdouble(r))')
     return "\n".join(code)
 
 
@@ -180,7 +223,11 @@ def upload_and_run(client, args, wait_secs=3, block_secs=1):
         print "replaced contents of original file #%s" % script_id
     params = svc.getParams(script_id)
     if args.func == create_table:
-        remote_args = ['nrows=%s' % args.nrows, 'ncols=%s' % args.ncols]
+        remote_args = [
+            'nrows=%s' % args.nrows,
+            'ncols=%s' % args.ncols,
+            'pytables=%s' % args.pytables,
+            ]
     elif args.func == run_test:
         remote_args = ['pytables=%s' % args.pytables]
     else:
