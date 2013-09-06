@@ -5,19 +5,28 @@ No biobank dependencies here.
 """
 
 import json
+import hashlib
+
+
 
 class Wrapper(object):
     # http://stackoverflow.com/questions/2827623/python-create-object-and-add-attributes-to-it
     def __init__(self, wrapped, parent=None):
         object.__setattr__(self, 'core', lambda: None)
-        object.__setattr__(self, 'is_modified', False)        
+        object.__setattr__(self, 'is_modified', False)
         object.__setattr__(self, 'parent', parent)    
         setattr(self.core, 'wrapped', wrapped)
+        self.update_md5()
+
+    def update_md5(self):
+        md5 = hashlib.md5(json.dumps(self.core.wrapped)).hexdigest()        
+        object.__setattr__(self, 'md5', md5)
 
     def touch(self):
         object.__setattr__(self, 'is_modified', True)
         if self.parent:
             self.parent.touch()               
+        self.update_md5()
 
     def __setattr__(self, name, value):
         core = self.core
@@ -33,9 +42,14 @@ class Wrapper(object):
         else:
             raise KeyError(name)
 
+    def __eq__(self, other):
+        return  self.md5 == other.md5
+
+    def __hash__(self):
+        return self.md5
+
     def to_json(self):
-        #return json.dumps(self.core.wrapped)
-        return self.core.wrapped
+        return json.dumps(self.core.wrapped)
 
     @classmethod
     def from_json(cls, jdef):
@@ -95,12 +109,6 @@ class Workflow(Wrapper):
     @property
     def steps(self):
         return self.core.steps
-        
-    def __eq__(self, other):
-        return  self.name == other.name
-
-    def __hash__(self):
-        return self.name
 
 
 class History(Wrapper):
