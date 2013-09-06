@@ -1,3 +1,2 @@
-from bl.vl.kb.galaxy.wrapper import Workflow
-
+from bl.vl.kb.galaxy.wrappers import Workflow
 
