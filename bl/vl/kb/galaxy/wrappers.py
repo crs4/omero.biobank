@@ -5,6 +5,10 @@ class Workflow(CoreWorkflow):
     def __init__(self, wf_id, wf_dict):
         super(Workflow, self).__init__(wf_dict)
         setattr(self.core, 'id', wf_id)
+    
+    def touch(self):
+        super(Workflow, self).touch()
+        setattr(self.core, 'id', None)        
 
     def clone(self):
         return self.__class__(None, self.core.wrapped)
