@@ -106,14 +106,26 @@ class TableManager(object):
         self.table.initialize(self.columns)
         print "table initialized in %.3f s" % (time.time() - start)
 
-    def __populate_table(self):
-        for col in self.vids, self.op_vids:
-            col.values = [make_a_vid() for _ in xrange(self.nrows)]
-        self.probs.values = [np.random.random(2*self.ncols).astype(np.float32)
-                             for _ in xrange(self.nrows)]
-        self.confs.values = [np.random.random(self.ncols).astype(np.float32)
-                             for _ in xrange(self.nrows)]
-        self.table.addData(self.columns)
+    def __chunk_sizes(self, rows_per_chunk):
+        n_chunks, rem = divmod(self.nrows, rows_per_chunk)
+        for _ in xrange(n_chunks):
+            yield rows_per_chunk
+        if rem:
+            yield rem
+
+    def __populate_table(self, rows_per_chunk=ROWS_PER_CHUNK):
+        for cs in self.__chunk_sizes(rows_per_chunk):
+            for col in self.vids, self.op_vids:
+                col.values = [make_a_vid() for _ in xrange(cs)]
+            self.probs.values = [
+                np.random.random(2*self.ncols).astype(np.float32)
+                for _ in xrange(cs)
+                ]
+            self.confs.values = [
+                np.random.random(self.ncols).astype(np.float32)
+                for _ in xrange(cs)
+                ]
+            self.table.addData(self.columns)
         self.table.close()
 
     def __generate_rows(self, n):
@@ -129,11 +141,8 @@ class TableManager(object):
         path = get_table_path(self.session, self.table.getOriginalFile())
         with tables.openFile(path, "r+") as f:
             t = f.root.OME.Measurements
-            n_chunks, rem = divmod(self.nrows, rows_per_chunk)
-            for _ in xrange(n_chunks):
-                t.append(self.__generate_rows(rows_per_chunk))
-            if rem:
-                t.append(self.__generate_rows(rem))
+            for cs in self.__chunk_sizes(rows_per_chunk):
+                t.append(self.__generate_rows(cs))
 
     def populate_table(self, pytables=False):
         start = time.time()
