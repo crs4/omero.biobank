@@ -1,5 +1,9 @@
+"""
+Test table performance.
+"""
+
 from __future__ import division
-import sys, os, argparse, uuid, time
+import sys, os, argparse, uuid, time, socket
 
 import omero
 import omero.model  # had to add this to prevent an error ---simleo
@@ -13,11 +17,12 @@ import numpy as np
 
 
 TABLE_NAME = 'ometable_test.h5'
+ROWS, COLS = 100, 10000
 ROWS_PER_CHUNK = 10
+
 VID_SIZE = 34
 
-
-OME_HOST = os.getenv('OME_HOST', 'localhost')
+OME_HOST = os.getenv('OME_HOST', socket.gethostname())
 OME_USER = os.getenv('OME_USER', 'root')
 OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
 
@@ -168,58 +173,12 @@ def drop_table(session):
         us.deleteObject(of)
 #------------------
 
-### DONT_CHANGE_THIS_LINE
-
-#-- server-side execution --
-def generate_client_instantiation(func, pytables):
-    code = [
-        'client = scripts.client("table_performance.py", "table performance",'
-        ]
-    if func is create_table:
-        code.append('  scripts.Long("nrows"), scripts.Long("ncols"),')
-    if (func is create_table or func is run_test) and pytables:
-        code.append('  scripts.Bool("pytables"),')
-    if func is run_test:
-        code.append(
-            '  scripts.List("callrate").ofType(omero.rtypes.rdouble(0)).out(),'
-            )
-    code.append(')')
-    return code
-
-
-def generate_subcommand_call(func, pytables):
-    code = ['%s%s(client.getSession(),' %
-            ('r = ' if func is run_test else '', func.__name__)]
-    if func is create_table:
-        code.extend([
-            '  client.getInput("nrows").val,',
-            '  client.getInput("ncols").val,',
-            ])
-    if (func is create_table or func is run_test) and pytables:
-        code.append('  pytables=client.getInput("pytables").val,')
-    code.append(')')
-    return code
-
-
-def get_script_text(path, func, pytables):
-    code = []
-    #--
-    with open(path) as f:
-        for l in f:
-            if l.startswith("### DONT_CHANGE_THIS_LINE"):
-                break
-            code.append(l.rstrip())
-    code.extend(generate_client_instantiation(func, pytables))
-    code.extend(generate_subcommand_call(func, pytables))
-    if func is run_test:
-        code.append('client.setOutput("callrate", omero.rtypes.wrap(r))')
-    return "\n".join(code)
-
 
 def upload_and_run(client, args, wait_secs=3, block_secs=1):
     session = client.getSession()
     script_path = os.path.abspath(__file__)
-    script_text = get_script_text(script_path, args.func, args.pytables)
+    with open(script_path) as f:
+        script_text = f.read()
     svc = session.getScriptService()
     script_id = svc.getScriptID(script_path)
     if script_id < 0:
@@ -230,16 +189,15 @@ def upload_and_run(client, args, wait_secs=3, block_secs=1):
         svc.editScript(of, script_text)
         print "replaced contents of original file #%s" % script_id
     params = svc.getParams(script_id)
+    remote_args = ['command=%s' % args.func.__name__]
     if args.func == create_table:
-        remote_args = [
+        remote_args.extend([
             'nrows=%s' % args.nrows,
             'ncols=%s' % args.ncols,
             'pytables=%s' % args.pytables,
-            ]
+            ])
     elif args.func == run_test:
-        remote_args = ['pytables=%s' % args.pytables]
-    else:
-        remote_args = []
+        remote_args.extend(['pytables=%s' % args.pytables])
     m = scripts.parse_inputs(remote_args, params)
     try:
         proc = svc.runScript(script_id, m, None)
@@ -264,20 +222,19 @@ def upload_and_run(client, args, wait_secs=3, block_secs=1):
             stream = getattr(sys, stream_name)
             client.download(ofile=f.val, filehandle=stream)
     return r
-#---------------------------
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(description="test tables")
+    parser = argparse.ArgumentParser(description=__doc__.strip())
     parser.add_argument("--server", action="store_true", help="run on server")
     parser.add_argument("--pytables", action="store_true",
                         help="use pytables directly (forces --server to True)")
     subparsers = parser.add_subparsers()
     #--
     p = subparsers.add_parser('create', help="create table")
-    p.add_argument('-r', '--nrows', type=int, metavar="INT", default=100,
+    p.add_argument('-r', '--nrows', type=int, metavar="INT", default=ROWS,
                    help="number of rows")
-    p.add_argument('-c', '--ncols', type=int, metavar="INT", default=10000,
+    p.add_argument('-c', '--ncols', type=int, metavar="INT", default=COLS,
                    help="number of columns")
     p.set_defaults(func=create_table)
     #--
@@ -318,5 +275,35 @@ def main():
     client.closeSession()
 
 
+def remote_main():
+    client = scripts.client(
+        __file__, __doc__.strip(),
+        scripts.String("command", optional=False),
+        scripts.Long("nrows", optional=True, default=ROWS),
+        scripts.Long("ncols", optional=True, default=COLS),
+        scripts.Bool("pytables", optional=True, default=False),
+        scripts.List("callrate").ofType(omero.rtypes.rdouble(0)).out(),
+        )
+    command = client.getInput("command").val
+    if command == "create_table":
+        create_table(
+            client.getSession(),
+            client.getInput("nrows").val,
+            client.getInput("ncols").val,
+            pytables=client.getInput("pytables").val,
+            )
+    elif command == "run_test":
+        r = run_test(
+            client.getSession(),
+            pytables=client.getInput("pytables").val,
+            )
+        client.setOutput("callrate", omero.rtypes.wrap(r))
+    elif command == "drop_table":
+        drop_table(client.getSession())
+
+
 if __name__ == '__main__':
-    main()
+    if socket.gethostname() == OME_HOST:
+        remote_main()
+    else:
+        main()
