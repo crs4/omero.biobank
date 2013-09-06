@@ -95,6 +95,7 @@ class DataCollectionItem(wp.OmeroWrapper):
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('dataSample', DataSample, wp.REQUIRED),
                 ('dataCollection', DataCollection, wp.REQUIRED),
+                ('role', wp.STRING, wp.OPTIONAL),
                 ('dataCollectionItemUK', wp.STRING, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
