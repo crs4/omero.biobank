@@ -10,12 +10,17 @@ class Wrapper(object):
     # http://stackoverflow.com/questions/2827623/python-create-object-and-add-attributes-to-it
     def __init__(self, wrapped):
         object.__setattr__(self, 'core', lambda: None)
+        object.__setattr__(self, 'is_modified', False)        
         setattr(self.core, 'wrapped', wrapped)
+
+    def touch(self):
+        object.__setattr__(self, 'is_modified', True)                
 
     def __setattr__(self, name, value):
         core = self.core
         if core.wrapped.has_key(name):
             core.wrapped[name] = value
+            self.touch()
         else:
             raise KeyError('no property with name %s' % name)
     def __getattr__(self, name):
@@ -31,10 +36,6 @@ class Wrapper(object):
         self.sync()
         #return json.dumps(self.core.wrapped)
         return self.core.wrapped
-
-    def copy(self):
-        self.sync()
-        return self.__class__(self.core.wrapped)
 
     @classmethod
     def from_json(cls, jdef):
