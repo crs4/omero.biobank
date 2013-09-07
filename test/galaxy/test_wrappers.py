@@ -31,23 +31,37 @@ class TestWrappers(unittest.TestCase):
     with open('Galaxy-Workflow-Hepatocyte.ga') as f: 
       wf_desc = json.load(f)
     wf_id = '89898989898'
-    wf_inputs = {u'contigs': {'input': u'63',
-                              'mimetype': u'x-vl/fasta',
-                              'type': u'SeqDataSample'
-                              },
-                 u'mates': {'input': u'65',
-                            'mimetype': u'x-vl/fastq',
-                            'type': u'SeqDataSample'
-                            },
-                 u'reads': {'input': u'64',
-                            'mimetype': u'x-vl/fastq',
-                            'type': u'SeqDataSample'
-                            }
-                }
-    wf = glxy.Workflow(wf_id, wf_desc, wf_inputs)
-    self.assertEqual(set(wf.inputs.keys()), set(wf_inputs.keys()))
-    for k in wf.inputs:
-      self.assertEqual(wf.inputs[k], wf_inputs[k])
+    wf_ports = {
+      "inputs": {"contigs" : 
+                 {"type" : "DataCollection", 
+                  "fields":   {"contigs": 
+                               {"port" : {"step" : "0", "name": "contigs"},
+                                "mimetype" : "x-vl/fasta"},
+                               "reads":
+                               {"port" : {"step" : "1", "name": "reads"},
+                                "mimetype" : "x-vl/fasta"},
+                               "mates":
+                               {"port" : {"step" : "2", "name": "mates"},
+                                "mimetype" : "x-vl/fasta"}}}},
+      "outputs": {"scaffolding":
+                  {"type" : "DataCollection",
+                   "fields" : {"finalevidence": 
+                                 {"port": {"step":"3","name" : "finalevidence"},
+                                  "mimetype" : "text/plain"},
+                               "summary": 
+                                 {"port": {"step" : "3", "name": "summary"},
+                                  "mimetype" : "text/plain"}}}}
+               }
+    wf_links = {'u71': {'label' : 'contigs', 'value': ''},
+                'u72': {'label' : 'reads', 'value': ''},
+                'u73': {'label' : 'mates', 'value': ''}}
+    wf = glxy.Workflow(wf_id, wf_desc, wf_ports, wf_links)
+    self.assertEqual(set(wf.ports.keys()), set(wf_ports.keys()))
+    for k in wf.ports:
+      self.assertEqual(wf.ports[k], wf_ports[k])
+    self.assertEqual(set(wf.links.keys()), set(wf_links.keys()))
+    for k in wf.links:
+      self.assertEqual(wf.links[k], wf_links[k])
 
     
 def suite():
