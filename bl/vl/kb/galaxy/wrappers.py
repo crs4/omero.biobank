@@ -6,7 +6,9 @@ class Workflow(CoreWorkflow):
         super(Workflow, self).__init__(wf_dict)
         setattr(self.core, 'id', wf_id)
         setattr(self.core, 'ports', wf_ports)
-        setattr(self.core, 'links', wf_links)      
+        setattr(self.core, 'links', wf_links)
+        if wf_id is None:
+            super(Workflow, self).touch()                  
     
     def touch(self):
         super(Workflow, self).touch()
