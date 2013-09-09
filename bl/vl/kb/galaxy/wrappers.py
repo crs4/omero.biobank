@@ -55,6 +55,9 @@ class Folder(CoreFolder):
     def __init__(self, folder_desc, library):
         super(Folder, self).__init__(folder_desc)
         setattr(self.core, 'library', library)
+    @property
+    def library(self):
+        return self.core.library
         
 class History(CoreHistory):
     def __init__(self, history_desc, history_das):
