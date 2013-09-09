@@ -11,7 +11,8 @@ from bl.vl.kb.galaxy.core_wrappers import LibraryDataset as CoreLibraryDataset
 
 class Workflow(CoreWorkflow):
     def __init__(self, wf_id, wf_dict, wf_ports=None, wf_links=None):
-        links = dict([(d['label'], k) for k, d in wf_links.iteritems()])
+        links = None if wf_links is None \
+                else dict([(d['label'], k) for k, d in wf_links.iteritems()])
         super(Workflow, self).__init__(wf_dict)
         setattr(self.core, 'id', wf_id)
         setattr(self.core, 'ports', wf_ports)
