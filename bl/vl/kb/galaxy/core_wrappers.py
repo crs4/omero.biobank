@@ -140,12 +140,12 @@ class HistoryDatasetAssociation(DatasetWrapper):
     def __init__(self, ds_dict):
         super(HistoryDatasetAssociation, self).__init__(ds_dict, 'hda')
 
-class LibraryDatasetDatasetAssociation(Wrapper):
+class LibraryDatasetDatasetAssociation(DatasetWrapper):
     "Wrapper for ldda"
     def __init__(self, ds_dict):
         super(LibraryDatasetDatasetAssociation, self).__init__(ds_dict, 'ldda')
 
-class LibraryDataset(Wrapper):
+class LibraryDataset(DatasetWrapper):
     "Wrapper for ld"
     def __init__(self, ds_dict):
         super(LibraryDataset, self).__init__(ds_dict, 'ld')
