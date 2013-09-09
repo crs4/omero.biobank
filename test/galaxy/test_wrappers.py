@@ -52,16 +52,17 @@ class TestWrappers(unittest.TestCase):
                                  {"port": {"step" : "3", "name": "summary"},
                                   "mimetype" : "text/plain"}}}}
                }
-    wf_links = {'u71': {'label' : 'contigs', 'value': ''},
-                'u72': {'label' : 'reads', 'value': ''},
-                'u73': {'label' : 'mates', 'value': ''}}
+    wf_links = {'71': {'label' : 'contigs', 'value': ''},
+                '72': {'label' : 'reads', 'value': ''},
+                '73': {'label' : 'mates', 'value': ''}}
+    links_by_label = dict([(v['label'], k) for k, v in wf_links.iteritems()])
     wf = glxy.Workflow(wf_id, wf_desc, wf_ports, wf_links)
     self.assertEqual(set(wf.ports.keys()), set(wf_ports.keys()))
     for k in wf.ports:
       self.assertEqual(wf.ports[k], wf_ports[k])
-    self.assertEqual(set(wf.links.keys()), set(wf_links.keys()))
+    self.assertEqual(set(wf.links.keys()), set(links_by_label.keys()))
     for k in wf.links:
-      self.assertEqual(wf.links[k], wf_links[k])
+      self.assertEqual(wf.links[k], links_by_label[k])
 
     
 def suite():
