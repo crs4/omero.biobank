@@ -1,0 +1,21 @@
+#!/usr/bin/ipython -i
+
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
+import sys, os
+import bl.vl.kb.galaxy as glxy
+
+api_key = 'cc23224aabcc44132c25b4e23f03580f'
+url = 'http://localhost:8070'
+gi = glxy.GalaxyInstance(url, api_key)
+
+print
+print "### GLXY ENV PRELOADED ###"
+print "# connected to %s" % url
+print "# galaxy instance: gi"
+print "##########################"
+
+# Local Variables: **
+# mode: python **
+# End: **
