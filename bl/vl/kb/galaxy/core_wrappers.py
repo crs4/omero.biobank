@@ -111,45 +111,45 @@ class Workflow(Wrapper):
         return self.core.steps
 
 
+class Library(Wrapper):
+    pass
+
+class Folder(Wrapper):
+    pass
+
 class History(Wrapper):
     """
     Fixme
     """
-    def __init__(self, hdict, hdas):
-        super(History, self).__init__(history_dict)
-        details = history_dict['']
-        setattr(self.core, 'steps', 
-                [Step(steps[str(x)]) for x in xrange(len(steps))])
+    pass
+
+
+class DatasetWrapper(Wrapper):
+    """
+    FIXME
+    """
+    def __init__(self, ds_dict, src):
+        super(DatasetWrapper, self).__init__(ds_dict)
+        setattr(self.core, 'src', src)
     @property
-    def steps(self):
-        return self.core.steps
+    def src(self):
+        return self.core.src
+
+class HistoryDatasetAssociation(DatasetWrapper):
+    "Wrapper for hda"
+    def __init__(self, ds_dict):
+        super(HistoryDatasetAssociation, self).__init__(ds_dict, 'hda')
+
+class LibraryDatasetDatasetAssociation(Wrapper):
+    "Wrapper for ldda"
+    def __init__(self, ds_dict):
+        super(LibraryDatasetDatasetAssociation, self).__init__(ds_dict, 'ldda')
+
+class LibraryDataset(Wrapper):
+    "Wrapper for ld"
+    def __init__(self, ds_dict):
+        super(LibraryDataset, self).__init__(ds_dict, 'ld')
         
-    def sync(self):
-        for s in self.steps:
-            s.sync()
 
-    def __eq__(self, other):
-        return  self.id == other.id
-        
-    def __hash__(self):
-        return self.id
-
-
-class HistoryDatasetAssociation(Wrapper):
-    """
-    A python friendly wrapper for hda descriptions.
-    """
-    def __init__(self, hda_dict):
-        super(HistoryDatasetAssociation, self).__init__(hda_dict)
-
-    def __eq__(self, other):
-        return  self.id == other.id
-        
-    def __hash__(self):
-        return self.id
-
-
-            
-        
-        
+    
         
