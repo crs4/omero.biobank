@@ -3,7 +3,7 @@ Test table performance.
 """
 
 from __future__ import division
-import sys, os, argparse, uuid, time, socket
+import sys, os, argparse, uuid, time, socket, random
 
 import omero
 import omero.model  # had to add this to prevent an error ---simleo
@@ -53,7 +53,9 @@ def open_table(session):
     return t
 
 
-def get_call_rates(session, threshold=0.05):
+def get_call_rates(session, threshold=0.05, sample_size=0):
+    if sample_size <= 0:
+        raise NotImplementedError("client-side subsampling not yet available")
     table = open_table(session)
     nrows = table.getNumberOfRows()
     col_headers = [h.name for h in table.getHeaders()]
@@ -70,7 +72,7 @@ def get_call_rates(session, threshold=0.05):
     return r
 
 
-def get_call_rates_pytables(session, threshold=0.05):
+def get_call_rates_pytables(session, threshold=0.05, sample_size=0):
     import tables
     ofile = get_original_file(session, TABLE_NAME)
     path = get_table_path(session, ofile)
@@ -78,8 +80,13 @@ def get_call_rates_pytables(session, threshold=0.05):
     start = time.time()
     with tables.openFile(path) as f:
         table = f.root.OME.Measurements
+        if sample_size > 0:
+            row_idx = random.sample(xrange(table.nrows), sample_size)
+            row_iterator = table.itersequence(row_idx)
+        else:
+            row_iterator = table.iterrows()
         call_rates = [(row["confidence"] <= threshold).mean()
-                      for row in table.iterrows()]
+                      for row in row_iterator]
     print "data read & call rates computed in %.3f s" % (time.time() - start)
     return call_rates
 
@@ -162,11 +169,11 @@ def create_table(session, nrows, ncols, pytables=False):
     tm.populate_table(pytables=pytables)
 
 
-def run_test(session, pytables=False):
+def run_test(session, pytables=False, sample_size=0):
     if pytables:
-        r = get_call_rates_pytables(session)
+        r = get_call_rates_pytables(session, sample_size=sample_size)
     else:
-        r = get_call_rates(session)
+        r = get_call_rates(session, sample_size=sample_size)
     return r
 
 
@@ -206,7 +213,10 @@ def upload_and_run(client, args, wait_secs=3, block_secs=1):
             'pytables=%s' % args.pytables,
             ])
     elif args.func == run_test:
-        remote_args.extend(['pytables=%s' % args.pytables])
+        remote_args.extend([
+            'pytables=%s' % args.pytables,
+            'sample_size=%s' % args.sample_size,
+            ])
     m = scripts.parse_inputs(remote_args, params)
     try:
         proc = svc.runScript(script_id, m, None)
@@ -248,6 +258,8 @@ def build_parser():
     p.set_defaults(func=create_table)
     #--
     p = subparsers.add_parser('run', help="run test")
+    p.add_argument('-s', '--sample-size', type=int, metavar="INT",
+                   default=0, help="sample size for row indexes")
     p.set_defaults(func=run_test)
     #--
     p = subparsers.add_parser('clean', help="remove table(s)")
@@ -290,6 +302,7 @@ def remote_main():
         scripts.String("command", optional=False),
         scripts.Long("nrows", optional=True, default=ROWS),
         scripts.Long("ncols", optional=True, default=COLS),
+        scripts.Long("sample_size", optional=True, default=0),
         scripts.Bool("pytables", optional=True, default=False),
         scripts.List("callrate").ofType(omero.rtypes.rdouble(0)).out(),
         )
@@ -305,6 +318,7 @@ def remote_main():
         r = run_test(
             client.getSession(),
             pytables=client.getInput("pytables").val,
+            sample_size=client.getInput("sample_size").val,
             )
         client.setOutput("callrate", omero.rtypes.wrap(r))
     elif command == "drop_table":
