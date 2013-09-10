@@ -20,11 +20,16 @@ FLOAT = 'float'
 TEXT = 'text'
 TIMESTAMP = 'timestamp'
 SELF_TYPE = 'self-type'
+
+def safe_rstring(text):
+  text = str(text) if type(text) == unicode else text
+  return ort.rstring(text)
+
 WRAPPING = {
   TIMESTAMP: vluo.time2rtime,
-  VID: ort.rstring,
-  STRING: ort.rstring,
-  TEXT: ort.rstring,
+  VID: safe_rstring,
+  STRING: safe_rstring,
+  TEXT: safe_rstring,
   FLOAT: ort.rfloat,
   INT: ort.rint,
   LONG: ort.rlong,
@@ -33,6 +38,7 @@ WRAPPING = {
 
 
 def ome_wrap(v, wtype=None):
+  v = str(v) if type(v) == unicode else v
   return WRAPPING[wtype](v) if wtype else ort.wrap(v)
 
 
@@ -147,6 +153,7 @@ class CoreOmeroWrapper(object):
 
   @property
   def id(self):
+    #return 'DB_MAGIC_NUMBER:%s:%s' % (self.get_ome_table(), self.omero_id)
     return self.vid
 
   @property
