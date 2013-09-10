@@ -25,6 +25,7 @@ VID_SIZE = 34
 OME_HOST = os.getenv('OME_HOST', socket.gethostname())
 OME_USER = os.getenv('OME_USER', 'root')
 OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
+OME_KEEPALIVE_SECS = 60
 
 
 #-- helper functions & classes --
@@ -274,6 +275,7 @@ def main():
     print 'connecting to %s' % OME_HOST
     client = omero.client(OME_HOST)
     session = client.createSession(OME_USER, OME_PASSWD)
+    client.enableKeepAlive(OME_KEEPALIVE_SECS)
     r = None
     if args.pytables:
         args.server = True
@@ -291,8 +293,6 @@ def main():
         with open("call_rates.txt", "w") as fo:
             fo.write("\n".join("%.3f" % _ for _ in r)+"\n")
         print "call rates dumped to", fo.name
-    else:
-        print "no result from remote script"
     client.closeSession()
 
 
@@ -306,6 +306,7 @@ def remote_main():
         scripts.Bool("pytables", optional=True, default=False),
         scripts.List("callrate").ofType(omero.rtypes.rdouble(0)).out(),
         )
+    client.enableKeepAlive(OME_KEEPALIVE_SECS)
     command = client.getInput("command").val
     if command == "create_table":
         create_table(
@@ -323,6 +324,7 @@ def remote_main():
         client.setOutput("callrate", omero.rtypes.wrap(r))
     elif command == "drop_table":
         drop_table(client.getSession())
+    client.closeSession()
 
 
 if __name__ == '__main__':
