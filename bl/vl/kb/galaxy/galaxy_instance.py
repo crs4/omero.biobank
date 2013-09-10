@@ -20,6 +20,7 @@ class GalaxyInstance(CoreGalaxyInstance):
         super(GalaxyInstance, self).__init__(url, api_key, logger=self.logger)
         self.kb = kb
         self.metastore = metastore
+        self.to_be_killed = []
 
     def _pack_history_annotation(self, study, workflow, input_object):
         return json.dumps({
@@ -131,10 +132,10 @@ class GalaxyInstance(CoreGalaxyInstance):
                     'bad target class: %s' % input_object.get_ome_table())
         
     def _create_action(self, study, workflow, input_object,
-                       history, operator, description, saved):
-        self.logger.debug(('_create_action('+ '%s,'*7+')')
+                       history, operator, description):
+        self.logger.debug(('_create_action('+ '%s,'*6+')')
                           % (study, workflow, input_object,
-                             history, operator, description, saved))
+                             history, operator, description))
         root_name, _ = parse_workflow_name(workflow.name)
         device = self.kb.get_device(root_name)
         if not device:
@@ -142,59 +143,64 @@ class GalaxyInstance(CoreGalaxyInstance):
                                   'missing a device for %s' % workflow.name)
         conf = {'label': history.name, 'conf' : history.to_json()}
         action_setup = self.kb.factory.create(self.kb.ActionSetup, conf)
-        saved.append(action_setup.save())
-        self.logger.info('created action_setup %s' % action_setup.label)        
+        self.to_be_killed.append(action_setup.save())
+        self.logger.debug('created action_setup %s' % action_setup.label)
         conf = {'setup': action_setup, 'device': device,
                 'actionCategory': self.kb.ActionCategory.CREATION,
                 'operator': operator, 'context': study,
                 'description': description, 'target': input_object}
         action_klass = self._get_action_klass(input_object)
         action = self.kb.factory.create(action_klass, conf)
-        saved.append(action.save())
-        self.logger.info('created action %s' % action)     
+        self.to_be_killed.append(action.save())
+        self.logger.debug('created action %s' % action)     
         action.unload() # we do not need the details.          
         return action
 
-    def _create_data_collection(self, label, action, fields, datasets, saved):
-        data_samples = []
+    def _create_data_collection(self, label, action, fields, datasets):
+        self.logger.info('creating data_collection %s.' % label)        
+        conf = {'label': label, 'action': action}
+        data_collection = self.kb.factory.create(self.kb.DataCollection, conf)
+        self.to_be_killed.append(data_collection.save())
+        self.logger.debug('created DataCollection %s' % data_collection)
+
         for name, desc in fields.iteritems():
+            self.logger.debug('Iteration for role %s' % name)
+
+            self.logger.debug('action.is_loaded: %s' % action.is_loaded())
+            if action.is_loaded(): action.unload()
+
             conf = {'label': '%s.%s' % (label, name),
                     'status': self.kb.DataSampleStatus.USABLE,
                     'action': action}
-            d_sample = self.kb.factory.create(self.kb.DataSample, conf).save()
-            saved.append(d_sample)
+            d_sample = self.kb.factory.create(self.kb.DataSample, conf)
+            self.to_be_killed.append(d_sample.save())
             self.logger.debug('created DataSample %s' % d_sample)
+
+            self.logger.debug('action.is_loaded: %s' % action.is_loaded())
+            if action.is_loaded(): action.unload()
+            
             conf = {'sample': d_sample,
                     'path': datasets[desc['port']['name']].file_name,
                     'mimetype': desc['mimetype'],
                     'sha1': 'fake-sha1',
                     'size': datasets[desc['port']['name']].file_size}
-            d_object = self.kb.factory.create(self.kb.DataObject, conf).save()
-            saved.append(d_object)
+            d_object = self.kb.factory.create(self.kb.DataObject, conf)
+            self.to_be_killed.append(d_object.save())
             self.logger.debug('created DataObject %s' % d_object)
-            data_samples.append(d_sample)
+            
+            self.logger.debug('action.is_loaded: %s' % action.is_loaded())
+            if action.is_loaded(): action.unload()
 
-        return
-        #     conf = {'dataSample': data_sample,
-        #             'dataCollection': data_collection, 
-        #             'role': name}
-        #     self.logger.debug('creating DataCollectionItem conf:%s' 
-        #                       % conf)
-        #     data_sample.reload() # FIXME this is needed to keep hibernate happy
-        #     dci = self.kb.factory.create(self.kb.DataCollectionItem, conf)
-        #     data_sample.unload() # FIXME this is needed to keep hibernate happy
-        #     saved.append(dci.save())
-        #     dci.unload()            
-        #     self.logger.debug('created DataCollectionItem %s' % dci)
-        # self.logger.info('creating data_collection %s.' % label)        
-        # conf = {'label': label, 'action': action}
-        # data_collection = self.kb.factory.create(self.kb.DataCollection, conf)
-        # data_collection = data_collection.save()
-        # saved.append(data_collection)
-        # self.logger.debug('created DataCollection %s' % data_collection)        
-        # data_collection.unload()
+            conf = {'dataSample': d_sample,
+                    'dataCollection': data_collection, 
+                    'role': name}
+            dci = self.kb.factory.create(self.kb.DataCollectionItem, conf)
+            self.to_be_killed.append(dci.save())
+            self.logger.debug('created DataCollectionItem: %s' % dci)
+        self.logger.debug('filled DataCollection %s' % data_collection)        
+
                     
-    def _create_output(self, label, port, datasets, action, saved):
+    def _create_output(self, label, port, datasets, action):
         self.logger.info('creating output object %s.' % label)
         if not set([v['port']['name'] for v in port['fields'].values()])\
                 .issubset(set(datasets.keys())):
@@ -203,7 +209,7 @@ class GalaxyInstance(CoreGalaxyInstance):
         klass = getattr(self.kb, port['type'])
         if klass == self.kb.DataCollection:
             self._create_data_collection(label, action, port['fields'], 
-                                         datasets, saved)
+                                         datasets)
         else:
             self._raise_exception(RuntimeError,
                                   'cannot handle port type %s' % port['type'])
@@ -213,53 +219,28 @@ class GalaxyInstance(CoreGalaxyInstance):
         Save history results in omero.biobank.
 
         """
+        self.to_be_killed = []
         self.logger.info('saving history %s results.' % history.name)
         study, workflow, input_object = self._unpack_history_annotation(
                                               history.annotation)
+        self.logger.info('History %s was run' % history.name)
+        self.logger.info('\tin the context of %s' % study.label)
+        self.logger.info('\twith workflow %s' % workflow.name)   
+        self.logger.info('\ton input %s(%s)' % (input_object.get_ome_table(),
+                                                input_object.id))       
         datasets = dict([(d.name, d) for d in history.datasets])
-        saved = []
-        action = self._create_action(study, workflow, input_object, 
-                                     history, operator, description, saved)
-        saved.append(action)
-        for name, port in workflow.ports['outputs'].iteritems():
-            self._create_output(create_object_label(history.name, name),
-                                port, datasets, action, saved)
-        saved.reverse()
-        for o in saved:
-            self.logger.debug('deleting object: %s' % o)            
-            self.kb.delete(o)
-            
-        
-        # try:
-        #     action = self._create_action(study, workflow, input_object, 
-        #                                  history, operator, description, saved)
-        #     saved.append(action)
-        #     for name, port in workflow.ports['outputs']:
-        #         self._create_output(create_object_label(history.name, name),
-        #                             port, datasets, action, saved)
-        # except StandardError as e:
-        #     self.logger.error('Got an exception: %s. Started cleanup.' % e)
-        #     saved.reverse()
-        #     for o in saved:
-        #         self.logger.debug('deleting object: %s' % o)            
-        #         self.kb.delete(o)
-        #     self.logger.error('Done with cleanup. Raising %s again.' % e)
-        #     raise e
-        
-
-        
-
-def cleanup(kb):
-    data_objects = kb.get_objects(kb.DataObject)
-    for do in data_objects[3:]:
-        kb.delete(do)
-    data_samples = kb.get_objects(kb.DataSample)
-    for ds in data_samples[3:]:
-        kb.delete(ds)
-    actions = kb.get_objects(kb.Action)
-    for a in actions[1:]:
-        kb.delete(a)
-    action_setups = kb.get_objects(kb.ActionSetup)
-    for a in action_setups[1:]:
-        kb.delete(a)
-    
+        try:
+            action = self._create_action(study, workflow, input_object, 
+                                         history, operator, description)
+            for name, port in workflow.ports['outputs'].iteritems():
+                self._create_output(create_object_label(history.name, name),
+                                    port, datasets, action)
+        except StandardError as e:
+            self.logger.error('Got an exception: %s. Started cleanup.' % e)
+            self.to_be_killed.reverse()
+            for o in self.to_be_killed:
+                self.logger.debug('deleting object: %s' % o)            
+                self.kb.delete(o)
+            raise e
+        finally:
+            self.to_be_killed = []

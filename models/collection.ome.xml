@@ -58,9 +58,9 @@ END_COPYRIGHT
       <required name="vid" type="string" unique="true"/>
       <required name="dataSample" type="ome.model.vl.DataSample"/>      
       <required name="dataCollection" type="ome.model.vl.DataCollection"/>
+      <optional name="role" type="string"/>
       <!-- dataCollection.vid, dataSample.vid -->
       <required name="dataCollectionItemUK" type="string" unique="true"/>
-      <optional name="role" type="string"/>
     </properties>
   </type>
 
