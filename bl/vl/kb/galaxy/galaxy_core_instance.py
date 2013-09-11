@@ -214,6 +214,7 @@ class GalaxyInstance(object):
     #     return workflow
 
     def register(self, obj):
+        "Register a workflow object in galaxy"
         if type(obj) == Workflow:
             if obj.id is None:
                 root_name, _ = parse_workflow_name(obj.name)
