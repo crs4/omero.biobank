@@ -36,7 +36,7 @@ GLX_URL = 'http://localhost:8070'
 
 kb = KnowledgeBase(driver='omero')(OME_HOST, OME_USER, OME_PASSWD, 
                                    check_ome_version=CHECK_OME_VERSION)
-gi = GalaxyInstance(kb, GLX_URLGLX_API_KEY)
+gi = GalaxyInstance(kb, GLX_URL, GLX_API_KEY)
 
 """
     ..
@@ -98,27 +98,28 @@ def create_input_object():
     data_collection = kb.factory.create(kb.DataCollection, conf)
     to_be_killed.append(data_collection.save())
     for name, desc  in input_paths.iteritems():
-            conf = {'label': '%s.%s' % (dc_label, name),
-                    'status': kb.DataSampleStatus.USABLE,
-                    'action': action}
-            data_sample = kb.factory.create(kb.DataSample, conf)
-            to_be_killed.append(data_sample.save())
-            conf = {'dataSample': data_sample,
-                    'dataCollection': data_collection, 
-                    'role': name}
-            dci = kb.factory.create(kb.DataCollectionItem, conf)
-            to_be_killed.append(dci.save())
-            conf = {'sample': data_sample,
-                    'path': desc[0],
-                    'mimetype': desc[1],
-                    'sha1': 'fake-sha1',
-                    'size': 10} # fake size
-            data_object = kb.factory.create(kb.DataObject, conf)
-            to_be_killed.append(data_object.save())
+        conf = {'label': '%s.%s' % (dc_label, name),
+                'status': kb.DataSampleStatus.USABLE,
+                'action': action}
+        data_sample = kb.factory.create(kb.DataSample, conf)
+        to_be_killed.append(data_sample.save())
+        conf = {'dataSample': data_sample,
+                'dataCollection': data_collection, 
+                'role': name}
+        dci = kb.factory.create(kb.DataCollectionItem, conf)
+        to_be_killed.append(dci.save())
+        conf = {'sample': data_sample,
+                'path': desc[0],
+                'mimetype': desc[1],
+                'sha1': 'fake-sha1',
+                'size': 10} # fake size
+        data_object = kb.factory.create(kb.DataObject, conf)
+        to_be_killed.append(data_object.save())
+    return data_collection
 
 to_be_killed=[]
 try:
-    create_input_object()
+    input_data = create_input_object()
 except StandardError as e:
     print 'intercepted an exception, %s, cleaning up.' % e
     while to_be_killed:
@@ -136,7 +137,7 @@ Now that we have an input we can run the workflow.
 
 """
 
-history = gi.run_workflow(study, workflow, data_collection)
+history = gi.run_workflow(study, workflow, input_data)
 
 """
    ..
@@ -162,16 +163,10 @@ device. That is, were obtained obtained by changing a
 parameter with respect to the reference workflow which is represented
 by device.
 
-"""
-
-ws = gi.get_workflows(device)
-
-"""
-   ..
-
 Collect info on related histories and what has been saved in biobank.
 
 """   
+ws = gi.get_workflows(device)
 for w in ws:
     print 'Workflow %s' % w.name
     hs = gi.get_histories(w)
@@ -179,9 +174,11 @@ for w in ws:
     h_by_obj = {}
     for h in hs:
         if gi.is_biobank_compatible(h):
-            h_by_obj.setdefault(gi.get_input_object(h), []).append(h)
-    for o, hlist in h_by_obj.iteritems():
-        print '\t%s' % o
+            label = gi.get_input_object(h).label
+            print 'label:%r, type:%r'% (label, type(label))
+            h_by_obj.setdefault(label, []).append(h)
+    for label, hlist in h_by_obj.iteritems():
+        print '\t%s' % label
         for h in hlist:
             in_biobank = gi.is_mapped_in_biobank(h)
             print ('\t\t%s: {status: %s, in_biobank: %s}' 
@@ -206,21 +203,17 @@ for i in range(1, 4):
     w = gi.register(w)
     h = gi.run_workflow(study, w, input_object, wait=True)
     gi.save(h)
-"""
-   ..
 
-We will run a series of runs for param 
-
-"""   
-        
 
 """
    ..
 
-We should now
-
+Rerun an analysis with a different parameter
+--------------------------------------------
 
 """
+
+
     
 
     
