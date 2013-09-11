@@ -2,6 +2,8 @@ from bl.vl.kb.galaxy.galaxy_core_instance import GalaxyInstance\
                                                  as CoreGalaxyInstance
 from bl.vl.kb.galaxy.galaxy_core_instance import parse_workflow_name
 
+from bl.vl.kb.galaxy import Workflow, History
+
 import json
 
 def create_object_label(history_name, port_name):
@@ -56,6 +58,60 @@ class GalaxyInstance(CoreGalaxyInstance):
                                   (annotation, e))
 
         return study, workflow, input_object
+
+    def is_biobank_compatible(self, obj):
+        """
+        True if the galaxy object obj could be tracked by omero.biobank.
+
+        FIXME: we are currently using heuristics to speed up things.
+
+        """
+        if isinstance(obj, Workflow):
+            return obj.ports is not None
+        if isinstance(obj, History):
+            return obj.annotation.find('biobank_id') > -1
+        self._raise_exception(ValueError,
+                    'cannot check biobank compatibility of %s' % obj)
+        
+    def is_mapped_in_biobank(self, obj):
+        """
+        True if a representation of obj is stored in omero.biobank.
+        """
+        if isinstance(obj, Workflow):
+            root_name, _ = parse_workflow_name(obj.name)
+            device = self.kb.get_device(root_name)
+            return device is not None
+        if isinstance(obj, History):
+            action = self.kb.get_action_setup(obj.name)
+            return action is not None
+        self._raise_exception(ValueError,
+                    'cannot check if %s is mapped to biobank' % obj)
+
+    def get_workflows(self, device=None):
+        ws = super(GalaxyInstance, self).get_workflows()
+        if device is None:
+            return ws
+        if not isinstance(device, self.kb.Device):
+            self._raise_exception(ValueError,
+                  '%s is not a kb.Device' % device)
+        results = []
+        for w in ws:
+            root_name, _ = parse_workflow_name(w.name)
+            if root_name == device.label:
+                results.append(w)
+        return results
+
+    def get_input_object(self, history=None):
+        if not isinstance(history, History):
+            self._raise_exception(ValueError,
+                    '%s is not a History' % history)
+        if not self.is_biobank_compatible(history):
+            self._raise_exception(ValueError,
+                    '%s is not biobank compatible' % history)
+        study, workflow, input_object = self._unpack_history_annotation(
+                                              history.annotation)
+        return input_object
+
 
     def _get_data_object_path(self, sample, mimetype):
         self.logger.debug('_get_data_object_path(%s, %s)' %
