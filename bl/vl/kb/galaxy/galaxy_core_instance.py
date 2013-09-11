@@ -167,9 +167,17 @@ class GalaxyInstance(object):
         self.logger.debug('\tlinked to:%s)' % res[0])
         return LibraryDataset(res[0])
 
-    def get_histories(self):
+    def get_histories(self, workflow=None):
         self.logger.debug('get_histories()')
         hlist = self.blend.gi.histories.get_histories()
+        if workflow is not None:
+            if not isinstance(workflow, Workflow):
+                self._raise_exception(ValueError,
+                                      '%s is not a Workflow' % workflow)
+            hlist = [h for h in hlist
+                     if workflow.name == (h['name'].split('+', 1))[0]]
+            # we are not using parse_history_name because it expect a
+            # precise pattern
         return [self.get_history(h['id']) for h in hlist]
                 
     def get_history(self, history_id):
