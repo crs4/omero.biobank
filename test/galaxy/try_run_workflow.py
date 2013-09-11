@@ -193,21 +193,25 @@ for w in ws:
 Run a parameter search 
 ----------------------
 
-By doing something similar to what has been done above, 
+Simple variant, no checks on what has already been done.
 
 """
+workflow = gi.get_workflows(device)[0]
+input_object = gi.get_input_object(gi.get_histories(workflow)[0])
+study = input_object.action.context
 
-ws = gi.get_workflows(device)
-
+for i in range(1, 4):
+    w = workflow.clone()
+    w.steps[3].tool['error'] = str(0.25*i)
+    w = gi.register(w)
+    h = gi.run_workflow(study, w, input_object, wait=True)
+    gi.save(h)
 """
    ..
 
+We will run a series of runs for param 
 
 """   
-for w in ws:
-    print w.steps[3].tool.params['error']
-    hs = gi.get_histories(w)
-    for h in hs:
         
 
 """
