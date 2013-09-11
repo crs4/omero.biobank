@@ -275,25 +275,27 @@ def main():
     print 'connecting to %s' % OME_HOST
     client = omero.client(OME_HOST)
     session = client.createSession(OME_USER, OME_PASSWD)
-    client.enableKeepAlive(OME_KEEPALIVE_SECS)
-    r = None
-    if args.pytables:
-        args.server = True
-    if args.server:
-        r = upload_and_run(client, args)
-    else:
-        if args.func == create_table:
-            create_table(session, args.nrows, args.ncols)
-        elif args.func == drop_table:
-            drop_table(session)
+    try:
+        client.enableKeepAlive(OME_KEEPALIVE_SECS)
+        r = None
+        if args.pytables:
+            args.server = True
+        if args.server:
+            r = upload_and_run(client, args)
         else:
-            r = run_test(session, pytables=False)
-    print
+            if args.func == create_table:
+                create_table(session, args.nrows, args.ncols)
+            elif args.func == drop_table:
+                drop_table(session)
+            else:
+                r = run_test(session, pytables=False)
+    finally:
+        client.closeSession()
     if r is not None:
+        print
         with open("call_rates.txt", "w") as fo:
             fo.write("\n".join("%.3f" % _ for _ in r)+"\n")
         print "call rates dumped to", fo.name
-    client.closeSession()
 
 
 def remote_main():
