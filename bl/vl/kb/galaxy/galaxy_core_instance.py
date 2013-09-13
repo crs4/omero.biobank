@@ -160,12 +160,15 @@ class GalaxyInstance(object):
         res = self.blend.gi.libraries.upload_from_galaxy_filesystem(
                    library_id, path, folder_id, 'auto', '?',
                    link_data_only='link_to_files')
-        if not res:
-            msg = ('Empty reply when linking path %s into %s' 
-                   % (path, destination.name))
+        # FIXME: add 'upload_from_galaxy_filesystem' to our blend_wrapper
+        if isinstance(res, list):
+            res = res[0]
+        if not res or not isinstance(res, dict):
+            msg = ('Bad reply when linking path %s into %s: %r'
+                   % (path, destination.name, res))
             self._raise_exception(RuntimeError, msg)
-        self.logger.debug('\tlinked to:%s)' % res[0])
-        return LibraryDataset(res[0])
+        self.logger.debug('\tlinked to:%s)' % res)
+        return LibraryDataset(res)
 
     def get_histories(self, workflow=None):
         self.logger.debug('get_histories()')
