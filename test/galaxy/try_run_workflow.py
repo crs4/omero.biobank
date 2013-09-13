@@ -85,8 +85,10 @@ input_paths  = dict([
     ('mates',   (d + 'SRR001665_red_2.fastq', 'x-vl/fastq'))
     ])
 
+STUDY_LABEL = 'a-test-study-%s' % uuid.uuid1().hex
+
 def create_input_object():
-    conf = {'label': 'a-test-study-%s' % uuid.uuid1().hex, 
+    conf = {'label': STUDY_LABEL,
             'description': 'this is a test.'}
     study = kb.factory.create(kb.Study, conf)
     to_be_killed.append(study.save())
@@ -208,56 +210,23 @@ for i in range(1, 4):
 """
    ..
 
-Rerun an analysis with a different parameter
---------------------------------------------
+Rerun an analysis with different parameters
+-------------------------------------------
 
 """
 
-
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-    
-    
-    
-
-
-
-
-conf = {'label': label, 'action': action}
-data_collection = kb.factory.create(kb.DataCollection, conf)
-
-
-
-
-
-ws = gi.get_workflows()
-w = ws[0]
-
-
-h = gi.run_workflow(w, input_paths, True)
-
-
-
+device = kb.get_device(WORKFLOW_NAME)
+study = kb.get_study(STUDY_LABEL)
+query = """
+select action from ActionOnCollection action
+where action.device.id = :dev_id and action.context.id = :std_id
+"""
+actions = kb.find_all_by_query(
+    query, {'dev_id': device.omero_id, 'std_id': study.omero_id}
+    )
+h = gi.get_history(action=actions[0])
+study, workflow, input_object = gi.get_initial_conditions(h)
+w2 = workflow.clone()
+w2.steps[1].tool['cols'] = "c2"  # "Change Case" tool
+w2 = gi.register(w2)
+h2 = gi.run_workflow(study, w2, input_object)
