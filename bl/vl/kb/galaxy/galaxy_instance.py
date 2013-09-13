@@ -155,6 +155,7 @@ class GalaxyInstance(CoreGalaxyInstance):
         field name. Otherwise, it will interpret the field name as an
         attribute of the input_object.
         """
+        input_paths = {}
         if input_object.get_ome_table() != in_port['type']:
             self._raise_exception(ValueError, 
                 'expected input of type %s got %s.' %
@@ -166,10 +167,19 @@ class GalaxyInstance(CoreGalaxyInstance):
                 for k, ds in [(i.role, i.dataSample) 
                              for i in self.kb.get_data_collection_items(
                                                input_object)]])
-            return input_paths
+        elif in_port['type'] == 'DataSample':
+            fields = in_port['fields']
+            if len(fields) != 1:
+                self._raise_exception(ValueError, 'wrong number of fields')
+            k = fields.iterkeys().next()
+            input_paths = {
+                k: self._get_data_object_path(
+                    input_object, fields[k]['mimetype']
+                    )}
         else:
             self._raise_exception(ValueError,
                     'kb type %s not supported' % in_port['type'])
+        return input_paths
 
 
     def run_workflow(self, study, workflow, input_object, wait=True):
@@ -226,6 +236,7 @@ class GalaxyInstance(CoreGalaxyInstance):
         action.unload() # we do not need the details.          
         return action
 
+    # FIXME: refactor to use _create_data_sample
     def _create_data_collection(self, label, action, fields, datasets):
         self.logger.info('creating data_collection %s.' % label)        
         conf = {'label': label, 'action': action}
@@ -269,7 +280,36 @@ class GalaxyInstance(CoreGalaxyInstance):
             self.logger.debug('created DataCollectionItem: %s' % dci)
         self.logger.debug('filled DataCollection %s' % data_collection)        
 
-                    
+    def _create_data_sample(self, label, action, fields, datasets):
+        self.logger.info('creating data_sample %s.' % label)
+        conf = {'label': label, 'action': action}
+        name, desc = fields.iteritems().next()
+        self.logger.debug('Iteration for role %s' % name)
+        self.logger.debug('action.is_loaded: %s' % action.is_loaded())
+        if action.is_loaded():
+            action.unload()
+        conf = {
+            'label': '%s.%s' % (label, name),
+            'status': self.kb.DataSampleStatus.USABLE,
+            'action': action,
+            }
+        d_sample = self.kb.factory.create(self.kb.DataSample, conf)
+        self.to_be_killed.append(d_sample.save())
+        self.logger.debug('created DataSample %s' % d_sample)
+        self.logger.debug('action.is_loaded: %s' % action.is_loaded())
+        if action.is_loaded():
+            action.unload()
+        conf = {
+            'sample': d_sample,
+            'path': datasets[desc['port']['name']].file_name,
+            'mimetype': desc['mimetype'],
+            'sha1': 'fake-sha1',
+            'size': datasets[desc['port']['name']].file_size,
+            }
+        d_object = self.kb.factory.create(self.kb.DataObject, conf)
+        self.to_be_killed.append(d_object.save())
+        self.logger.debug('created DataObject %s' % d_object)
+
     def _create_output(self, label, port, datasets, action):
         self.logger.info('creating output object %s.' % label)
         if not set([v['port']['name'] for v in port['fields'].values()])\
@@ -280,6 +320,8 @@ class GalaxyInstance(CoreGalaxyInstance):
         if klass == self.kb.DataCollection:
             self._create_data_collection(label, action, port['fields'], 
                                          datasets)
+        elif klass == self.kb.DataSample:
+            self._create_data_sample(label, action, port['fields'], datasets)
         else:
             self._raise_exception(RuntimeError,
                                   'cannot handle port type %s' % port['type'])
