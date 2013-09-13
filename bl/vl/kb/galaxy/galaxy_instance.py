@@ -331,7 +331,6 @@ class GalaxyInstance(CoreGalaxyInstance):
         Save history results in omero.biobank.
 
         """
-        self.to_be_killed = []
         self.logger.info('saving history %s results.' % history.name)
         study, workflow, input_object = self._unpack_history_annotation(
                                               history.annotation)
@@ -341,6 +340,7 @@ class GalaxyInstance(CoreGalaxyInstance):
         self.logger.info('\ton input %s(%s)' % (input_object.get_ome_table(),
                                                 input_object.id))       
         datasets = dict([(d.name, d) for d in history.datasets])
+        self.to_be_killed = []
         try:
             action = self._create_action(study, workflow, input_object, 
                                          history, operator, description)
@@ -349,8 +349,8 @@ class GalaxyInstance(CoreGalaxyInstance):
                                     port, datasets, action)
         except StandardError as e:
             self.logger.error('Got an exception: %s. Started cleanup.' % e)
-            self.to_be_killed.reverse()
-            for o in self.to_be_killed:
+            while self.to_be_killed:
+                o = self.to_be_killed.pop()
                 self.logger.debug('deleting object: %s' % o)            
                 self.kb.delete(o)
             raise e
