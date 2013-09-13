@@ -87,6 +87,15 @@ class GalaxyInstance(CoreGalaxyInstance):
         self._raise_exception(ValueError,
                     'cannot check if %s is mapped to biobank' % obj)
 
+    def get_history(self, history_id=None, action=None):
+        if history_id is None and action is None:
+            self._raise_exception(
+                ValueError, "specify either history_id or action"
+                )
+        if not history_id:
+            history_id = json.loads(action.setup.conf)['id']
+        return super(GalaxyInstance, self).get_history(history_id)
+
     def get_workflows(self, device=None):
         ws = super(GalaxyInstance, self).get_workflows()
         if device is None:
@@ -101,17 +110,22 @@ class GalaxyInstance(CoreGalaxyInstance):
                 results.append(w)
         return results
 
-    def get_input_object(self, history=None):
+    def get_initial_conditions(self, history):
+        """
+        Return study, workflow, input_object used to obtain history.
+        """
         if not isinstance(history, History):
             self._raise_exception(ValueError,
                     '%s is not a History' % history)
         if not self.is_biobank_compatible(history):
             self._raise_exception(ValueError,
                     '%s is not biobank compatible' % history)
-        study, workflow, input_object = self._unpack_history_annotation(
-                                              history.annotation)
-        return input_object
+        return self._unpack_history_annotation(history.annotation)
 
+    # DEPRECATED
+    def get_input_object(self, history):
+        study, workflow, input_object = self.get_initial_conditions(history)
+        return input_object
 
     def _get_data_object_path(self, sample, mimetype):
         self.logger.debug('_get_data_object_path(%s, %s)' %
