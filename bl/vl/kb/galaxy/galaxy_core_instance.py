@@ -253,7 +253,7 @@ class GalaxyInstance(object):
         self.logger.debug('\tpassed validation')
         # step 1
         library = self.get_library_for_workflow(workflow)
-        folder = self.create_folder(library, 'folder_name', '')
+        folder = self.create_folder(library, uuid.uuid4().hex, '')
         self.logger.debug('\tcreated folder %s' % folder)
         # step 2
         data_objs = dict([(name, 
