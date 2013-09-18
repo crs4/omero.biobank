@@ -105,3 +105,7 @@ class DataCollectionItem(wp.OmeroWrapper):
     setattr(self.ome_obj, 'dataCollectionItemUK',
             self.to_omero(self.__fields__['dataCollectionItemUK'][0], dci_uk))
 
+  def __dump_to_graph__(self, is_update):
+    super(DataCollectionItem, self).__dump_to_graph__(is_update)
+    self.proxy.dt.create_collection_item(self.dataSample,
+                                         self.dataCollection)
