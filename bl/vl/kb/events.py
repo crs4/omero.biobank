@@ -63,6 +63,13 @@ def build_event(event_cls, event_conf):
             data['new_dest_node'] = ome_hash(conf['bl_dest_obj'].ome_obj)
         return data
 
+    def get_collection_item_creation_data(conf):
+        return {
+            'action': 'COLLECTION_ITEM_CREATE',
+            'item_node': ome_hash(conf['item_obj'].ome_obj),
+            'collection_node': ome_hash(conf['coll_obj'].ome_obj)
+        }
+
     get_data_map = {
         NodeCreationEvent: get_node_creation_data,
         EdgeCreationEvent: get_edge_creation_data,
@@ -70,6 +77,7 @@ def build_event(event_cls, event_conf):
         EdgeDeletionEvent: get_edge_deletion_data,
         EdgesDeletionEvent: get_edges_deletion_data,
         EdgeUpdateEvent: get_edge_update_data,
+        CollectionItemCreationEvent: get_collection_item_creation_data,
     }
 
     event = event_cls(get_data_map[event_cls](event_conf))
@@ -85,6 +93,7 @@ def decode_event(routing_key, msg_body):
         'graph.edge.delete': EdgeDeletionEvent,
         'graph.edges.delete': EdgesDeletionEvent,
         'graph.edge.update': EdgeUpdateEvent,
+        'graph.collection_item.create': CollectionItemCreationEvent,
     }
     decode_key = '.'.join(routing_key.split('.')[-3:])
     event = decode_map[decode_key](json.loads(msg_body, object_hook=decode_dict))
@@ -217,3 +226,19 @@ class EdgeUpdateEvent(BasicEvent):
             }
         )
         super(EdgeUpdateEvent, self).validate(schema)
+
+
+class CollectionItemCreationEvent(BasicEvent):
+
+    def __init__(self, data):
+        super(CollectionItemCreationEvent, self).__init__('graph.collection_item.create', data)
+
+    def validate(self):
+        schema = Schema (
+            {
+                'action': 'COLLECTION_ITEM_CREATE',
+                'item_node': int,
+                'collection_node': int,
+            }
+        )
+        super(CollectionItemCreationEvent, self).validate(schema)
