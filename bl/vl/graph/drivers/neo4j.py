@@ -38,6 +38,14 @@ class OME_Action(Relationship):
         return self.eid
 
 
+class OME_CollectionItem(Relationship):
+
+    label = 'collected_in'
+
+    def __hash__(self):
+        return self.eid
+
+
 class Neo4JDriver(object):
 
     BLOCKED_PROXY_CALLBACKS = (
@@ -46,6 +54,7 @@ class Neo4JDriver(object):
         'delete_node',
         'delete_edge',
         'update_edge',
+        'save_collection_item',
     )
 
     DIRECTION_INCOMING = 1
@@ -73,6 +82,7 @@ class Neo4JDriver(object):
             raise GraphAuthenticationError(msg)
         self.graph.add_proxy('ome_objects', OME_Object)
         self.graph.add_proxy('produces', OME_Action)
+        self.graph.add_proxy('collected_in', OME_CollectionItem)
         self.kb = kb
         if kb:
             self.logger = kb.logger
@@ -152,6 +162,24 @@ class Neo4JDriver(object):
                 edge = self.graph.produces.create(src_node, dest_node, action_conf)
             except httplib2.socket.error:
                 raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
+        return edge.eid
+
+    def create_collection_item(self, item, collection):
+        event = events.build_event(events.CollectionItemCreationEvent,
+                                   {'item_obj' : item, 'coll_obj': collection})
+        self.kb.events_sender.send_event(event)
+
+    def save_collection_item(self, item_hash, collection_hash):
+        item_node = self.__get_node_by_hash__(item_hash)
+        if not item_node:
+            raise MissingNodeError('No node with hash %s' % item_hash)
+        collection_node = self.__get_node_by_hash__(collection_hash)
+        if not collection_node:
+            raise MissingNodeError('No node with hash %s' % collection_hash)
+        try:
+            edge = self.graph.collected_in.create(item_node, collection_node)
+        except httplib2.socket.error:
+            raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         return edge.eid
 
     def destroy_node(self, obj):
