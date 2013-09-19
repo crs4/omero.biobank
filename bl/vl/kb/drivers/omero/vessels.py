@@ -108,6 +108,10 @@ class PlateWell(Vessel):
     setattr(self.ome_obj, 'containerSlotIndexUK',
             self.to_omero(self.__fields__['containerSlotIndexUK'][0], csi_uk))
 
+  def __dump_to_graph__(self, is_update):
+    super(PlateWell, self).__dump_to_graph__(is_update)
+    self.proxy.dt.create_collection_item(self, self.container)
+
 
 # These classes are not in objects_collections module in order to
 # prevent a cyclic import issue
@@ -136,6 +140,10 @@ class VesselsCollectionItem(wp.OmeroWrapper):
     vci_uk = make_unique_key(self.vesselsCollection.id, self.vessel.id)
     setattr(self.ome_obj, 'vesselsCollectionItemUK',
             self.to_omero(self.__fields__['vesselsCollectionItemUK'][0], vci_uk))
+
+  def __dump_to_graph__(self, is_update):
+    super(VesselsCollectionItem, self).__dump_to_graph__(is_update)
+    self.proxy.dt.create_collection_item(self.vessel, self.vesselsCollection)
 
 
 class LaneSlot(wp.OmeroWrapper):
@@ -167,3 +175,6 @@ class LaneSlot(wp.OmeroWrapper):
       setattr(self.ome_obj, 'laneSlotUK',
               self.to_omero(self.__field__['laneSlotUK'][0], ls_uk))
 
+  def __dump_to_graph__(self, is_update):
+    super(LaneSlot, self).__dump_to_graph__(is_update)
+    self.proxy.dt.create_collection_item(self, self.lane)

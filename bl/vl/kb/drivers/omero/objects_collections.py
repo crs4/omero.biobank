@@ -78,6 +78,10 @@ class Lane(Container):
     setattr(self.ome_obj, 'laneUK',
             self.to_omero(self.__field__['laneUK'][0], l_uk))
 
+  def __dump_to_graph__(self, is_update):
+    super(Lane, self).__dump_to_graph__(is_update)
+    self.proxy.dt.create_collection_item(self, self.flowCell)
+
 
 class DataCollection(VLCollection):
 
