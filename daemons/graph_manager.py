@@ -25,6 +25,7 @@ class GraphManagerDaemon(object):
             'EDGE_DELETE': self.delete_edge,
             'EDGES_DELETE': self.delete_edges,
             'EDGE_UPDATE': self.update_edge,
+            'COLLECTION_ITEM_CREATE': self.create_collection_item,
         }
 
         if not log_file:
@@ -96,6 +97,11 @@ class GraphManagerDaemon(object):
         eid = self.graph_driver.save_edge(msg['details'], msg['source_node'],
                                           msg['dest_node'])
         self.logger.info('Saved new edge, assigned ID is %d' % eid)
+
+    def create_collection_item(self, msg):
+        eid = self.graph_driver.save_collection_item(msg['item_node'],
+                                                     msg['collection_node'])
+        self.logger.info('Saved new collection item edge, assigned ID is %d' % eid)
 
     def delete_node(self, msg):
         self.graph_driver.delete_node(msg['target'])

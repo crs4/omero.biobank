@@ -120,3 +120,6 @@ class PygraphDriver(object):
 
     def modify_edge(self, act, source, dest):
         pass
+
+    def create_collection_item(self, item, collection):
+        pass
