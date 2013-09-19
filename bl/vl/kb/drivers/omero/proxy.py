@@ -390,6 +390,8 @@ class Proxy(ProxyCore):
       a_klass = self.ActionOnDataSample
     elif isinstance(target, self.Individual):
       a_klass = self.ActionOnIndividual
+    elif isinstance(target, self.VLCollection):
+        a_klass = self.ActionOnCollection
     else:
       assert False
     operator = operator if operator else pwd.getpwuid(os.geteuid())[0]
