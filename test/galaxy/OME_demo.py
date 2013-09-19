@@ -88,11 +88,72 @@ input_paths  = dict([
 
 STUDY_LABEL = 'Metagenomics-%s' % uuid.uuid1().hex
 
-def create_input_object():
+def create_study():
     conf = {'label': STUDY_LABEL,
-            'description': 'this is a test.'}
+            'description': 'this is a test'}
     study = kb.factory.create(kb.Study, conf)
     to_be_killed.append(study.save())
+    return study
+
+def create_flowcell_and_samples(study):
+    action = kb.create_an_action(study)
+    to_be_killed.append(action.save())
+    tubes = []
+    for x in xrange(3):
+        tube_label = 'a-test-tube-%s' % uuid.uuid1().hex
+        conf = {'label': tube_label,
+                'action': action,
+                'currentVolume': 1.0,
+                'initialVolume': 1.0,
+                'content': kb.VesselContent.DNA,
+                'status': kb.VesselStatus.CONTENTUSABLE}
+        tube = kb.factory.create(kb.Tube, conf)
+        print ' Created tube %s' % tube.label
+        tubes.append(tube.save())
+        to_be_killed.append(tube)
+    flowcell_label = 'a-test-flowcell-%s' % uuid.uuid1().hex
+    conf = {'action': action,
+            'numberOfSlots': 8,
+            'status': kb.ContainerStatus.READY,
+            'label': flowcell_label}
+    flowcell = kb.factory.create(kb.FlowCell, conf)
+    print ' Created flowcell %s' % flowcell.label
+    to_be_killed.append(flowcell.save())
+    for x in xrange(2):
+        lane_label = 'a-test-lane-%s' % uuid.uuid1().hex
+        conf = {'action': action,
+                'label': lane_label,
+                'flowCell': flowcell,
+                'slot': x+1,
+                'status': kb.ContainerStatus.READY}
+        lane = kb.factory.create(kb.Lane, conf)
+        print ' Created lane %s' % lane.label
+        to_be_killed.append(lane.save())
+        for y in xrange(2):
+            lsaction = kb.create_an_action(study, tubes[x+y])
+            to_be_killed.append(lsaction.save())
+            conf = {'action': lsaction,
+                    'lane': lane,
+                    'tag': uuid.uuid1().hex, # I only need a unique string
+                    'content': kb.VesselContent.DNA}
+            laneslot = kb.factory.create(kb.LaneSlot, conf)
+            print ' Created laneslot for lane %s' % lane.label
+            to_be_killed.append(laneslot.save())
+    return flowcell
+
+
+def create_input_object(flowcell, study):
+    action = kb.create_an_action(study, flowcell)
+    to_be_killed.append(action.save())
+    seq_out_label = 'a-test-sequencer-output-%s' % uuid.uuid1().hex
+    conf = {'label': seq_out_label,
+            'action': action,
+            'status': kb.DataSampleStatus.USABLE}
+    sequencer_output = kb.factory.create(kb.SequencerOutput, conf)
+    print ' Created sequencer output %s' % sequencer_output.label
+    to_be_killed.append(sequencer_output.save())
+    sequencer_output.unload()
+    sequencer_output.reload()
     action = kb.create_an_action(study)
     to_be_killed.append(action.save())
     dc_label = 'a-test-data-collection-%s' % uuid.uuid1().hex
@@ -100,6 +161,8 @@ def create_input_object():
     data_collection = kb.factory.create(kb.DataCollection, conf)
     print " Created collection %s" % dc_label
     to_be_killed.append(data_collection.save())
+    action = kb.create_an_action(study, sequencer_output)
+    to_be_killed.append(action.save())
     for name, desc  in input_paths.iteritems():
         conf = {'label': '%s.%s' % (dc_label, name),
                 'status': kb.DataSampleStatus.USABLE,
@@ -107,6 +170,8 @@ def create_input_object():
         data_sample = kb.factory.create(kb.DataSample, conf)
         print " Created datasample %s" % data_sample.label 
         to_be_killed.append(data_sample.save())
+        data_sample.unload()
+        data_sample.reload()
         conf = {'dataSample': data_sample,
                 'dataCollection': data_collection, 
                 'role': name}
@@ -119,22 +184,24 @@ def create_input_object():
                 'size': 10} # fake size
         data_object = kb.factory.create(kb.DataObject, conf)
         to_be_killed.append(data_object.save())
-    return data_collection, study
+    return data_collection
 
-
+def cleanup():
+    while to_be_killed:
+        kb.delete(to_be_killed.pop())
 
 to_be_killed=[]
 try:
-    input_data, study = create_input_object()
+    study = create_study()
+    flowcell = create_flowcell_and_samples(study)
+    input_data = create_input_object(flowcell, study)
 except StandardError as e:
-    print 'intercepted an exception, %s, cleaning up.' % e
-    while to_be_killed:
-        kb.delete(to_be_killed.pop())
+    print 'intercepted an exception, %s, cleaning up.' % e.message
+    cleanup()
     raise e
 
 trigger = raw_input("Press Enter to continue...")
-    
-        
+
 # """
 #    ..
 
