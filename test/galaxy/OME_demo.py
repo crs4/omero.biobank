@@ -99,7 +99,7 @@ def create_flowcell_and_samples(study):
     action = kb.create_an_action(study)
     to_be_killed.append(action.save())
     tubes = []
-    for x in xrange(3):
+    for x in xrange(2):
         tube_label = 'a-test-tube-%s' % uuid.uuid1().hex
         conf = {'label': tube_label,
                 'action': action,
@@ -119,7 +119,7 @@ def create_flowcell_and_samples(study):
     flowcell = kb.factory.create(kb.FlowCell, conf)
     print ' Created flowcell %s' % flowcell.label
     to_be_killed.append(flowcell.save())
-    for x in xrange(2):
+    for x in xrange(1):
         lane_label = 'a-test-lane-%s' % uuid.uuid1().hex
         conf = {'action': action,
                 'label': lane_label,
@@ -212,6 +212,7 @@ trigger = raw_input("Press Enter to continue...")
 
 # """
 print "Workflow %s is running " % workflow.name
+print "The reference db is %s" % '16SMicrobial-20130611'
 history = gi.run_workflow(study, workflow, input_data)
 
 # """
@@ -247,9 +248,9 @@ def find_workflow(device, gi):
     print "\n *** "
     ws = gi.get_workflows(device)
     for w in ws:
-        print 'Workflow %s' % w.name
+        print '\nWorkflow %s' % w.name
         hs = gi.get_histories(w)
-        print '\t%d histories on this workflow' % len(hs)
+        print '%d histories on this workflow' % len(hs)
         h_by_obj = {}
         for h in hs:
             if gi.is_biobank_compatible(h):
@@ -260,9 +261,9 @@ def find_workflow(device, gi):
             #print '\t%s' % label
             for h in hlist:
                 in_biobank = gi.is_mapped_in_biobank(h)
-                print ('\t\t%s: {status: %s, in_biobank: %s}' 
+                print ('%s:\n{status: %s, in_biobank: %s}' 
                        % (h.name, h.state, in_biobank))
-    print "\n *** "
+    print " *** "
 
 find_workflow(device,gi)
 trigger = raw_input("Press Enter to continue...")
@@ -281,19 +282,21 @@ input_object = gi.get_input_object(gi.get_histories(workflow)[0])
 study = input_object.action.context
 
 
-ref_dbs = ('16SMicrobial-20130511', '16SMicrobial-20130611',
-           '16SMicrobial-20130711')
-for db in ref_dbs:
-    w = workflow.clone()
-    x = w.steps[2].tool['genomeSource']
-    x['indices'] = db
-    w.steps[2].tool['genomeSource'] = x
-    print "Saved a clone of Workflow %s with modified parameters " % workflow.name
-    w = gi.register(w)
-    print "Running workflow %s " % workflow.name
-    h = gi.run_workflow(study, w, input_object, wait=True)
-    gi.save(h)
-    print "saving history in the biobank"
+#ref_dbs = ('16SMicrobial-20130511', '16SMicrobial-20130611',
+ #          '16SMicrobial-20130711')
+ref_db = '16SMicrobial-20130711'
+#for db in ref_dbs:
+w = workflow.clone()
+x = w.steps[2].tool['genomeSource']
+x['indices'] = ref_db
+w.steps[2].tool['genomeSource'] = x
+print "Saved a clone of Workflow %s with modified parameters " % workflow.name
+w = gi.register(w)
+print "Running workflow %s " % w.name
+print "The reference db is %s" % ref_db
+h = gi.run_workflow(study, w, input_object, wait=True)
+gi.save(h)
+print "saving history in the biobank"
 
 find_workflow(device,gi)
 trigger = raw_input("Press Enter to continue...")
@@ -308,6 +311,7 @@ trigger = raw_input("Press Enter to continue...")
 
 device = kb.get_device(WORKFLOW_NAME)
 study = kb.get_study(STUDY_LABEL)
+print "Quering Omero to obtain a previous history from this study %s" % study.label
 query = """
 select action from ActionOnCollection action
 where action.device.id = :dev_id and action.context.id = :std_id
@@ -319,12 +323,15 @@ actions = kb.find_all_by_query(
 a = actions[0]
 a.reload()
 h = gi.get_history(action=a)
+print "Retrieved the history %s " % h.name
 study, workflow, input_object = gi.get_initial_conditions(h)
 w2 = workflow.clone()
 x = w2.steps[2].tool['genomeSource']
 x['indices'] = "16SMicrobial-20130911"
 w2.steps[2].tool['genomeSource'] = x
 w2 = gi.register(w2)
+print "Running workflow %s " % w2.name
+print "The reference db is %s" % "16SMicrobial-20130911"
 h2 = gi.run_workflow(study, w2, input_object)
 gi.save(h2)
 find_workflow(device,gi)
