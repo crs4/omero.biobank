@@ -9,6 +9,8 @@ from bl.vl.kb.galaxy.core_wrappers import LibraryDatasetDatasetAssociation \
                                        as CoreLibraryDatasetDatasetAssociation
 from bl.vl.kb.galaxy.core_wrappers import LibraryDataset as CoreLibraryDataset
 
+from copy import deepcopy
+
 class Workflow(CoreWorkflow):
     def __init__(self, wf_id, wf_dict, wf_ports=None, wf_links=None):
         links = None if wf_links is None \
@@ -27,7 +29,7 @@ class Workflow(CoreWorkflow):
         setattr(self.core, 'links', None)
 
     def clone(self):
-        return self.__class__(None, self.core.wrapped)
+        return self.__class__(None, deepcopy(self.core.wrapped))
         
     @property
     def id(self):
