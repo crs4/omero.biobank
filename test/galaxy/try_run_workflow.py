@@ -218,7 +218,7 @@ Rerun an analysis with different parameters
 device = kb.get_device(WORKFLOW_NAME)
 study = kb.get_study(STUDY_LABEL)
 query = """
-select action from ActionOnCollection action
+select action from Action action
 where action.device.id = :dev_id and action.context.id = :std_id
 """
 actions = kb.find_all_by_query(
