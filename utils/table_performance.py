@@ -299,15 +299,21 @@ def main():
 
 
 def remote_main():
-    client = scripts.client(
-        __file__, __doc__.strip(),
-        scripts.String("command", optional=False),
-        scripts.Long("nrows", optional=True, default=ROWS),
-        scripts.Long("ncols", optional=True, default=COLS),
-        scripts.Long("sample_size", optional=True, default=0),
-        scripts.Bool("pytables", optional=True, default=False),
-        scripts.List("callrate").ofType(omero.rtypes.rdouble(0)).out(),
-        )
+    print "creating script client on", OME_HOST
+    try:
+        client = scripts.client(
+            __file__, __doc__.strip(),
+            scripts.String("command", optional=False),
+            scripts.Long("nrows", optional=True, default=ROWS),
+            scripts.Long("ncols", optional=True, default=COLS),
+            scripts.Long("sample_size", optional=True, default=0),
+            scripts.Bool("pytables", optional=True, default=False),
+            scripts.List("callrate").ofType(omero.rtypes.rdouble(0)).out(),
+            )
+    except omero.ClientError:
+        sys.exit(
+            "ERROR: connection failed. Is this running as an OMERO script?"
+            )
     client.enableKeepAlive(OME_KEEPALIVE_SECS)
     command = client.getInput("command").val
     if command == "create_table":
