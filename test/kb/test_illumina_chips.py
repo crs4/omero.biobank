@@ -92,7 +92,7 @@ class TestEnums(EnumBase):
     super(TestEnums, self).__init__(name)
     self.kill_list = []
     self.enum_names = [
-      'IlluminaAssayType',
+      'IlluminaBeadChipAssayType',
       ]
 
   def setUp(self):
