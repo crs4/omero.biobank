@@ -55,18 +55,21 @@ def open_table(session):
 
 
 def get_call_rates(session, threshold=0.05, sample_size=0):
-    if sample_size <= 0:
-        raise NotImplementedError("client-side subsampling not yet available")
     table = open_table(session)
     nrows = table.getNumberOfRows()
-    col_headers = [h.name for h in table.getHeaders()]
-    conf_index = col_headers.index("confidence")
     print "reading from table"
     start = time.time()
-    data = table.read([conf_index], 0, nrows)
+    if sample_size > 0:
+        row_idx = random.sample(xrange(nrows), sample_size)
+        data = table.readCoordinates(row_idx)
+        col = data.columns[3]
+    else:
+        col_headers = [h.name for h in table.getHeaders()]
+        conf_index = col_headers.index("confidence")
+        data = table.read([conf_index], 0, nrows)
+        col = data.columns[0]
     print "confidence data read in %.3f s" % (time.time() - start)
     start = time.time()
-    col = data.columns[0]
     r = [sum(x <= threshold for x in row) / col.size for row in col.values]
     table.close()
     print "call rates computed in %.3f s" % (time.time() - start)
@@ -288,7 +291,9 @@ def main():
             elif args.func == drop_table:
                 drop_table(session)
             else:
-                r = run_test(session, pytables=False)
+                r = run_test(
+                    session, pytables=False, sample_size=args.sample_size
+                    )
     finally:
         client.closeSession()
     if r is not None:
