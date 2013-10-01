@@ -11,9 +11,9 @@ from utils import assign_vid, make_unique_key
 
 import re
 
-class IlluminaAssayType(wp.OmeroWrapper):
+class IlluminaBeadChipAssayType(wp.OmeroWrapper):
 
-  OME_TABLE = "IlluminaAssayType"
+  OME_TABLE = "IlluminaBeadChipAssayType"
   __enums__ = ["ALS_iSelect_272541_A",
         "CVDSNP55v1_A", "Cardio_Metabo_Chip_11395247_A",
         "Human1M","Human1M_2",  "Human1M_Duov3_B",
@@ -26,7 +26,10 @@ class IlluminaAssayType(wp.OmeroWrapper):
         "HumanOmni25Exome_8v1_A", "HumanOmni5_4v1_B",
         "HumanOmniExpressExome_8v1_A", "HumanOmniExpress_12v1_C",
         "HumanOmniExpress_12v1_Multi_H", "Immuno_BeadChip_11419691_B",
-        "Linkage_12", "UNKNOWN"]
+        "Linkage_12", "UNKNOWN", "HUMAN1M_DUO", "HUMANOMNI5_QUAD",
+        "HUMANOMNI2_5S", "HUMANOMNI2_5_8", "HUMANOMNI1S", "HUMANOMNI1_QUAD",
+        "HUMANOMNIEXPRESS", "HUMANCYTOSNP_12", "METABOCHIP",
+        "IMMUNOCHIP"]
 
 class IlluminaArrayOfArraysType(wp.OmeroWrapper):
   OME_TABLE = "IlluminaArrayOfArraysType"
@@ -55,7 +58,7 @@ class IlluminaBeadChipArray(PlateWell):
 
   OME_TABLE = "IlluminaBeadChipArray"
 
-  __fields__ = [('assayType', IlluminaAssayType, wp.REQUIRED),
+  __fields__ = [('assayType', IlluminaBeadChipAssayType, wp.REQUIRED),
                 ('container', IlluminaArrayOfArrays, wp.REQUIRED)]
 
   def _is_a_legal_label(self, label):

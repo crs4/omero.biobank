@@ -7,7 +7,18 @@ END_COPYRIGHT
 
 <types>
 
-  <enum id="ome.model.vl.IlluminaAssayType">
+  <enum id="ome.model.vl.IlluminaBeadChipAssayType">
+    <entry name="UNKNOWN"/>
+    <entry name="HUMAN1M_DUO"/>
+    <entry name="HUMANOMNI5_QUAD"/>
+    <entry name="HUMANOMNI2_5S"/>
+    <entry name="HUMANOMNI2_5_8"/>
+    <entry name="HUMANOMNI1S"/>
+    <entry name="HUMANOMNI1_QUAD"/>
+    <entry name="HUMANOMNIEXPRESS"/>
+    <entry name="HUMANCYTOSNP_12"/>
+    <entry name="METABOCHIP"/>
+    <entry name="IMMUNOCHIP"/>
     <entry name="ALS_iSelect_272541_A"/>
     <entry name="CVDSNP55v1_A"/>
     <entry name="Cardio_Metabo_Chip_11395247_A"/>
@@ -38,7 +49,6 @@ END_COPYRIGHT
     <entry name="HumanOmniExpress_12v1_Multi_H"/>
     <entry name="Immuno_BeadChip_11419691_B"/>
     <entry name="Linkage_12"/>
-    <entry name="UNKNOWN"/>
   </enum>
 
   <enum id="ome.model.vl.IlluminaArrayOfArraysType">
@@ -68,7 +78,7 @@ END_COPYRIGHT
   <type id="ome.model.vl.IlluminaBeadChipArray"
 	superclass="ome.model.vl.PlateWell">
     <properties>
-      <required name="assayType" type="ome.model.vl.IlluminaAssayType"/>
+      <required name="assayType" type="ome.model.vl.IlluminaBeadChipAssayType"/>
     </properties>
   </type>
 
