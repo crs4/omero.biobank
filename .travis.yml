@@ -16,6 +16,9 @@ env:
     - OME_HOST=localhost
     - OME_USER=root
     - OME_PASS=omero
+  matrix:
+    - GRAPH_ENGINE=neo4j
+    - GRAPH_ENGINE=pygraph
 
 before_install:
   # prepare the DB
@@ -45,11 +48,13 @@ before_install:
   # ** Neo4j and RabbitMQ setup
   - cd ../omero
   - echo "" >> etc/omero.properties
-  - echo "omero.biobank.graph.engine=neo4j" >> etc/omero.properties
-  - echo "omero.biobank.graph.uri=http://localhost:7474/db/data/" >> etc/omero.properties
-  - echo "omero.biobank.messages_queue.enabled=True" >> etc/omero.properties
-  - echo "omero.biobank.messages_queue.host=localhost" >> etc/omero.properties
-  - echo "omero.biobank.messages_queue.queue=bb-travis-ci" >> etc/omero.properties
+  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then echo "omero.biobank.graph.engine=neo4j" >> etc/omero.properties; fi
+  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then echo "omero.biobank.graph.uri=http://localhost:7474/db/data/" >> etc/omero.properties; fi
+  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then echo "omero.biobank.messages_queue.enabled=True" >> etc/omero.properties; fi
+  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then echo "omero.biobank.messages_queue.host=localhost" >> etc/omero.properties; fi
+  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then echo "omero.biobank.messages_queue.queue=bb-travis-ci" >> etc/omero.properties; fi
+  - if [[ "$GRAPH_ENGINE" == "pygraph" ]]; then echo "omero.biobank.graph.engine=pygraph" >> etc/omero.properties; fi
+  - if [[ "$GRAPH_ENGINE" == "pygraph" ]]; then echo "omero.biobank.messages_queue.enabled=False" >> etc/omero.properties; fi
   # ** patch the build.py script in order to avoid JavaOutOfMemory exception
   #    when compiling models
   - patch ./build.py < ../omero.biobank/.travis-data/build.py.patch
@@ -76,14 +81,15 @@ before_install:
 
 install:
   - cd ../omero.biobank
-  - pip install pika==0.9.12
-  - pip install bulbs
-  - pip install voluptuous
+  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then pip install pika==0.9.12; fi
+  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then pip install bulbs; fi
+  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then pip install voluptuous; fi
+  - if [[ "$GRAPH_ENGINE" == "pygraph" ]]; then easy_install python-graph-core; fi
   # retrieve neo4j and rabbitmq config parameters
   - python ./build_configuration.py -H localhost -U ${OME_USER} -P ${OME_PASS} --python
   - python setup.py install
   #  start the graph_manager daemon
-  - python ./daemons/graph_manager.py --logfile /tmp/graph_manager.log &
+  - .travis-data/run_graph_daemon.sh
   # move to test directory in order to avoid PYTHONPATH problems
   - cd ./test
   
