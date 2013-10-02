@@ -4,6 +4,8 @@ python:
 
 jdk:
   - oraclejdk7
+  - openjdk7
+  - openjdk6
   
 services:
   - neo4j
