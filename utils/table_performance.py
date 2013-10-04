@@ -68,11 +68,17 @@ def get_call_rates(session, threshold=0.05, sample_size=0):
         conf_index = col_headers.index("confidence")
         data = table.read([conf_index], 0, nrows)
         col = data.columns[0]
-    print "confidence data read in %.3f s" % (time.time() - start)
+    delta = time.time() - start
+    print "confidence data read in %.3f s" % (delta)
     start = time.time()
-    r = [sum(x <= threshold for x in row) / col.size for row in col.values]
+    # slower: [sum(x <= threshold for x in l) / col.size for l in col.values]
+    r = (np.array(col.values, dtype=np.float32) <= threshold).mean(1)
+    delta = time.time() - start
+    print "call rates computed in %.3f s" % (delta)
+    start = time.time()
     table.close()
-    print "call rates computed in %.3f s" % (time.time() - start)
+    delta = time.time() - start
+    print "table closed in %.3f" % (delta)
     return r
 
 
