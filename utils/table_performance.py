@@ -188,7 +188,6 @@ def run_test(session, pytables=False, sample_size=0):
 
 
 def drop_table(session):
-    print "cleaning up the mess"
     qs = session.getQueryService()
     ofiles = qs.findAllByString(
         'OriginalFile', 'name', TABLE_NAME, True, None
@@ -325,25 +324,28 @@ def remote_main():
         sys.exit(
             "ERROR: connection failed. Is this running as an OMERO script?"
             )
-    client.enableKeepAlive(OME_KEEPALIVE_SECS)
-    command = client.getInput("command").val
-    if command == "create_table":
-        create_table(
-            client.getSession(),
-            client.getInput("nrows").val,
-            client.getInput("ncols").val,
-            pytables=client.getInput("pytables").val,
-            )
-    elif command == "run_test":
-        r = run_test(
-            client.getSession(),
-            pytables=client.getInput("pytables").val,
-            sample_size=client.getInput("sample_size").val,
-            )
-        client.setOutput("callrate", omero.rtypes.wrap(r))
-    elif command == "drop_table":
-        drop_table(client.getSession())
-    client.closeSession()
+    try:
+        client.enableKeepAlive(OME_KEEPALIVE_SECS)
+        command = client.getInput("command").val
+        if command == "create_table":
+            create_table(
+                client.getSession(),
+                client.getInput("nrows").val,
+                client.getInput("ncols").val,
+                pytables=client.getInput("pytables").val,
+                )
+        elif command == "run_test":
+            r = run_test(
+                client.getSession(),
+                pytables=client.getInput("pytables").val,
+                sample_size=client.getInput("sample_size").val,
+                )
+            r = [row.tolist() for row in r]
+            client.setOutput("callrate", omero.rtypes.wrap(r))
+        elif command == "drop_table":
+            drop_table(client.getSession())
+    finally:
+        client.closeSession()
 
 
 if __name__ == '__main__':
