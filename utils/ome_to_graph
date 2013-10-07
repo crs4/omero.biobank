@@ -129,6 +129,11 @@ class GraphDumper(object):
             self.__save_collection_item__(ci['item'], ci['collection'])
         self.logger.info('Done saving collections items')
 
+    def dump(self):
+        nodes = self.save_nodes()
+        self.save_edges(nodes)
+        self.save_collections()
+
 
 def make_parser():
     parser = argparse.ArgumentParser(description='Load existing data from an OMERO server and dump to its graph engine')
@@ -153,9 +158,7 @@ def main():
     kb = KB(driver='omero')(args.host, args.user, args.passwd)
 
     dumper = GraphDumper(kb, logger)
-    nodes = dumper.save_nodes()
-    dumper.save_edges(nodes)
-    dumper.save_collections()
+    dumper.dump()
 
 
 if __name__ == '__main__':
