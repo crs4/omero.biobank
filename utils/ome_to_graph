@@ -36,9 +36,9 @@ class GraphDumper(object):
     def __get_nodes__(self):
         nodes = []
         for nc in self.node_classes:
-            self.logger.info('Loading %s objects and subclasses' % nc.__name__)
+            self.logger.info('Loading %s objects and subclasses',  nc.__name__)
             objs = self.kb.get_objects(nc)
-            self.logger.info('Loaded %d objects' % len(objs))
+            self.logger.info('Loaded %d objects', len(objs))
             nodes.extend(objs)
         return nodes
 
@@ -52,7 +52,7 @@ class GraphDumper(object):
             self.kb.disconnect()
             self.kb.connect()
             acts = [n.action for n in nodes if hasattr(n.action, 'target')]
-        self.logger.info('Loaded %d actions' % len(acts))
+        self.logger.info('Loaded %d actions', len(acts))
         self.logger.info('Building edges data')
         for n in nodes:
             if hasattr(n.action, 'target'):
@@ -82,49 +82,47 @@ class GraphDumper(object):
     def __get_collections__(self):
         collections = []
         for cc in self.collection_classes:
-            self.logger.info('Loading collections for %s and subclasses' % cc.__name__)
+            self.logger.info('Loading collections for %s and subclasses', cc.__name__)
             objs = self.kb.get_objects(cc)
-            self.logger.info('Loaded %d objects' % len(objs))
+            self.logger.info('Loaded %d objects', len(objs))
             collections.extend([self.__get_collection_info__(ci) for ci in objs])
         return collections
 
     def __save_node__(self, node):
-        self.logger.debug('NODE --> %s::%s' % (type(node), node.id))
+        self.logger.debug('NODE --> %s::%s', type(node), node.id)
         self.kb.dt.create_node(node)
 
     def save_nodes(self):
         nodes = self.__get_nodes__()
-        self.logger.info('Saving %d nodes' % len(nodes))
+        self.logger.info('Saving %d nodes', len(nodes))
         for n in nodes:
             self.__save_node__(n)
         self.logger.info('Done saving nodes')
         return nodes
 
     def __save_edge__(self, action, source, destination):
-        self.logger.debug('EDGE --> action %s::%s  source %s::%s  target %s::%s' %
-                          (type(action), action.omero_id,
+        self.logger.debug('EDGE --> action %s::%s  source %s::%s  target %s::%s',
+                          type(action), action.omero_id,
                           type(source), source.id,
                           type(destination), destination.id)
-        )
         self.kb.dt.create_edge(action, source, destination)
 
     def save_edges(self, nodes):
         edges = self.__get_edges__(nodes)
-        self.logger.info('Saving %d edges' % len(edges))
+        self.logger.info('Saving %d edges', len(edges))
         for e in edges:
             self.__save_edge__(e['action'], e['source'], e['target'])
         self.logger.info('Done saving edges')
 
     def __save_collection_item__(self, item, collection):
-        self.logger.debug('ITEM --> %s::%s COLLECTION --> %s:%s' %
-                          (type(item), item.id,
+        self.logger.debug('ITEM --> %s::%s COLLECTION --> %s:%s',
+                          type(item), item.id,
                           type(collection), collection.id)
-        )
         self.kb.dt.create_collection_item(item, collection)
 
     def save_collections(self):
         collections = self.__get_collections__()
-        self.logger.info('Saving %d collections items' % len(collections))
+        self.logger.info('Saving %d collections items', len(collections))
         for ci in collections:
             self.__save_collection_item__(ci['item'], ci['collection'])
         self.logger.info('Done saving collections items')
