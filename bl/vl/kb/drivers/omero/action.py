@@ -4,7 +4,7 @@
 import omero.model as om
 import omero.rtypes as ort
 
-from utils import assign_vid_and_timestamp
+from utils import assign_vid_and_timestamp, assign_vid
 import wrapper as wp
 from genotyping import SNPMarkersSet
 from bl.vl.utils.graph import graph_driver
@@ -42,6 +42,9 @@ class Device(wp.OmeroWrapper):
                 ('maker', wp.STRING, wp.REQUIRED),
                 ('model', wp.STRING, wp.REQUIRED),
                 ('release', wp.STRING, wp.REQUIRED)]
+
+  def __preprocess_conf__(self, conf):
+    return assign_vid(conf)
 
 
 class SoftwareProgram(Device):
@@ -94,6 +97,9 @@ class ActionSetup(wp.OmeroWrapper):
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
                 ('conf', wp.STRING, wp.REQUIRED)]
+
+  def __preprocess_conf__(self, conf):
+    return assign_vid(conf)
 
 
 class Action(wp.OmeroWrapper):

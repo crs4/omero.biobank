@@ -39,10 +39,7 @@ class Vessel(wp.OmeroWrapper):
                 ('lastUpdate', Action, wp.OPTIONAL)]
 
   def __preprocess_conf__(self, conf):
-    if not 'activationDate'  in conf:
-      return assign_vid_and_timestamp(conf, time_stamp_field='activationDate')
-    else:
-      return assign_vid(conf)
+    return assign_vid_and_timestamp(conf, time_stamp_field='activationDate')
 
 
 class Tube(Vessel):
