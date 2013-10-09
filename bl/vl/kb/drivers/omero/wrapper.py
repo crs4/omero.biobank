@@ -178,9 +178,7 @@ class MetaWrapper(type):
     def configurator(self, ome_obj, conf):
       base.__config__(self, ome_obj, conf)
       for k, t in fields.iteritems():
-        if k is 'vid':
-          setattr(ome_obj, k, self.to_omero(STRING, vlu.make_vid()))
-        elif k in conf:
+        if k in conf:
           setattr(ome_obj, k, self.to_omero(t[0], conf[k]))
         elif t[1] is REQUIRED:
           raise ValueError('missing value for required field %s' % k)
