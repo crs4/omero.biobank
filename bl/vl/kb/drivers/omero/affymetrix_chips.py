@@ -6,15 +6,18 @@ import wrapper as wp
 from data_samples import MicroArrayMeasure
 from vessels import Tube
 
+
 class AffymetrixCelArrayType(wp.OmeroWrapper):
 
   OME_TABLE="AffymetrixCelArrayType"
   __enums__ = ["UNKNOWN", "GENOMEWIDESNP_6"]
 
+
 class AffymetrixAssayType(wp.OmeroWrapper):
 
   OME_TABLE="AffymetrixAssayType"
   __enums__ = ["UNKNOWN", "GENOMEWIDESNP_6"]
+
 
 class AffymetrixArray(Tube):
 
@@ -26,8 +29,6 @@ class AffymetrixArray(Tube):
     conf['initialVolume'] = 0.0
     conf['currentVolume'] = 0.0
     return super(AffymetrixArray, self).__preprocess_conf__(conf)
-
-
 
 
 class AffymetrixCel(MicroArrayMeasure):

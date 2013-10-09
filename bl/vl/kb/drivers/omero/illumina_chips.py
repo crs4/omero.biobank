@@ -11,6 +11,7 @@ from utils import assign_vid, make_unique_key
 
 import re
 
+
 class IlluminaBeadChipAssayType(wp.OmeroWrapper):
 
   OME_TABLE = "IlluminaBeadChipAssayType"
@@ -31,13 +32,16 @@ class IlluminaBeadChipAssayType(wp.OmeroWrapper):
         "HUMANOMNIEXPRESS", "HUMANCYTOSNP_12", "METABOCHIP",
         "IMMUNOCHIP"]
 
+
 class IlluminaArrayOfArraysType(wp.OmeroWrapper):
   OME_TABLE = "IlluminaArrayOfArraysType"
   __enums__ = ["BeadChip_12x1Q", "UNKNOWN"]
 
+
 class IlluminaArrayOfArraysClass(wp.OmeroWrapper):
   OME_TABLE = "IlluminaArrayOfArraysClass"
   __enums__ = ["Slide", "UNKNOWN"]
+
 
 class IlluminaArrayOfArraysAssayType(wp.OmeroWrapper):
   OME_TABLE = "IlluminaArrayOfArraysAssayType"
@@ -53,6 +57,7 @@ class IlluminaArrayOfArrays(TiterPlate):
 
   def __preprocess_conf__(self, conf):
     return super(IlluminaArrayOfArrays, self).__preprocess_conf__(conf)
+
 
 class IlluminaBeadChipArray(PlateWell):
 

@@ -11,6 +11,7 @@ class SequencerOutput(DataSample):
   OME_TABLE = 'SequencerOutput'
   __fields__ = []
 
+
 class RawSeqDataSample(DataSample):  
   OME_TABLE = 'RawSeqDataSample'
   __fields__ = [('lane', Lane, wp.OPTIONAL)]

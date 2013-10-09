@@ -61,6 +61,7 @@ class FlowCell(SlottedContainer):
 
 
 class Lane(Container):
+
   OME_TABLE = 'Lane'
   __fields__ = [('flowCell', FlowCell, wp.REQUIRED),
                 ('slot', wp.INT, wp.REQUIRED),
