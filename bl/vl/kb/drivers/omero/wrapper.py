@@ -142,6 +142,29 @@ class CoreOmeroWrapper(object):
   def save(self):
     return self.proxy.save(self)
 
+  def serialize(self, engine, shallow=False):
+    if not isinstance(engine, Serializer):
+        raise ValueError('%s is not a Serializer' % engine)
+    if not self.is_loaded():
+        self.reload()
+    if engine.has_seen(self.id):
+        return
+    conf = self.to_conf()
+    for k in conf:
+        if isinstance(conf[k], CoreOmeroWrapper):
+            if conf[k].is_enum():
+                if not conf[k].is_loaded():
+                    conf[k].reload()
+                conf[k] = conf[k].enum_label()
+            else:
+                if shallow:
+                    conf[k] = engine.by_vid(conf[k].id)
+                else:
+                    conf[k].serialize(engine)                
+                    conf[k] = engine.by_ref(conf[k].id)
+    engine.serialize(self.id, self.get_ome_table(), conf, vid=self.vid)
+    engine.register(self.id)
+  
   def reload(self):
     self.proxy.reload_object(self)
 
