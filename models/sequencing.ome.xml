@@ -45,10 +45,51 @@
     </properties>
   </type>
 
+
   <type id="ome.model.vl.SeqDataSample"
 	superclass="ome.model.vl.DataSample">
+    <!-- The actual seq data sample type is resolved from the mime-type -->
     <properties>
       <optional name="sample" type="ome.model.vl.Tube"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.AlignedSeqData" 
+	superclass="ome.model.vl.SeqDataSample">
+    <!-- The actual AlignedSeqData type is resolved from the mime-type -->
+    <properties>
+      <!-- This is supposed to be an url (e.g., irods://) -->
+      <required name="referenceGenotype" type="string"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.GenomicAssemblyData" 
+	superclass="ome.model.vl.SeqDataSample">
+    <!-- The actual GenomicAssemblyData type is resolved from the mime-type -->
+    <properties>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.GenomeVariationsData" 
+	superclass="ome.model.vl.DataSample">
+    <!-- The actual GenomicAssemblyData type is resolved from the mime-type -->
+    <properties>
+      <!-- This is supposed to be an url (e.g., irods://) -->
+      <required name="referenceGenotype" type="string"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.GeneExpressionLevels" 
+	superclass="ome.model.vl.DataSample">
+    <!-- The actual format is resolved using the mime-type  -->
+    <properties>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.TaxonomicProfile" 
+	superclass="ome.model.vl.DataSample">
+    <!-- The actual format is resolved using the mime-type  -->
+    <properties>
     </properties>
   </type>
 
