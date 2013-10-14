@@ -59,7 +59,7 @@
     <!-- The actual AlignedSeqData type is resolved from the mime-type -->
     <properties>
       <!-- This is supposed to be an url (e.g., irods://) -->
-      <required name="referenceGenotype" type="string"/>
+      <required name="referenceGenome" type="string"/>
     </properties>
   </type>
 
@@ -72,23 +72,23 @@
 
   <type id="ome.model.vl.GenomeVariationsData" 
 	superclass="ome.model.vl.DataSample">
-    <!-- The actual GenomicAssemblyData type is resolved from the mime-type -->
+    <!-- The actual GenomeVariationsData type is resolved from the mime-type -->
     <properties>
       <!-- This is supposed to be an url (e.g., irods://) -->
-      <required name="referenceGenotype" type="string"/>
+      <required name="referenceGenome" type="string"/>
     </properties>
   </type>
 
   <type id="ome.model.vl.GeneExpressionLevels" 
 	superclass="ome.model.vl.DataSample">
-    <!-- The actual format is resolved using the mime-type  -->
+    <!-- The actual data format is resolved using the mime-type  -->
     <properties>
     </properties>
   </type>
 
   <type id="ome.model.vl.TaxonomicProfile" 
 	superclass="ome.model.vl.DataSample">
-    <!-- The actual format is resolved using the mime-type  -->
+    <!-- The actual data format is resolved using the mime-type  -->
     <properties>
     </properties>
   </type>
