@@ -65,8 +65,8 @@ class PlateWell(Vessel):
     m = re.match('^([A-Z])(\d{1,2})$', label.upper())
     if not m:
       raise ValueError('label [%s] not in the form A1' % label)
-    row, col = ord(m.groups()[0]) - ord('A'), int(m.groups()[1]) - 1
-    if row >= rows or col >= cols:
+    row, col = ord(m.groups()[0]) - ord('A'), int(m.groups()[1])
+    if row >= rows or col > cols:
       raise ValueError('label [%s] out of range', label)
     return row * cols + col
 
