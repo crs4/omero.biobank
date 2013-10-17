@@ -39,6 +39,7 @@ def ome_wrap(v, wtype=None):
 class CoreOmeroWrapper(object):
 
   OME_TABLE = None
+  __do_not_serialize__ = []
 
   @classmethod
   def get_ome_type(klass):
@@ -150,6 +151,9 @@ class CoreOmeroWrapper(object):
     if engine.has_seen(self.id):
         return
     conf = self.to_conf()
+    # Remove unique keys from config
+    for field in self.__do_not_serialize__:
+        conf.pop(field)
     for k in conf:
         if isinstance(conf[k], CoreOmeroWrapper):
             if conf[k].is_enum():

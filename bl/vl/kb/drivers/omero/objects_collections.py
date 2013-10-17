@@ -66,6 +66,7 @@ class Lane(Container):
   __fields__ = [('flowCell', FlowCell, wp.REQUIRED),
                 ('slot', wp.INT, wp.REQUIRED),
                 ('laneUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['laneUK']
 
   def __preprocess_conf__(self, conf):
     if not 'label' in conf:
@@ -97,6 +98,7 @@ class DataCollectionItem(wp.OmeroWrapper):
                 ('dataSample', DataSample, wp.REQUIRED),
                 ('dataCollection', DataCollection, wp.REQUIRED),
                 ('dataCollectionItemUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['dtaCollectionItemUK']
 
   def __preprocess_conf__(self, conf):
     if not 'dataCollectionItemUK' in conf:

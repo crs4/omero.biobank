@@ -129,8 +129,7 @@ def deserialize_streams(kb, streams, logger=None):
               o.save()
               print 'saved %s with id: %s' % (o, o.id)
     """
-    logger = logger if logger \
-      else get_logger("deserialize_stream")
+    logger = logger if logger else get_logger("deserialize_stream")
     
     limbo = ObjectsLimbo(kb, logger)
     for stream in streams:
