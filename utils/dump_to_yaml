@@ -44,14 +44,14 @@ def get_all_objects(kb, exclude_gdos, logger):
     logger.info('Loading data')
     objects = []
     for o in obj_classes:
-        logger.info('Loading %s' % o.__name__)
+        logger.info('Loading %s', o.__name__)
         objects.extend(kb.get_objects(o))
     objects.extend(get_data_objects(kb, logger, exclude_gdos))
     return objects
 
 
 def to_yaml(outfile, objects, logger):
-    logger.info('Serializing %d objects to %s' % (len(objects), outfile))
+    logger.info('Serializing %d objects to %s', (len(objects), outfile))
     with open(outfile, 'w') as f:
         serializer = YamlSerializer(f, logger)
         for o in objects:
