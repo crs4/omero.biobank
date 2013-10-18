@@ -21,6 +21,8 @@ def make_parser():
                         required=True)
     parser.add_argument('--out-file', '-O', type=str, help='YAML output file',
                         required=True)
+    parser.add_argument('--exclude-types', type=str, default='',
+                        help='A list of comma separated types that will be exclude from the dump process')
     parser.add_argument('--exclude-gdos', action='store_true',
                         help='exclude GDOs serialized as OMERO.table rows')
     return parser
@@ -36,7 +38,7 @@ def get_data_objects(kb, logger, exclude_gdos):
         return kb.get_objects(kb.DataObject)
 
 
-def get_all_objects(kb, exclude_gdos, logger):
+def get_all_objects(kb, exclude_gdos, excluded_types, logger):
     obj_classes = [kb.Individual, kb.Enrollment, kb.Vessel,
                    kb.Study, kb.Device, kb.DataSample,
                    kb.VLCollection, kb.DataCollectionItem,
@@ -44,8 +46,9 @@ def get_all_objects(kb, exclude_gdos, logger):
     logger.info('Loading data')
     objects = []
     for o in obj_classes:
-        logger.info('Loading %s', o.__name__)
-        objects.extend(kb.get_objects(o))
+        if o.__name__ not in excluded_types:
+            logger.info('Loading %s', o.__name__)
+            objects.extend(kb.get_objects(o))
     objects.extend(get_data_objects(kb, logger, exclude_gdos))
     return objects
 
@@ -66,7 +69,8 @@ def main(argv):
     logger = get_logger('main', level=args.loglevel, filename=args.logfile)
     kb = KB(driver='omero')(args.host, args.user, args.passwd)
 
-    objects = get_all_objects(kb, args.exclude_gdos, logger)
+    objects = get_all_objects(kb, args.exclude_gdos, args.exclude_types.split(','),
+                              logger)
     to_yaml(args.out_file, objects, logger)
 
 
