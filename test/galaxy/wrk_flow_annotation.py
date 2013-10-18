@@ -1,7 +1,7 @@
 {
-"inputs": {"contigs" : 
-           {"type" : "DataCollection", 
-            "fields":   {"contigs": 
+"inputs": {"contigs" :
+           {"type" : "DataCollection",
+            "fields":   {"contigs":
                             {"port" : {"step" : "0", "name": "contigs"},
                              "mimetype" : "x-vl/fasta"},
                          "reads":
@@ -12,10 +12,10 @@
                             "mimetype" : "x-vl/fastq"}}}},
 "outputs": {"scaffolding":
             {"type" : "DataCollection",
-             "fields" : {"finalevidence": 
+             "fields" : {"finalevidence":
                          {"port": {"step":"3","name" : "finalevidence"},
                           "mimetype" : "text/plain"},
-                         "summary": 
+                         "summary":
                          {"port": {"step" : "3", "name": "summaryfile"},
                           "mimetype" : "text/plain"}}}}
 }

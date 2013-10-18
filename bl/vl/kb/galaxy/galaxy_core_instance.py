@@ -13,23 +13,28 @@ import time
 import math
 from datetime import datetime
 
+
 def map_name_to_id(object_list):
     id_by_name = {}
     for w in object_list:
         id_by_name.setdefault(w['name'], []).append(w['id'])
     return id_by_name
 
+
 def create_workflow_name(root_name):
-    assert root_name.find(':') == -1    
+    assert root_name.find(':') == -1
     return '%s:%s' % (root_name, uuid.uuid1().hex)
-    
+
+
 def parse_workflow_name(name):
     parts = name.split(':', 1)
     return parts[0], None if len(parts) == 1 else parts
 
+
 def create_history_name(workflow_name):
     assert workflow_name.find('+') == -1
-    return '%s+%s' % (workflow_name, uuid.uuid1().hex)    
+    return '%s+%s' % (workflow_name, uuid.uuid1().hex)
+
 
 def parse_history_name(name):
     parts = name.split('+', 1)
@@ -39,7 +44,7 @@ def parse_history_name(name):
 
 class GalaxyInstance(object):
     "FIXME "
-    
+
     def __init__(self, url, api_key, logger=None):
         self.blend = BlendWrapper(bg.GalaxyInstance(url, api_key))
         self.logger = logger if logger \
@@ -77,7 +82,7 @@ class GalaxyInstance(object):
         return [self.get_workflow(w['id'], id_by_name) for w in wf_list]
 
     def get_workflow_by_name(self, name):
-        self.logger.debug('get_workflows_by_name(%s)' % name)        
+        self.logger.debug('get_workflows_by_name(%s)' % name)
         wf_id, id_by_name = self._resolve_workflow_name_to_id(name, None)
         return self.get_workflow(wf_id, id_by_name)
 
@@ -87,11 +92,11 @@ class GalaxyInstance(object):
         """
         self.logger.debug('get_workflow(%s, %s)' % (workflow_id, id_by_name))
         wf = self._request_workflow(workflow_id)
-        root, _ = parse_workflow_name(wf['name'])        
+        root, _ = parse_workflow_name(wf['name'])
         root_id, _ = self._resolve_workflow_name_to_id(root, id_by_name)
         root_wf = wf if workflow_id == root_id \
                      else self._request_workflow(root_id)
-        try: 
+        try:
             wf_ports = json.loads(root_wf['annotation'])
         except ValueError:
             self.logger.error('Root workflow (%s) has a bad annotation' %
@@ -105,7 +110,7 @@ class GalaxyInstance(object):
         lib_list = self.blend.gi.libraries.get_libraries()
         #id_bu_name = map_name_to_id(lib_list)
         return [self.get_library(lib['id']) for lib in lib_list]
-        
+
     def get_library(self, library_id):
         self.logger.debug('get_library(%s)' % library_id)
         ldesc = self.blend.gi.libraries.show_library(library_id)
@@ -123,7 +128,7 @@ class GalaxyInstance(object):
         return self.get_library(res['id'])
 
     def get_library_for_workflow(self, workflow):
-        self.logger.debug('get_library_for_workflow(%s)' % workflow)        
+        self.logger.debug('get_library_for_workflow(%s)' % workflow)
         root_name, _ = parse_workflow_name(workflow.name)
         lib_list = self.blend.gi.libraries.get_libraries()
         id_by_name = map_name_to_id(lib_list)
@@ -133,13 +138,13 @@ class GalaxyInstance(object):
         return self.get_library(id_by_name[root_name][0])
 
     def create_folder(self, library, folder_name, description=None):
-        self.logger.debug('create_folder(%s, %s, %s)' 
+        self.logger.debug('create_folder(%s, %s, %s)'
                           % (library.name, folder_name, description))
         folder_desc = self.blend.gi.libraries.create_folder(library.id,
                            folder_name,
                            '' if description is None else description)
         if not folder_desc:
-            msg = ('Empty reply when creating folder %s of %s ' 
+            msg = ('Empty reply when creating folder %s of %s '
                    % (folder_name, library.name))
             self._raise_exception(RuntimeError, msg)
         # for unkown reasons, create_folder returns a list
@@ -155,7 +160,7 @@ class GalaxyInstance(object):
             library_id = destination.library.id
             folder_id = destination.id
         else:
-            self._raise_exception(RuntimeError, 
+            self._raise_exception(RuntimeError,
                  'Destination %s is of the wrong type' % destination)
         res = self.blend.gi.libraries.upload_from_galaxy_filesystem(
                    library_id, path, folder_id, 'auto', '?',
@@ -182,9 +187,9 @@ class GalaxyInstance(object):
             # we are not using parse_history_name because it expect a
             # precise pattern
         return [self.get_history(h['id']) for h in hlist]
-                
+
     def get_history(self, history_id):
-        self.logger.debug('get_history(%s)' % history_id)        
+        self.logger.debug('get_history(%s)' % history_id)
         hdesc = self.blend.gi.histories.show_history(history_id)
         details = self.blend.gi.histories.show_history(history_id, True)
         hdas = [self.blend.gi.histories.show_dataset(history_id, f['id'])
@@ -193,16 +198,16 @@ class GalaxyInstance(object):
         return History(hdesc, hdas)
 
     def update_history(self, history, name=None, annotation=None):
-        self.logger.debug('update_history(%s, %s, %s)' % 
+        self.logger.debug('update_history(%s, %s, %s)' %
                           (history, name, annotation))
-        res = self.blend.gi.histories.update_history(history.id, 
+        res = self.blend.gi.histories.update_history(history.id,
                                                      name=name,
                                                      annotation=annotation)
         if res != 200:
-            self._raise_exception(RuntimeError, 
+            self._raise_exception(RuntimeError,
                   'failed history update on %s' % history.id)
         return self.get_history(history.id)
-        
+
     # def history_to_workflow(self, history_desc, derive=False):
     #     history_desc = history_desc if type(history_desc) == dict \
     #                    else json.loads(history_desc)
@@ -212,7 +217,7 @@ class GalaxyInstance(object):
     #     history = self.get_history(history_id)
     #     workflow = self.get_workflow(history.workflow_id)
     #     if not self.is_consistent(workflow, history):
-    #         raise RuntimeError('history %s is not obtained by running %s' 
+    #         raise RuntimeError('history %s is not obtained by running %s'
     #                            % (history.id, workflow.id))
     #     return workflow
 
@@ -256,14 +261,14 @@ class GalaxyInstance(object):
         folder = self.create_folder(library, uuid.uuid4().hex, '')
         self.logger.debug('\tcreated folder %s' % folder)
         # step 2
-        data_objs = dict([(name, 
+        data_objs = dict([(name,
                            self.link_path_to_library(folder, path))
                            for name, path in input_paths.iteritems()])
-        self.logger.debug('\tuplinked files %s' % data_objs)        
+        self.logger.debug('\tuplinked files %s' % data_objs)
         # step 3
         input_map = dict([(v, {'id': data_objs[k].id, 'src': data_objs[k].src})
                           for k, v in workflow.links.iteritems()])
-        res = self.blend.run_workflow(workflow.id, input_map, 
+        res = self.blend.run_workflow(workflow.id, input_map,
                        history_name=create_history_name(workflow.name))
         self.logger.debug('\tworkflow %s launched' % workflow.name)
         history_id = res['history']
@@ -276,7 +281,7 @@ class GalaxyInstance(object):
             else:
                 self.logger.error('Workflow %s has failed.' % workflow)
         return self.get_history(history_id)
-                
+
     @staticmethod
     def in_minutes_seconds(delta):
         """
@@ -285,7 +290,7 @@ class GalaxyInstance(object):
 
         return: a tuple (minutes, seconds)
         """
-        seconds = (delta.microseconds + 
+        seconds = (delta.microseconds +
                    (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
         return seconds / 60, seconds % 60
 
@@ -306,7 +311,7 @@ class GalaxyInstance(object):
         log_interval_sec = 60 # seconds
         # calculate the number of iterations suitable for the desired
         # log interval length
-        log_interval = int(math.ceil(log_interval_sec / 
+        log_interval = int(math.ceil(log_interval_sec /
                                      float(sleep_interval_sec)))
         iteration_count = 0
         wait_start = datetime.now()
@@ -318,7 +323,7 @@ class GalaxyInstance(object):
             # avoid considering a workflow as failed when maybe Galaxy
             # was only temporarily unavailable or some other transient
             # problem kept us from getting the reply as expected.
-            if (status_info['state'] not in ('queued', 'running') 
+            if (status_info['state'] not in ('queued', 'running')
                 and last_status == status_info):
                 # Since galaxy reports a state of 'ok' before it has
                 # finished adding all datasets to the history, we wait
@@ -336,4 +341,3 @@ class GalaxyInstance(object):
                      "%d'%02d\"" % self.in_minutes_seconds(wait_so_far),
                      sleep_interval_sec)
             time.sleep(sleep_interval_sec)
-    
