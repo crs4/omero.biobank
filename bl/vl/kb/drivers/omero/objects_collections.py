@@ -98,7 +98,7 @@ class DataCollectionItem(wp.OmeroWrapper):
                 ('dataSample', DataSample, wp.REQUIRED),
                 ('dataCollection', DataCollection, wp.REQUIRED),
                 ('dataCollectionItemUK', wp.STRING, wp.REQUIRED)]
-  __do_not_serialize__ = ['dtaCollectionItemUK']
+  __do_not_serialize__ = ['dataCollectionItemUK']
 
   def __preprocess_conf__(self, conf):
     if not 'dataCollectionItemUK' in conf:
