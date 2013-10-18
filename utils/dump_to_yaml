@@ -51,7 +51,7 @@ def get_all_objects(kb, exclude_gdos, logger):
 
 
 def to_yaml(outfile, objects, logger):
-    logger.info('Serializing %d objects to %s', (len(objects), outfile))
+    logger.info('Serializing %d objects to %s', len(objects), outfile)
     with open(outfile, 'w') as f:
         serializer = YamlSerializer(f, logger)
         for o in objects:
