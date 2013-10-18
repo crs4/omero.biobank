@@ -57,6 +57,7 @@
   <type id="ome.model.vl.ReferenceGenome" 
         superclass="ome.model.vl.DataSample">
     <properties>
+      <required name="nChroms"  type="int"/>
       <required name="maker"    type="string"/>
       <required name="model"    type="string"/>
       <required name="release"  type="string"/>
