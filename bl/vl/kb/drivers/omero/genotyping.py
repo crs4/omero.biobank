@@ -76,6 +76,15 @@ class SNPMarkersSet(wp.OmeroWrapper):
                 ('release', wp.STRING, wp.REQUIRED),
                 ('markersSetVID', wp.VID, wp.REQUIRED),
                 ('snpMarkersSetUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['snpMarkersSetUK']
+
+  @property
+  def id(self):
+    return '%s:%s:%s' % (self.maker, self.model, self.release)
+
+  @property
+  def vid(self):
+    return self.id
 
   MAX_LEN = 10**8
   MAX_GENOME_LEN = 10**10
