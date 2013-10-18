@@ -53,8 +53,11 @@ def get_all_objects(kb, exclude_gdos, excluded_types, logger):
     return objects
 
 
-def to_yaml(outfile, objects, logger):
+def to_yaml(outfile, objects, kb, logger):
     logger.info('Serializing %d objects to %s', len(objects), outfile)
+    # Fetch Actions and their ActionSetup in order to speedup serialization
+    act_cache = kb.get_objects(kb.Action)
+    acts_cache = kb.get_objects(kb.ActionSetup)
     with open(outfile, 'w') as f:
         serializer = YamlSerializer(f, logger)
         for o in objects:
@@ -71,7 +74,7 @@ def main(argv):
 
     objects = get_all_objects(kb, args.exclude_gdos, args.exclude_types.split(','),
                               logger)
-    to_yaml(args.out_file, objects, logger)
+    to_yaml(args.out_file, objects, kb, logger)
 
 
 if __name__ == '__main__':
