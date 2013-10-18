@@ -1,12 +1,8 @@
 """
-
 No biobank dependencies here.
-
 """
-
 import json
 import hashlib
-
 
 
 class Wrapper(object):
@@ -14,18 +10,18 @@ class Wrapper(object):
     def __init__(self, wrapped, parent=None):
         object.__setattr__(self, 'core', lambda: None)
         object.__setattr__(self, 'is_modified', False)
-        object.__setattr__(self, 'parent', parent)    
+        object.__setattr__(self, 'parent', parent)
         setattr(self.core, 'wrapped', wrapped)
         self.update_md5()
 
     def update_md5(self):
-        md5 = hashlib.md5(json.dumps(self.core.wrapped)).hexdigest()        
+        md5 = hashlib.md5(json.dumps(self.core.wrapped)).hexdigest()
         object.__setattr__(self, 'md5', md5)
 
     def touch(self):
         object.__setattr__(self, 'is_modified', True)
         if self.parent:
-            self.parent.touch()               
+            self.parent.touch()
         self.update_md5()
 
     def __setattr__(self, name, value):
@@ -35,6 +31,7 @@ class Wrapper(object):
             self.touch()
         else:
             raise KeyError('no property with name %s' % name)
+
     def __getattr__(self, name):
         core = self.core
         if core.wrapped.has_key(name):
@@ -54,48 +51,57 @@ class Wrapper(object):
     @classmethod
     def from_json(cls, jdef):
         return cls(json.loads(jdef))
-        
+
 
 class Tool(object):
+
     def __init__(self, step_dict, parent):
         self.step_dict = step_dict
         self.state = json.loads(step_dict['tool_state'])
         self.parent = parent
+
     @property
     def id(self):
         return self.step_dict['tool_id']
+
     @property
     def version(self):
         return self.step_dict['tool_version']
+
     @property
     def errors(self):
         return self.step_dict['tool_errors']
+
     @property
     def params(self):
         return self.state
+
     def __getitem__(self, key):
         return json.loads(self.state[key])
+
     def __setitem__(self, key, value):
         if not self.state.has_key(key):
             raise ValueError(key)
         self.state[key] = json.dumps(value)
         self.parent.touch()
         self.sync()
-        
+
     def sync(self):
         self.step_dict['tool_state'] = json.dumps(self.state)
-        
+
+
 class Step(Wrapper):
+
     def __init__(self, step_dict, parent):
         super(Step, self).__init__(step_dict, parent)
         if step_dict['type'] == 'tool':
             setattr(self.core, 'tool', Tool(step_dict, self))
-    
+
     @property
     def tool(self):
         return self.core.tool
-        
-        
+
+
 class Workflow(Wrapper):
     """
     A modifiable Galaxy workflow description.
@@ -104,8 +110,9 @@ class Workflow(Wrapper):
     def __init__(self, wf_dict):
         super(Workflow, self).__init__(wf_dict)
         steps = wf_dict['steps']
-        setattr(self.core, 'steps', 
+        setattr(self.core, 'steps',
                 [Step(steps[str(x)], self) for x in xrange(len(steps))])
+
     @property
     def steps(self):
         return self.core.steps
@@ -114,8 +121,10 @@ class Workflow(Wrapper):
 class Library(Wrapper):
     pass
 
+
 class Folder(Wrapper):
     pass
+
 
 class History(Wrapper):
     """
@@ -131,25 +140,25 @@ class DatasetWrapper(Wrapper):
     def __init__(self, ds_dict, src):
         super(DatasetWrapper, self).__init__(ds_dict)
         setattr(self.core, 'src', src)
+
     @property
     def src(self):
         return self.core.src
+
 
 class HistoryDatasetAssociation(DatasetWrapper):
     "Wrapper for hda"
     def __init__(self, ds_dict):
         super(HistoryDatasetAssociation, self).__init__(ds_dict, 'hda')
 
+
 class LibraryDatasetDatasetAssociation(DatasetWrapper):
     "Wrapper for ldda"
     def __init__(self, ds_dict):
         super(LibraryDatasetDatasetAssociation, self).__init__(ds_dict, 'ldda')
 
+
 class LibraryDataset(DatasetWrapper):
     "Wrapper for ld"
     def __init__(self, ds_dict):
         super(LibraryDataset, self).__init__(ds_dict, 'ld')
-        
-
-    
-        

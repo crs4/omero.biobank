@@ -34,7 +34,7 @@ CHECK_OME_VERSION = False
 GLX_API_KEY = 'cc23224aabcc44132c25b4e23f03580f'
 GLX_URL = 'http://localhost:8070'
 
-kb = KnowledgeBase(driver='omero')(OME_HOST, OME_USER, OME_PASSWD, 
+kb = KnowledgeBase(driver='omero')(OME_HOST, OME_USER, OME_PASSWD,
                                    check_ome_version=CHECK_OME_VERSION)
 gi = GalaxyInstance(kb, GLX_URL, GLX_API_KEY)
 
@@ -55,16 +55,15 @@ WORKFLOW_NAME='WKF-SSPACE-SCAFFOLDING-002'
 workflow = gi.get_workflow_by_name(name=WORKFLOW_NAME)
 device = kb.get_device(WORKFLOW_NAME)
 if device is None:
-    device = kb.create_device(WORKFLOW_NAME, 
+    device = kb.create_device(WORKFLOW_NAME,
                               'CRS4', 'WKF-SSPACE-SCAFFOLDING', '002')
-    
 
 """
     ..
 
 Creating an input object in biobank
 ...................................
-    
+
 This specific workflow needs as an input the following contents:
 
   * 'contigs': SeqDataSample with the sequences of the contigs,
@@ -73,7 +72,7 @@ This specific workflow needs as an input the following contents:
 
   * 'mates': mate sequences
 
-with corresponding reads and mates paired. 
+with corresponding reads and mates paired.
 
 FIXME It is actually more general, but for the time being we leave as it is.
 """
@@ -94,7 +93,6 @@ def create_input_object():
     to_be_killed.append(study.save())
     action = kb.create_an_action(study)
     to_be_killed.append(action.save())
-
     dc_label = 'a-test-data-collection-%s' % uuid.uuid1().hex
     conf = {'label': dc_label, 'action': action}
     data_collection = kb.factory.create(kb.DataCollection, conf)
@@ -106,7 +104,7 @@ def create_input_object():
         data_sample = kb.factory.create(kb.DataSample, conf)
         to_be_killed.append(data_sample.save())
         conf = {'dataSample': data_sample,
-                'dataCollection': data_collection, 
+                'dataCollection': data_collection,
                 'role': name}
         dci = kb.factory.create(kb.DataCollectionItem, conf)
         to_be_killed.append(dci.save())
@@ -127,14 +125,13 @@ except StandardError as e:
     while to_be_killed:
         kb.delete(to_be_killed.pop())
     raise e
-    
-        
+
 """
    ..
 
 Run the actual workflow
 .......................
-    
+
 Now that we have an input we can run the workflow.
 
 """
@@ -146,13 +143,12 @@ history = gi.run_workflow(study, workflow, input_data)
 
 Save results
 ............
-   
+
 Now that we have a history we can save it in the biobank.
 
 """
 
 gi.save(history)
-
 
 """
    ..
@@ -167,7 +163,7 @@ by device.
 
 Collect info on related histories and what has been saved in biobank.
 
-"""   
+"""
 ws = gi.get_workflows(device)
 for w in ws:
     print 'Workflow %s' % w.name
@@ -183,13 +179,13 @@ for w in ws:
         print '\t%s' % label
         for h in hlist:
             in_biobank = gi.is_mapped_in_biobank(h)
-            print ('\t\t%s: {status: %s, in_biobank: %s}' 
+            print ('\t\t%s: {status: %s, in_biobank: %s}'
                    % (h.name, h.state, in_biobank))
 
 """
    ..
 
-Run a parameter search 
+Run a parameter search
 ----------------------
 
 Simple variant, no checks on what has already been done.
@@ -205,7 +201,6 @@ for i in range(1, 4):
     w = gi.register(w)
     h = gi.run_workflow(study, w, input_object, wait=True)
     gi.save(h)
-
 
 """
    ..

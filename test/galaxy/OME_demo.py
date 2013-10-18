@@ -22,6 +22,7 @@ Initialization
 ..............
 
 """
+
 import sys, os
 from bl.vl.kb.galaxy import GalaxyInstance
 from bl.vl.kb import KnowledgeBase
@@ -36,7 +37,7 @@ CHECK_OME_VERSION = False
 GLX_API_KEY = 'a53cff7189d8bcacfdf3871d5cc0f3bb'
 GLX_URL = 'http://localhost:8080'
 
-kb = KnowledgeBase(driver='omero')(OME_HOST, OME_USER, OME_PASSWD, 
+kb = KnowledgeBase(driver='omero')(OME_HOST, OME_USER, OME_PASSWD,
                                    check_ome_version=CHECK_OME_VERSION)
 gi = GalaxyInstance(kb, GLX_URL, GLX_API_KEY)
 
@@ -52,21 +53,21 @@ related omero.biobank device. We then create a study object to define
 the context of our interaction with omero.biobank.
 
 """
+
 WORKFLOW_NAME='Bacterial_assembly_paired_end'
 
 workflow = gi.get_workflow_by_name(name=WORKFLOW_NAME)
 device = kb.get_device(WORKFLOW_NAME)
 if device is None:
-    device = kb.create_device(WORKFLOW_NAME, 
+    device = kb.create_device(WORKFLOW_NAME,
                               'CRS4', 'Bacterial_assembly_paired_end', '001')
-    
 
 """
     ..
 
 Creating an input object in biobank
 ...................................
-    
+
 This specific workflow needs as an input the following contents:
 
   * 'contigs': SeqDataSample with the sequences of the contigs,
@@ -75,9 +76,10 @@ This specific workflow needs as an input the following contents:
 
   * 'mates': mate sequences
 
-with corresponding reads and mates paired. 
+with corresponding reads and mates paired.
 
 FIXME It is actually more general, but for the time being we leave as it is.
+
 """
 
 d = '/home/omero/metagenomics/anterior_nares/SRS015450/'
@@ -85,7 +87,6 @@ input_paths  = dict([
     ('read1',   (d + 'SRS015450.1.fastq', 'x-vl/fastq')),
     ('read2',   (d + 'SRS015450.2.fastq', 'x-vl/fastq'))
     ])
-
 STUDY_LABEL = 'Metagenomics-%s' % uuid.uuid1().hex
 
 def create_study():
@@ -141,7 +142,6 @@ def create_flowcell_and_samples(study):
             to_be_killed.append(laneslot.save())
     return flowcell
 
-
 def create_input_object(flowcell, study):
     action = kb.create_an_action(study, flowcell)
     to_be_killed.append(action.save())
@@ -168,14 +168,14 @@ def create_input_object(flowcell, study):
                 'status': kb.DataSampleStatus.USABLE,
                 'action': action}
         data_sample = kb.factory.create(kb.DataSample, conf)
-        print " Created datasample %s" % data_sample.label 
+        print " Created datasample %s" % data_sample.label
         to_be_killed.append(data_sample.save())
         data_sample.unload()
         data_sample.reload()
         conf = {'dataSample': data_sample,
-                'dataCollection': data_collection, 
+                'dataCollection': data_collection,
                 'role': name}
-        dci = kb.factory.create(kb.DataCollectionItem, conf)        
+        dci = kb.factory.create(kb.DataCollectionItem, conf)
         to_be_killed.append(dci.save())
         conf = {'sample': data_sample,
                 'path': desc[0],
@@ -207,7 +207,7 @@ trigger = raw_input("Press Enter to continue...")
 
 # Run the actual workflow
 # .......................
-    
+
 # Now that we have an input we can run the workflow.
 
 # """
@@ -220,7 +220,7 @@ history = gi.run_workflow(study, workflow, input_data)
 
 # Save results
 # ............
-   
+
 # Now that we have a history we can save it in the biobank.
 
 # """
@@ -242,7 +242,7 @@ trigger = raw_input("Press Enter to continue...")
 
 # Collect info on related histories and what has been saved in biobank.
 
-# """   
+# """
 
 def find_workflow(device, gi):
     print "\n *** "
@@ -261,7 +261,7 @@ def find_workflow(device, gi):
             #print '\t%s' % label
             for h in hlist:
                 in_biobank = gi.is_mapped_in_biobank(h)
-                print ('%s:\n{status: %s, in_biobank: %s}' 
+                print ('%s:\n{status: %s, in_biobank: %s}'
                        % (h.name, h.state, in_biobank))
     print " *** "
 
@@ -271,7 +271,7 @@ trigger = raw_input("Press Enter to continue...")
 # """
 #    ..
 
-# Run a parameter search 
+# Run a parameter search
 # ----------------------
 
 # Simple variant, no checks on what has already been done.
@@ -280,7 +280,6 @@ trigger = raw_input("Press Enter to continue...")
 workflow = gi.get_workflows(device)[0]
 input_object = gi.get_input_object(gi.get_histories(workflow)[0])
 study = input_object.action.context
-
 
 #ref_dbs = ('16SMicrobial-20130511', '16SMicrobial-20130611',
  #          '16SMicrobial-20130711')
