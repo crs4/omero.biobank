@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import argparse, sys, yaml
+import argparse, sys,gc
+from yaml import CBaseLoader
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb import KBError
@@ -28,8 +29,13 @@ def objects_from_yaml(kb, yaml_file, logger):
     logger.info('Loading objects from %s', yaml_file)
     limbo = ObjectsLimbo(kb, logger)
     with open(yaml_file) as f:
-        for ref, conf in yaml.load(f).iteritems():
+        loader = CBaseLoader(f)
+        yaml_data = loader.get_data()
+        loader.dispose()
+        for ref, conf in yaml_data.iteritems():
             limbo.add_object(ref, conf)
+        del yaml_data
+        gc.collect()
     return limbo
 
 
@@ -77,9 +83,13 @@ def main(argv):
     kb.start_keep_alive()
 
     objects_limbo = objects_from_yaml(kb, args.yaml_file, logger)
-    to_biobank(kb, objects_limbo, logger)
-    # Stop the keep_alive
-    kb.stop_keep_alive()
+    try:
+        to_biobank(kb, objects_limbo, logger)
+    except Exception, e:
+        logger.critical(e.message)
+    finally:
+        # Stop the keep_alive
+        kb.stop_keep_alive()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
