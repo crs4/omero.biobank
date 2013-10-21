@@ -6,4 +6,5 @@ docs/_build
 MANIFEST
 bl/vl/version.py
 dist
+bl/vl/kb/config.py
 
