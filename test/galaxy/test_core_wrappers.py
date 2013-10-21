@@ -64,7 +64,7 @@ class TestCoreWrappers(unittest.TestCase):
       wk_desc = json.load(f)
     wf = cwps.Workflow(wk_desc)
     self.assertFalse(wf.is_modified)
-    wf.steps[4].tool['format'] = 'a new format'
+    wf.steps[10].tool['chromInfo'] = 'foo'
     self.assertTrue(wf.is_modified)
 
 
