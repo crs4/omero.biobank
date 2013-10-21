@@ -151,6 +151,13 @@ class ProxyCore(object):
       self.current_session = None
       self.transaction_tokens = 0
 
+  def start_keep_alive(self, timeout=300):
+    self.client.enableKeepAlive(timeout)
+    self.client.startKeepAlive()
+
+  def stop_keep_alive(self):
+    self.client.stopKeepAlive()
+
   def ome_query_params(self, conf):
     params = osp.ParametersI()
     for k in conf.keys():
