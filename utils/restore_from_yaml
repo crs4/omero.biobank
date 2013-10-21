@@ -73,9 +73,13 @@ def main(argv):
 
     logger = get_logger('main', level=args.loglevel, filename=args.logfile)
     kb = KB(driver='omero')(args.host, args.user, args.passwd)
+    # This job can take a lot of time, start keep_alive
+    kb.start_keep_alive()
 
     objects_limbo = objects_from_yaml(kb, args.yaml_file, logger)
     to_biobank(kb, objects_limbo, logger)
+    # Stop the keep_alive
+    kb.stop_keep_alive()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
