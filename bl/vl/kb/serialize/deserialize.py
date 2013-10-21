@@ -11,6 +11,7 @@ from bl.vl.kb.serialize.utils import is_a_kb_object, dewrap, sort_by_dependency
 from bl.vl.kb.serialize.utils import get_attribute, get_field_descriptor
 from bl.vl.kb.serialize.utils import UnknownKey, UnresolvedDependency
 from bl.vl.kb.drivers.omero.data_samples import DataObject
+from bl.vl.kb.drivers.omero.genotyping import SNPMarkersSet
 
 from pygraph.classes.digraph import digraph
 
@@ -42,7 +43,7 @@ class ObjectProxy(object):
                   else get_attribute(value_type, value)
             else:
                 return dewrap(value_type, value)
-        if self.type == DataObject:
+        if self.type == DataObject or self.type == SNPMarkersSet:
             configuration.pop('vid')
         return dict([(k, convert_value(k, configuration[k]))
                     for k in configuration])
