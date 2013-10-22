@@ -33,11 +33,11 @@ class ReferenceGenome(DataSample):
                                                   conf['release'])
     return super(ReferenceGenome, self).__preprocess_conf__(conf)
 
-class AlignedSeqDataSample(DataSample):  
+class AlignedSeqDataSample(SeqDataSample):  
   OME_TABLE = 'AlignedSeqDataSample'
   __fields__ = [('referenceGenome', ReferenceGenome, wp.REQUIRED)]
 
-class GenomicAssemblyData(DataSample):  
+class GenomicAssemblyData(SeqDataSample):  
   OME_TABLE = 'GenomicAssemblyData'
   __fields__ = []
   
