@@ -66,7 +66,7 @@
     </properties>
   </type>
 
-  <type id="ome.model.vl.AlignedSeqData" 
+  <type id="ome.model.vl.AlignedSeqDataSample" 
 	superclass="ome.model.vl.SeqDataSample">
     <!-- The actual AlignedSeqData type is resolved from the mime-type -->
     <properties>
@@ -74,29 +74,31 @@
     </properties>
   </type>
 
-  <type id="ome.model.vl.GenomicAssemblyData" 
+  <type id="ome.model.vl.GenomicAssemblyDataSample" 
 	superclass="ome.model.vl.SeqDataSample">
-    <!-- The actual GenomicAssemblyData type is resolved from the mime-type -->
+    <!-- The actual GenomicAssemblyDataSample type is resolved from
+         the mime-type -->
     <properties>
     </properties>
   </type>
 
-  <type id="ome.model.vl.GenomeVariationsData" 
+  <type id="ome.model.vl.GenomeVariationsDataSample" 
 	superclass="ome.model.vl.DataSample">
-    <!-- The actual GenomeVariationsData type is resolved from the mime-type -->
+    <!-- The actual GenomeVariationsDataSample type is resolved from
+         the mime-type -->
     <properties>
       <required name="referenceGenome" type="ome.model.vl.ReferenceGenome"/>
     </properties>
   </type>
 
-  <type id="ome.model.vl.GeneExpressionLevels" 
+  <type id="ome.model.vl.GeneExpressionLevelsDataSample" 
 	superclass="ome.model.vl.DataSample">
     <!-- The actual data format is resolved using the mime-type  -->
     <properties>
     </properties>
   </type>
 
-  <type id="ome.model.vl.TaxonomicProfile" 
+  <type id="ome.model.vl.TaxonomicProfileDataSample" 
 	superclass="ome.model.vl.DataSample">
     <!-- The actual data format is resolved using the mime-type  -->
     <properties>
