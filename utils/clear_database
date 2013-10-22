@@ -18,6 +18,10 @@ def make_parser():
                         required=True)
     parser.add_argument('--passwd', '-P', type=str, help='OMERO password',
                         required=True)
+    parser.add_argument('--clear-studies', action='store_true',
+                        help='clear Study objects at the end')
+    parser.add_argument('--clear-devices', action='store_true',
+                        help='clear Device objects at the end')
     parser.add_argument('--do-it', action='store_true',
                         help='confirm that you want to delete all data from the database')
     return parser
@@ -65,18 +69,25 @@ def delete(kb, objects, actions, logger):
     return undeleted_objs, undeleted_acts
 
 
-def cleanup(kb, logger):
+def cleanup(kb, clear_studies, clear_devices, logger):
     # Remove ActionSetup objects that are still present into the system
     setup_objs = kb.get_objects(kb.ActionSetup)
     logger.info('ActionSetup to delete: %d' % len(setup_objs))
     for s in setup_objs:
         kb.delete(s)
     logger.info('ActionSetup objects deleted')
-    studies = kb.get_objects(kb.Study)
-    logger.info('Study to delete: %d' % len(studies))
-    for s in studies:
-        kb.delete(s)
-    logger.info('Study objects deleted')
+    if clear_studies:
+        studies = kb.get_objects(kb.Study)
+        logger.info('Study to delete: %d' % len(studies))
+        for s in studies:
+            kb.delete(s)
+        logger.info('Study objects deleted')
+    if clear_devices:
+        devices = kb.get_objects(kb.Device)
+        logger.info('Devices to delete: %d' % len(devices))
+        for d in devices:
+            kb.delete(d)
+        logger.info('Device objects deleted')
 
 
 def main(argv):
@@ -101,7 +112,7 @@ def main(argv):
             iteration += 1
 
     logger.info('***** Cleaning remaining data *****')
-    cleanup(kb, logger)
+    cleanup(kb, args.clear_studies, args.clear_devices, logger)
 
     logger.info('--- Job completed ---')
 
