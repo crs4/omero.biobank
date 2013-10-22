@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+import argparse, sys
+
+from bl.vl.kb import KnowledgeBase as KB
+from bl.vl.kb.mimetypes import GDO_TABLE
+from bl.vl.kb.serialize.yaml_serializer import YamlSerializer
+from bl.vl.utils import LOG_LEVELS, get_logger
+
+
+def make_parser():
+    parser = argparse.ArgumentParser('Dump all data related to a specific user from an OMERO server to a YAML file')
+    parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
+    parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
+                        help='logging level', default='INFO')
+    parser.add_argument('--host', '-H', type=str, help='OMERO host',
+                        required=True)
+    parser.add_argument('--user', '-U', type=str, help='OMERO user',
+                        required=True)
+    parser.add_argument('--passwd', '-P', type=str, help='OMERO password',
+                        required=True)
+    parser.add_argument('--out-file', '-O', type=str, help='YAML output file',
+                        required=True)
+    parser.add_argument('--exclude-types', type=str, default='',
+                        help='A list of comma separated types that will be exclude from the dump process')
+    parser.add_argument('--exclude-gdos', action='store_true',
+                        help='exclude GDOs serialized as OMERO.table rows')
+    return parser
+
+
+def get_data_objects(kb, logger, exclude_gdos):
+    if exclude_gdos:
+        logger.info('Retrieving DataObjects. GDOs excluded')
+        query = 'SELECT dobj FROM DataObject dobj WHERE dobj.mimetype != :mtype'
+        return kb.find_all_by_query(query, {'mtype': GDO_TABLE})
+    else:
+        logger.info('Retrieving DataObjects')
+        return kb.get_objects(kb.DataObject)
+
+
+def get_all_objects(kb, exclude_gdos, excluded_types, logger):
+    obj_classes = [kb.Individual, kb.Enrollment, kb.Vessel,
+                   kb.Study, kb.Device, kb.DataSample,
+                   kb.VLCollection, kb.DataCollectionItem,
+                   kb.VesselsCollectionItem, kb.LaneSlot]
+    logger.info('Loading data')
+    objects = []
+    for o in obj_classes:
+        if o.__name__ not in excluded_types:
+            logger.info('Loading %s', o.__name__)
+            objects.extend(kb.get_objects(o))
+    objects.extend(get_data_objects(kb, logger, exclude_gdos))
+    return objects
+
+
+def to_yaml(outfile, objects, kb, logger):
+    logger.info('Serializing %d objects to %s', len(objects), outfile)
+    # Fetch Actions and their ActionSetup in order to speedup serialization
+    act_cache = kb.get_objects(kb.Action)
+    acts_cache = kb.get_objects(kb.ActionSetup)
+    with open(outfile, 'w') as f:
+        serializer = YamlSerializer(f, logger)
+        for o in objects:
+            o.serialize(serializer)
+    logger.info('Objects serialization completed')
+
+
+def main(argv):
+    parser = make_parser()
+    args = parser.parse_args(argv)
+
+    logger = get_logger('main', level=args.loglevel, filename=args.logfile)
+    kb = KB(driver='omero')(args.host, args.user, args.passwd)
+
+    objects = get_all_objects(kb, args.exclude_gdos, args.exclude_types.split(','),
+                              logger)
+    to_yaml(args.out_file, objects, kb, logger)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

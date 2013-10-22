@@ -57,6 +57,7 @@ class PlateWell(Vessel):
                 ('container', TiterPlate, wp.REQUIRED),
                 ('containerSlotLabelUK', wp.STRING, wp.REQUIRED),
                 ('containerSlotIndexUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['containerSlotLabelUK', 'containerSlotIndexUK']
 
   def _is_a_legal_label(self, label):
     return re.match('^([A-Z])(\d{1,2})$', label.upper())
@@ -126,6 +127,7 @@ class VesselsCollectionItem(wp.OmeroWrapper):
                 ('vessel', Vessel, wp.REQUIRED),
                 ('vesselsCollection', VesselsCollection, wp.REQUIRED),
                 ('vesselsCollectionItemUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['vesselsCollectionItemUK']
 
   def __preprocess_conf__(self, conf):
     if not 'vesselsCollectionItemUK' in conf:
@@ -154,6 +156,7 @@ class LaneSlot(wp.OmeroWrapper):
                 ('laneSlotUK', wp.STRING, wp.REQUIRED),
                 ('action', Action, wp.REQUIRED),
                 ('lastUpdate', Action, wp.OPTIONAL)]
+  __do_not_serialize__ = ['laneSlotUK']
 
   def __preprocess_conf__(self, conf):
     if not 'laneSlotUK' in conf:

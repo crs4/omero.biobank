@@ -34,6 +34,7 @@ class Demographic(wp.OmeroWrapper):
                 ('demogUK', wp.STRING, wp.REQUIRED),
                 ('action', Action, wp.REQUIRED),
                 ('lastUpdate', ActionOnAction, wp.OPTIONAL)]
+  __do_not_serialize__ = ['demogUK']
 
   def __preprocess_conf__(self, conf):
     conf = assign_vid(conf)

@@ -36,6 +36,14 @@ class DataObject(OriginalFile):
     conf['name'] = conf['sample'].vid
     return conf
 
+  @property
+  def id(self):
+    return '%s::%s' % (self.mimetype, self.omero_id)
+
+  @property
+  def vid(self):
+    return self.id
+
 
 class MicroArrayMeasure(DataSample):
 

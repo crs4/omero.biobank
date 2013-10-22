@@ -50,6 +50,7 @@ class Enrollment(wp.OmeroWrapper):
                 ('stCodeUK', wp.STRING, wp.REQUIRED),
                 # stIndUK = STUDY-VID_INDIVIDUAL-VID
                 ('stIndUK',  wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['stCodeUK', 'stIndUK']
 
   def __preprocess_conf__(self, conf):
     if not 'stCodeUK' in conf:

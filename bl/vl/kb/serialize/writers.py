@@ -1,7 +1,7 @@
 import uuid
 
 def protect(string):
-    return '"%s"' % string
+    return '\'%s\'' % string
 
 def by_ref(ref):
     return {'by_ref': str(ref)}
@@ -15,6 +15,8 @@ def by_label(label):
 def write_object(ostream, oid, otype, configuration, vid=None):
     ostream.write('"%s":\n type: %s\n configuration:\n' % (oid, otype))
     for k, v in configuration.iteritems():
+        if type(v) == str:
+            v = protect(v)
         ostream.write('  %s: %s\n' % (k, v))
     if not vid is None:
         ostream.write('  "%s": %s\n' % ('vid', vid))

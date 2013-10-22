@@ -23,6 +23,7 @@ DEWRAPPING = {
     INT: int,
     LONG: int,
     BOOLEAN: bool,
+    TIMESTAMP: float,
     }
 
 def is_a_kb_object(vtype):

@@ -8,6 +8,7 @@ import bl.vl.utils as vlu
 import bl.vl.utils.ome_utils as vluo
 from bl.vl.kb import KBError
 from bl.vl.utils.graph import graph_driver
+from bl.vl.kb.serialize.serializer import Serializer
 
 REQUIRED = 'required'
 OPTIONAL = 'optional'
@@ -39,14 +40,15 @@ def ome_wrap(v, wtype=None):
 class CoreOmeroWrapper(object):
 
   OME_TABLE = None
+  __do_not_serialize__ = []
 
   @classmethod
-  def get_ome_type(klass):
-    return getattr(om, "%sI" % klass.OME_TABLE)
+  def get_ome_type(cls):
+    return getattr(om, "%sI" % cls.OME_TABLE)
 
   @classmethod
-  def get_ome_table(klass):
-    return klass.OME_TABLE
+  def get_ome_table(cls):
+    return cls.OME_TABLE
 
   def __init__(self, ome_obj, proxy):
     super(CoreOmeroWrapper, self).__setattr__('ome_obj', ome_obj)
@@ -71,6 +73,9 @@ class CoreOmeroWrapper(object):
   def __config__(self, ome_obj, conf):
     pass
 
+  def __to_conf__(self, ome_obj, conf):
+    pass
+    
   def bare_getattr(self, name):
     return super(CoreOmeroWrapper, self).__getattribute__(name)
 
@@ -142,6 +147,32 @@ class CoreOmeroWrapper(object):
   def save(self):
     return self.proxy.save(self)
 
+  def serialize(self, engine, shallow=False):
+    if not isinstance(engine, Serializer):
+        raise ValueError('%s is not a Serializer' % engine)
+    if not self.is_loaded():
+        self.reload()
+    if engine.has_seen(self.id):
+        return
+    conf = self.to_conf()
+    # Remove unique keys from config
+    for field in self.__do_not_serialize__:
+        conf.pop(field)
+    for k in conf:
+        if isinstance(conf[k], CoreOmeroWrapper):
+            if conf[k].is_enum():
+                if not conf[k].is_loaded():
+                    conf[k].reload()
+                conf[k] = conf[k].enum_label()
+            else:
+                if shallow:
+                    conf[k] = engine.by_vid(conf[k].id)
+                else:
+                    conf[k].serialize(engine)                
+                    conf[k] = engine.by_ref(conf[k].id)
+    engine.serialize(self.id, self.get_ome_table(), conf, vid=self.vid)
+    engine.register(self.id)
+  
   def reload(self):
     self.proxy.reload_object(self)
 
@@ -152,6 +183,8 @@ class CoreOmeroWrapper(object):
   @property
   def omero_id(self):
     return self.ome_obj._id._val
+    
+    
 
 
 class MetaWrapper(type):
@@ -159,14 +192,14 @@ class MetaWrapper(type):
   __KNOWN_OME_KLASSES__ = {}
 
   @classmethod
-  def normalize_fields(klass, fields):
+  def normalize_fields(cls, fields):
     nfields = {}
     for f in fields:
       nfields[f[0]] = f[1:]
     return nfields
 
   @classmethod
-  def make_initializer(klass, base):
+  def make_initializer(cls, base):
     def initializer(self, ome_obj=None, proxy=None):
       if not ome_obj:
         ome_obj = self.get_ome_type()()
@@ -174,7 +207,7 @@ class MetaWrapper(type):
     return initializer
 
   @classmethod
-  def make_configurator(klass, base, fields):
+  def make_configurator(cls, base, fields):
     def configurator(self, ome_obj, conf):
       base.__config__(self, ome_obj, conf)
       for k, t in fields.iteritems():
@@ -185,7 +218,17 @@ class MetaWrapper(type):
     return configurator
 
   @classmethod
-  def make_setter(klass, base, fields):
+  def make_to_conf(cls, base, fields):
+    def to_conf(self, ome_obj, conf):
+      base.__to_conf__(self, ome_obj, conf)
+      for k, t in fields.iteritems():
+        v = getattr(ome_obj, k)
+        if v != None:
+          conf[k] = self.from_omero(t[0], v)
+    return to_conf
+
+  @classmethod
+  def make_setter(cls, base, fields):
     def setter(self, k, v):
       if k in fields:
         setattr(self.ome_obj, k, self.to_omero(fields[k][0], v))
@@ -195,7 +238,7 @@ class MetaWrapper(type):
     return setter
 
   @classmethod
-  def make_getter(klass, base, fields):
+  def make_getter(cls, base, fields):
     def getter(self, k):
       if k in fields:
         v = getattr(self.ome_obj, k)
@@ -221,6 +264,8 @@ class MetaWrapper(type):
     attrs['__init__']   = MetaWrapper.make_initializer(bases[0])
     attrs['__config__'] = MetaWrapper.make_configurator(bases[0],
                                                         attrs['__fields__'])
+    attrs['__to_conf__'] = MetaWrapper.make_to_conf(bases[0],
+                                                    attrs['__fields__'])
     attrs['__setattr__'] = MetaWrapper.make_setter(bases[0],
                                                    attrs['__fields__'])
     attrs['__getattr__'] = MetaWrapper.make_getter(bases[0],
@@ -314,7 +359,11 @@ class OmeroWrapper(CoreOmeroWrapper):
       if hasattr(self.action, 'target'):
         self.proxy.dt.destroy_edge(self, self.action.target)
 
-    
   def configure(self, conf):
     conf = self.__preprocess_conf__(conf)
     self.__config__(self.ome_obj, conf)
+
+  def to_conf(self):
+    conf = {}
+    self.__to_conf__(self.ome_obj, conf)
+    return conf
