@@ -72,13 +72,13 @@ class IlluminaBeadChipArray(PlateWell):
   def _ibca_slot_from_label(self, label, rows, cols):
     m = re.match('^R(\d{2})C(\d{2})$', label)
     if m:
-      row, col = map(lambda x: int(x) - 1, m.groups())
-      if row >= rows or col >= cols:
+      row, col = map(int, m.groups())
+      row -= 1
+      if row >= rows or col > cols:
         raise ValueError('label [%s] out of range', label)
       return row * cols + col
     elif super(IlluminaBeadChipArray, self)._is_a_legal_label(label):
-      return super(IlluminaBeadChipArray, self)\
-                 ._ibca_slot_from_label(label, rows, cols)
+      return super(IlluminaBeadChipArray, self)._slot_from_label(label, rows, cols)
     else:
       raise ValueError('label [%s] not in a legal form' % label)
 
@@ -101,7 +101,7 @@ class IlluminaBeadChipArray(PlateWell):
     return super(IlluminaBeadChipArray, self).__preprocess_conf__(conf)
 
   def __update_constraints__(self):
-    super(IlluminaBeadChipArray, self).__update_constraints__(conf)
+    super(IlluminaBeadChipArray, self).__update_constraints__()
 
 
 class IlluminaBeadChipMeasure(MicroArrayMeasure):
