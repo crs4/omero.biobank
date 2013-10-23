@@ -175,7 +175,7 @@ def create_input_object(flowcell, study):
         conf = {'dataSample': data_sample,
                 'dataCollection': data_collection,
                 'role': name}
-        dci = kb.factory.create(kb.DataCollectionItem, conf)
+        dci = kb.factory.create(kb.TaggedDataCollectionItem, conf)
         to_be_killed.append(dci.save())
         conf = {'sample': data_sample,
                 'path': desc[0],

@@ -151,7 +151,7 @@ class GalaxyInstance(CoreGalaxyInstance):
 
         For each field of the input port, find a corresponding data
         path. If input_object is a DataCollection, it will map each
-        field field to a DataCollectionItem that has role equal to the
+        field field to a TaggedDataCollectionItem that has role equal to the
         field name. Otherwise, it will interpret the field name as an
         attribute of the input_object.
         """
@@ -266,9 +266,9 @@ class GalaxyInstance(CoreGalaxyInstance):
             conf = {'dataSample': d_sample,
                     'dataCollection': data_collection,
                     'role': name}
-            dci = self.kb.factory.create(self.kb.DataCollectionItem, conf)
+            dci = self.kb.factory.create(self.kb.TaggedDataCollectionItem, conf)
             self.to_be_killed.append(dci.save())
-            self.logger.debug('created DataCollectionItem: %s' % dci)
+            self.logger.debug('created TaggedDataCollectionItem: %s' % dci)
         self.logger.debug('filled DataCollection %s' % data_collection)
 
     def _create_data_sample(self, label, action, fields, datasets):

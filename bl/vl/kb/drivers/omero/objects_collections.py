@@ -96,7 +96,6 @@ class DataCollectionItem(wp.OmeroWrapper):
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('dataSample', DataSample, wp.REQUIRED),
                 ('dataCollection', DataCollection, wp.REQUIRED),
-                ('role', wp.STRING, wp.OPTIONAL),
                 ('dataCollectionItemUK', wp.STRING, wp.REQUIRED)]
 
   def __preprocess_conf__(self, conf):
@@ -115,3 +114,9 @@ class DataCollectionItem(wp.OmeroWrapper):
     super(DataCollectionItem, self).__dump_to_graph__(is_update)
     self.proxy.dt.create_collection_item(self.dataSample,
                                          self.dataCollection)
+
+
+class TaggedDataCollectionItem(DataCollectionItem):
+
+  OME_TABLE = "TaggedDataCollectionItem"
+  __fields__ = [('role', wp.STRING, wp.REQUIRED)]
