@@ -39,7 +39,7 @@ def objects_from_yaml(kb, yaml_file, logger):
     return limbo
 
 
-def records_by_chunk(records, batch_size=1000):
+def records_by_chunk(records, batch_size=500):
     offset = 0
     while len(records[offset:]) > 0:
         yield records[offset:offset+batch_size]
@@ -48,6 +48,7 @@ def records_by_chunk(records, batch_size=1000):
 
 def save_objects(kb, objects, logger):
     kb.connect()
+    logger.info('Saving %d records', len(objects))
     for chunk, records in enumerate(records_by_chunk(objects)):
         logger.debug('Saving chunk %d', chunk)
         kb.save_array(records)
@@ -80,8 +81,8 @@ def to_biobank(kb, objects_limbo, logger):
         return klass.__name__
     shared_objects_type = ['Study', 'Device']
     for objtype, objects in objects_limbo.groupbytype():
+        logger.info('Saving type %s', objtype)
         bb_objs = [o[1] for o in objects]
-        logger.info('Saving %d objects --- type %s', len(bb_objs), objtype)
         if get_base_klass(objtype) in shared_objects_type:
             save_shared_objects(kb, bb_objs, logger)
         else:
