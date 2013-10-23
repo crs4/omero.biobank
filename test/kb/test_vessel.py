@@ -63,15 +63,15 @@ class TestKB(KBObjectCreator):
 
     conf, v = self.create_plate_well(p, label='B01')
     self.kill_list.append(v.save())
-    self.assertEqual(v.slot, p.columns)
+    self.assertEqual(v.slot, p.columns+1)
 
     conf, v = self.create_plate_well(p, label='A02')
     self.kill_list.append(v.save())
-    self.assertEqual(v.slot, 1)
+    self.assertEqual(v.slot, 2)
 
     conf, v = self.create_plate_well(p, label='D3')
     self.kill_list.append(v.save())
-    self.assertEqual(v.slot, 3*p.columns + 2)
+    self.assertEqual(v.slot, 3*p.columns + 3)
 
 
 def suite():
