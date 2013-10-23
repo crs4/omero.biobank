@@ -45,10 +45,63 @@
     </properties>
   </type>
 
+
   <type id="ome.model.vl.SeqDataSample"
 	superclass="ome.model.vl.DataSample">
+    <!-- The actual seq data sample type is resolved from the mime-type -->
     <properties>
       <optional name="sample" type="ome.model.vl.Tube"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.ReferenceGenome" 
+        superclass="ome.model.vl.DataSample">
+    <properties>
+      <required name="nChroms"  type="int"/>
+      <required name="maker"    type="string"/>
+      <required name="model"    type="string"/>
+      <required name="release"  type="string"/>
+      <!-- maker model release -->
+      <required name="referenceGenomeUK" type="string" unique="true"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.AlignedSeqDataSample" 
+	superclass="ome.model.vl.SeqDataSample">
+    <!-- The actual AlignedSeqData type is resolved from the mime-type -->
+    <properties>
+      <required name="referenceGenome" type="ome.model.vl.ReferenceGenome"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.GenomicAssemblyDataSample" 
+	superclass="ome.model.vl.SeqDataSample">
+    <!-- The actual GenomicAssemblyDataSample type is resolved from
+         the mime-type -->
+    <properties>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.GenomeVariationsDataSample" 
+	superclass="ome.model.vl.DataSample">
+    <!-- The actual GenomeVariationsDataSample type is resolved from
+         the mime-type -->
+    <properties>
+      <required name="referenceGenome" type="ome.model.vl.ReferenceGenome"/>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.GeneExpressionLevelsDataSample" 
+	superclass="ome.model.vl.DataSample">
+    <!-- The actual data format is resolved using the mime-type  -->
+    <properties>
+    </properties>
+  </type>
+
+  <type id="ome.model.vl.TaxonomicProfileDataSample" 
+	superclass="ome.model.vl.DataSample">
+    <!-- The actual data format is resolved using the mime-type  -->
+    <properties>
     </properties>
   </type>
 

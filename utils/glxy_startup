@@ -1,0 +1,53 @@
+#!/usr/bin/ipython -i
+
+# BEGIN_COPYRIGHT
+# END_COPYRIGHT
+
+import sys, os
+import bl.vl.kb.galaxy as glxy
+from bl.vl.kb import KnowledgeBase
+
+import logging
+
+OME_HOST = os.getenv('OME_HOST', 'localhost')
+OME_USER = os.getenv('OME_USER', 'root')
+OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
+
+GLX_API_KEY = 'cc23224aabcc44132c25b4e23f03580f'
+GLX_URL = 'http://localhost:8070'
+
+CHECK_OME_VERSION = False
+
+BaseProxy = KnowledgeBase(driver='omero')
+
+class Proxy(BaseProxy):
+  def get_objects_dict(self, klass):
+    return dict((o.label, o) for o in super(Proxy, self).get_objects(klass))
+
+kb = Proxy(OME_HOST, OME_USER, OME_PASSWD, check_ome_version=CHECK_OME_VERSION)
+kb.logger.setLevel(logging.DEBUG)
+
+
+def cleanup():
+  print "# disconnecting the kb"
+  kb.disconnect()
+
+sys.exitfunc = cleanup
+
+gi = glxy.GalaxyInstance(kb, GLX_URL, GLX_API_KEY)
+
+print
+print "### KB ENV PRELOADED ###"
+print "# connected to %s" % OME_HOST
+print "# knowledge base: kb"
+print "# extra method: kb.get_objects_dict"
+print "########################"
+print
+print "### GLXY ENV PRELOADED ###"
+print "# connected to %s" % GLX_URL
+print "# galaxy instance: gi"
+print "##########################"
+
+# Local Variables: **
+# mode: python **
+# End: **

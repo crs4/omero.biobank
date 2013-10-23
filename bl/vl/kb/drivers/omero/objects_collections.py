@@ -78,7 +78,7 @@ class Lane(Container):
   def __update_constraints__(self):
     l_uk = make_unique_key(self.flowCell.label, self.slot)
     setattr(self.ome_obj, 'laneUK',
-            self.to_omero(self.__field__['laneUK'][0], l_uk))
+            self.to_omero(self.__fields__['laneUK'][0], l_uk))
 
   def __dump_to_graph__(self, is_update):
     super(Lane, self).__dump_to_graph__(is_update)
@@ -116,3 +116,9 @@ class DataCollectionItem(wp.OmeroWrapper):
     super(DataCollectionItem, self).__dump_to_graph__(is_update)
     self.proxy.dt.create_collection_item(self.dataSample,
                                          self.dataCollection)
+
+
+class TaggedDataCollectionItem(DataCollectionItem):
+
+  OME_TABLE = "TaggedDataCollectionItem"
+  __fields__ = [('role', wp.STRING, wp.REQUIRED)]

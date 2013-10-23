@@ -63,6 +63,13 @@ END_COPYRIGHT
     </properties>
   </type>
 
+  <type id="ome.model.vl.TaggedDataCollectionItem"
+        superclass="ome.model.vl.DataCollectionItem">
+    <properties>
+      <required name="role" type="string"/>
+    </properties>
+  </type>
+
   <type id="ome.model.vl.VesselsCollection" superclass="ome.model.vl.VLCollection">
     <properties>
     </properties>

@@ -1,831 +1,831 @@
 {
-    "a_galaxy_workflow": "true", 
-    "annotation": "", 
-    "format-version": "0.1", 
-    "name": "Test import workflo", 
+    "a_galaxy_workflow": "true",
+    "annotation": "",
+    "format-version": "0.1",
+    "name": "Test import workflo",
     "steps": {
         "0": {
-            "annotation": "", 
-            "id": 0, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 0,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 10
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "1": {
-            "annotation": "", 
-            "id": 1, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 1,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 130
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "2": {
-            "annotation": "", 
-            "id": 2, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 2,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 250
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "3": {
-            "annotation": "", 
-            "id": 3, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 3,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 370
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "4": {
-            "annotation": "", 
-            "id": 4, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 4,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 490
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "5": {
-            "annotation": "", 
-            "id": 5, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 5,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 610
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "6": {
-            "annotation": "", 
-            "id": 6, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 6,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 730
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "7": {
-            "annotation": "", 
-            "id": 7, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 7,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 850
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "8": {
-            "annotation": "", 
-            "id": 8, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 8,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 970
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "9": {
-            "annotation": "", 
-            "id": 9, 
-            "input_connections": {}, 
+            "annotation": "",
+            "id": 9,
+            "input_connections": {},
             "inputs": [
                 {
-                    "description": "", 
+                    "description": "",
                     "name": "Input Dataset"
                 }
-            ], 
-            "name": "Input dataset", 
-            "outputs": [], 
+            ],
+            "name": "Input dataset",
+            "outputs": [],
             "position": {
-                "left": 10, 
+                "left": 10,
                 "top": 1090
-            }, 
-            "tool_errors": null, 
-            "tool_id": null, 
-            "tool_state": "{\"name\": \"Input Dataset\"}", 
-            "tool_version": null, 
-            "type": "data_input", 
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"Input Dataset\"}",
+            "tool_version": null,
+            "type": "data_input",
             "user_outputs": []
-        }, 
+        },
         "10": {
-            "annotation": "", 
-            "id": 10, 
+            "annotation": "",
+            "id": 10,
             "input_connections": {
                 "input1": {
-                    "id": 0, 
+                    "id": 0,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.study", 
+            },
+            "inputs": [],
+            "name": "VLI.study",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 10
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_study", 
-            "tool_state": "{\"__page__\": 0, \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 2}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"input1\": \"null\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_study",
+            "tool_state": "{\"__page__\": 0, \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 2}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"input1\": \"null\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "11": {
-            "annotation": "", 
-            "id": 11, 
+            "annotation": "",
+            "id": 11,
             "input_connections": {
                 "input1": {
-                    "id": 1, 
+                    "id": 1,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.individual", 
+            },
+            "inputs": [],
+            "name": "VLI.individual",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 130
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_individual", 
-            "tool_state": "{\"__page__\": 0, \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"input1\": \"null\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_individual",
+            "tool_state": "{\"__page__\": 0, \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"input1\": \"null\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "12": {
-            "annotation": "", 
-            "id": 12, 
+            "annotation": "",
+            "id": 12,
             "input_connections": {
                 "input1": {
-                    "id": 2, 
+                    "id": 2,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLT.map_vid", 
+            },
+            "inputs": [],
+            "name": "VLT.map_vid",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 250
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_tools_map_vid", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"Individual\\\", \\\"study\\\": {\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}, \\\"__current_case__\\\": 5}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"source\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"2\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_tools_map_vid",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"Individual\\\", \\\"study\\\": {\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}, \\\"__current_case__\\\": 5}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"source\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"2\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "13": {
-            "annotation": "", 
-            "id": 13, 
+            "annotation": "",
+            "id": 13,
             "input_connections": {
                 "input1": {
-                    "id": 3, 
+                    "id": 3,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLT.map_vid", 
+            },
+            "inputs": [],
+            "name": "VLT.map_vid",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 370
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_tools_map_vid", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"Tube\\\", \\\"__current_case__\\\": 0}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"source\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"3\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_tools_map_vid",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"Tube\\\", \\\"__current_case__\\\": 0}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"source\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"3\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "14": {
-            "annotation": "", 
-            "id": 14, 
+            "annotation": "",
+            "id": 14,
             "input_connections": {
                 "input1": {
-                    "id": 4, 
+                    "id": 4,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.titer_plate", 
+            },
+            "inputs": [],
+            "name": "VLI.titer_plate",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 490
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_titer_plate", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"plate_shape\": \"\\\"use_provided\\\"\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"plate_status\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"model\": \"\\\"\\\"\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"maker\": \"\\\"\\\"\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_titer_plate",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"plate_shape\": \"\\\"use_provided\\\"\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"plate_status\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"model\": \"\\\"\\\"\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"maker\": \"\\\"\\\"\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "15": {
-            "annotation": "", 
-            "id": 15, 
+            "annotation": "",
+            "id": 15,
             "input_connections": {
                 "input1": {
-                    "id": 5, 
+                    "id": 5,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLT.map_vid", 
+            },
+            "inputs": [],
+            "name": "VLT.map_vid",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 610
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_tools_map_vid", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"Tube\\\", \\\"__current_case__\\\": 0}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"source\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"6\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_tools_map_vid",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"Tube\\\", \\\"__current_case__\\\": 0}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"source\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"6\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "16": {
-            "annotation": "", 
-            "id": 16, 
+            "annotation": "",
+            "id": 16,
             "input_connections": {
                 "input1": {
-                    "id": 6, 
+                    "id": 6,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLT.map_vid", 
+            },
+            "inputs": [],
+            "name": "VLT.map_vid",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 730
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_tools_map_vid", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"PlateWell\\\", \\\"__current_case__\\\": 2}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"source\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"3\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_tools_map_vid",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"PlateWell\\\", \\\"__current_case__\\\": 2}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"source\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"3\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "17": {
-            "annotation": "", 
-            "id": 17, 
+            "annotation": "",
+            "id": 17,
             "input_connections": {
                 "input1": {
-                    "id": 7, 
+                    "id": 7,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.device", 
+            },
+            "inputs": [],
+            "name": "VLI.device",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 850
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_device", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\", \"device_type\": \"\\\"use_provided\\\"\", \"release\": \"\\\"\\\"\", \"model\": \"\\\"\\\"\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"maker\": \"\\\"\\\"\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_device",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\", \"device_type\": \"\\\"use_provided\\\"\", \"release\": \"\\\"\\\"\", \"model\": \"\\\"\\\"\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"maker\": \"\\\"\\\"\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "18": {
-            "annotation": "", 
-            "id": 18, 
+            "annotation": "",
+            "id": 18,
             "input_connections": {
                 "input1": {
-                    "id": 8, 
+                    "id": 8,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLT.map_vid", 
+            },
+            "inputs": [],
+            "name": "VLT.map_vid",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 970
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_tools_map_vid", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"DataSample\\\", \\\"__current_case__\\\": 4}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"data_sample\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"3\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_tools_map_vid",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"DataSample\\\", \\\"__current_case__\\\": 4}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"data_sample\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"3\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "19": {
-            "annotation": "", 
-            "id": 19, 
+            "annotation": "",
+            "id": 19,
             "input_connections": {
                 "input1": {
-                    "id": 9, 
+                    "id": 9,
                     "output_name": "output"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLT.map_vid", 
+            },
+            "inputs": [],
+            "name": "VLT.map_vid",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 230, 
+                "left": 230,
                 "top": 1090
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_tools_map_vid", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"DataSample\\\", \\\"__current_case__\\\": 4}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"data_sample\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"3\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_tools_map_vid",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"DataSample\\\", \\\"__current_case__\\\": 4}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"data_sample\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"3\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "20": {
-            "annotation": "", 
-            "id": 20, 
+            "annotation": "",
+            "id": 20,
             "input_connections": {
                 "input1": {
-                    "id": 12, 
+                    "id": 12,
                     "output_name": "output1"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.biosample", 
+            },
+            "inputs": [],
+            "name": "VLI.biosample",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 450, 
+                "left": 450,
                 "top": 10
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_biosample", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"vessel_type\": \"\\\"Tube\\\"\", \"extra_fields\": \"{\\\"enabled\\\": \\\"no\\\", \\\"__current_case__\\\": 0}\", \"vessel_status\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"CONTENTUSABLE\\\"}\", \"source_type\": \"\\\"Individual\\\"\", \"vessel_content\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BLOOD\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_biosample",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"vessel_type\": \"\\\"Tube\\\"\", \"extra_fields\": \"{\\\"enabled\\\": \\\"no\\\", \\\"__current_case__\\\": 0}\", \"vessel_status\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"CONTENTUSABLE\\\"}\", \"source_type\": \"\\\"Individual\\\"\", \"vessel_content\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BLOOD\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "21": {
-            "annotation": "", 
-            "id": 21, 
+            "annotation": "",
+            "id": 21,
             "input_connections": {
                 "input1": {
-                    "id": 13, 
+                    "id": 13,
                     "output_name": "output1"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.biosample", 
+            },
+            "inputs": [],
+            "name": "VLI.biosample",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 450, 
+                "left": 450,
                 "top": 130
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_biosample", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"vessel_type\": \"\\\"Tube\\\"\", \"extra_fields\": \"{\\\"enabled\\\": \\\"no\\\", \\\"__current_case__\\\": 0}\", \"vessel_status\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"CONTENTUSABLE\\\"}\", \"source_type\": \"\\\"Tube\\\"\", \"vessel_content\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"DNA\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_biosample",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"vessel_type\": \"\\\"Tube\\\"\", \"extra_fields\": \"{\\\"enabled\\\": \\\"no\\\", \\\"__current_case__\\\": 0}\", \"vessel_status\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"CONTENTUSABLE\\\"}\", \"source_type\": \"\\\"Tube\\\"\", \"vessel_content\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"DNA\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "22": {
-            "annotation": "", 
-            "id": 22, 
+            "annotation": "",
+            "id": 22,
             "input_connections": {
                 "input1": {
-                    "id": 15, 
+                    "id": 15,
                     "output_name": "output1"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLT.map_vid", 
+            },
+            "inputs": [],
+            "name": "VLT.map_vid",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 450, 
+                "left": 450,
                 "top": 250
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_tools_map_vid", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"TiterPlate\\\", \\\"__current_case__\\\": 1}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"plate\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"1\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_tools_map_vid",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"TiterPlate\\\", \\\"__current_case__\\\": 1}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"plate\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"1\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "23": {
-            "annotation": "", 
-            "id": 23, 
+            "annotation": "",
+            "id": 23,
             "input_connections": {
                 "input1": {
-                    "id": 16, 
+                    "id": 16,
                     "output_name": "output1"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLT.map_vid", 
+            },
+            "inputs": [],
+            "name": "VLT.map_vid",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 450, 
+                "left": 450,
                 "top": 370
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_tools_map_vid", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"Chip\\\", \\\"__current_case__\\\": 3}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"device\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"1\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_tools_map_vid",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"source_type\": \"{\\\"source_type\\\": \\\"Chip\\\", \\\"__current_case__\\\": 3}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"new_column_name\": \"\\\"device\\\"\", \"selected_column\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"1\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "24": {
-            "annotation": "", 
-            "id": 24, 
+            "annotation": "",
+            "id": 24,
             "input_connections": {
                 "input1": {
-                    "id": 18, 
+                    "id": 18,
                     "output_name": "output1"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.data_object", 
+            },
+            "inputs": [],
+            "name": "VLI.data_object",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 450, 
+                "left": 450,
                 "top": 490
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_data_object", 
-            "tool_state": "{\"mimetype\": \"\\\"use_provided\\\"\", \"__page__\": 0, \"input1\": \"null\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_data_object",
+            "tool_state": "{\"mimetype\": \"\\\"use_provided\\\"\", \"__page__\": 0, \"input1\": \"null\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "25": {
-            "annotation": "", 
-            "id": 25, 
+            "annotation": "",
+            "id": 25,
             "input_connections": {
                 "input1": {
-                    "id": 19, 
+                    "id": 19,
                     "output_name": "output1"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.data_collection", 
+            },
+            "inputs": [],
+            "name": "VLI.data_collection",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 450, 
+                "left": 450,
                 "top": 610
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_data_collection", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"label\": \"\\\"\\\"\", \"data_sample_type\": \"\\\"use_provided\\\"\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_data_collection",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"label\": \"\\\"\\\"\", \"data_sample_type\": \"\\\"use_provided\\\"\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "26": {
-            "annotation": "", 
-            "id": 26, 
+            "annotation": "",
+            "id": 26,
             "input_connections": {
                 "input1": {
-                    "id": 22, 
+                    "id": 22,
                     "output_name": "output1"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.biosample", 
+            },
+            "inputs": [],
+            "name": "VLI.biosample",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 670, 
+                "left": 670,
                 "top": 10
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_biosample", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"vessel_type\": \"\\\"PlateWell\\\"\", \"extra_fields\": \"{\\\"enabled\\\": \\\"no\\\", \\\"__current_case__\\\": 0}\", \"vessel_status\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"CONTENTUSABLE\\\"}\", \"source_type\": \"\\\"Tube\\\"\", \"vessel_content\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"DNA\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_biosample",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"vessel_type\": \"\\\"PlateWell\\\"\", \"extra_fields\": \"{\\\"enabled\\\": \\\"no\\\", \\\"__current_case__\\\": 0}\", \"vessel_status\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"CONTENTUSABLE\\\"}\", \"source_type\": \"\\\"Tube\\\"\", \"vessel_content\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"DNA\\\"}\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"BSTUDY\\\"}\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
-        }, 
+        },
         "27": {
-            "annotation": "", 
-            "id": 27, 
+            "annotation": "",
+            "id": 27,
             "input_connections": {
                 "input1": {
-                    "id": 23, 
+                    "id": 23,
                     "output_name": "output1"
                 }
-            }, 
-            "inputs": [], 
-            "name": "VLI.data_sample", 
+            },
+            "inputs": [],
+            "name": "VLI.data_sample",
             "outputs": [
                 {
-                    "name": "output1", 
+                    "name": "output1",
                     "type": "tabular"
-                }, 
+                },
                 {
-                    "name": "logfile", 
+                    "name": "logfile",
                     "type": "txt"
                 }
-            ], 
+            ],
             "position": {
-                "left": 670, 
+                "left": 670,
                 "top": 130
-            }, 
-            "post_job_actions": {}, 
-            "tool_errors": null, 
-            "tool_id": "vl_import_data_sample", 
-            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"scanner\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"V0B7B6D57EF5404BEDB07B9C78DC7090CF\\\"}\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"source_type\": \"\\\"PlateWell\\\"\", \"device_type\": \"\\\"Chip\\\"\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\"}", 
-            "tool_version": null, 
-            "type": "tool", 
+            },
+            "post_job_actions": {},
+            "tool_errors": null,
+            "tool_id": "vl_import_data_sample",
+            "tool_state": "{\"__page__\": 0, \"input1\": \"null\", \"scanner\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"V0B7B6D57EF5404BEDB07B9C78DC7090CF\\\"}\", \"study\": \"{\\\"__class__\\\": \\\"UnvalidatedValue\\\", \\\"value\\\": \\\"use_provided\\\"}\", \"source_type\": \"\\\"PlateWell\\\"\", \"device_type\": \"\\\"Chip\\\"\", \"advanced_configuration\": \"{\\\"configuration_level\\\": \\\"default\\\", \\\"__current_case__\\\": 0}\", \"chromInfo\": \"\\\"/home/zag/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\"}",
+            "tool_version": null,
+            "type": "tool",
             "user_outputs": []
         }
     }

@@ -1,0 +1,166 @@
+{
+    "a_galaxy_workflow": "true",
+    "annotation": "{\n\"inputs\": {\"contigs\" : \n           {\"type\" : \"DataCollection\", \n            \"fields\":   {\"contigs\": \n                            {\"port\" : {\"step\" : \"0\", \"name\": \"contigs\"},\n                             \"mimetype\" : \"x-vl/fasta\"},\n                         \"reads\":\n                            {\"port\" : {\"step\" : \"1\", \"name\": \"reads\"},\n                             \"mimetype\" : \"x-vl/fasta\"},\n                         \"mates\":\n                            {\"port\" : {\"step\" : \"2\", \"name\": \"mates\"},\n                            \"mimetype\" : \"x-vl/fasta\"}}}},\n\"outputs\": {\"scaffolding\":\n            {\"type\" : \"DataCollection\",\n             \"fields\" : {\"finalevidence\": \n                         {\"port\": {\"step\":\"3\",\"name\" : \"finalevidence\"},\n                          \"mimetype\" : \"text/plain\"},\n                         \"summary\": \n                         {\"port\": {\"step\" : \"3\", \"name\": \"summary\"},\n                          \"mimetype\" : \"text/plain\"}}}}\n}",
+    "format-version": "0.1",
+    "name": "WKF-SSPACE-SCAFFOLDING-002",
+    "steps": {
+        "0": {
+            "annotation": "File with the contigs in fasta format.",
+            "id": 0,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "File with the contigs in fasta format.",
+                    "name": "contigs"
+                }
+            ],
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "left": 206,
+                "top": 206
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"contigs\"}",
+            "tool_version": null,
+            "type": "data_input",
+            "user_outputs": []
+        },
+        "1": {
+            "annotation": "",
+            "id": 1,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "",
+                    "name": "reads"
+                }
+            ],
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "left": 206,
+                "top": 325
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"reads\"}",
+            "tool_version": null,
+            "type": "data_input",
+            "user_outputs": []
+        },
+        "2": {
+            "annotation": "",
+            "id": 2,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "",
+                    "name": "mates"
+                }
+            ],
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "left": 206,
+                "top": 446
+            },
+            "tool_errors": null,
+            "tool_id": null,
+            "tool_state": "{\"name\": \"mates\"}",
+            "tool_version": null,
+            "type": "data_input",
+            "user_outputs": []
+        },
+        "3": {
+            "annotation": "",
+            "id": 3,
+            "input_connections": {
+                "contigs": {
+                    "id": 0,
+                    "output_name": "output"
+                },
+                "reads1": {
+                    "id": 1,
+                    "output_name": "output"
+                },
+                "reads2": {
+                    "id": 2,
+                    "output_name": "output"
+                }
+            },
+            "inputs": [],
+            "name": "SSPACE",
+            "outputs": [
+                {
+                    "name": "libraryname",
+                    "type": "tabular"
+                },
+                {
+                    "name": "finalevidence",
+                    "type": "txt"
+                },
+                {
+                    "name": "finalscaffolds",
+                    "type": "fasta"
+                },
+                {
+                    "name": "logfile",
+                    "type": "txt"
+                },
+                {
+                    "name": "summaryfile",
+                    "type": "txt"
+                }
+            ],
+            "position": {
+                "left": 420,
+                "top": 200
+            },
+            "post_job_actions": {
+                "RenameDatasetActionfinalevidence": {
+                    "action_arguments": {
+                        "newname": "finalevidence"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "finalevidence"
+                },
+                "RenameDatasetActionfinalscaffolds": {
+                    "action_arguments": {
+                        "newname": "finalscaffolds"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "finalscaffolds"
+                },
+                "RenameDatasetActionlibraryname": {
+                    "action_arguments": {
+                        "newname": "libraryname"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "libraryname"
+                },
+                "RenameDatasetActionlogfile": {
+                    "action_arguments": {
+                        "newname": "logfile"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "logfile"
+                },
+                "RenameDatasetActionsummaryfile": {
+                    "action_arguments": {
+                        "newname": "summaryfile"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "summaryfile"
+                }
+            },
+            "tool_errors": null,
+            "tool_id": "sspace",
+            "tool_state": "{\"contigoverlap\": \"\\\"30\\\"\", \"contigs\": \"null\", \"orientation\": \"\\\"FR\\\"\", \"min_base_ratio\": \"\\\"0.9\\\"\", \"insert\": \"\\\"200\\\"\", \"__page__\": 0, \"exten\": \"\\\"False\\\"\", \"__rerun_remap_job_id__\": null, \"reads2\": \"null\", \"maxratio\": \"\\\"0.7\\\"\", \"max_trim\": \"\\\"0\\\"\", \"reads1\": \"null\", \"minlink\": \"\\\"5\\\"\", \"mincontig\": \"\\\"200\\\"\", \"error\": \"\\\"0.25\\\"\", \"numofreads\": \"\\\"8\\\"\", \"minoverlap\": \"\\\"35\\\"\", \"chromInfo\": \"\\\"/vs/hg/galaxy-dist/tool-data/shared/ucsc/chrom/?.len\\\"\", \"unpaired\": \"null\"}",
+            "tool_version": "1.0.5",
+            "type": "tool",
+            "user_outputs": []
+        }
+    }
+}
