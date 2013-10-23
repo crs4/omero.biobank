@@ -27,6 +27,7 @@ class ReferenceGenome(DataSample):
                 ('model', wp.STRING, wp.REQUIRED),
                 ('release', wp.STRING, wp.REQUIRED),
                 ('referenceGenomeUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['referenceGenomeUK']
 
   def __preprocess_conf__(self, conf):
     if not 'referenceGenomeUK' in conf:
