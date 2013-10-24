@@ -3,10 +3,11 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
+import argparse
 import sqlite3
 import csv, os, sys, re
 from bs4 import BeautifulSoup
-
+import logging, time
 
 """
 
@@ -18,32 +19,18 @@ beadchip meta files. The results are accumulated in a sqlite3 file.
 
 """
 
-#-----------------------------------------------------------------
-import logging, time
-
-default_logging_level=logging.INFO
-
-LOG_FILENAME = 'sentrix_load_mapping.log'
-logging.basicConfig(
-    filename=LOG_FILENAME,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=default_logging_level)
-logger = logging.getLogger()
-ch = logging.StreamHandler()
-ch.setLevel(default_logging_level)
-formatter = logging.Formatter(
-    fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-#---------------------------------------------------------------------
-import argparse
-
 DEFAULT_DB_NAME='illumina_chips.db'
+
+LOG_FORMAT = '%(asctime)s|%(levelname)-8s|%(message)s'
+LOG_DATEFMT = '%Y-%m-%d %H:%M:%S'
+LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 def cmd_parser():
     parser = argparse.ArgumentParser(description="""
     gather meta information from illumina beadchip files""")
+    parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
+    parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
+                        help='logging level (default=INFO)', default='INFO')
     parser.add_argument("--db-file", type=str, default=DEFAULT_DB_NAME,
                         help="name of the db file that should be used")
 
@@ -252,6 +239,15 @@ class ingestor(object):
 if __name__ == '__main__':
     parser = cmd_parser()
     args = parser.parse_args()
+    log_level = getattr(logging, args.loglevel)
+    kwargs = {'format': LOG_FORMAT,
+              'datefmt': LOG_DATEFMT,
+              'level': log_level}
+    if args.logfile:
+        kwargs['filename'] = args.logfile
+    logging.basicConfig(**kwargs)
+    logger = logging.getLogger()
+
     ing = ingestor(args.db_file)
     if args.reset:
         ing.initialize_db()
