@@ -156,7 +156,7 @@ class CoreOmeroWrapper(object):
   def serialize(self, engine, shallow=False):
     if not isinstance(engine, Serializer):
         raise ValueError('%s is not a Serializer' % engine)
-    if not self.is_loaded():
+    if not self.is_loaded() and self.is_mapped():
         self.reload()
     if engine.has_seen(self.id):
         return
