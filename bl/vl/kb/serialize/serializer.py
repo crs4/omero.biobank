@@ -16,6 +16,7 @@ The general usage scheme is as follows.
 
 """
 
+
 class Serializer(object):
     """kb serializer interface class.
 
@@ -31,6 +32,7 @@ class Serializer(object):
     def by_vid(self, vid):
         "A reference by vid wrapping"
         return {'by_vid' : vid}
+
     def by_ref(self, ref):
         "A reference by ref wrapping"
         return {'by_ref' : ref}

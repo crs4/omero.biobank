@@ -68,7 +68,7 @@ def save_chunks(output_dir, objects_limbo, yaml_data, base_fname, logger):
                 conf = decode_dict(yaml_data[oid]['configuration'])
                 serializer.serialize(oid, str(yaml_data[oid]['type']),
                                      from_ref_to_vid(conf),
-                                     str(yaml_data[oid]['configuration']['vid']))
+                                     str(yaml_data[oid]['configuration'].get('vid')))
         chunk_counter += 1
 
 
