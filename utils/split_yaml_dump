@@ -76,7 +76,7 @@ def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
 
-    logger = get_logger('main', level=args.loglevel, filename=args.logfile)
+    logger = get_logger('split_yaml_dump', level=args.loglevel, filename=args.logfile)
     kb = KB(driver='omero')(args.host, args.user, args.passwd)
 
     objects_limbo, yaml_data = load_objects(args.in_file, kb, logger)
