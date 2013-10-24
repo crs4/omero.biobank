@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-import argparse, sys, gc
+import sys, gc, os
 from yaml import CBaseLoader
+from argparse import ArgumentError, ArgumentParser
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb import KBError
@@ -10,7 +11,7 @@ from bl.vl.utils import LOG_LEVELS, get_logger
 
 
 def make_parser():
-    parser = argparse.ArgumentParser('Restore data stored as YAML to an OMERO server')
+    parser = ArgumentParser('Restore data stored as YAML to an OMERO server')
     parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
     parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
                         help='logging level', default='INFO')
@@ -20,8 +21,9 @@ def make_parser():
                         required=True)
     parser.add_argument('--passwd', '-P', type=str, help='OMERO password',
                         required=True)
-    parser.add_argument('--yaml-file', '-Y', type=str, help='YAML input file',
-                        required=True)
+    parser.add_argument('--yaml-file', '-Y', type=str, help='YAML input file')
+    parser.add_argument('--chunks-directory', '-D', type=str,
+                        help='directory containing YAML chunks produced using the split_yaml_dump tool')
     return parser
 
 
@@ -90,6 +92,19 @@ def to_biobank(kb, objects_limbo, logger):
     logger.info('Objects restoring completed')
 
 
+def dump_file(kb, file_path, logger):
+    objects_limbo = objects_from_yaml(kb, file_path, logger)
+    to_biobank(kb, objects_limbo, logger)
+
+
+def dump_chunks(kb, chunks_folder, logger):
+    files = os.listdir(chunks_folder)
+    files.sort()
+    for f in files:
+        dump_file(kb, os.path.join(chunks_folder, f), logger)
+        os.remove(os.path.join(chunks_folder, f))
+
+
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
@@ -98,9 +113,16 @@ def main(argv):
     kb = KB(driver='omero')(args.host, args.user, args.passwd)
     kb.disconnect()
 
-    objects_limbo = objects_from_yaml(kb, args.yaml_file, logger)
+    if not args.yaml_file and not args.chunks_directory:
+        raise ArgumentError('Provide a YAML file or a directory containing chunks')
+    if args.yaml_file and args.chunks_directory:
+        raise ArgumentError('Provide only one between YAML file and chunks directory')
+
     try:
-        to_biobank(kb, objects_limbo, logger)
+        if args.yaml_file:
+            dump_file(kb, args.yaml_file, logger)
+        if args.chunks_directory:
+            dump_chunks(kb, args.chunks_directory, logger)
     except Exception, e:
         logger.critical(e.message)
 
