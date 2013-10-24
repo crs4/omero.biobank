@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+
+import argparse, sys, os
+
+from bl.vl.kb.serialize.deserialize import ObjectsLimbo
+from bl.vl.utils import LOG_LEVELS, get_logger, decode_dict
+from bl.vl.kb import KnowledgeBase as KB
+from bl.vl.kb.serialize.yaml_serializer import YamlSerializer
+
+from yaml import CBaseLoader
+import itertools as it
+
+
+def make_parser():
+    parser = argparse.ArgumentParser('Split a YAML dump in smaller files')
+    parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
+    parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
+                        help='logging level', default='INFO')
+    parser.add_argument('--host', '-H', type=str, help='OMERO host',
+                        required=True)
+    parser.add_argument('--user', '-U', type=str, help='OMERO user',
+                        required=True)
+    parser.add_argument('--passwd', '-P', type=str, help='OMERO password',
+                        required=True)
+    parser.add_argument('--in-file', '-I', type=str, help='YAML file that will be splitted',
+                        required=True)
+    parser.add_argument('--out-dir', '-O', type=str, help='output dir for produced files',
+                        required=True)
+    return parser
+
+
+def load_objects(input_file, kb, logger):
+    logger.info('Loading objects from %s' % input_file)
+    limbo = ObjectsLimbo(kb, logger)
+    with open(input_file) as f:
+        loader = CBaseLoader(f)
+        yaml_data = loader.get_data()
+        loader.dispose()
+        for ref, conf in yaml_data.iteritems():
+            limbo.add_object(ref, conf)
+    return limbo, yaml_data
+
+
+def from_ref_to_vid(conf_dict):
+    new_conf = {}
+    for k, v in conf_dict.iteritems():
+        if type(v) == dict:
+            new_conf[k] = from_ref_to_vid(v)
+        else:
+            if k == 'by_ref':
+                new_conf['by_vid'] = conf_dict[k]
+            else:
+                new_conf[k] = v
+    return new_conf
+
+
+def save_chunks(output_dir, objects_limbo, yaml_data, base_fname, logger):
+    logger.info('Saving chunks')
+    oids = objects_limbo.get_object_oids_sorted_by_dependency()
+    grouped = it.groupby(oids, lambda oid: objects_limbo.objects[oid].type.OME_TABLE)
+    chunk_counter = 1
+    for t, group in grouped:
+        logger.info('Object type %s, saving chunk %04d', t, chunk_counter)
+        fname = os.path.join(output_dir, '%s.%04d' % (base_fname, chunk_counter))
+        with open(fname, 'w') as ofile:
+            serializer = YamlSerializer(ofile, logger)
+            for oid in group:
+                conf = decode_dict(yaml_data[oid]['configuration'])
+                serializer.serialize(oid, str(yaml_data[oid]['type']),
+                                     from_ref_to_vid(conf),
+                                     str(yaml_data[oid]['configuration']['vid']))
+        chunk_counter += 1
+
+
+def main(argv):
+    parser = make_parser()
+    args = parser.parse_args(argv)
+
+    logger = get_logger('main', level=args.loglevel, filename=args.logfile)
+    kb = KB(driver='omero')(args.host, args.user, args.passwd)
+
+    objects_limbo, yaml_data = load_objects(args.in_file, kb, logger)
+    save_chunks(args.out_dir, objects_limbo, yaml_data,
+                os.path.basename(args.in_file), logger)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
