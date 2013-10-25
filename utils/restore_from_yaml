@@ -93,16 +93,22 @@ def to_biobank(kb, objects_limbo, logger):
 
 
 def dump_file(kb, file_path, logger):
-    objects_limbo = objects_from_yaml(kb, file_path, logger)
-    to_biobank(kb, objects_limbo, logger)
+    try:
+        objects_limbo = objects_from_yaml(kb, file_path, logger)
+        to_biobank(kb, objects_limbo, logger)
+        return True
+    except Exception, e:
+        logger.critical(e.message)
+        return False
 
 
 def dump_chunks(kb, chunks_folder, logger):
     files = os.listdir(chunks_folder)
     files.sort()
     for f in files:
-        dump_file(kb, os.path.join(chunks_folder, f), logger)
-        os.remove(os.path.join(chunks_folder, f))
+        dumped = dump_file(kb, os.path.join(chunks_folder, f), logger)
+        if dumped:
+            os.remove(os.path.join(chunks_folder, f))
 
 
 def main(argv):
@@ -118,13 +124,10 @@ def main(argv):
     if args.yaml_file and args.chunks_directory:
         raise ArgumentError('Provide only one between YAML file and chunks directory')
 
-    try:
-        if args.yaml_file:
-            dump_file(kb, args.yaml_file, logger)
-        if args.chunks_directory:
-            dump_chunks(kb, args.chunks_directory, logger)
-    except Exception, e:
-        logger.critical(e.message)
+    if args.yaml_file:
+        dump_file(kb, args.yaml_file, logger)
+    if args.chunks_directory:
+        dump_chunks(kb, args.chunks_directory, logger)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
