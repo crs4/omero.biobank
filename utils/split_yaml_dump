@@ -16,12 +16,6 @@ def make_parser():
     parser.add_argument('--logfile', type=str, help='log file (default=stderr)')
     parser.add_argument('--loglevel', type=str, choices=LOG_LEVELS,
                         help='logging level', default='INFO')
-    parser.add_argument('--host', '-H', type=str, help='OMERO host',
-                        required=True)
-    parser.add_argument('--user', '-U', type=str, help='OMERO user',
-                        required=True)
-    parser.add_argument('--passwd', '-P', type=str, help='OMERO password',
-                        required=True)
     parser.add_argument('--in-file', '-I', type=str, help='YAML file that will be splitted',
                         required=True)
     parser.add_argument('--out-dir', '-O', type=str, help='output dir for produced files',
@@ -77,7 +71,9 @@ def main(argv):
     args = parser.parse_args(argv)
 
     logger = get_logger('split_yaml_dump', level=args.loglevel, filename=args.logfile)
-    kb = KB(driver='omero')(args.host, args.user, args.passwd)
+    # No need to actually connect to an OMERO server, we are just going to use
+    # KB's objects factory
+    kb = KB(driver='omero')('localhost', 'omero', 'omero', check_ome_version=False)
 
     objects_limbo, yaml_data = load_objects(args.in_file, kb, logger)
     save_chunks(args.out_dir, objects_limbo, yaml_data,
