@@ -46,25 +46,32 @@ def get_data(kb, logger):
 def delete(kb, objects, actions, logger):
     logger.info('Objects to delete: %d' % len(objects))
     undeleted_objs = []
-    for o in objects:
+    for i, o in enumerate(objects):
         try:
             kb.delete(o)
+            logger.debug('Deleted object %d of %d', i, len(objects))
         except KBError:
             undeleted_objs.append(o)
+            logger.debug('Object %d of %d deletion failed, retry during next wave',
+                         i, len(objects))
     logger.info('%d objects deleted' % (len(objects) - len(undeleted_objs)))
     logger.info('Actions to delete: %d' % len(actions))
     undeleted_acts = []
-    for a in actions:
+    for i, a in enumerate(actions):
         try:
             if a.setup:
                 kb.delete(a.setup)
+                logger.debug('Deleted action %d of %d setup', i, len(actions))
         except KBError:
             # different actions can have the same configuration objects, ignore if can't delete
             pass
         try:
             kb.delete(a)
+            logger.debug('Deleted action %d of %d', i, len(actions))
         except KBError:
             undeleted_acts.append(a)
+            logger.debug('Action %d of %d deletion failed, retry during next wave',
+                         i, len(actions))
     logger.info('%d actions deleted' % (len(actions) - len(undeleted_acts)))
     return undeleted_objs, undeleted_acts
 
@@ -80,13 +87,21 @@ def cleanup(kb, clear_studies, clear_devices, logger):
         studies = kb.get_objects(kb.Study)
         logger.info('Study to delete: %d' % len(studies))
         for s in studies:
-            kb.delete(s)
+            try:
+                kb.delete(s)
+                logger.debug('Study %s deleted', s.label)
+            except KBError:
+                logger.debug('Study %s is still referenced, can\'t delete', s.label)
         logger.info('Study objects deleted')
     if clear_devices:
         devices = kb.get_objects(kb.Device)
         logger.info('Devices to delete: %d' % len(devices))
         for d in devices:
-            kb.delete(d)
+            try:
+                kb.delete(d)
+                logger.debug('Device %s deleted', d.label)
+            except KBError:
+                logger.debug('Device %s is still referenced, can\'t delete', d.label)
         logger.info('Device objects deleted')
 
 
