@@ -34,7 +34,7 @@ class GraphManagerDaemon(object):
         else:
             self.logger = self.__get_logger(log_file, log_level)
         try:
-            self.messages_consumer = get_events_consumer(self.logger)
+            self.messages_consumer = get_events_consumer(self.logger, self.consume_message)
             self.graph_driver = build_driver()
         except GraphAuthenticationError, gr_auth_error:
             self.logger.critical(gr_auth_error.message)
@@ -51,7 +51,7 @@ class GraphManagerDaemon(object):
         logger.addHandler(handler)
         return logger
 
-    def consume_message(self, channel, method, head, body):
+    def consume_message(self, channel, method, properties, body):
         routing_key = method.routing_key
         self.logger.debug('Validating message')
         try:
@@ -87,7 +87,7 @@ class GraphManagerDaemon(object):
             self.logger.critical(me_auth_error.message)
             sys.exit(me_auth_error.message)
         self.logger.info('Start consuming messages')
-        self.messages_consumer.run(self.consume_message)
+        self.messages_consumer.run()
 
     def create_node(self, msg):
         nid = self.graph_driver.save_node(msg['details'])
