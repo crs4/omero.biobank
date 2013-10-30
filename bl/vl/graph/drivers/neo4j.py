@@ -131,6 +131,11 @@ class Neo4JDriver(object):
     def __get_edge_by_nodes__(self, src_node_hash, dest_node_hash):
         return self.__get_edge_by_id__(build_edge_id(src_node_hash, dest_node_hash))
 
+    def __encode_conf__(self, conf):
+        for k, v in conf.iteritems():
+            conf[k] = str(v)
+        return conf
+
     def create_node(self, obj):
         event = events.build_event(events.NodeCreationEvent, {'bl_obj': obj})
         self.kb.events_sender.send_event(event)
@@ -138,7 +143,7 @@ class Neo4JDriver(object):
     def save_node(self, node_conf):
         try:
             node = self.graph.ome_objects.get_or_create('obj_hash', node_conf['obj_hash'],
-                                                        node_conf)
+                                                        self.__encode_conf__(node_conf))
         except httplib2.socket.error:
             raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         return node.eid
@@ -159,7 +164,8 @@ class Neo4JDriver(object):
             if not dest_node:
                 raise MissingNodeError('No node with hash %s' % dest_hash)
             try:
-                edge = self.graph.produces.create(src_node, dest_node, action_conf)
+                edge = self.graph.produces.create(src_node, dest_node,
+                                                  self.__encode_conf__(action_conf))
             except httplib2.socket.error:
                 raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         return edge.eid
@@ -239,14 +245,14 @@ class Neo4JDriver(object):
 
     def __get_ome_obj__(self, node):
         try:
-            return self.kb._CACHE[node.obj_hash]
+            return self.kb._CACHE[int(node.obj_hash)]
         except KeyError:
             return self.kb.get_by_vid(getattr(self.kb, node.obj_class),
                                       str(node.obj_id))
 
     def __get_ome_obj_by_info__(self, obj_info):
         try:
-            return self.kb._CACHE[obj_info['object_hash']]
+            return self.kb._CACHE[int(obj_info['object_hash'])]
         except KeyError:
             return self.kb.get_by_vid(getattr(self.kb, obj_info['object_type']),
                                       obj_info['object_id'])
