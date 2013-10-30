@@ -81,7 +81,7 @@ before_install:
 
 install:
   - cd ../omero.biobank
-  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then pip install pika==0.9.12; fi
+  - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then pip install pika; fi
   - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then pip install bulbs; fi
   - if [[ "$GRAPH_ENGINE" == "neo4j" ]]; then pip install voluptuous; fi
   - if [[ "$GRAPH_ENGINE" == "pygraph" ]]; then easy_install python-graph-core; fi
