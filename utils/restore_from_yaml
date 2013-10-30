@@ -120,9 +120,9 @@ def main(argv):
     kb.disconnect()
 
     if not args.yaml_file and not args.chunks_directory:
-        raise ArgumentError('Provide a YAML file or a directory containing chunks')
+        raise Exception('Provide a YAML file or a directory containing chunks')
     if args.yaml_file and args.chunks_directory:
-        raise ArgumentError('Provide only one between YAML file and chunks directory')
+        raise Exception('Provide only one between YAML file and chunks directory')
 
     if args.yaml_file:
         dump_file(kb, args.yaml_file, logger)
