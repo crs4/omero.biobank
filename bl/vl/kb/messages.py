@@ -18,12 +18,13 @@ def get_events_sender(logger=None):
         return None
 
 
-def get_events_consumer(logger=None):
+def get_events_consumer(logger=None, consumer_callback=None):
     return EventsConsumer(msgconf.messages_engine_host(),
                           msgconf.messages_engine_port(),
                           msgconf.messages_engine_username(),
                           msgconf.messages_engine_password(),
                           msgconf.messages_engine_queue(),
+                          consumer_callback,
                           logger)
 
 
@@ -55,7 +56,7 @@ class MessagesHandler(object):
         if self.host is None or self.queue is None:
             raise MessagesEngineConfigurationError('Check configuration values for HOST and QUEUE')
 
-    def __get_connection_params(self):
+    def _get_connection_params(self):
         self.conn_params = pika.ConnectionParameters()
         if not self.host:
             raise ValueError('No host provided')
@@ -71,23 +72,23 @@ class MessagesHandler(object):
 
     def connect(self):
         if not self.connection:
-            conn_params = self.__get_connection_params()
+            conn_params = self._get_connection_params()
             try:
                 self.connection = pika.BlockingConnection(conn_params)
-            except AMQPConnectionError:
-                msg = 'Error while connection to RabbitMQ server, unable to contact the server'
-                raise MessageEngineConnectionError(msg)
             except ConnectionClosed:
                 if not self.user or not self.password:
                     msg = 'Unable to connect to RabbitMQ, authentication required'
                 else:
                     msg = 'Unable to connect to RabbitMQ, wrong username and\or password'
                 raise MessagesEngineAuthenticationError(msg)
+            except AMQPConnectionError:
+                msg = 'Error while connecting to RabbitMQ server, unable to contact the server'
+                raise MessageEngineConnectionError(msg)
             self.channel = self.connection.channel()
-            self.__setup_network()
+            self._setup_network()
             self.logger.info('connection established')
         else:
-            self.logger.debug('Connection object already exist')
+            self.logger.debug('connection object already exists')
 
     def disconnect(self):
         if self.connection:
@@ -104,12 +105,24 @@ class MessagesHandler(object):
                 self.logger.exception(e)
                 raise e
 
-    def __setup_network(self):
-        self.__declare_exchange()
-        f = self.__declare_queue()
-        self.channel.queue_bind(
+    def _setup_network(self):
+        params = self._get_connection_params()
+        connection = pika.BlockingConnection(params)
+        channel = connection.channel()
+        channel.exchange_declare(
             exchange=self.exchange_name,
-            queue=f.method.queue,
+            type='topic',
+            durable=True
+        )
+        channel.queue_declare(
+            self.queue,
+            durable=True,
+            exclusive=False,
+            auto_delete=False
+        )
+        channel.queue_bind(
+            self.queue,
+            self.exchange_name,
             routing_key='%s.graph.#' % self.queue
         )
 
@@ -123,22 +136,6 @@ class MessagesHandler(object):
         else:
             self.logger.debug('%d messages still in queue' % f.method.message_count)
             return False
-
-    def __declare_exchange(self):
-        self.channel.exchange_declare(
-            exchange=self.exchange_name,
-            type='topic',
-            durable=True
-        )
-
-    def __declare_queue(self):
-        frame = self.channel.queue_declare(
-            queue=self.queue,
-            durable=True,
-            exclusive=False,
-            auto_delete=False
-        )
-        return frame
 
     def __del__(self):
         self.disconnect()
@@ -172,33 +169,60 @@ class EventsSender(MessagesHandler):
 class EventsConsumer(MessagesHandler):
 
     def __init__(self, host, port=None, user=None, password=None,
-                 queue=None, logger=None):
+                 queue=None, consumer_callback=None, logger=None):
         super(EventsConsumer, self).__init__(host, port, user, password,
                                              queue, logger)
+        self.consumer_callback = consumer_callback
+
+    def _on_connect(self, connection):
+        connection.channel(self._on_channel_open)
+
+    def _on_channel_open(self, channel):
+        self.channel = channel
+        self.channel.basic_consume(self.consumer_callback, self.queue)
+
+    def _on_close(self, frame):
+        self.connection.ioloop.stop()
+
+    def connect(self):
+        if not self.connection:
+            self._setup_network()
+            conn_params = self._get_connection_params()
+            try:
+                self.connection = pika.SelectConnection(conn_params, self._on_connect)
+                self.connection.add_on_close_callback(self._on_close)
+            except ConnectionClosed:
+                if not self.user or not self.password:
+                    msg = 'Unable to connect to RabbitMQ, authentication required'
+                else:
+                    msg = 'Unable to connect to RabbitMQ, wrong username and\or password'
+                raise MessagesEngineAuthenticationError(msg)
+            except AMQPConnectionError:
+                msg = 'Error while connectiong to RabbitMQ server, unable to contact the server'
+                raise MessageEngineConnectionError(msg)
+            # self.channel = self.connection.channel(self._on_channel_open)
+            self.logger.info('connection established')
+        else:
+            self.logger.debug('connection object already exists')
 
     def stop(self):
         self.logger.debug('Closing connection')
-        self.channel.stop_consuming()
-        self.disconnect()
+        self.connection.close()
+        self.connection.ioloop.start()
+        self.logger.debug('Connection closes')
 
-    def run(self, consumer_callback):
-        if not self.channel:
-            self.connect()
+    def run(self):
         try:
-            self.channel.basic_consume(consumer_callback, queue=self.queue)
-            self.channel.start_consuming()
-            self.logger.info('Start consuming messages')
+            self.connection.ioloop.start()
         except KeyboardInterrupt:
-            self.logger.info('Captured keyboard interrupt, stopping')
+            self.logger.info('Captured keyboard interrupt, exit now')
         except ChannelClosed:
-            msg = 'Connection to RabbitMQ server closed unexpectedly'
-            raise MessageEngineConnectionError(msg)
+            self.logger.error('Channel closed remotely, exit now')
         except Exception, e:
-            self.logger.critical('Exception captured: %s' % e)
+            self.logger.critical('Exception in RabbitMQ ioloop: %s', e)
             raise e
         finally:
             try:
                 self.stop()
             except:
-                self.logger.error('Error occurred while calling stop() method')
                 pass
