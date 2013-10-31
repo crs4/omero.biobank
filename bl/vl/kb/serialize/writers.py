@@ -1,4 +1,5 @@
 import uuid
+from yaml import dump
 
 def protect(string):
     return '\'%s\'' % string
@@ -11,6 +12,14 @@ def by_vid(vid):
 
 def by_label(label):
     return {'by_label': str(label)}
+
+def write_yaml(ostream, oid, otype, configuration, vid=None):
+    obj_def = dict()
+    obj_def['type'] = otype
+    obj_def['configuration'] = configuration
+    if not vid is None:
+        obj_def['vid'] = vid
+    ostream.write(dump({str(oid): obj_def}))
 
 def write_object(ostream, oid, otype, configuration, vid=None):
     ostream.write('"%s":\n type: %s\n configuration:\n' % (oid, otype))
