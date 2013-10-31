@@ -170,11 +170,11 @@ class LaneSlot(wp.OmeroWrapper):
     if self.tag:
       ls_uk = make_unique_key(self.tag, self.lane.label)
       setattr(self.ome_obj, 'laneSlotUK',
-              self.to_omero(self.__field__['laneSlotUK'][0], ls_uk))
+              self.to_omero(self.__fields__['laneSlotUK'][0], ls_uk))
     else:
       ls_uk = make_unique_key(self.lane.label)
       setattr(self.ome_obj, 'laneSlotUK',
-              self.to_omero(self.__field__['laneSlotUK'][0], ls_uk))
+              self.to_omero(self.__fields__['laneSlotUK'][0], ls_uk))
 
   def __dump_to_graph__(self, is_update):
     super(LaneSlot, self).__dump_to_graph__(is_update)
