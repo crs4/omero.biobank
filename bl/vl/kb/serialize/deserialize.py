@@ -44,7 +44,10 @@ class ObjectProxy(object):
             else:
                 return dewrap(value_type, value)
         if self.type == DataObject or self.type == SNPMarkersSet:
-            configuration.pop('vid')
+            try:
+                configuration.pop('vid')
+            except KeyError:
+                pass
         return dict([(k, convert_value(k, configuration[k]))
                     for k in configuration])
 
