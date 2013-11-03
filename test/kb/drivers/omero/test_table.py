@@ -168,6 +168,46 @@ class TestProxyCore(unittest.TestCase):
         pc.delete_table(table_name)
       self.assertTrue(np.all(data == rows))
 
+  def test_whole_table_ops(self):
+    n_records = 11
+    dtype = np.dtype([('i', '<i4'), ('l', '<i8'), 
+                      ('b', '<b1'), ('f', '<f4'), 
+                      ('d', '<f8'), ('s', 'S10')])
+    records = np.zeros(n_records, dtype=dtype)
+    d = np.arange(n_records)
+    records['i'] = d
+    records['l'] = n_records + d
+    records['b'] = d & 0x01
+    records['f'] = 0.333 * d
+    records['d'] = 0.90290939209 * d
+    records['s'] = map(str, d)
+    #---
+    table_name = get_random_table_name()
+    try:
+      pc = ProxyCore(OME_HOST, OME_USER, OME_PASS)
+      self.assertFalse(pc.table_exists(table_name))
+      pc.store_as_a_table(table_name, records)
+      self.assertTrue(pc.table_exists(table_name))
+      newrec = pc.read_whole_table(table_name)
+      self.assertEqual(len(newrec), len(records))
+      for k in ['i', 'l', 'b', 'f', 'd', 's']:
+        self.assertTrue(np.all(records[k] == newrec[k]))
+    finally:
+        pc.delete_table(table_name)
+    #---
+    table_name = get_random_table_name()
+    batch_size = n_records/2
+    try:
+      pc = ProxyCore(OME_HOST, OME_USER, OME_PASS)
+      self.assertFalse(pc.table_exists(table_name))
+      pc.store_as_a_table(table_name, records, batch_size)
+      self.assertTrue(pc.table_exists(table_name))
+      newrec = pc.read_whole_table(table_name, batch_size)
+      self.assertEqual(len(newrec), len(records))
+      for k in ['i', 'l', 'b', 'f', 'd', 's']:
+        self.assertTrue(np.all(records[k] == newrec[k]))
+    finally:
+        self.kb.delete_table(table_name)
 
 def suite():
   suite = unittest.TestSuite()
@@ -177,6 +217,7 @@ def suite():
   suite.addTest(TestProxyCore('test_update_row'))
   suite.addTest(TestProxyCore('test_selections'))
   suite.addTest(TestProxyCore('test_array_size'))
+  suite.addTest(TestProxyCore('test_whole_table_ops'))
   return suite
 
 

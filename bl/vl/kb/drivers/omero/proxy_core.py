@@ -39,6 +39,16 @@ def convert_type(o):
   elif isinstance(o, omero.grid.LongArrayColumn):
     return '(%d,)int64' % o.size
 
+def dtype_to_ome_table_column(name, dtype):
+  if dtype in [np.int32, np.int64]:
+    return omero.grid.LongColumn(name, '')
+  elif dtype in [np.float32, np.float64]:
+    return omero.grid.DoubleColumn(name, '')
+  elif dtype in [np.bool, np.bool8]:
+    return omero.grid.BoolColumn(name, '')
+  elif dtype.kind == 'S':
+    return omero.grid.StringColumn(name, '', dtype.itemsize)
+    
 
 def convert_coordinates_to_np(d):
   record_type = [(c.name, convert_type(c)) for c in d.columns]
@@ -50,7 +60,6 @@ def convert_coordinates_to_np(d):
 
 def convert_to_numpy_record_type(d):
   return [(c.name, convert_type(c)) for c in d]
-
 
 def convert_from_numpy(x):
   if isinstance(x, np.int64):
@@ -104,8 +113,9 @@ class ProxyCore(object):
     client_version = omero_version
     self.disconnect()
     if server_version != client_version:
-      raise kb.KBError('OMERO client version %s doesn\'t match server version %s' %
-                       (client_version, server_version))
+      raise kb.KBError(
+        'OMERO client version %s doesn\'t match server version %s' %
+        (client_version, server_version))
 
   def __init__(self, host, user, passwd, group=None, session_keep_tokens=1,
                check_ome_version=True):
@@ -221,7 +231,8 @@ class ProxyCore(object):
     Save and return a KB object.
     """
     try:
-      # check if we are saving a new object or if we are updating an existing one
+      # check if we are saving a new object or if we are updating an
+      # existing one
       obj_update = obj.is_mapped()
       result = self.ome_operation("getUpdateService", "saveAndReturnObject",
                                   obj.ome_obj)
@@ -323,15 +334,62 @@ class ProxyCore(object):
       # self.disconnect()
     return len(ofiles) > 0
 
+  @staticmethod
+  def _load_columns(table, records):
+    columns = table.getHeaders()
+    for c in columns:
+      c.values = records[c.name]
+    return columns
+    
+  def store_as_a_table(self, table_name, records, batch_size=10000):
+    """
+    Creates a new omero table called table_name and store in it the
+    contents of records, a numpy records array.
+    """
+    if not hasattr(records, 'dtype') or records.dtype.type != np.void:
+      raise ValueError('records is not a numpy records array')
+    dtype = records.dtype
+    fields = [dtype_to_ome_table_column(k, dtype.fields[k][0])
+              for k in records.dtype.names]
+    table = self._create_table(table_name, fields)
+    offset = 0
+    while offset < len(records):
+      table.addData(_load_columns(table, records[offset: offset + batch_size]))
+      offset += batch_size
+    
+  def read_whole_table(self, table_name, batch_size=10000):
+    """
+    Reads all data contained in the omero table called table_name and
+    return result as a numpy records array.
+    """
+    session = self.connect()
+    table = self._get_table(session, table_name)
+    n_rows = table.getNumberOfRows()
+    columns = table.getHeaders()
+    dtype = [(c.name, convert_type(c)) for c in columns]
+    records = np.zeros(n_rows, dtype=dtype)
+    offset = 0
+    while offset < n_rows:
+      next_offset = offset + batch_size
+      data = table.read(range(len(columns), offset, next_offset))
+      block = records[offset:next_offset]
+      for c in data.columns:
+        block[c.name] = c.values
+      offset = next_offset
+    return records
+    
   def create_table(self, table_name, fields):
     ofields = [self.OME_TABLE_COLUMN[f[0]](*f[1:]) for f in fields]
+    return self._create_table(table_name, ofields)
+    
+  def _create_table(self, table_name, fields):
     s = self.connect()
     # try:
     r = s.sharedResources()
     m = r.repositories()
     i = m.descriptions[0].id.val
     t = r.newTable(i, table_name)
-    t.initialize(ofields)
+    t.initialize(fields)
     # finally:
     #   self.disconnect()
     return t
