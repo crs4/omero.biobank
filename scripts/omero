@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# Author: Gianmauro Cuccuru, 2012
+
+### BEGIN INIT INFO
+# Provides:             omero
+# Required-Start:       $all
+# Required-Stop:
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    Omero server
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+#export LD_LIBRARY_PATH=/opt/Ice-3.4.2/lib64:$LD_LIBRARY_PATH
+#export PYTHONPATH=/opt/Ice-3.4.2/python:$PYTHONPATH
+#export PATH=/opt/Ice-3.4.2/bin:$PATH
+
+USER="omero"
+GROUP="omero"
+DIR="/opt/omero/"
+EXEC="/opt/omero/dist/bin/omero"
+OPT_start=" admin start"
+OPT_stop=" admin stop"
+OPT_status=" admin diagnostics"
+PIDFILE="/var/run/omero.pid"
+
+case "${1:-''}" in
+  'start')
+           log_daemon_msg "Starting Omero Server"
+           if start-stop-daemon -v --chuid $USER --group $GROUP --start --background \
+                     --chdir $DIR --exec $EXEC -- $OPT_start; then
+             log_end_msg 0
+           else
+             log_end_msg 1
+           fi
+
+        ;;
+  'stop')
+           log_daemon_msg "Stopping Omero Server" 
+	   if start-stop-daemon --chuid $USER --group $GROUP --start --exec $EXEC --$OPT_stop; then
+             log_end_msg 0
+           else 
+             log_end_msg 1
+           fi
+        ;;
+  'restart')
+           # restart commands here
+           $0 stop
+           $0 start
+                          
+        ;;
+  'status')
+	   log_daemon_msg "Status Omero Server"
+           if start-stop-daemon --chuid $USER --group $GROUP --start --exec $EXEC --$OPT_status; then
+             log_end_msg 0
+           else
+             log_end_msg 1
+           fi
+        ;;
+  *)      # no parameter specified
+        echo "Usage: $SELF start|stop|restart|status"
+        exit 1
+        ;;
+esac
+
+
+
+
+
