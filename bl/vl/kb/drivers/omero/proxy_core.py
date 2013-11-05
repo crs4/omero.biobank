@@ -264,8 +264,10 @@ class ProxyCore(object):
                                   kb_obj.ome_obj)
     except omero.ValidationException:
       raise kb.KBError("object is referenced by one or more objects")
-    except omero.ApiUsageException, e:
+    except omero.ApiUsageException:
       raise kb.KBError("trying to delete non-persistent object")
+    except omero.SecurityViolation:
+      raise kb.KBError("deletion of the object not allowed")
     else:
       self.del_from_cache(kb_obj.ome_obj)
       kb_obj.__cleanup__()
