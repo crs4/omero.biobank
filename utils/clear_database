@@ -91,7 +91,7 @@ def cleanup(kb, clear_studies, clear_devices, logger):
                 kb.delete(s)
                 logger.debug('Study %s deleted', s.label)
             except KBError:
-                logger.debug('Study %s is still referenced, can\'t delete', s.label)
+                logger.debug('Can\'t delete study %s', s.label)
         logger.info('Study objects deleted')
     if clear_devices:
         devices = kb.get_objects(kb.Device)
@@ -101,7 +101,7 @@ def cleanup(kb, clear_studies, clear_devices, logger):
                 kb.delete(d)
                 logger.debug('Device %s deleted', d.label)
             except KBError:
-                logger.debug('Device %s is still referenced, can\'t delete', d.label)
+                logger.debug('Can\'t delete device %s', d.label)
         logger.info('Device objects deleted')
 
 
