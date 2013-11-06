@@ -29,7 +29,10 @@ class GraphManagerDaemon(object):
             'COLLECTION_ITEM_CREATE': self.create_collection_item,
         }
 
-        self.logger = get_logger('graph_manager_daemon', log_level, log_file)
+        if not log_file:
+            self.logger = get_logger('graph_manager_daemon', log_level)
+        else:
+            self.logger = self.__get_logger(log_file, log_level)
         self.pid_file = pid_file
 
         try:
