@@ -184,7 +184,7 @@ class EventsConsumer(MessagesHandler):
         self.channel = channel
         self.channel.basic_consume(self.consumer_callback, self.queue)
 
-    def _on_close(self, frame):
+    def _on_close(self, *args):
         self.connection.ioloop.stop()
 
     def connect(self):
