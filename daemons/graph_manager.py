@@ -7,8 +7,9 @@ from bl.vl.kb.events import decode_event, InvalidMessageError
 import sys
 import logging
 import argparse
+import os
 from logging.handlers import RotatingFileHandler
-from bl.vl.utils import LOG_FORMAT, LOG_DATEFMT
+from bl.vl.utils import LOG_FORMAT, LOG_DATEFMT, get_logger
 
 
 class GraphManagerDaemon(object):
@@ -17,7 +18,7 @@ class GraphManagerDaemon(object):
     LOG_MAX_SIZE = 100*1024*1024
     LOG_BACKUP_COUNT = 3
 
-    def __init__(self, log_file=None, log_level='INFO'):
+    def __init__(self, log_file, log_level, pid_file):
         self.actions_mapping = {
             'NODE_CREATE': self.create_node,
             'EDGE_CREATE': self.create_edge,
@@ -28,17 +29,29 @@ class GraphManagerDaemon(object):
             'COLLECTION_ITEM_CREATE': self.create_collection_item,
         }
 
-        if not log_file:
-            self.logger = logging.getLogger(self.LOGGER_LABEL)
-            self.logger.setLevel(getattr(logging, log_level))
-        else:
-            self.logger = self.__get_logger(log_file, log_level)
+        self.logger = get_logger('graph_manager_daemon', log_level, log_file)
+        self.pid_file = pid_file
+
         try:
-            self.messages_consumer = get_events_consumer(self.logger, self.consume_message)
+            self.messages_consumer = get_events_consumer(self.logger, self.consume_message,
+                                                         self.destroy_pid)
             self.graph_driver = build_driver()
         except GraphAuthenticationError, gr_auth_error:
             self.logger.critical(gr_auth_error.message)
             sys.exit(gr_auth_error.message)
+
+    def check_pid_file(self):
+        if os.path.isfile(self.pid_file):
+            self.logger.info('Another Graph manager is running, exit')
+            sys.exit(0)
+
+    def create_pid(self):
+        pid = str(os.getpid())
+        with open(self.pid_file, 'w') as ofile:
+            ofile.write(pid)
+
+    def destroy_pid(self):
+        os.remove(self.pid_file)
 
     def __get_logger(self, filename, log_level):
         logger = logging.getLogger(self.LOGGER_LABEL)
@@ -77,6 +90,7 @@ class GraphManagerDaemon(object):
             channel.basic_nack(delivery_tag=method.delivery_tag)
 
     def start_consume(self):
+        self.create_pid()
         self.logger.info('Connecting to messages queue')
         try:
             self.messages_consumer.connect()
@@ -124,13 +138,16 @@ def make_parser():
     parser.add_argument('--logfile', type=str, help='log file name')
     parser.add_argument('--loglevel', type=str, help='log level',
                         default='INFO')
+    parser.add_argument('--pid-file', type=str, help='PID file',
+                        default='graph_manager.pid')
     return parser
 
 
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
-    daemon = GraphManagerDaemon(args.logfile, args.loglevel)
+    daemon = GraphManagerDaemon(args.logfile, args.loglevel, args.pid_file)
+    daemon.check_pid_file()
     daemon.start_consume()
 
 if __name__ == '__main__':
