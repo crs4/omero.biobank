@@ -207,7 +207,7 @@ class TestProxyCore(unittest.TestCase):
       for k in ['i', 'l', 'b', 'f', 'd', 's']:
         self.assertTrue(np.all(records[k] == newrec[k]))
     finally:
-        self.kb.delete_table(table_name)
+        pc.delete_table(table_name)
 
 def suite():
   suite = unittest.TestSuite()

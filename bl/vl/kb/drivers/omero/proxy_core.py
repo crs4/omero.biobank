@@ -338,7 +338,7 @@ class ProxyCore(object):
   def _load_columns(table, records):
     columns = table.getHeaders()
     for c in columns:
-      c.values = records[c.name]
+      c.values = records[c.name].tolist()
     return columns
     
   def store_as_a_table(self, table_name, records, batch_size=10000):
@@ -354,7 +354,8 @@ class ProxyCore(object):
     table = self._create_table(table_name, fields)
     offset = 0
     while offset < len(records):
-      table.addData(_load_columns(table, records[offset: offset + batch_size]))
+      table.addData(self._load_columns(table, 
+                                       records[offset: offset + batch_size]))
       offset += batch_size
     
   def read_whole_table(self, table_name, batch_size=10000):
@@ -371,7 +372,7 @@ class ProxyCore(object):
     offset = 0
     while offset < n_rows:
       next_offset = offset + batch_size
-      data = table.read(range(len(columns), offset, next_offset))
+      data = table.read(range(len(columns)), offset, next_offset)
       block = records[offset:next_offset]
       for c in data.columns:
         block[c.name] = c.values
@@ -615,9 +616,9 @@ class ProxyCore(object):
     for dc in data.columns:
       if dc.name in update_items.keys():
         for x in range(0, len(dc.values)):
-          self.logger.debug('\tcolumn :%s  -> setting value to %s (old value %s)' % (dc.name,
-                                                                                     update_items[dc.name],
-                                                                                     dc.values[x]))
+          self.logger.debug(
+            '\tcolumn :%s  -> setting value to %s (old value %s)' % 
+            (dc.name, update_items[dc.name], dc.values[x]))
           dc.values[x] = update_items[dc.name]
     self.logger.debug('\trecords have been modified')
     t.update(data)
