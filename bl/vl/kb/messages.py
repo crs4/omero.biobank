@@ -18,13 +18,14 @@ def get_events_sender(logger=None):
         return None
 
 
-def get_events_consumer(logger=None, consumer_callback=None):
+def get_events_consumer(logger=None, consumer_callback=None, close_action=None):
     return EventsConsumer(msgconf.messages_engine_host(),
                           msgconf.messages_engine_port(),
                           msgconf.messages_engine_username(),
                           msgconf.messages_engine_password(),
                           msgconf.messages_engine_queue(),
                           consumer_callback,
+                          close_action,
                           logger)
 
 
@@ -169,10 +170,12 @@ class EventsSender(MessagesHandler):
 class EventsConsumer(MessagesHandler):
 
     def __init__(self, host, port=None, user=None, password=None,
-                 queue=None, consumer_callback=None, logger=None):
+                 queue=None, consumer_callback=None,
+                 on_close_extra_action=None, logger=None):
         super(EventsConsumer, self).__init__(host, port, user, password,
                                              queue, logger)
         self.consumer_callback = consumer_callback
+        self.close_extra_action = on_close_extra_action
 
     def _on_connect(self, connection):
         connection.channel(self._on_channel_open)
@@ -210,6 +213,9 @@ class EventsConsumer(MessagesHandler):
         self.connection.close()
         self.connection.ioloop.start()
         self.logger.debug('Connection closes')
+        if self.close_extra_action:
+            self.logger.debug('Executiong extra close action')
+            self.close_extra_action()
 
     def run(self):
         try:
@@ -223,6 +229,7 @@ class EventsConsumer(MessagesHandler):
             raise e
         finally:
             try:
+                self.logger.debug('Stopping consumer')
                 self.stop()
             except:
                 pass
