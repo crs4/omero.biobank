@@ -73,7 +73,6 @@ class TestVCS(KBObjectCreator):
                 'status' : self.kb.DataSampleStatus.USABLE,
                 'action': action}  
         vcs = self.kb.factory.create(VariantCallSupport, conf)
-        self.kill_list.append(vcs)
         vcs.define_support(nodes)
         vcs.define_field('origin', field)
         register_vcs(self.kb, vcs, action)
@@ -81,7 +80,8 @@ class TestVCS(KBObjectCreator):
         self.assertTrue(np.alltrue(vcs2.get_field('origin') 
                                    == vcs.get_field('origin')))
         self.assertTrue(np.alltrue(vcs2.get_nodes() == vcs.get_nodes()))
-
+        delete_vcs(self.kb, vcs)
+        self.assertEqual(get_vcs_by_label(self.kb, label), None)
 
 def suite():
     suite = unittest.TestSuite()

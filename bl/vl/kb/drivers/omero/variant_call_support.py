@@ -11,11 +11,11 @@ mediated by kb.
 
 .. code-block:: python
 
-   vcs1 = kb.get_vcs('label1') 
-   vcs2 = kb.get_vcs('label2')   
+   vcs1 = get_vcs_by_label(kb, 'label1') 
+   vcs2 = get_vcs_by_label(kb, 'label2')   
    vcs3 = vcs1.union(vcs2)
    vcs3.label = 'label1+label2'
-   kb.register_vcs(vcs3)
+   register_vcs(kb, vcs3)
    
   
 """
@@ -114,7 +114,21 @@ def register_vcs(kb, vcs, action):
 
 def delete_vcs(kb, vcs):
     "Deletes vcs from permanent storage"
-    pass
+    dos = kb.get_data_objects(vcs)
+    if len(dos) > 0:
+        _delete_data(kb, vcs)
+    kb.delete(vcs)
+
+def _delete_data(kb, vcs):
+    for do in dos:
+        do.reload()
+        if do.mimetype == mimetypes.VCS_TABLES:
+            table_names = _unpack_path(do.path)
+            kb.delete_table(table_names['support']['nodes'])
+            for table_name in table_names['fields'].values():
+                kb.delete_table(table_name)
+    else:
+        raise RuntimeError('cannot find data fields')
     
 
 VID_SIZE = vlu.DEFAULT_VID_LEN
