@@ -147,6 +147,15 @@ class Proxy(ProxyCore):
     """
     return self.get_by_field(klass, 'label', labels, batch_size)
 
+  def get_by_label(self, klass, label):
+    res = self.get_by_labels(klass, [label])
+    if len(res) == 0:
+      return None
+    if not res.has_key(label):
+      raise RuntimeError('bad result for %s with label %s' %
+                         (klass, label))
+    return res[label]
+
   def create_global_tables(self, destructive=False):
     self.eadpt.create_ehr_table(destructive=destructive)
 
