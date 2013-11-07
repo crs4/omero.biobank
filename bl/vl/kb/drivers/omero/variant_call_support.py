@@ -38,15 +38,6 @@ import bl.vl.utils as vlu
 import bl.vl.utils.np_ext as np_ext
 
 
-def _restore_data(kb, vcs):
-    dos = kb.get_data_objects(vcs)
-    if len(dos) == 0:
-        return vcs # empty vcs
-    nodes, fields = _get_vcs_data(kb, dos)
-    vcs.define_support(nodes)
-    vcs.define_fields(fields)
-    return vcs
-    
 def get_vcs_by_label(kb, label):
     "Recover a VariantCallSupport definition by label"
     vcs = kb.get_by_label(VariantCallSupport, label)
@@ -61,6 +52,16 @@ def get_vcs_by_vid(kb, vid):
         raise ValueError('no VariantCallSupport for %s' % vid)
     return _restore_data(kb, vcs)    
 
+def _restore_data(kb, vcs):
+    # pylint: disable=C0111    
+    dos = kb.get_data_objects(vcs)
+    if len(dos) == 0:
+        return vcs # empty vcs
+    nodes, fields = _get_vcs_data(kb, dos)
+    vcs.define_support(nodes)
+    vcs.define_fields(fields)
+    return vcs
+
 def _make_table_name(vcs, tag):
     return '%s:%s.h5' % (vcs.id, tag)
 
@@ -69,7 +70,6 @@ def _pack_in_path(table_names):
 
 def _unpack_path(path):
     return json.loads(path)
-    
     
 def _get_vcs_data(kb, dos):
     # pylint: disable=C0111
@@ -110,16 +110,16 @@ def _save_vcs_data(kb, vcs):
             'size' : size,
             }
     return kb.factory.create(kb.DataObject, conf)
-    
+
 def register_vcs(kb, vcs, action):
     "Creates a permanent copy of a VariantCallSupport"
     vcs.save()
-    _save_vcs_data(kb, vcs)
+    return _save_vcs_data(kb, vcs)
 
 def delete_vcs(kb, vcs):
     "Deletes vcs from permanent storage"
     pass
-
+    
 
 VID_SIZE = vlu.DEFAULT_VID_LEN
 
@@ -140,6 +140,10 @@ class  VariantCallSupport(DataSample):
                                   ('vid', '|S%d' % VID_SIZE), ('vpos', '<i8')])
     #ATTR_VC_DTYPE  = np.dtype([('ref', '|S%d' % VID_SIZE), ('vpos', '<i8')]) 
 
+    def save(self):
+        print '%s I am saving myself!' % self
+        super(VariantCallSupport, self).save()
+        
     def __len__(self):
         return len(self.get_nodes())
 
