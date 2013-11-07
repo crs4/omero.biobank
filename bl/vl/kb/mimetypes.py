@@ -2,6 +2,7 @@
 # END_COPYRIGHT
 
 GDO_TABLE = 'x-bl/gdo-table'
+VCS_TABLES = 'x-bb/vcs-tables'
 SSC_FILE = 'x-ssc-messages'
 CEL_FILE = 'x-vl/affymetrix-cel'
 SAM_FILE = 'x-vl/sam'
