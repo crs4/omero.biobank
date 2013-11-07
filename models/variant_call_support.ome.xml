@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+BEGIN_COPYRIGHT
+END_COPYRIGHT
+-->
+
+<types>
+
+  <type id="ome.model.vl.VariantCallSupport"
+	superclass="ome.model.vl.DataSample">
+    <properties>
+      <required name="referenceGenome" type="ome.model.vl.ReferenceGenome" />
+    </properties>
+  </type>
+
+</types>
