@@ -41,16 +41,12 @@ import bl.vl.utils.np_ext as np_ext
 def get_vcs_by_label(kb, label):
     "Recover a VariantCallSupport definition by label"
     vcs = kb.get_by_label(VariantCallSupport, label)
-    if vcs is None:
-        raise ValueError('no VariantCallSupport for %s' % label)
-    return _restore_data(kb, vcs)
+    return None if vcs is None else _restore_data(kb, vcs)
 
 def get_vcs_by_vid(kb, vid):
     "Recover a VariantCallSupport definition by vid"
     vcs = kb.get_by_vid(VariantCallSupport, vid)
-    if vcs is None:
-        raise ValueError('no VariantCallSupport for %s' % vid)
-    return _restore_data(kb, vcs)    
+    return None if vcs is None else _restore_data(kb, vcs)    
 
 def _restore_data(kb, vcs):
     # pylint: disable=C0111    
