@@ -106,6 +106,15 @@ class MessagesHandler(object):
                 self.logger.exception(e)
                 raise e
 
+    def _declare_queue(self):
+        frame = self.channel.queue_declare(
+            self.queue,
+            durable=True,
+            exclusive=False,
+            auto_delete=False
+        )
+        return frame
+
     def _setup_network(self):
         params = self._get_connection_params()
         connection = pika.BlockingConnection(params)
@@ -115,12 +124,7 @@ class MessagesHandler(object):
             type='topic',
             durable=True
         )
-        channel.queue_declare(
-            self.queue,
-            durable=True,
-            exclusive=False,
-            auto_delete=False
-        )
+        self._declare_queue()
         channel.queue_bind(
             self.queue,
             self.exchange_name,
@@ -130,7 +134,7 @@ class MessagesHandler(object):
     @property
     def is_queue_empty(self):
         self.connect()
-        f = self.__declare_queue()
+        f = self._declare_queue()
         if f.method.message_count == 0:
             self.logger.debug('queue is empty')
             return True
