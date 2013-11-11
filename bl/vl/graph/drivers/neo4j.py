@@ -274,6 +274,11 @@ class Neo4JDriver(object):
             raise DependencyTreeError('No proper events handler configured, unable to check queue status')
 
     def __get_connected_nodes__(self, node, direction, depth, visited_nodes=None):
+        def get_connected_list(nodes_generator):
+            try:
+                return list(nodes_generator)
+            except TypeError:
+                return []
         if not visited_nodes:
             visited_nodes = set()
         if direction not in (self.DIRECTION_INCOMING, self.DIRECTION_OUTGOING,
@@ -284,11 +289,11 @@ class Neo4JDriver(object):
             return visited_nodes
         try:
             if direction == self.DIRECTION_INCOMING:
-                connected = list(node.inV('produces'))
+                connected = get_connected_list(node.inV('produces'))
             elif direction == self.DIRECTION_OUTGOING:
-                connected = list(node.outV('produces'))
+                connected = get_connected_list(node.outV('produces'))
             elif direction == self.DIRECTION_BOTH:
-                connected = list(node.bothV('produces'))
+                connected = get_connected_list(node.bothV('produces'))
         except httplib2.socket.error:
             raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         visited_nodes.add(node)
