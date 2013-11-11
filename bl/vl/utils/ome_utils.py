@@ -2,12 +2,12 @@
 # END_COPYRIGHT
 
 import hashlib
-import os
 import omero
 # DO NOT DELETE import omero.model, removing this import will result
 # in a blocking error
 import omero.model
 import omero.rtypes
+from bl.vl.utils import _get_env_variable
 
 
 _HASHER_CLASS = hashlib.md5
@@ -39,23 +39,13 @@ def ome_hash(ome_obj):
   return hash((klass.__name__, ome_obj.id._val))
 
 
-def _ome_env_variable(name):
-  try:
-    if os.environ[name] == 'NONE':
-        return None
-    else:
-        return os.environ[name]
-  except KeyError:
-    raise ValueError("Can't find %r environment variable" % (name,))
-
-
 def ome_host():
-  return _ome_env_variable('OME_HOST')
+  return _get_env_variable('OME_HOST')
 
 
 def ome_user():
-  return _ome_env_variable('OME_USER')
+  return _get_env_variable('OME_USER')
 
 
 def ome_passwd():
-  return _ome_env_variable('OME_PASSWD')
+  return _get_env_variable('OME_PASSWD')

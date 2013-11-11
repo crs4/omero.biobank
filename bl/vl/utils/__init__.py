@@ -10,7 +10,7 @@ Generic utilities used by other modules.
 
 # DEV NOTE: this module must NOT use other OMERO.biobank modules.
 
-import uuid, hashlib, logging
+import uuid, hashlib, logging, os
 
 
 DEFAULT_BUFSIZE = 16777216
@@ -85,3 +85,13 @@ def decode_dict(data):
             val = decode_dict(val)
         decoded[key] = val
     return decoded
+
+
+def _get_env_variable(name):
+    try:
+        if os.environ[name] == 'NONE':
+            return None
+        else:
+            return os.environ[name]
+    except KeyError:
+        raise ValueError('Cant\'t find environment variable %s', name)
