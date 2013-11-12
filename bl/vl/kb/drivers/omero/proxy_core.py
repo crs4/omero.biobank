@@ -438,10 +438,10 @@ class ProxyCore(object):
       col_numbers = range(len(col_objs))
     return col_numbers
 
-  def get_table_rows(self, table_name, selector, col_names=None,
+  def get_table_rows(self, table_name, selector=None, col_names=None,
                      batch_size=BATCH_SIZE):
     """
-    selector can be either a selection or a list of selections. In
+    selector can be one of None, a selection or a list of selections. In
     the latter case, it is interpreted as an 'or' condition between
     the list elements.
     """
@@ -449,11 +449,11 @@ class ProxyCore(object):
     # try:
     t = self._get_table(s, table_name)
     col_numbers = self.__convert_col_names_to_indices(t, col_names)
-    if selector:
+    if selector is None:
+      res = self.__get_table_rows_bulk(t, col_numbers, batch_size)      
+    else:
       res = self.__get_table_rows_selected(t, selector, col_numbers,
                                            batch_size)
-    else:
-      res = self.__get_table_rows_bulk(t, col_numbers, batch_size)
     # finally:
     #   self.disconnect()
     return res
@@ -467,11 +467,11 @@ class ProxyCore(object):
     # try:
     t = self._get_table(s, table_name)
     col_numbers = self.__convert_col_names_to_indices(t, col_names)
-    if indices:
+    if indices is None:
+      res = self.__get_table_rows_bulk(t, col_numbers, batch_size)      
+    else:
       res = self.__get_table_rows_by_indices(t, indices, col_numbers,
                                              batch_size)
-    else:
-      res = self.__get_table_rows_bulk(t, col_numbers, batch_size)
     # finally:
     #   self.disconnect()
     return res
