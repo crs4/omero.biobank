@@ -27,11 +27,11 @@ def get_snp_labels(mset_label):
     kb = KnowledgeBase(driver='omero')(
       ome_env['OME_HOST'], ome_env['OME_USER'], ome_env['OME_PASSWD'],
       )
-    mset = kb.get_snp_markers_set(mset_label)
+    mset = kb.genomics.get_markers_array(mset_label)
     if not mset:
       raise ValueError("No marker set in kb with label %s" % mset_label)
-    mset.load_markers()
-    labels = mset.markers['label']
+    markers = mset.proxy.genomics.get_markers_array_rows(mset)
+    labels = markers['label']
   finally:
     kb.disconnect()
   return labels

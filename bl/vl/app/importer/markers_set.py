@@ -5,6 +5,9 @@
 Import markers_set
 ==================
 
+
+FIXME --- this is out phase with the current classes
+
 A SNPMarkersSet represents an ordered list of markers where the order
 usually comes from aligning the SNP markers against a reference
 genome. Within Biobank, different genotyping technologies are mapped
@@ -83,9 +86,14 @@ class Recorder(core.Core):
     N = len(records)
     def stream():
       for r in records:
-        yield r['label'], r['mask'], r['index'], r['allele_flip']
-    mset = self.kb.create_snp_markers_set(label, maker, model, release,
-                                          N, stream(), action)
+        if r.has_key('allele_flip'):
+          r['permutation'] = r['allele_flip']
+        if not r.has_key('op_vid'):
+          r['op_vid'] = action.id
+        #yield r['label'], r['mask'], r['index'], r['permutation']
+        yield r
+    mset = self.kb.genomics.create_markers_array(label, maker, model, release,
+                                                 stream(), action)
     otsv.writerow({
       'study': study.label,
       'label': mset.label,

@@ -6,7 +6,7 @@ import omero.rtypes as ort
 
 from utils import assign_vid_and_timestamp, assign_vid
 import wrapper as wp
-from genotyping import SNPMarkersSet
+from snp_markers_set import SNPMarkersSet
 from bl.vl.utils.graph import graph_driver
 
 

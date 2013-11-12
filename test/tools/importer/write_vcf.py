@@ -23,7 +23,7 @@ def main(argv):
   except IndexError:
     return "USAGE: python %s OUT_FN" % argv[0]
   kb = KnowledgeBase(driver="omero")(OME_HOST, OME_USER, OME_PASSWD)
-  mset = kb.get_snp_markers_set(MS_LABEL)
+  mset = kb.genomics.get_markers_array(MS_LABEL)
   data_samples = get_data_samples(kb, mset)
   writer = io.VCFWriter(mset, REF_GENOME)
   with open(out_fn, "w") as fo:
