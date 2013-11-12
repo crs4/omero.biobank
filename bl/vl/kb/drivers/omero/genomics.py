@@ -51,6 +51,10 @@ VID_SIZE = vlu.DEFAULT_VID_LEN
 MARKER_LABEL_SIZE = 128
 MARKER_MASK_SIZE = 1024 # this is probably way too big...
 MSET_TABLE_NAME = 'mset'
+MSET_TABLE_COLS_DTYPE  = [('label', '|S%d' % MARKER_LABEL_SIZE),
+                          ('mask',  '|S%d' % MARKER_MASK_SIZE),
+                          ('permutation', '?'),
+                          ('op_vid', '|S%d' % VID_SIZE)]
 MSET_TABLE_COLS  = [
     ('string', 'label', 'Marker label', MARKER_LABEL_SIZE, None),
     ('string', 'mask', 'Illumina TOP mask in the <FLANK>[VAR]<FLANK> format',
@@ -88,24 +92,29 @@ class GenomicsAdapter(object):
     def __init__(self, kb):
         self.kb = kb
 
-    def create_markers_array(self, label, maker, model, release, stream, 
+    def create_markers_array(self, label, maker, model, release, rows, 
                              action):
         """
         Create a new (SNP)MarkersSet object and associate to it all
-        the markers information contained in stream.
-        Each record of stream should be consistent with self.MARKER_COLS.
-        The order of markers array records exactly the one given in stream.
+        the markers information contained in rows.  Rows could be
+        either a numpy record array consistent with
+        self.MSET_TABLE_COLS_DTYPE or a stream of dict records each of
+        which should be consistent with self.MSET_TABLE_COLS. The
+        order of markers array records exactly the one given in
+        stream.
 
         FIXME: confusedly enough, this currently returns a SNPMarkersSet
         """
+        avid = self.kb.resolve_action_id(action)
         conf = {'label': label, 'maker': maker, 'model': model, 
+                'markersSetVID': vlu.make_vid(),
                 'release': release}
         marray = self.kb.factory.create(self.kb.SNPMarkersSet, conf).save()
         self._create_markers_array_table(MSET_TABLE_NAME, MSET_TABLE_COLS, 
                                          marray.id)
-        N = self._fill_markers_array_table(MSET_TABLE_NAME, marray.id,
-                                           stream, action.id
-                                           batch_size=BATCH_SIZE)
+        N = len(self._fill_markers_array_table(MSET_TABLE_NAME, marray.id,
+                                               rows, avid,
+                                               batch_size=BATCH_SIZE))
         #FIXME we are actually considering only SNP gdo.
         self._create_markers_array_table(GDO_TABLE_NAME, GDO_TABLE_COLS(N),
                                          marray.id)
@@ -213,15 +222,15 @@ class GenomicsAdapter(object):
                     yield self.get_gdo(mset, vid, row_index, indices)
                 else:
                     pass
-            if data_samples is None:
-                return self._get_gdo_iterator(mset.id, indices, batch_size)
-            for d in data_samples:
-                if d.snpMarkersSet != mset:
-                    raise ValueError('data_sample %s snpMarkersSet != mset' % d.id)
-            ids = ','.join('%s' % ds.omero_id for ds in data_samples)
-            query = 'from DataObject do where do.sample.id in (%s)' % ids
-            dos = self.kb.find_all_by_query(query, None)
-            return get_gdo_iterator_on_list(dos)
+        if data_samples is None:
+            return self._get_gdo_iterator(mset.id, indices, batch_size)
+        for d in data_samples:
+            if d.snpMarkersSet != mset:
+                raise ValueError('data_sample %s snpMarkersSet != mset' % d.id)
+        ids = ','.join('%s' % ds.omero_id for ds in data_samples)
+        query = 'from DataObject do where do.sample.id in (%s)' % ids
+        dos = self.kb.find_all_by_query(query, None)
+        return get_gdo_iterator_on_list(dos)
 
     def get_genotype_data_samples(self, individual, markers_set):
         """
@@ -253,22 +262,20 @@ class GenomicsAdapter(object):
         if tag not in MA_TABLES:
             raise ValueError('tag %s from %s is illegal' % (tag, table_name))
         return tag, set_vid
-    
+
     def _create_markers_array_table(self, table_name_root, cols_def, set_vid):
         table_name = self._markers_array_table_name(table_name_root, set_vid)
         self.kb.create_table(table_name, cols_def)
         return set_vid
 
-    def _fill_markers_array_table(self, table_name_root, set_vid, stream,
+    def _fill_markers_array_table(self, table_name_root, set_vid, rows,
                                   op_vid, batch_size):
         table_name = self._markers_array_table_name(table_name_root, set_vid)
-        def add_op_vid(stream):
-            for r in stream:
-                r['op_vid'] = op_vid
-                yield r
-        return self.kb.add_table_rows_from_stream(table_name, 
-                                                  add_op_vid(stream), 
-                                                  batch_size)
+        if hasattr(rows, 'dtype'):
+            return self.kb.add_table_rows(table_name, rows, batch_size)
+        else:
+            return self.kb.add_table_rows_from_stream(table_name, stream,
+                                                      batch_size)
         
     def _make_gdo_path(self, marray, vid, index):
         table_name = self._markers_array_table_name(GDO_TABLE_NAME, marray.id)

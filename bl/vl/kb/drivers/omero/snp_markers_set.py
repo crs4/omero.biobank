@@ -26,6 +26,11 @@ class SNPMarkersSet(wp.OmeroWrapper):
                                                 conf['release'])
     return conf
 
+  def __update_constraints__(self):
+    uk = make_unique_key(self.maker, self.model, self.release)
+    setattr(self.ome_obj, 'snpMarkersSetUK',
+            self.to_omero(self.__fields__['snpMarkersSetUK'][0], uk))
+
   def __cleanup__(self):
     self.proxy.genomics.delete_markers_array_tables(self.id)
 
@@ -37,9 +42,4 @@ class SNPMarkersSet(wp.OmeroWrapper):
   def vid(self):
       return self.id
 
-
-  def __update_constraints__(self):
-    uk = make_unique_key(self.maker, self.model, self.release)
-    setattr(self.ome_obj, 'snpMarkersSetUK',
-            self.to_omero(self.__fields__['snpMarkersSetUK'][0], uk))
 

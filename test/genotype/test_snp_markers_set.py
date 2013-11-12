@@ -7,12 +7,13 @@ import tempfile
 import numpy as np
 
 from bl.vl.kb import KnowledgeBase as KB
-from bl.vl.kb.drivers.omero.genotyping import Marker
+from bl.vl.kb.drivers.omero.genomics import MSET_TABLE_COLS_DTYPE
 
 from bl.core.io import MessageStreamWriter
 import bl.core.gt.messages.SnpCall as SnpCall
 
 import bl.vl.genotype.io as gio
+import bl.vl.utils as vlu
 
 
 OME_HOST = os.getenv('OME_HOST', 'localhost')
@@ -79,9 +80,11 @@ class markers_set(unittest.TestCase):
   def __create_markers_set(self, N):
     label = 'ams-%f' % time.time()
     maker, model, release = 'FOO', 'FOO1', '%f' % time.time()
-    rows = [('M%d' % i, 'AC[A/G]GT', False) for i in xrange(N)]
+    vid = vlu.make_vid()
+    rows = np.array([('M%d' % i, 'AC[A/G]GT', False, vid) for i in xrange(N)],
+                    dtype=MSET_TABLE_COLS_DTYPE)
     mset = self.kb.genomics.create_markers_array(
-      label, maker, model, release, iter(rows), self.action
+      label, maker, model, release, rows, self.action
       )
     self.kill_list.append(mset)
     return mset, rows
@@ -110,9 +113,9 @@ class markers_set(unittest.TestCase):
     markers = self.kb.genomics.get_markers_array_rows(mset)
     self.assertEqual(len(markers), N)
     for r, m in it.izip(rows, markers):
-      self.assertEqual(len(r)+1, len(m))
+      self.assertEqual(len(r), len(m))
       for i, x in enumerate(r):
-        self.assertEqual(x, m[i+1])
+        self.assertEqual(x, m[i])
 
   def test_read_ssc(self):
     N = 16
@@ -202,7 +205,7 @@ def suite():
   suite = unittest.TestSuite()
   suite.addTest(markers_set('test_creation_destruction'))
   suite.addTest(markers_set('test_read_ssc'))
-  suite.addTest(markers_set('test_gdo'))
+  # suite.addTest(markers_set('test_gdo'))
   #--
   ## suite.addTest(markers_set('test_speed'))
   ## suite.addTest(markers_set('test_speed_gdo'))
