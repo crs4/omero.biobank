@@ -59,6 +59,7 @@ ${IMPORTER} -i ${WORK}/marker_definitions.tsv \
     --study ${STUDY_LABEL} --label ${MS_LABEL} \
     --maker CRS4 --model TEST --release 1 || die "import marker set failed"
 
+
 cat <<EOF >${WORK}/device.tsv
 device_type	label	maker	model	release	markers_set
 GenotypingProgram	${DEVICE_LABEL}	CRS4	chipal	0.1.0	${MS_LABEL}
@@ -70,18 +71,18 @@ ${KB_QUERY} -o ${WORK}/device_vids.tsv map_vid -i ${WORK}/device.tsv \
 ${IMPORTER} -i ${WORK}/device_vids.tsv -o ${WORK}/device_map.tsv device \
     --study ${STUDY_LABEL} || die "import device failed"
 
-${KB_QUERY} -o ${WORK}/marker_definitions_vids.tsv map_vid \
-    -i ${WORK}/marker_definitions.tsv --source-type Marker \
-    --column label,vid --study ${STUDY_LABEL} \
-    --marker-set ${MS_LABEL} || die "map vid on marker definitions failed"
+# ${KB_QUERY} -o ${WORK}/marker_definitions_vids.tsv map_vid \
+#     -i ${WORK}/marker_definitions.tsv --source-type SNPMarkersSet \
+#     --column label,vid --study ${STUDY_LABEL} \
+#     --marker-set ${MS_LABEL} || die "map vid on marker definitions failed"
 
-python ${BASEDIR}/make_marker_align.py ${WORK}/marker_definitions_vids.tsv \
-    ${WORK}/marker_alignments_vids.tsv
+# python ${BASEDIR}/make_marker_align.py ${WORK}/marker_definitions_vids.tsv \
+#     ${WORK}/marker_alignments_vids.tsv
 
-${IMPORTER} -i ${WORK}/marker_alignments_vids.tsv \
-    -o ${WORK}/marker_alignments_map.tsv \
-    marker_alignment --markers-set ${MS_LABEL} --ref-genome='hg19' \
-    --study ${STUDY_LABEL} || die "import marker alignments failed"
+# ${IMPORTER} -i ${WORK}/marker_alignments_vids.tsv \
+#     -o ${WORK}/marker_alignments_map.tsv \
+#     marker_alignment --markers-set ${MS_LABEL} --ref-genome='hg19' \
+#     --study ${STUDY_LABEL} || die "import marker alignments failed"
 
 pushd ${WORK}
 python ${BASEDIR}/make_ssc.py ${MS_LABEL} individual.tsv
@@ -115,4 +116,7 @@ ${IMPORTER} -i ${WORK}/ssc_data_objects_vids.tsv \
 
 ${GDOIZE_MS} -s ${STUDY_LABEL} -m ${MS_LABEL}
 
-REF_GENOME=hg19 python write_vcf.py ${WORK}/data.vcf
+# FIXME this will not work until we fix io.vcf so that it will use
+#VariantCallSupport 
+
+#REF_GENOME=hg19 python write_vcf.py ${WORK}/data.vcf

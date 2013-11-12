@@ -23,7 +23,7 @@ class MappingError(Exception):
 class MapVIDApp(Core):
 
   SUPPORTED_SOURCE_TYPES = ['Tube', 'Individual', 'TiterPlate', 'PlateWell',
-                            'Chip', 'DataSample', 'Marker', 'Scanner',
+                            'Chip', 'DataSample', 'Scanner',
                             'SoftwareProgram', 'SNPMarkersSet',
                             'DataCollectionItem', 'Device',
                             'FlowCell', 'Lane', 'SequencerOutput']
@@ -136,8 +136,6 @@ class MapVIDApp(Core):
       return self.resolve_mapping_individual(labels)
     elif source_type == self.kb.PlateWell:
       return self.resolve_mapping_plate_well(source_type, labels)
-    elif source_type == self.kb.Marker:
-      return self.resolve_mapping_marker()
     elif source_type == self.kb.DataCollectionItem:
       return self.resolve_mapping_data_collection_item(source_type, labels)
     else:

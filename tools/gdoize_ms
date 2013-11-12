@@ -59,13 +59,10 @@ def main(argv):
   study = kb.get_study(label=args.study_label)
   if study is None:
     critical(logger, "no study in db with label %s" % args.study_label)
-  ms = kb.get_snp_markers_set(label=args.markers_set_label)
+  ms = kb.genomics.get_markers_array(label=args.markers_set_label)
   if ms is None:
     critical(logger, "no marker set in db with label %s"
              % args.markers_set_label)
-  logger.info("loading markers for %s" % ms.label)
-  ms.load_markers()
-  logger.info("finished loading markers for %s" % ms.label)
   query = "from GenotypeDataSample g where g.snpMarkersSet.id = :id"
   params = {"id": ms.omero_id}
   gds = kb.find_all_by_query(query, params)
@@ -80,7 +77,7 @@ def main(argv):
     dev = kb.create_device(dev_label, dev_maker, dev_model,
                            dev_release)
   action = kb.create_an_action(study, device = dev)
-
+  markers = kb.genomics.get_markers_array_rows(ms)
   n_created_gdos = 0
   for g in gds:
     assert ms == g.snpMarkersSet
@@ -96,9 +93,9 @@ def main(argv):
     else:
       if ssc_do:
         logger.info("reading genotyping data for %s" % g.label)
-        probs, confs = read_ssc(ssc_do.path, ms)
+        probs, confs = read_ssc(ssc_do.path, ms, markers)
         logger.info("creating gdo for %s" % g.label)
-        kb.add_gdo_data_object(action, g, probs, confs)
+        kb.genomics.add_gdo_data_object(action, g, probs, confs)
         logger.info("finished with %s" % g.label)
         n_created_gdos += 1
   if n_created_gdos == 0:

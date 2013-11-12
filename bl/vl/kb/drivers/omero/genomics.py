@@ -287,11 +287,11 @@ class GenomicsAdapter(object):
         self.kb.create_table(table_name, cols_def)
         return set_vid
 
-    def _fill_markers_array_table(self, table_name_root, set_vid, rows,
+    def _fill_markers_array_table(self, table_name_root, set_vid, stream,
                                   op_vid, batch_size):
         table_name = self._markers_array_table_name(table_name_root, set_vid)
-        if hasattr(rows, 'dtype'):
-            return self.kb.add_table_rows(table_name, rows, batch_size)
+        if hasattr(stream, 'dtype'):
+            return self.kb.add_table_rows(table_name, stream, batch_size)
         else:
             return self.kb.add_table_rows_from_stream(table_name, stream,
                                                       batch_size)
