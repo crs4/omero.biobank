@@ -364,25 +364,28 @@ class PedWriter(object):
     self.ped_file = None
 
 
-def read_ssc(fn, mset, logger=None):
+def read_ssc(fn, mset, markers=None, logger=None):
   """
   Read a file with mimetypes.SSC_FILE mimetype and return the prob and
-  conf arrays for a given marker
-
-  SNPMarkersSet mset.
+  conf arrays for a given marker array mset.
 
   :param fn: ssc file name
   :type fn: str
 
   :param mset: a reference markers set
   :type mset: SNPMarkersSet
+
+  :param markers: preloaded markers informations
+  :type markers: a numpy record array obtained with a call to
+                 mset.proxy.genomics.get_markers_array_rows(mset)
   """
   if logger is None:
     logger = NullLogger()
   ct = Counter()
 
   # FIXME do we really want something so convoluted?
-  markers = mset.proxy.genomics.get_markers_array_rows(mset)
+  if markers is None:
+    markers = mset.proxy.genomics.get_markers_array_rows(mset)
   n_markers = len(markers)
   probs = np.empty((2, n_markers), dtype=np.float32)
   probs.fill(1/3.)

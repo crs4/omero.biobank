@@ -186,7 +186,7 @@ class markers_set(unittest.TestCase):
     self.assertTrue((probs == probs1).all())
     self.assertTrue((confs == confs1).all())
     beg = time.time()
-    s = self.kb.get_gdo_iterator(mset, data_samples=[data_sample])
+    s = self.kb.genomics.get_gdo_iterator(mset, data_samples=[data_sample])
     for i, x in enumerate(s):
       self.assertTrue((probs == x['probs']).all())
       self.assertTrue((confs == x['confidence']).all())
@@ -194,7 +194,7 @@ class markers_set(unittest.TestCase):
     print 'iterating took %f' % (time.time() - beg)
     indices = slice(N/4, N/2)
     beg = time.time()
-    s = self.kb.get_gdo_iterator(
+    s = self.kb.genomics.get_gdo_iterator(
       mset, data_samples=[data_sample], indices=indices
       )
     for i, x in enumerate(s):
