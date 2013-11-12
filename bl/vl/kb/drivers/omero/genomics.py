@@ -150,10 +150,27 @@ class GenomicsAdapter(object):
                                                  col_names=None,
                                                  batch_size=batch_size)
 
+    def get_number_of_markers(self, marray):
+        "get the number of markers listed by marray"
+        table_name = self._markers_array_table_name(MSET_TABLE_NAME, marray.id)
+        return self.kb.get_number_of_rows(table_name)
+        
     def delete_markers_array_tables(self, marray_id):
         for table in MA_TABLES:
             table_name = self._markers_array_table_name(table, marray_id)
             self.kb.delete_table(table_name)
+
+    def make_gdo_path(self, marray, vid, index):
+        table_name = self._markers_array_table_name(GDO_TABLE_NAME, marray.id)
+        return 'table:%s/vid=%s/row_index=%d' % (table_name, vid, index)
+
+    def parse_gdo_path(self, path):
+        head, vid, index = path.split('/')
+        head = head[len('table:'):]
+        vid = vid[len('vid='):]
+        tag, set_vid = self._markers_array_table_name_parse(head)
+        index = int(index[len('row_index='):])
+        return set_vid, vid, index
 
     def add_gdo(self, set_vid, probs, confidence, op_vid):
         probs.shape = probs.size
@@ -190,7 +207,7 @@ class GenomicsAdapter(object):
         s = confs.tostring();  size += len(s) ; sha1.update(s)
         conf = {
           'sample': sample,
-          'path': self._make_gdo_path(mset, gdo_vid, row_index),
+          'path': self.make_gdo_path(mset, gdo_vid, row_index),
           'mimetype': mimetypes.GDO_TABLE,
           'sha1': sha1.hexdigest(),
           'size': size,
@@ -214,7 +231,7 @@ class GenomicsAdapter(object):
                 # FIXME we could, in principle, handle other mimetypes too
                 if do.mimetype == mimetypes.GDO_TABLE:
                     self.kb.logger.debug(do.path)
-                    mset_vid, vid, row_index = self._parse_gdo_path(do.path)
+                    mset_vid, vid, row_index = self.parse_gdo_path(do.path)
                     self.kb.logger.debug('%r' % [vid, row_index])
                     if mset_vid != mset.id:
                         raise ValueError(
@@ -279,17 +296,6 @@ class GenomicsAdapter(object):
             return self.kb.add_table_rows_from_stream(table_name, stream,
                                                       batch_size)
         
-    def _make_gdo_path(self, marray, vid, index):
-        table_name = self._markers_array_table_name(GDO_TABLE_NAME, marray.id)
-        return 'table:%s/vid=%s/row_index=%d' % (table_name, vid, index)
-
-    def _parse_gdo_path(self, path):
-        head, vid, index = path.split('/')
-        head = head[len('table:'):]
-        vid = vid[len('vid='):]
-        tag, set_vid = self._markers_array_table_name_parse(head)
-        index = int(index[len('row_index='):])
-        return set_vid, vid, index
 
     def _unwrap_gdo(self, row, indices):
         r = {'vid': row['vid'], 'op_vid': row['op_vid']}

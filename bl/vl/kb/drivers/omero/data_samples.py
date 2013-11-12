@@ -4,7 +4,7 @@
 from bl.vl.kb import mimetypes
 import wrapper as wp
 from action import Action, OriginalFile
-from genotyping import SNPMarkersSet
+from snp_markers_set import SNPMarkersSet
 from utils import assign_vid_and_timestamp
 
 
@@ -63,11 +63,11 @@ class GenotypeDataSample(DataSample):
     for do in dos:
       do.reload()
       if do.mimetype == mimetypes.GDO_TABLE:
-        set_vid, vid, index = self.proxy.parse_gdo_path(do.path)
+        set_vid, vid, index = self.proxy.genomics.parse_gdo_path(do.path)
         mset = self.snpMarkersSet
         assert mset.id == set_vid
         mset.reload()
-        res = self.proxy.get_gdo(mset, vid, index)
+        res = self.proxy.genomics.get_gdo(mset, vid, index)
         return res['probs'], res['confidence']
     else:
       raise ValueError('DataObject is not a %s' % mimetypes.GDO_TABLE)

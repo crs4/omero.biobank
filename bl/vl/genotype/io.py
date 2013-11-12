@@ -367,7 +367,9 @@ class PedWriter(object):
 def read_ssc(fn, mset, logger=None):
   """
   Read a file with mimetypes.SSC_FILE mimetype and return the prob and
-  conf arrays for a given SNPMarkersSet mset.
+  conf arrays for a given marker
+
+  SNPMarkersSet mset.
 
   :param fn: ssc file name
   :type fn: str
@@ -378,15 +380,15 @@ def read_ssc(fn, mset, logger=None):
   if logger is None:
     logger = NullLogger()
   ct = Counter()
-  if not mset.has_markers():
-    mset.load_markers()
-  n_markers = len(mset)
+
+  # FIXME do we really want something so convoluted?
+  markers = mset.proxy.genomics.get_markers_array_rows(mset)
+  n_markers = len(markers)
   probs = np.empty((2, n_markers), dtype=np.float32)
   probs.fill(1/3.)
   confs = np.zeros((n_markers,), dtype=np.float32)
-  markers = mset.markers
   labels = markers['label']
-  flips = markers['allele_flip']
+  flips = markers['permutation']
   indx  = markers['index']
   l2m = dict((l, (f, i)) for (l, f, i) in it.izip(labels, flips, indx))
   reader = MessageStreamReader(fn)

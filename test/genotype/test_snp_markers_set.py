@@ -24,7 +24,6 @@ PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
 
 def make_fake_data(n, add_nan=False):
-  print 'make_fake_data -- n:', n
   probs = 0.5 * np.cast[np.float32](np.random.random((2, n)))
   confs = np.cast[np.float32](np.random.random(n))
   if add_nan:
@@ -104,8 +103,10 @@ class markers_set(unittest.TestCase):
     return data_sample
 
   def __create_data_object(self, data_sample, add_nan=False):
-    probs, confs = make_fake_data(data_sample.snpMarkersSet, add_nan)
-    do = self.kb.add_gdo_data_object(self.action, data_sample, probs, confs)
+    n = self.kb.genomics.get_number_of_markers(data_sample.snpMarkersSet)
+    probs, confs = make_fake_data(n, add_nan)
+    do = self.kb.genomics.add_gdo_data_object(self.action, 
+                                              data_sample, probs, confs)
     self.kill_list.append(do)
     return probs, confs
 
@@ -139,13 +140,13 @@ class markers_set(unittest.TestCase):
     probs1, confs1 = data_sample.resolve_to_data()
     self.assertTrue((probs == probs1).all())
     self.assertTrue((confs == confs1).all())
-    s = self.kb.get_gdo_iterator(mset, data_samples=[data_sample])
+    s = self.kb.genomics.get_gdo_iterator(mset, data_samples=[data_sample])
     for i, x in enumerate(s):
       self.assertTrue((probs == x['probs']).all())
       self.assertTrue((confs == x['confidence']).all())
     self.assertEqual(i, 0)
     indices = slice(N/4, N/2)
-    s = self.kb.get_gdo_iterator(
+    s = self.kb.genomics.get_gdo_iterator(
       mset, data_samples=[data_sample], indices=indices
       )
     for i, x in enumerate(s):
@@ -206,8 +207,8 @@ class markers_set(unittest.TestCase):
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(markers_set('test_creation_destruction'))
-  # suite.addTest(markers_set('test_read_ssc'))
-  # suite.addTest(markers_set('test_gdo'))
+  suite.addTest(markers_set('test_read_ssc'))
+  suite.addTest(markers_set('test_gdo'))
   #--
   ## suite.addTest(markers_set('test_speed'))
   ## suite.addTest(markers_set('test_speed_gdo'))
