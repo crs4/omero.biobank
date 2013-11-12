@@ -458,17 +458,20 @@ class ProxyCore(object):
     #   self.disconnect()
     return res
 
-  def get_table_rows_by_indices(self, table_name, indices, col_names=None,
+  def get_table_rows_by_indices(self, table_name, indices=None, col_names=None,
                                 batch_size=BATCH_SIZE):
     """
-    indices must be a list of integer values.
+    indices must be either None or a list of integer values.
     """
     s = self.connect()
     # try:
     t = self._get_table(s, table_name)
     col_numbers = self.__convert_col_names_to_indices(t, col_names)
-    res = self.__get_table_rows_by_indices(t, indices, col_numbers,
-                                           batch_size)
+    if indices:
+      res = self.__get_table_rows_by_indices(t, indices, col_numbers,
+                                             batch_size)
+    else:
+      res = self.__get_table_rows_bulk(t, col_numbers, batch_size)
     # finally:
     #   self.disconnect()
     return res
