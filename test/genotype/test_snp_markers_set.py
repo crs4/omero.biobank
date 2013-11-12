@@ -24,6 +24,7 @@ PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
 
 def make_fake_data(n, add_nan=False):
+  print 'make_fake_data -- n:', n
   probs = 0.5 * np.cast[np.float32](np.random.random((2, n)))
   confs = np.cast[np.float32](np.random.random(n))
   if add_nan:
@@ -81,7 +82,8 @@ class markers_set(unittest.TestCase):
     label = 'ams-%f' % time.time()
     maker, model, release = 'FOO', 'FOO1', '%f' % time.time()
     vid = vlu.make_vid()
-    rows = np.array([('M%d' % i, 'AC[A/G]GT', False, vid) for i in xrange(N)],
+    rows = np.array([('M%d' % i, i, 'AC[A/G]GT', False, vid) 
+                     for i in xrange(N)],
                     dtype=MSET_TABLE_COLS_DTYPE)
     mset = self.kb.genomics.create_markers_array(
       label, maker, model, release, rows, self.action
@@ -204,7 +206,7 @@ class markers_set(unittest.TestCase):
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(markers_set('test_creation_destruction'))
-  suite.addTest(markers_set('test_read_ssc'))
+  # suite.addTest(markers_set('test_read_ssc'))
   # suite.addTest(markers_set('test_gdo'))
   #--
   ## suite.addTest(markers_set('test_speed'))

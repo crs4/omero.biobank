@@ -52,11 +52,13 @@ MARKER_LABEL_SIZE = 128
 MARKER_MASK_SIZE = 1024 # this is probably way too big...
 MSET_TABLE_NAME = 'mset'
 MSET_TABLE_COLS_DTYPE  = [('label', '|S%d' % MARKER_LABEL_SIZE),
+                          ('index', 'i8'),
                           ('mask',  '|S%d' % MARKER_MASK_SIZE),
                           ('permutation', '?'),
                           ('op_vid', '|S%d' % VID_SIZE)]
 MSET_TABLE_COLS  = [
     ('string', 'label', 'Marker label', MARKER_LABEL_SIZE, None),
+    ('long',   'index', 'Marker index within this set', None),
     ('string', 'mask', 'Illumina TOP mask in the <FLANK>[VAR]<FLANK> format',
      MARKER_MASK_SIZE, None),
     ('bool', 'permutation', 'Is VAR in data a permutation of VAR in mask?', 
