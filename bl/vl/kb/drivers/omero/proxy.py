@@ -24,12 +24,13 @@ import individual
 import location
 import demographic
 import sequencing
+import snp_markers_set
 
-from genotyping import GenotypingAdapter
+#from genotyping import GenotypingAdapter
+from genomics import GenomicsAdapter
 from modeling import ModelingAdapter
 from eav import EAVAdapter
 from ehr import EHR
-from genotyping import Marker
 
 from admin import Admin
 
@@ -67,10 +68,8 @@ class Proxy(ProxyCore):
     for k in KOK:
       klass = KOK[k]
       setattr(self, klass.get_ome_table(), klass)
-    # special case
-    self.Marker = Marker
     #-- setup adapters
-    self.gadpt = GenotypingAdapter(self)
+    self.genomics = GenomicsAdapter(self)
     self.madpt = ModelingAdapter(self)
     self.eadpt = EAVAdapter(self)
     self.admin = Admin(self)
@@ -82,6 +81,10 @@ class Proxy(ProxyCore):
       msg = 'bad type for %s(%s)' % (fname, val)
       raise ValueError(msg)
 
+  def resolve_action_id(self, action):
+    #FIXME hack to be able to use it from Genomics
+    return self.__resolve_action_id(action)
+    
   def __resolve_action_id(self, action):
     if isinstance(action, self.Action):
       if not action.is_loaded():
@@ -210,165 +213,6 @@ class Proxy(ProxyCore):
   def get_data_objects(self, sample):
     return self.madpt.get_data_objects(sample)
 
-  # Genotyping-related utility functions
-  # ====================================
-
-  def create_snp_markers_set(self, label, maker, model, release,
-                             N, stream, action):
-    """
-    Given a stream of (label, mask, index, allele_flip) tuples,
-    build and save a new marker set.
-    """
-    assert type(N) == int and N > 0
-    if not action.is_loaded():
-      action.reload()
-    stream_header = "label", "mask", "index", "allele_flip"
-    def mod_stream():
-      for tuple_ in stream:
-        yield dict(zip(stream_header, tuple_))
-    set_vid = vlu.make_vid()
-    op_vid = self.__resolve_action_id(action)
-    conf = {
-      'label': label,
-      'maker': maker,
-      'model': model,
-      'release': release,
-      'markersSetVID': set_vid,
-      'action': action,
-      }
-    mset = self.factory.create(self.SNPMarkersSet, conf)
-    mset.save()
-    # TODO: add better exception handling to the following code
-    try:
-      self.gadpt.create_snp_markers_set_tables(mset.id, N)
-      count = self.gadpt.define_snp_markers_set(set_vid, mod_stream(), op_vid)
-      if count != N:
-        raise ValueError('there are %d records in stream (expected %d)' %
-                         (count, N))
-    except:
-      self.delete_snp_markers_set(mset)
-      raise
-    return mset
-
-  def delete_snp_markers_set(self, mset):
-    self.gadpt.delete_snp_markers_set_tables(mset.id)
-    self.delete(mset)
-
-  def align_snp_markers_set(self, mset, ref_genome, stream, action):
-    """
-    Given a stream of six-element tuples, save alignment information
-    of markers wrt a reference genome.
-
-    Tuple elements are, respectively:
-
-      #. the marker vid;
-      #. the chromosome number (23=X, 24=Y, 25=XY, 26=MT);
-      #. the position within the chromosome;
-      #. a boolean that's True if the marker aligns on the 5' strand;
-      #. the allele seen on the reference genome;
-      #. the number of times this marker has been seen on the
-         reference genome. If the latter is larger than 1, there
-         should be N records for this marker.
-    """
-    # FIXME no checking
-    def gen(s):
-      for x in s:
-        y = {
-          'marker_vid': x[0],
-          'ref_genome': ref_genome,
-          'chromosome': x[1],
-          'pos': x[2],
-          'strand': x[3],
-          'allele': x[4],
-          'copies': x[5],
-          }
-        yield y
-    max_len = self.gadpt.SNP_ALIGNMENT_COLS[1][3]
-    if len(ref_genome) > max_len:
-      raise ValueError('len("%s") > %d' % (ref_genome, max_len))
-    self.gadpt.add_snp_markers_set_alignments(mset, gen(stream), action)
-
-  def make_gdo_path(self, mset, vid, index):
-    table_name = self.gadpt.snp_markers_set_table_name('gdo', mset.id)
-    return 'table:%s/vid=%s/row_index=%d' % (table_name, vid, index)
-
-  def parse_gdo_path(self, path):
-    head, vid, index = path.split('/')
-    head = head[len('table:'):]
-    vid = vid[len('vid='):]
-    tag, set_vid = self.gadpt.snp_markers_set_table_name_parse(head)
-    index = int(index[len('row_index='):])
-    return set_vid, vid, index
-
-  def add_gdo_data_object(self, action, sample, probs, confs):
-    """
-    Syntactic sugar to simplify adding genotype data objects.
-
-    :param probs: a 2x<nmarkers> array with the AA and the BB
-      homozygous probabilities.
-    :type probs: numpy.darray
-
-    :param confs: a <nmarkers> array with the confidence on the above
-      probabilities.
-    :type probs: numpy.darray
-
-    """
-    avid = self.__resolve_action_id(action)
-    if not isinstance(sample, self.GenotypeDataSample):
-      raise ValueError('sample should be an instance of GenotypeDataSample')
-    mset = sample.snpMarkersSet
-    # FIXME doesn't check that probs and confs have the right dtype and size
-    gdo_vid, row_index = self.gadpt.add_gdo(mset.id, probs, confs, avid)
-    size = 0
-    sha1 = hashlib.sha1()
-    s = probs.tostring();  size += len(s) ; sha1.update(s)
-    s = confs.tostring();  size += len(s) ; sha1.update(s)
-    conf = {
-      'sample': sample,
-      'path': self.make_gdo_path(mset, gdo_vid, row_index),
-      'mimetype': mimetypes.GDO_TABLE,
-      'sha1': sha1.hexdigest(),
-      'size': size,
-      }
-    gds = self.factory.create(self.DataObject, conf).save()
-    return gds
-
-  def get_gdo(self, mset, vid, row_index, indices=None):
-    return self.gadpt.get_gdo(mset.id, vid, row_index, indices)
-
-
-  #FIXME this is the basic object, we should have some support for selections
-  def get_gdo_iterator(self, mset, data_samples=None, indices = None,
-                       batch_size=100):
-    def get_gdo_iterator_on_list(dos):
-      seen_data_samples = set([])
-      for do in dos:
-        # FIXME we could, in principle, handle other mimetypes too
-        if do.mimetype == mimetypes.GDO_TABLE:
-          self.logger.debug(do.path)
-          mset_vid, vid, row_index = self.parse_gdo_path(do.path)
-          self.logger.debug('%r' % [vid, row_index])
-          if mset_vid != mset.id:
-            raise ValueError(
-              'DataObject %s map to data with a wrong SNPMarkersSet' % do.path
-              )
-          yield self.get_gdo(mset, vid, row_index, indices)
-        else:
-          pass
-    if data_samples is None:
-      return self.gadpt.get_gdo_iterator(mset.id, indices, batch_size)
-    for d in data_samples:
-      if d.snpMarkersSet != mset:
-        raise ValueError('data_sample %s snpMarkersSet != mset' % d.id)
-    ids = ','.join('%s' % ds.omero_id for ds in data_samples)
-    query = 'from DataObject do where do.sample.id in (%s)' % ids
-    dos = self.find_all_by_query(query, None)
-    return get_gdo_iterator_on_list(dos)
-
-  def get_snp_markers_set(self, label=None,
-                          maker=None, model=None, release=None):
-    return self.madpt.get_snp_markers_set(label, maker, model, release)
-
 
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
@@ -468,21 +312,6 @@ class Proxy(ProxyCore):
     klass = getattr(self, data_sample_klass_name)
     return (d for d in self.dt.get_connected(individual, aklass=klass))
 
-  def get_genotype_data_samples(self, individual, markers_set):
-    """
-    Syntactic sugar to simplify the looping on GenotypeDataSample(s) related to a
-    specific technology (or markers set) connected to an individual.
-
-    :param individual: the root individual object
-    :type individual: Individual
-
-    :param markers_set: reference SNP markers set
-    :param markers_set: SNPMarkersSet
-
-    :type return: generator of a sequence of GenotypeDataSample objects
-    """
-    return (d for d in self.get_data_samples(individual, 'GenotypeDataSample')
-            if d.snpMarkersSet == markers_set)
 
   def get_vessels_by_individual(self, individual, vessel_klass_name='Vessel'):
     """
