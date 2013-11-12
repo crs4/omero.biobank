@@ -334,6 +334,12 @@ class ProxyCore(object):
       # self.disconnect()
     return len(ofiles) > 0
 
+  def get_number_of_rows(self, table_name):
+    "returns the number of rows of table table_name"
+    session = self.connect()
+    table = self._get_table(session, table_name)
+    return table.getNumberOfRows()
+
   @staticmethod
   def _load_columns(table, records):
     columns = table.getHeaders()

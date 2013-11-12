@@ -88,10 +88,13 @@ class TestProxyCore(unittest.TestCase):
       pc = ProxyCore(OME_HOST, OME_USER, OME_PASS)
       pc.create_table(table_name, fields)
       data = self.__fill_table(pc, table_name, N_ROWS)
+      n_rows = pc.get_number_of_rows(table_name)
       rows = pc.get_table_rows(table_name, None)
     finally:
       pc.delete_table(table_name)
+    self.assertEqual(n_rows, len(data))      
     self.assertTrue(np.all(data == rows))
+
 
   def test_table_rows_iterator(self):
     fields = self.__make_fields()
