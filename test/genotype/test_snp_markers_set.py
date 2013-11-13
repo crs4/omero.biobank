@@ -9,54 +9,16 @@ import numpy as np
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb.drivers.omero.genomics import MSET_TABLE_COLS_DTYPE
 
-from bl.core.io import MessageStreamWriter
-import bl.core.gt.messages.SnpCall as SnpCall
+from common import UTCommon
 
 import bl.vl.genotype.io as gio
-import bl.vl.utils as vlu
-
 
 OME_HOST = os.getenv('OME_HOST', 'localhost')
 OME_USER = os.getenv('OME_USER', 'root')
 OME_PASSWD = os.getenv('OME_PASSWD', 'romeo')
 
-PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
-
-def make_fake_data(n, add_nan=False):
-  probs = 0.5 * np.cast[np.float32](np.random.random((2, n)))
-  confs = np.cast[np.float32](np.random.random(n))
-  if add_nan:
-    rand_indices = np.random.random_integers(
-      0, len(probs[0]) - 1, len(probs[0]) / 2
-      )
-    for x in set(rand_indices):
-      probs[0][x] = np.nan
-      probs[1][x] = np.nan
-  return probs, confs
-
-
-def make_fake_ssc(mset, labels, sample_id, probs, conf, fn):
-  header = {'markers_set' : mset.label, 'sample_id':  sample_id}
-  stream = MessageStreamWriter(fn, PAYLOAD_MSG_TYPE, header)
-  for l, p_AA, p_BB, c in  it.izip(labels, probs[0], probs[1], conf):
-    p_AB = 1.0 - (p_AA + p_BB)
-    w_aa, w_ab, w_bb = p_AA, p_AB, p_BB
-    stream.write({
-      'sample_id': sample_id,
-      'snp_id': l,
-      'call': SnpCall.NOCALL, # we will not test this anyway
-      'confidence': float(c),
-      'sig_A': float(p_AA),
-      'sig_B': float(p_BB),
-      'w_AA': float(w_aa),
-      'w_AB': float(w_ab),
-      'w_BB': float(w_bb),
-      })
-  stream.close()
-
-
-class markers_set(unittest.TestCase):
+class markers_set(UTCommon):
 
   def __init__(self, name):
     super(markers_set, self).__init__(name)
@@ -77,42 +39,10 @@ class markers_set(unittest.TestCase):
     while self.kill_list:
       self.kb.delete(self.kill_list.pop())
 
-  def __create_markers_set(self, N):
-    label = 'ams-%f' % time.time()
-    maker, model, release = 'FOO', 'FOO1', '%f' % time.time()
-    vid = vlu.make_vid()
-    rows = np.array([('M%d' % i, i, 'AC[A/G]GT', False, vid) 
-                     for i in xrange(N)],
-                    dtype=MSET_TABLE_COLS_DTYPE)
-    mset = self.kb.genomics.create_markers_array(
-      label, maker, model, release, rows, self.action
-      )
-    self.kill_list.append(mset)
-    return mset, rows
-
-  def __create_data_sample(self, mset, label):
-    conf = {
-      'label': label,
-      'status': self.kb.DataSampleStatus.USABLE,
-      'action': self.action,
-      'snpMarkersSet': mset,
-      }
-    data_sample = self.kb.factory.create(self.kb.GenotypeDataSample,
-                                         conf).save()
-    self.kill_list.append(data_sample)
-    return data_sample
-
-  def __create_data_object(self, data_sample, add_nan=False):
-    n = self.kb.genomics.get_number_of_markers(data_sample.snpMarkersSet)
-    probs, confs = make_fake_data(n, add_nan)
-    do = self.kb.genomics.add_gdo_data_object(self.action, 
-                                              data_sample, probs, confs)
-    self.kill_list.append(do)
-    return probs, confs
-
   def test_creation_destruction(self):
     N = 32
-    mset, rows = self.__create_markers_set(N)
+    mset, rows = self.create_markers_set(N)
+    self.kill_list.append(mset)
     markers = self.kb.genomics.get_markers_array_rows(mset)
     self.assertEqual(len(markers), N)
     for r, m in it.izip(rows, markers):
@@ -123,20 +53,24 @@ class markers_set(unittest.TestCase):
   def test_read_ssc(self):
     N = 16
     N_dups = 4
-    mset, rows = self.__create_markers_set(N)
-    probs, confs = make_fake_data(N)
+    mset, rows = self.create_markers_set(N)
+    self.kill_list.append(mset)    
+    probs, confs = self.make_fake_data(N)
     sample_id = 'ffoo-%f' % time.time()
     fn = tempfile.NamedTemporaryFile().name
-    make_fake_ssc(mset, rows['label'], sample_id, probs, confs, fn)
+    self.make_fake_ssc(mset, rows['label'], sample_id, probs, confs, fn)
     probs_1, confs_1 = gio.read_ssc(fn, mset)
     self.assertAlmostEqual(np.sum(np.abs(probs - probs_1)), 0.0)
     self.assertAlmostEqual(np.sum(np.abs(confs - confs_1)), 0.0)
 
   def test_gdo(self):
     N = 32
-    mset, _ = self.__create_markers_set(N)
-    data_sample = self.__create_data_sample(mset, 'foo-data')
-    probs, confs = self.__create_data_object(data_sample)
+    mset, _ = self.create_markers_set(N)
+    self.kill_list.append(mset)    
+    data_sample = self.create_data_sample(mset, 'foo-data', self.action)
+    self.kill_list.append(data_sample)
+    data_obj, probs, confs = self.create_data_object(data_sample, self.action)
+    self.kill_list.append(data_obj)    
     probs1, confs1 = data_sample.resolve_to_data()
     self.assertTrue((probs == probs1).all())
     self.assertTrue((confs == confs1).all())
@@ -152,7 +86,7 @@ class markers_set(unittest.TestCase):
     for i, x in enumerate(s):
       self.assertTrue((probs[:,indices] == x['probs']).all())
       self.assertTrue((confs[indices] == x['confidence']).all())
-    self.assertEqual(i, 0)
+      self.assertEqual(i, 0)
 
 
   def test_speed(self):
@@ -163,7 +97,8 @@ class markers_set(unittest.TestCase):
     print ''
     print 'creating %d markers took %f' % (N1, time.time() - beg)
     beg = time.time()
-    mset1, _ = self.__create_markers_set(N1)
+    mset1, _ = self.create_markers_set(N1)
+    self.kill_list.append(mset)        
     print 'creating a markers set with %d markers took %f' % (
       N1, time.time() - beg
       )
@@ -173,12 +108,15 @@ class markers_set(unittest.TestCase):
     beg = time.time()
     print ''
     print 'creating %d markers took %f' % (N, time.time() - beg)
-    mset, _ = self.__create_markers_set(N)
+    mset, _ = self.create_markers_set(N)
+    self.kill_list.append(mset)            
     beg = time.time()
-    data_sample = self.__create_data_sample(mset, 'foo-data')
+    data_sample = self.create_data_sample(mset, 'foo-data', self.action)
+    self.kill_list.append(data_sample)    
     print 'creating a data sample took %f' % (time.time() - beg)
     beg = time.time()
-    probs, confs = self.__create_data_object(data_sample)
+    do, probs, confs = self.create_data_object(data_sample, self.action)
+    self.kill_list.append(do)        
     print 'creating a data object took %f' % (time.time() - beg)
     beg = time.time()
     probs1, confs1 = data_sample.resolve_to_data()
