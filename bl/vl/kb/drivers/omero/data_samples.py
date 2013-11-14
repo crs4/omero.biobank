@@ -56,7 +56,7 @@ class GenotypeDataSample(DataSample):
   OME_TABLE = 'GenotypeDataSample'
   __fields__ = [('snpMarkersSet', SNPMarkersSet, wp.REQUIRED)]
 
-  def resolve_to_data(self):
+  def resolve_to_data(self, indices=None):
     dos = self.proxy.get_data_objects(self)
     if not dos:
       raise ValueError('no connected DataObject(s)')
@@ -67,7 +67,7 @@ class GenotypeDataSample(DataSample):
         mset = self.snpMarkersSet
         assert mset.id == set_vid
         mset.reload()
-        res = self.proxy.genomics.get_gdo(mset, vid, index)
+        res = self.proxy.genomics.get_gdo(mset, vid, index, indices=indices)
         return res['probs'], res['confidence']
     else:
       raise ValueError('DataObject is not a %s' % mimetypes.GDO_TABLE)
