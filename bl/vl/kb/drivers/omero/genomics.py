@@ -123,10 +123,14 @@ class GenomicsAdapter(object):
         return marray
 
     def get_markers_array(self, label=None,
-                          maker=None, model=None, release=None):
-        if label:
+                          maker=None, model=None, release=None, vid=None):
+        if label is not None:
             query = "select ms from SNPMarkersSet ms where ms.label = :label"
             pars = self.kb.ome_query_params({'label': wp.ome_wrap(label)})
+        elif vid is not None:            
+            query = """select ms from SNPMarkersSet ms 
+                              where ms.markersSetVID = :vid"""
+            pars = self.kb.ome_query_params({'vid': wp.ome_wrap(vid)})
         else:
             if not (maker and model and release):
                 raise ValueError('maker, model, release should be all provided')
