@@ -112,6 +112,7 @@ def register_vcs(kb, vcs, action):
     vcs.save()
     return _save_vcs_data(kb, vcs)
 
+
 def delete_vcs(kb, vcs):
     "Deletes vcs from permanent storage"
     dos = kb.get_data_objects(vcs)
@@ -151,8 +152,12 @@ class  VariantCallSupport(DataSample):
     #ATTR_VC_DTYPE  = np.dtype([('ref', '|S%d' % VID_SIZE), ('vpos', '<i8')]) 
 
     def save(self):
-        print '%s I am saving myself!' % self
         super(VariantCallSupport, self).save()
+
+    def __cleanup__(self):
+        dos = self.proxy.get_data_objects(self)
+        if len(dos) > 0:
+            _delete_data(self.proxy, self)
         
     def __len__(self):
         return len(self.get_nodes())
