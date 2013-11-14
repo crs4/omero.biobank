@@ -9,7 +9,7 @@ efficient ways to handle the computational aspects of large scale
 biomedical studies.
 """
 
-import datetime
+import datetime, os
 
 # from setuptools import setup
 from distutils.core import setup
@@ -80,7 +80,8 @@ def write_version(filename="bl/vl/version.py"):
 
 def write_config():
   target = build_configuration.PYTHON_OUT_FN
-  if newer_group([__file__, build_configuration.__file__], target):
+  build_conf_file = os.path.splitext(build_configuration.__file__)[0] + '.py'
+  if newer_group([__file__, build_conf_file], target):
     build_configuration.main([])
 
 
