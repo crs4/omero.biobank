@@ -1,4 +1,4 @@
-import unittest, time, os, random
+import unittest, time, os, random, uuid
 import itertools as it
 import tempfile
 import numpy as np
@@ -11,11 +11,17 @@ from kb_object_creator import KBObjectCreator
 
 from bl.vl.kb.drivers.omero.genomics import MSET_TABLE_COLS_DTYPE
 
+from bl.vl.kb.drivers.omero.variant_call_support import register_vcs
+
 PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
 
 class UTCommon(KBObjectCreator):
 
+    @staticmethod
+    def make_random_str():
+        return uuid.uuid4().hex
+    
     def create_markers_set(self, N):
         label = 'ams-%f' % time.time()
         maker, model, release = 'FOO', 'FOO1', '%f' % time.time()
@@ -27,6 +33,18 @@ class UTCommon(KBObjectCreator):
             label, maker, model, release, rows, self.action
             )
         return mset, rows
+
+    def create_reference_genome(self, action):
+        conf = {'nChroms' : 10, 
+                'maker': self.make_random_str(),
+                'model': self.make_random_str(),
+                'release' : self.make_random_str(),
+                'label': self.make_random_str(),
+                'status' : self.kb.DataSampleStatus.USABLE,
+                'action': action}
+        reference_genome = self.kb.factory.create(self.kb.ReferenceGenome,
+                                                  conf).save()
+        return reference_genome
 
     @staticmethod
     def make_fake_data(n, add_nan=False):
@@ -78,3 +96,22 @@ class UTCommon(KBObjectCreator):
         do = self.kb.genomics.add_gdo_data_object(action, 
                                                   data_sample, probs, confs)
         return do, probs, confs
+
+    def create_variant_call_support(self, mset, reference_genome, action):
+        VariantCallSupport = self.kb.VariantCallSupport
+        N = self.kb.genomics.get_number_of_markers(mset)
+        mset_vid = mset.id
+        nodes = np.array([(1, 10 * i) for i in xrange(N)], 
+                         dtype=VariantCallSupport.NODES_DTYPE)
+        field = np.array([(i, mset_vid, i) for i in range(len(nodes))],
+                         dtype=VariantCallSupport.ATTR_ORIGIN_DTYPE)
+        label = self.make_random_str()
+        conf = {'referenceGenome' : reference_genome,
+                'label' : label,
+                'status' : self.kb.DataSampleStatus.USABLE,
+                'action': action}  
+        vcs = self.kb.factory.create(VariantCallSupport, conf)
+        vcs.define_support(nodes)
+        vcs.define_field('origin', field)
+        register_vcs(self.kb, vcs, action)
+        return vcs

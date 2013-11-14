@@ -245,48 +245,79 @@ class PedWriter(object):
   Writes a `PLINK <http://pngu.mgh.harvard.edu/~purcell/plink>`_
   (ped, map) pair for a given marker set and collection of families.
 
-  Use a subset of the markers if ``selected_markers`` is set. It is
-  possible to request that the map file contain marker positions wrt
-  a reference genome: if the latter is not provided, the map file
-  will contain default values, i.e., (0, 0). If the user does
-  provide a reference genome and there is no alignment information
-  for the markers in mset wrt to that genome, an error is generated.
+  It will write a map file with marker positions defined by vcs.  If
+  resolve_label is False, default value, it will use as markers label
+  <vid>:<idx> (e.g., V0393:8933) that are, respectively, the vid of
+  the definiting marker array and the index of the marker within
+  it. Otherwise, it will resolve to the label assigned to the marker
+  in the defining markers array.
 
-  :param mset: a reference markers set that will be used to generate
-    the map file
-  :type mset: SNPMarkersSet
+  In case of multiple origin for the same vcs node, the writer will
+  only consider the first. 
+
+  :param vcs: definition of markers positions used to generate the map file
+  :type mset: VariantCallSupport
 
   :param base_path: optional base_path that will be used to create the
     .ped and .map files
   :type base_path: str
 
-  :param ref_genome: optional reference genome against which the
-    markers are aligned in the map file
-  :type ref_genome: str
+  :param resolve_label: use MarkersArray markers label
+  :type base_path: bool
 
-  :param selected_markers: an array with the indices of the selected
-    markers.
-  :type selected_markers: numpy.ndarray of numpy.int32
+  :param threshold: maximum value of the ratio between the second
+      highest and the highest probability for a marker, beyond which
+      the discrete call is marked as undefined. Default 0.2 See
+      documentation of `bl.vl.genotype.algo.project_to_discrete_genotype()`.
+
   """
-  def __init__(self, mset, base_path="bl_vl_ped",
-               ref_genome=None, selected_markers=None):
-    self.mset = mset
+  def __init__(self, vcs, base_path="bl_vl_ped", resolve_label=False, 
+               threshold=0.2):
+    self.vcs = vcs
     self.base_path = base_path
-    self.selected_markers = selected_markers
-    self.ref_genome = ref_genome
+    self.threshold = threshold
     self.ped_file = None
-    try:
-      N = len(self.mset)
-    except ValueError:
-      self.mset.load_markers()
-      N = len(self.mset)
+    N = len(self.vcs)
     self.null_probs = np.empty((2, N), dtype=np.float32)
     self.null_probs.fill(1/3.)
-    if self.ref_genome:
-      self.mset.load_alignments(self.ref_genome)
-    kb = self.mset.proxy
-    kb.Gender.map_enums_values(kb)
-    self.gender_map = lambda x: 2 if x == kb.Gender.FEMALE else 1
+    self.kb = self.vcs.proxy
+    self.kb.Gender.map_enums_values(self.kb)
+    self.gender_map = lambda x: 2 if x == self.kb.Gender.FEMALE else 1
+    self._extract_vcs_info(resolve_label)
+
+  def _extract_labels(self, origin, resolve_label):
+    mvids = self.mvids
+    labels = [':'.join([v, str(i)]) 
+              for v, i in it.izip(origin['vid'], origin['index'])]
+    if resolve_label:
+      # FIXME this works because, up to now, we only have
+      # SNPMarkersSet as possible position sources.
+      msets = self.kb.get_by_field(self.kb.SNPMarkersSet,
+                                   'markersSetVID', mvids)
+      for vid, mset in mvids.iteritems():
+        sel = origin['vid'] == vid
+        indices = origin['index'][sel]
+        marray = self.kb.genomics.get_markers_array_rows(mset, indices)
+        labels[sel] = marray['label']
+    return labels
+
+  def _extract_data_indices(self, origin):
+    mvids = self.mvids    
+    # FIXME this works because, up to now, we only have
+    # SNPMarkersSet as possible position sources.
+    indices_by_mvid = {}
+    ilist = np.arange(len(origin), dtype=np.int32)
+    for vid in mvids:
+      sel = origin['vid'] == vid
+      indices_by_mvid[vid] = (ilist[sel], origin['index'][sel])
+    return indices_by_mvid
+    
+  def _extract_vcs_info(self, resolve_label):
+    origin = self.vcs.get_field('origin')
+    self.mvids = frozenset(origin['vid'])
+    self.labels = self._extract_labels(origin, resolve_label)
+    self.indices = self._extract_data_indices(origin)
+    self.nodes = self.vcs.get_nodes()
 
   def write_map(self):
     """
@@ -300,16 +331,42 @@ class PedWriter(object):
       if x < 23:
         return x
       return { 23 : 'X', 24 : 'Y', 25 : 'XY', 26 : 'MT'}[x]
-    def dump_markers(fo, marker_indx):
-      for i in marker_indx:
-        m = self.mset[i]
-        chrom, pos = m.position
-        fo.write('%s\t%s\t%s\t%s\n' % (chrom, m.label, 0, pos))
+    def dump_markers(fo, nodes, labels):
+      for node, label in it.izip(nodes, labels):
+        chrom, pos = node
+        fo.write('%s\t%s\t%s\t%s\n' % (chrom, label, 0, pos))
     with open(self.base_path + '.map', 'w') as fo:
-      fo.write('# map based on mset %s aligned on %s\n' %
-               (self.mset.id, self.ref_genome))
-      s = self.selected_markers or xrange(len(self.mset))
-      dump_markers(fo, s)
+      fo.write('# map based on vcs %s\n' % (self.vcs.id))
+      dump_markers(fo, self.nodes, self.labels)
+
+
+  def _check_and_normalize_input(self, data_sample_by_id):
+    normalized_data_sample_by_id = {}
+    if data_sample_by_id is None:
+      return
+    if len(self.mvids) == 1:
+      for k, v in data_sample_by_id.iteritems():
+        if not isinstance(v, self.kb.GenotypeDataSample):
+          raise ValueError('bad tupe for data_sample_by_id[%s]' % k)
+        if v.snpMarkersSet.id != list(self.mvids)[0]:
+          raise ValueError('bad mset for data_sample_by_id[%s]' % k)          
+        normalized_data_sample_by_id[k] = {v.snpMarkersSet.id : v}
+    else:
+      for k, v in data_sample_by_id.iteritems():
+        if not isinstance(v, dict):
+          raise ValueError('bad tupe for data_sample_by_id[%s]' % k)
+        for mid in self.mvids:
+          if not v.has_key(mid):
+            raise ValueError('no data for data_sample_by_id[%s][%s]' 
+                             % (k, mid))
+          if not isinstance(v[mid], self.kb.GenotypeDataSample):
+            raise ValueError('bad type for data_sample_by_id[%s][%s]' 
+                             % (k, mid))
+          if v[mid].mset != mid:
+            raise ValueError('bad mset for data_sample_by_id[%s][%s]' 
+                             % (k, mid))
+      normalized_data_sample_by_id = data_sample_by_id
+    return normalized_data_sample_by_id
 
   def write_family(self, family_label, family_members,
                    data_sample_by_id=None, phenotype_by_id=None):
@@ -324,7 +381,8 @@ class PedWriter(object):
     :type family_members: iterator on Individual
 
     :param data_sample_by_id: an optional dict-like object that maps
-      individual ids to GenotypeDataSample objects
+      individual ids to either a single GenotypeDataSample objects or
+      a dictionary of mset.id -> GenotypeDataSample object.
     :type data_sample_by_id: dict
 
     :param phenotype_by_id: an optional dict-like object that maps
@@ -332,6 +390,7 @@ class PedWriter(object):
       of a PLINK ped file
     :type phenotype_by_id: dict
     """
+    self._check_and_normalize_input(data_sample_by_id)
     if not phenotype_by_id:
       phenotype_by_id = {None: 0}
     allele_patterns = {0: 'A A', 1: 'B B', 2: 'A B', 3: '0 0'}
@@ -339,11 +398,16 @@ class PedWriter(object):
       if data_sample is None:
         probs = self.null_probs
       else:
-        probs, _ = data_sample.resolve_to_data()
-      if self.selected_markers:
-        probs = probs[:, self.selected_markers]
+        if type(data_sample) is dict:
+          probs = np.zeros((2, len(self.vcs)), dtype=np.float32)
+          for mid, indices in self.mvids.iteritems():
+            probs, _ = data_sample[mid].resolve_to_data(indices[1])
+            probs[indices[0]] = pprobs
+        else:
+          probs, _ = data_sample.resolve_to_data()
       fo.write('\t'.join([allele_patterns[x]
-                          for x in project_to_discrete_genotype(probs)]))
+                          for x in project_to_discrete_genotype(probs, 
+                                              threshold=self.threshold)]))
       fo.write('\n')
     if self.ped_file is None:
       self.ped_file = open(self.base_path+'.ped', 'w')
