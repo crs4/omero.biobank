@@ -30,3 +30,32 @@ def index_intersect(a1, a2):
   b.sort(order='item')
   mask = b[:-1]['item'] == b[1:]['item']
   return b[1:][mask]['idx'] - a2.size, b[mask]['idx']
+
+def argsort_split(a, kind='mergesort'):
+  """
+  Return a list of indices arrays that sort subsets of a in a strictly
+  increasing order. The first corresponds to the list of the first
+  appearance of unique values of a, the next to the list of first
+  second appearance of items in a, and so on.
+
+  .. code:: python
+      a = array([1, 3, 2, 1, 0, 3, 0, 4, 3, 2])
+      argsort_split(a)
+      >>> [array([4, 0, 2, 1, 7]), array([6, 3, 9, 5]), array([8])]
+      for idx in argsplit(a):
+           print idx, a[idx]
+      >>> [4 0 2 1 7] [0 1 2 3 4]
+          [6 3 9 5] [0 1 2 3]
+          [8] [3]
+  """
+  def split_index(idx):
+    flag = np.hstack([[True], a[idx][1:] != a[idx][:-1]])
+    return idx[flag], idx[~flag]
+  result = []
+  ia = a.argsort(kind=kind)
+  ia1, ia2 = split_index(ia)
+  result.append(ia1)
+  while len(ia2) > 0:
+    ia1, ia2 = split_index(ia2)
+    result.append(ia1)
+  return result

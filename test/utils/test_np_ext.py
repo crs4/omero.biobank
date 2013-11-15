@@ -3,6 +3,7 @@
 
 import unittest, time
 import numpy as np
+import itertools as it
 
 import bl.vl.utils.np_ext as np_ext
 
@@ -60,12 +61,24 @@ class TestIndexIntersect(unittest.TestCase):
     print
     print "finished in %.1f s" % (time.time()-t0)
 
+class TestArgsortSplit(unittest.TestCase):        
+
+  def test_basics(self):
+    cases = [(np.array([1, 3, 2, 1, 0, 3, 0, 4, 3, 2]),
+              [np.array([4, 0, 2, 1, 7]), 
+               np.array([6, 3, 9, 5]), np.array([8])])]
+    for a, res in cases:
+      splits = np_ext.argsort_split(a)
+      self.assertEqual(len(splits), len(res))
+      for s1, s2 in it.izip(splits, res):
+        self.assertTrue((s1==s2).all())
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(TestIndexIntersect('test_simple_array'))
   suite.addTest(TestIndexIntersect('test_record_array'))
   suite.addTest(TestIndexIntersect('test_exceptions'))
+  suite.addTest(TestArgsortSplit('test_basics'))  
   #suite.addTest(TestIndexIntersect('test_performance'))
   return suite
 
