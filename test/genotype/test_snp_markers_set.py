@@ -49,6 +49,15 @@ class markers_set(UTCommon):
       self.assertEqual(len(r) + 1, len(m))
       for i, x in enumerate(r):
         self.assertEqual(x, m[i])
+    #--
+    mset, rows = self.create_markers_set_from_stream(N)
+    self.kill_list.append(mset)
+    markers = self.kb.genomics.get_markers_array_rows(mset)
+    self.assertEqual(len(markers), N)
+    for r, m in it.izip(rows, markers):
+      self.assertEqual(len(r) + 1, len(m))
+      for i, x in enumerate(r):
+        self.assertEqual(x, m[i])
 
   def test_read_ssc(self):
     N = 16
