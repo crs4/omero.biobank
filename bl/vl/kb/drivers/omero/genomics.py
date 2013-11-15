@@ -41,6 +41,7 @@ from bl.vl.kb import mimetypes
 from utils import assign_vid, make_unique_key
 import wrapper as wp
 
+from proxy_core import convert_from_numpy
 
 import numpy as np
 import hashlib
@@ -293,14 +294,21 @@ class GenomicsAdapter(object):
 
     def _fill_markers_array_table(self, table_name_root, set_vid, stream,
                                   op_vid, batch_size):
+        def rows_to_stream(rows):
+            dtype = rows.dtype
+            for r in rows:
+                yield dict([(k, convert_from_numpy(r[k])) for k in dtype.names])
+        def add_op_vid(stream):
+            for r in stream:
+                if not r.has_key('op_vid'):
+                    r['op_vid'] = op_vid
+                yield r
         table_name = self._markers_array_table_name(table_name_root, set_vid)
         if hasattr(stream, 'dtype'):
-            return self.kb.add_table_rows(table_name, stream, batch_size)
-        else:
-            return self.kb.add_table_rows_from_stream(table_name, stream,
-                                                      batch_size)
-        
-
+            stream = rows_to_stream(stream)
+        return self.kb.add_table_rows_from_stream(table_name, 
+                                                  add_op_vid(stream),
+                                                  batch_size)
     def _unwrap_gdo(self, row, indices):
         r = {'vid': row['vid'], 'op_vid': row['op_vid']}
         p = row['probs']

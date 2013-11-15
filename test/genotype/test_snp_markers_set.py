@@ -46,7 +46,7 @@ class markers_set(UTCommon):
     markers = self.kb.genomics.get_markers_array_rows(mset)
     self.assertEqual(len(markers), N)
     for r, m in it.izip(rows, markers):
-      self.assertEqual(len(r), len(m))
+      self.assertEqual(len(r) + 1, len(m))
       for i, x in enumerate(r):
         self.assertEqual(x, m[i])
 
