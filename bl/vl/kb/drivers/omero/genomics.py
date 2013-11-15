@@ -276,18 +276,28 @@ class GenomicsAdapter(object):
 
 
     def register_vcs(self, vcs, action):
+        "Save vcs in kb"
         variant_call_support.register_vcs(self.kb, vcs, action)
 
     def delete_vcs(self, vcs):
+        "Delete vcs from kb"        
         variant_call_support.delete_vcs(self.kb, vcs)
         
     def get_vcs_by_label(self, label):
+        "Retrieve vcs with label label from kb"                
         return variant_call_support.get_vcs_by_label(self.kb, label)
         
     def get_vcs_by_vid(self, vid):
+        "Retrieve vcs with vid vid from kb"                        
         return variant_call_support.get_vcs_by_vid(self.kb, vid)
-        
-        
+
+    def create_vcs(self, marray, reference_genome, positions, action):
+        """
+        Create a vcs that correspond to marray mapped on
+        reference_genome, with markers positions defined by positions.
+        """
+        return variant_call_support.create_vcs(
+            self.kb, marray, reference_genome, positions, action)
             
     #----------------------------------------------------------------------
     @classmethod
