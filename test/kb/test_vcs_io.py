@@ -17,11 +17,6 @@ OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
 
-from bl.vl.kb.drivers.omero.variant_call_support import register_vcs
-from bl.vl.kb.drivers.omero.variant_call_support import delete_vcs
-from bl.vl.kb.drivers.omero.variant_call_support import get_vcs_by_label
-from bl.vl.kb.drivers.omero.variant_call_support import get_vcs_by_vid
-
 def make_random_str():
     return uuid.uuid4().hex
 
@@ -75,13 +70,13 @@ class TestVCS(KBObjectCreator):
         vcs = self.kb.factory.create(VariantCallSupport, conf)
         vcs.define_support(nodes)
         vcs.define_field('origin', field)
-        register_vcs(self.kb, vcs, action)
-        vcs2 = get_vcs_by_label(self.kb, label)
+        self.kb.genomics.register_vcs(vcs, action)
+        vcs2 = self.kb.genomics.get_vcs_by_label(label)
         self.assertTrue(np.alltrue(vcs2.get_field('origin') 
                                    == vcs.get_field('origin')))
         self.assertTrue(np.alltrue(vcs2.get_nodes() == vcs.get_nodes()))
-        delete_vcs(self.kb, vcs)
-        self.assertEqual(get_vcs_by_label(self.kb, label), None)
+        self.kb.genomics.delete_vcs(vcs)
+        self.assertEqual(self.kb.genomics.get_vcs_by_label(label), None)
 
 def suite():
     suite = unittest.TestSuite()

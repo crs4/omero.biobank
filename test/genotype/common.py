@@ -8,13 +8,16 @@ import bl.core.gt.messages.SnpCall as SnpCall
 import bl.vl.utils as vlu
 
 from kb_object_creator import KBObjectCreator
-
-from bl.vl.kb.drivers.omero.genomics import MSET_TABLE_COLS_DTYPE
+from bl.vl.kb.drivers.omero.proxy_core import convert_from_numpy
 
 from bl.vl.kb.drivers.omero.variant_call_support import register_vcs
-
+from bl.vl.kb.drivers.omero.genomics import MARKER_LABEL_SIZE, MARKER_MASK_SIZE
 PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
+MSET_TABLE_COLS_DTYPE  = [('label', '|S%d' % MARKER_LABEL_SIZE),
+                          ('index', 'i8'),
+                          ('mask',  '|S%d' % MARKER_MASK_SIZE),
+                          ('permutation', '?')]
 
 class UTCommon(KBObjectCreator):
 
@@ -22,11 +25,25 @@ class UTCommon(KBObjectCreator):
     def make_random_str():
         return uuid.uuid4().hex
     
+    def create_markers_set_from_stream(self, N):
+        label = 'ams-%f' % time.time()
+        maker, model, release = 'FOO', 'FOO1', '%f' % time.time()
+        rows = np.array([('M%d' % i, i, 'AC[A/G]GT', False) 
+                         for i in xrange(N)],
+                         dtype=MSET_TABLE_COLS_DTYPE)
+        def stream(rows):
+            dtype = rows.dtype
+            for r in rows:
+                yield dict([(k, convert_from_numpy(r[k])) for k in dtype.names])
+        mset = self.kb.genomics.create_markers_array(
+            label, maker, model, release, stream(rows), self.action
+            )
+        return mset, rows
+
     def create_markers_set(self, N):
         label = 'ams-%f' % time.time()
         maker, model, release = 'FOO', 'FOO1', '%f' % time.time()
-        vid = vlu.make_vid()
-        rows = np.array([('M%d' % i, i, 'AC[A/G]GT', False, vid) 
+        rows = np.array([('M%d' % i, i, 'AC[A/G]GT', False) 
                          for i in xrange(N)],
                          dtype=MSET_TABLE_COLS_DTYPE)
         mset = self.kb.genomics.create_markers_array(

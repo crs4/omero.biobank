@@ -25,6 +25,7 @@ import location
 import demographic
 import sequencing
 import snp_markers_set
+import variant_call_support
 
 #from genotyping import GenotypingAdapter
 from genomics import GenomicsAdapter

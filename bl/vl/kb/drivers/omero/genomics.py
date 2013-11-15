@@ -38,9 +38,10 @@ site: AA, AB and BB.
 
 import bl.vl.utils as vlu
 from bl.vl.kb import mimetypes
-from utils import assign_vid, make_unique_key
+import variant_call_support
 import wrapper as wp
-
+from proxy_core import convert_from_numpy
+from utils import assign_vid, make_unique_key
 
 import numpy as np
 import hashlib
@@ -272,6 +273,31 @@ class GenomicsAdapter(object):
         return (d for d in self.kb.get_data_samples(individual, 
                                                     'GenotypeDataSample')
                 if d.snpMarkersSet == markers_set)
+
+
+    def register_vcs(self, vcs, action):
+        "Save vcs in kb"
+        variant_call_support.register_vcs(self.kb, vcs, action)
+
+    def delete_vcs(self, vcs):
+        "Delete vcs from kb"        
+        variant_call_support.delete_vcs(self.kb, vcs)
+        
+    def get_vcs_by_label(self, label):
+        "Retrieve vcs with label label from kb"                
+        return variant_call_support.get_vcs_by_label(self.kb, label)
+        
+    def get_vcs_by_vid(self, vid):
+        "Retrieve vcs with vid vid from kb"                        
+        return variant_call_support.get_vcs_by_vid(self.kb, vid)
+
+    def create_vcs(self, marray, reference_genome, positions, action):
+        """
+        Create a vcs that correspond to marray mapped on
+        reference_genome, with markers positions defined by positions.
+        """
+        return variant_call_support.create_vcs(
+            self.kb, marray, reference_genome, positions, action)
             
     #----------------------------------------------------------------------
     @classmethod
@@ -293,14 +319,21 @@ class GenomicsAdapter(object):
 
     def _fill_markers_array_table(self, table_name_root, set_vid, stream,
                                   op_vid, batch_size):
+        def rows_to_stream(rows):
+            dtype = rows.dtype
+            for r in rows:
+                yield dict([(k, convert_from_numpy(r[k])) for k in dtype.names])
+        def add_op_vid(stream):
+            for r in stream:
+                if not r.has_key('op_vid'):
+                    r['op_vid'] = op_vid
+                yield r
         table_name = self._markers_array_table_name(table_name_root, set_vid)
         if hasattr(stream, 'dtype'):
-            return self.kb.add_table_rows(table_name, stream, batch_size)
-        else:
-            return self.kb.add_table_rows_from_stream(table_name, stream,
-                                                      batch_size)
-        
-
+            stream = rows_to_stream(stream)
+        return self.kb.add_table_rows_from_stream(table_name, 
+                                                  add_op_vid(stream),
+                                                  batch_size)
     def _unwrap_gdo(self, row, indices):
         r = {'vid': row['vid'], 'op_vid': row['op_vid']}
         p = row['probs']

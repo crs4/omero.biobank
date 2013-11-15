@@ -38,6 +38,9 @@ import bl.vl.utils as vlu
 import bl.vl.utils.np_ext as np_ext
 
 
+def create_label():
+    return uuid.uuid4().hex
+
 def get_vcs_by_label(kb, label):
     "Recover a VariantCallSupport definition by label"
     vcs = kb.get_by_label(VariantCallSupport, label)
@@ -130,8 +133,37 @@ def _delete_data(kb, vcs):
                 kb.delete_table(table_name)
     else:
         raise RuntimeError('cannot find data fields')
-    
 
+
+def _create_vcs_helper(kb, marray, reference_genome, indices, positions, 
+                       action):
+    conf = {'referenceGenome' : reference_genome,
+            'label' : create_label(),
+            'status' : kb.DataSampleStatus.USABLE,
+            'action': action}
+    vcs = kb.factory.create(VariantCallSupport, conf)
+    vcs.define_support(positions[indices])
+    origin = np.zeros(len(indices),
+                      dtype=VariantCallSupport.ATTR_ORIGIN_DTYPE)
+    origin['index'] = np.arange(len(indices))
+    origin['vid'] = marray.id
+    origin['vpos'] = indices
+    vcs.define_field('origin', origin)
+    return vcs
+
+def create_vcs(kb, marray, reference_genome, positions, action):
+    marray.reload()
+    if not len(positions) == kb.genomics.get_number_of_markers(marray):
+        raise ValueError('inconsistent number of markers and positions.')
+    split_arrays = np_ext.argsort_split(positions)
+    vcs = _create_vcs_helper(kb, marray, reference_genome, 
+                             split_arrays[0], positions, action)
+    for indices in split_arrays[1:]:
+        vcs = vcs.union(_create_vcs_helper(kb, marray, reference_genome,
+                                           indices, positions, action))
+    return vcs
+
+    
 VID_SIZE = vlu.DEFAULT_VID_LEN
 
 
@@ -191,6 +223,15 @@ class  VariantCallSupport(DataSample):
         """
         return {} if not hasattr(self, 'fields') \
                   else self.bare_getattr('fields')
+
+    def get_multiple_origins_nodes(self):
+        """
+        Retrieve all nodes with multiple origins (> 1) and a count of
+        how many origins are there for each node.
+        """
+        icounts = np.bincount(self.get_field('origin')['index'])
+        flag = icounts > 1
+        return np.vstack([np.arange(len(icounts))[flag], icounts[flag]])
 
     def define_support(self, nodes):
         """
@@ -276,7 +317,7 @@ class  VariantCallSupport(DataSample):
         other_fields = other.get_fields()
         s_keys, o_keys = (set(fs) for fs in [self_fields, other_fields])
         o_map = (o_sel.cumsum() - 1) + len(self_nodes)
-        inv_shuffle = np.arange(len(shuffle))[shuffle.argsort()]
+        inv_shuffle = shuffle.argsort()
         o_map[o_isct] = s_isct
         o_map = inv_shuffle[o_map]
         fields = {}
@@ -363,9 +404,6 @@ class  VariantCallSupport(DataSample):
         
     #------------- utility functions below here ----------------------
     # pylint: disable=C0111
-    @staticmethod
-    def _create_label():
-        return uuid.uuid4().hex
 
     def _define_support(self, nodes):
         self.bare_setattr('nodes', nodes)
@@ -396,7 +434,7 @@ class  VariantCallSupport(DataSample):
 
     def _clone_structure(self, support=None, fields=None):
         conf = self.to_conf()
-        conf['label'] = self._create_label()
+        conf['label'] = create_label()
         other = self.proxy.factory.create(self.__class__, conf)
         if support is not None:
             other._define_support(support)

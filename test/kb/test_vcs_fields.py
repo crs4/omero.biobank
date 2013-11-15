@@ -66,7 +66,7 @@ class TestVCS(KBObjectCreator):
         self.assertEqual(len(vcs), len(nodes))
         self.assertTrue(np.alltrue(nodes == vcs.get_nodes()))
         self.assertTrue(np.alltrue(field == vcs.get_fields()['origin']))
-	
+
     def test_selection(self):
         VariantCallSupport = self.kb.VariantCallSupport
         nodes = np.array([(1, 1), (1, 2), (1, 3), (2, 1), (2, 3)], 
