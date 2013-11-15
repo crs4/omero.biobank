@@ -38,10 +38,10 @@ site: AA, AB and BB.
 
 import bl.vl.utils as vlu
 from bl.vl.kb import mimetypes
-from utils import assign_vid, make_unique_key
+import variant_call_support
 import wrapper as wp
-
 from proxy_core import convert_from_numpy
+from utils import assign_vid, make_unique_key
 
 import numpy as np
 import hashlib
@@ -273,6 +273,21 @@ class GenomicsAdapter(object):
         return (d for d in self.kb.get_data_samples(individual, 
                                                     'GenotypeDataSample')
                 if d.snpMarkersSet == markers_set)
+
+
+    def register_vcs(self, vcs, action):
+        variant_call_support.register_vcs(self.kb, vcs, action)
+
+    def delete_vcs(self, vcs):
+        variant_call_support.delete_vcs(self.kb, vcs)
+        
+    def get_vcs_by_label(self, label):
+        return variant_call_support.get_vcs_by_label(self.kb, label)
+        
+    def get_vcs_by_vid(self, vid):
+        return variant_call_support.get_vcs_by_vid(self.kb, vid)
+        
+        
             
     #----------------------------------------------------------------------
     @classmethod
