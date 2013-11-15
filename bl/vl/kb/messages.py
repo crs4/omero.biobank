@@ -106,8 +106,10 @@ class MessagesHandler(object):
                 self.logger.exception(e)
                 raise e
 
-    def _declare_queue(self):
-        frame = self.channel.queue_declare(
+    def _declare_queue(self, channel=None):
+        if not channel:
+            channel = self.channel
+        frame = channel.queue_declare(
             self.queue,
             durable=True,
             exclusive=False,
@@ -124,7 +126,7 @@ class MessagesHandler(object):
             type='topic',
             durable=True
         )
-        self._declare_queue()
+        self._declare_queue(channel)
         channel.queue_bind(
             self.queue,
             self.exchange_name,
