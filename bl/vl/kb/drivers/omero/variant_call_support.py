@@ -276,7 +276,7 @@ class  VariantCallSupport(DataSample):
         other_fields = other.get_fields()
         s_keys, o_keys = (set(fs) for fs in [self_fields, other_fields])
         o_map = (o_sel.cumsum() - 1) + len(self_nodes)
-        inv_shuffle = np.arange(len(shuffle))[shuffle.argsort()]
+        inv_shuffle = shuffle.argsort()
         o_map[o_isct] = s_isct
         o_map = inv_shuffle[o_map]
         fields = {}
