@@ -224,6 +224,15 @@ class  VariantCallSupport(DataSample):
         return {} if not hasattr(self, 'fields') \
                   else self.bare_getattr('fields')
 
+    def get_multiple_origins_nodes(self):
+        """
+        Retrieve all nodes with multiple origins (> 1) and a count of
+        how many origins are there for each node.
+        """
+        icounts = np.bincount(self.get_field('origin')['index'])
+        flag = icounts > 1
+        return np.vstack([np.arange(len(icounts))[flag], icounts[flag]])
+
     def define_support(self, nodes):
         """
         vcs.define_support(np.array(data, dtype=vcs.NODES_DTYPE))
