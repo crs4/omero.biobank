@@ -1,0 +1,12 @@
+Ipython notebook based examples
+
+The idea is to write biobank examples directly as 
+notebooks and to generate 'static' documentation by converting
+notebooks into rst. It is expected that this will simplify the tedious  
+task of writing example code and maintaining it in phase with 
+development.
+
+Makefile has a ipynb to rst conversion as its default target, while
+'make startnb' will start a local ipython notebook server.  
+
+Ipython should be version 1.1 or above.
