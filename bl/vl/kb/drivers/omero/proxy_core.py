@@ -270,6 +270,7 @@ class ProxyCore(object):
     """
     Delete a KB object.
     """
+    kb_obj.__precleanup__()
     try:
       result = self.ome_operation("getUpdateService", "deleteObject",
                                   kb_obj.ome_obj)
