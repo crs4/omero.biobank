@@ -275,9 +275,9 @@ class GenomicsAdapter(object):
                 if d.snpMarkersSet == markers_set)
 
 
-    def register_vcs(self, vcs, action):
+    def register_vcs(self, vcs):
         "Save vcs in kb"
-        variant_call_support.register_vcs(self.kb, vcs, action)
+        variant_call_support.register_vcs(self.kb, vcs)
 
     def delete_vcs(self, vcs):
         "Delete vcs from kb"        
