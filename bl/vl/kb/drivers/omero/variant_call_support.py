@@ -448,6 +448,7 @@ class  VariantCallSupport(DataSample):
     def _clone_structure(self, support=None, fields=None):
         conf = self.to_conf()
         conf['label'] = create_label()
+        conf['vid'] = vlu.make_vid()
         other = self.proxy.factory.create(self.__class__, conf)
         if support is not None:
             other._define_support(support)

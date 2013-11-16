@@ -72,6 +72,7 @@ class TestVCS(KBObjectCreator):
         vcs.define_support(nodes)
         s = vcs.selection((tuple(nodes[1]), tuple(nodes[-1])))
         self.assertTrue(np.alltrue(nodes[1:-1] == s.get_nodes()))
+        self.assertTrue(s.id != vcs.id)
         
     def test_union(self):
         action = self.create_action()        
@@ -95,8 +96,13 @@ class TestVCS(KBObjectCreator):
         vcs1.define_support(nodes1)
         vcs2.define_support(nodes2)
         vcs3 = vcs1.union(vcs2)
+        self.assertTrue(vcs3.id != vcs1.id)        
+        self.assertTrue(vcs3.id != vcs2.id)                
         vcs4 = vcs2.union(vcs1)
+        self.assertTrue(vcs4.id != vcs1.id)        
+        self.assertTrue(vcs4.id != vcs2.id)                
         vcs5 = vcs1.selection((tuple(nodes1[2]), tuple(nodes1[4])))
+        self.assertTrue(vcs5.id != vcs1.id)        
         vcs6 = vcs1.union(vcs5)
         vcs7 = vcs1.union(vcs1)
         vcs8 = vcs5.union(vcs1)
@@ -129,35 +135,8 @@ class TestVCS(KBObjectCreator):
         vcs3 = vcs1.intersection(vcs1)
         self.assertTrue(np.alltrue(vcs1.get_nodes() == vcs3.get_nodes()))
         vcs4 = vcs1.intersection(vcs2)
-        vcs5 = vcs2.intersection(vcs1)
-        self.assertTrue(np.alltrue(vcs4.get_nodes() == intersected))
-        self.assertTrue(np.alltrue(vcs4.get_nodes() == vcs5.get_nodes()))
-        vcs6 = vcs1.selection((tuple(nodes1[2]), tuple(nodes1[5])))
-        vcs7 = vcs1.intersection(vcs6)
-        self.assertTrue(np.alltrue(vcs7.get_nodes() == vcs6.get_nodes()))
-
-    def test_intersection(self):
-        action = self.create_action()        
-        reference_genome = self.create_reference_genome(action)
-        VariantCallSupport = self.kb.VariantCallSupport
-        conf = {'referenceGenome' : reference_genome,
-                'label' : make_random_str(),
-                'status' : self.kb.DataSampleStatus.USABLE,
-                'action': action}
-        vcs1 = self.kb.factory.create(VariantCallSupport, conf)
-        conf['label'] = make_random_str()
-        vcs2 = self.kb.factory.create(VariantCallSupport, conf)
-        nodes1 = np.array([(1, 1), (1, 2), (1, 3), (2, 1), (2, 3), 
-                    (2,4), (3,5)], dtype=VariantCallSupport.NODES_DTYPE)
-        nodes2 = np.array([(1, 2), (2, 1), (2, 4), (3, 1), (3, 2)], 
-                          dtype=VariantCallSupport.NODES_DTYPE)
-        intersected =  np.array([(1, 2), (2, 1), (2,4)], 
-                          dtype=VariantCallSupport.NODES_DTYPE)
-        vcs1.define_support(nodes1)
-        vcs2.define_support(nodes2)
-        vcs3 = vcs1.intersection(vcs1)
-        self.assertTrue(np.alltrue(vcs1.get_nodes() == vcs3.get_nodes()))
-        vcs4 = vcs1.intersection(vcs2)
+        self.assertTrue(vcs4.id != vcs1.id)        
+        self.assertTrue(vcs4.id != vcs2.id)                
         vcs5 = vcs2.intersection(vcs1)
         self.assertTrue(np.alltrue(vcs4.get_nodes() == intersected))
         self.assertTrue(np.alltrue(vcs4.get_nodes() == vcs5.get_nodes()))
@@ -185,6 +164,8 @@ class TestVCS(KBObjectCreator):
         vcs1.define_support(nodes1)
         vcs2.define_support(nodes2)
         vcs3 = vcs1.complement(vcs1)
+        self.assertTrue(vcs3.id != vcs1.id)        
+        self.assertTrue(vcs3.id != vcs2.id)                
         self.assertEqual(len(vcs3), 0)
         vcs4 = vcs1.complement(vcs2)
         self.assertTrue(np.alltrue(vcs4.get_nodes() == complement))
