@@ -110,20 +110,17 @@ def _save_vcs_data(kb, vcs):
             }
     return kb.factory.create(kb.DataObject, conf)
 
-def register_vcs(kb, vcs, action):
+def register_vcs(kb, vcs):
     "Creates a permanent copy of a VariantCallSupport"
     vcs.save()
-    return _save_vcs_data(kb, vcs)
 
 
 def delete_vcs(kb, vcs):
     "Deletes vcs from permanent storage"
-    dos = kb.get_data_objects(vcs)
-    if len(dos) > 0:
-        _delete_data(kb, vcs)
     kb.delete(vcs)
 
-def _delete_data(kb, vcs):
+
+def _delete_data(kb, dos):
     for do in dos:
         do.reload()
         if do.mimetype == mimetypes.VCS_TABLES:
@@ -131,6 +128,7 @@ def _delete_data(kb, vcs):
             kb.delete_table(table_names['support']['nodes'])
             for table_name in table_names['fields'].values():
                 kb.delete_table(table_name)
+            kb.delete(do)
     else:
         raise RuntimeError('cannot find data fields')
 
@@ -178,18 +176,33 @@ class  VariantCallSupport(DataSample):
 
     CHROMOSOME_SCALE = 10**12 # this should allow up to 10**7 chromosomes
 
-    NODES_DTYPE = np.dtype([('chrom', '<i4'), ('pos', '<i8')])
-    ATTR_ORIGIN_DTYPE = np.dtype([('index', '<i4'), 
+    #FIXME -- note that we are using a long to store integers because
+    #omero.table does not have other integer types.
+    NODES_DTYPE = np.dtype([('chrom', '<i8'), ('pos', '<i8')])
+    ATTR_ORIGIN_DTYPE = np.dtype([('index', '<i8'), 
                                   ('vid', '|S%d' % VID_SIZE), ('vpos', '<i8')])
     #ATTR_VC_DTYPE  = np.dtype([('ref', '|S%d' % VID_SIZE), ('vpos', '<i8')]) 
 
     def save(self):
-        super(VariantCallSupport, self).save()
+        super(VariantCallSupport, self).save()        
+        do = _save_vcs_data(self.proxy, self)
+        do.save()
 
-    def __cleanup__(self):
+    def __precleanup__(self):
         dos = self.proxy.get_data_objects(self)
         if len(dos) > 0:
-            _delete_data(self.proxy, self)
+            kb = self.proxy
+            for do in dos:
+                do.reload()
+                if do.mimetype == mimetypes.VCS_TABLES:
+                    table_names = _unpack_path(do.path)
+                    kb.delete_table(table_names['support']['nodes'])
+                    for table_name in table_names['fields'].values():
+                        kb.delete_table(table_name)
+                    kb.delete(do)
+                else:
+                    raise RuntimeError('cannot find data fields')
+        super(VariantCallSupport, self).__precleanup__()
         
     def __len__(self):
         return len(self.get_nodes())
@@ -239,8 +252,8 @@ class  VariantCallSupport(DataSample):
 
         """
         
-        if (type(nodes) is not np.ndarray 
-            or nodes.dtype is not self.NODES_DTYPE):
+        if (not isinstance(nodes, np.ndarray)
+            or nodes.dtype != self.NODES_DTYPE):
             raise ValueError('nodes is not a compatible numpy array')
         self._check_strictly_increasing(nodes)
         self._define_support(nodes)

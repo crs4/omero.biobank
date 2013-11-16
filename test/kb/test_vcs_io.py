@@ -2,6 +2,7 @@
 # END_COPYRIGHT
 
 import os, unittest, logging, uuid
+import itertools as it
 import numpy as np
 logging.basicConfig(level=logging.ERROR)
 
@@ -70,13 +71,19 @@ class TestVCS(KBObjectCreator):
         vcs = self.kb.factory.create(VariantCallSupport, conf)
         vcs.define_support(nodes)
         vcs.define_field('origin', field)
-        self.kb.genomics.register_vcs(vcs, action)
+        #self.kb.genomics.register_vcs(vcs)
+        vcs.save()
+        self.kill_list.append(vcs)
+        dos = self.kb.get_objects(vcs)
+        self.assertEqual(len(dos), 1)
+        self.kb.del_from_cache(vcs.ome_obj) # do not do this at home.
         vcs2 = self.kb.genomics.get_vcs_by_label(label)
-        self.assertTrue(np.alltrue(vcs2.get_field('origin') 
-                                   == vcs.get_field('origin')))
         self.assertTrue(np.alltrue(vcs2.get_nodes() == vcs.get_nodes()))
-        self.kb.genomics.delete_vcs(vcs)
-        self.assertEqual(self.kb.genomics.get_vcs_by_label(label), None)
+        o1 = vcs.get_field('origin') 
+        o2 = vcs2.get_field('origin')
+        for a, b in it.izip(o1, o2):
+            for x, y in it.izip(a, b):
+                self.assertEqual(x, y)
 
 def suite():
     suite = unittest.TestSuite()
