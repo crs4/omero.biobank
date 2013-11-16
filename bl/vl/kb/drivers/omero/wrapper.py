@@ -359,6 +359,9 @@ class OmeroWrapper(CoreOmeroWrapper):
           source = getattr(self.action.target, relationships[type(self.action.target)])
           self.proxy.dt.create_edge(self.action, source, self)
 
+  def __precleanup__(self):
+    pass
+
   def __cleanup__(self):
     if hasattr(self, 'action'):
       self.proxy.dt.destroy_node(self)
