@@ -116,7 +116,7 @@ class Neo4JDriver(object):
 
     def __get_edge_by_id__(self, edge_id):
         try:
-            edges = list(self.graph.produces.index(edge_id=edge_id))
+            edges = list(self.graph.produces.index.lookup(edge_id=edge_id))
         except httplib2.socket.error:
             raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         except TypeError:
