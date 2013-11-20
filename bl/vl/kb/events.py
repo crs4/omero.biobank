@@ -25,7 +25,8 @@ def build_event(event_cls, event_conf):
                                          ome_hash(conf['bl_dest_obj'].ome_obj)),
                 'act_type': type(conf['bl_act']).__name__,
                 'act_id': conf['bl_act'].id,
-                'act_hash': ome_hash(conf['bl_act'].ome_obj)
+                'act_hash': ome_hash(conf['bl_act'].ome_obj),
+                'device_id': conf['bl_act_dev'].id
             },
             'source_node': ome_hash(conf['bl_src_obj'].ome_obj),
             'dest_node': ome_hash(conf['bl_dest_obj'].ome_obj)
@@ -154,7 +155,8 @@ class EdgeCreationEvent(BasicEvent):
                     'edge_id': str,
                     'act_type': str,
                     'act_id': str,
-                    'act_hash': int
+                    'act_hash': int,
+                    'device_id': str,
                 },
                 'source_node': int,
                 'dest_node': int

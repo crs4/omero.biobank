@@ -33,6 +33,7 @@ class OME_Action(Relationship):
     act_type = String(nullable=False)
     act_id = String(nullable=False)
     act_hash = String(nullable=False)
+    device_id = String(nullable=False)
 
     def __hash__(self):
         return self.eid
@@ -151,7 +152,8 @@ class Neo4JDriver(object):
     def create_edge(self, act, source, dest):
         event = events.build_event(events.EdgeCreationEvent, {'bl_act': act,
                                                               'bl_src_obj': source,
-                                                              'bl_dest_obj': dest})
+                                                              'bl_dest_obj': dest,
+                                                              'bl_act_dev': act.device})
         self.kb.events_sender.send_event(event)
 
     def save_edge(self, action_conf, source_hash, dest_hash):
