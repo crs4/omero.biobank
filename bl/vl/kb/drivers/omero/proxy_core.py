@@ -131,10 +131,17 @@ class ProxyCore(object):
     self.current_session = None
     if check_ome_version:
         self.__check_omero_version()
+    self.context_managers = []
 
   def __del__(self):
     if self.current_session:
       self.client.closeSession()
+
+  def push_context_manager(self, ctx_manager):
+    self.context_managers.append(ctx_manager)
+
+  def pop_context_manager(self):
+    self.context_managers.pop()
 
   def change_group(self, group_name):
     self.group_name = group_name
@@ -244,6 +251,8 @@ class ProxyCore(object):
     obj.ome_obj = result
     self.store_to_cache(obj)
     obj.__dump_to_graph__(obj_update)
+    if self.context_managers:
+      self.context_managers[-1].register(obj)
     return obj
 
   def save_array(self, array):
@@ -264,6 +273,8 @@ class ProxyCore(object):
       o.ome_obj = v
       self.store_to_cache(o)
       o.__dump_to_graph__(u)
+      if self.context_managers:
+        self.context_managers[-1].register(o)
     return array
 
   def delete(self, kb_obj):
@@ -283,6 +294,8 @@ class ProxyCore(object):
     else:
       self.del_from_cache(kb_obj.ome_obj)
       kb_obj.__cleanup__()
+      if self.context_managers:
+        self.context_managers[-1].deregister(kb_obj)
     return result
 
   #----------------------------------------------------------------------------

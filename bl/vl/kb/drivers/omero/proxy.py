@@ -30,6 +30,7 @@ import variant_call_support
 #from genotyping import GenotypingAdapter
 from genomics import GenomicsAdapter
 from modeling import ModelingAdapter
+from context_manager import ContextManagerAdapter
 from eav import EAVAdapter
 from ehr import EHR
 
@@ -72,6 +73,7 @@ class Proxy(ProxyCore):
     #-- setup adapters
     self.genomics = GenomicsAdapter(self)
     self.madpt = ModelingAdapter(self)
+    self.context = ContextManagerAdapter(self)
     self.eadpt = EAVAdapter(self)
     self.admin = Admin(self)
     self.events_sender = get_events_sender(self.logger)
@@ -218,11 +220,14 @@ class Proxy(ProxyCore):
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
 
-  def create_an_action(self, study, target=None, doc='', operator=None,
+  def create_an_action(self, study=None, target=None, doc='', operator=None,
                        device=None, acat=None, options=None):
     """
     Syntactic sugar to simplify action creation.
 
+    Unless explicitely provided, the action will use as its study the
+    one identified by the label 'STUDY-CREATE-AN-ACTION'.
+    
     Unless explicitely provided, the action will use as its device the
     one identified by the label 'DEVICE-CREATE-AN-ACTION'.
 
@@ -230,7 +235,8 @@ class Proxy(ProxyCore):
     code. It is merely a convenience to simplify action creation in
     small scripts.
     """
-    default_device_label = 'DEVICE-CREATE-AN-ACTION'
+    default_study_label  = 'STUDY-CREATE-AN-ACTION'
+    default_device_label = 'DEVICE-CREATE-AN-ACTION'    
     alabel = ('auto-created-action%f' % (time.time()))
     asetup = self.factory.create(
       self.ActionSetup, {'label': alabel, 'conf': json.dumps(options)}
@@ -248,16 +254,19 @@ class Proxy(ProxyCore):
         a_klass = self.ActionOnCollection
     else:
       assert False
-    operator = operator if operator else pwd.getpwuid(os.geteuid())[0]
-    device = self.get_device(default_device_label)
-    if not device:
-      conf = {
-        'label': default_device_label,
-        'maker': 'CRS4',
-        'model': 'fake-device',
-        'release': 'create_an_action',
-        }
-      device = self.factory.create(self.Device, conf).save()
+
+    operator = operator if operator is not None\
+                        else pwd.getpwuid(os.geteuid())[0]
+    study = study if study is not None\
+                  else self.get_study(default_study_label)
+    if study is None:
+      study = self.factory.create(self.Study, 
+                                  {'label': default_study_label}).save()      
+    device = device if device is not None\
+                    else self.get_device(default_device_label)
+    if device is None:
+      device = self.create_device('CRS4', default_device_label,
+                                  'fake-device', 'create_an_action')
     conf = {
       'setup': asetup,
       'device': device,
