@@ -30,6 +30,7 @@ import variant_call_support
 #from genotyping import GenotypingAdapter
 from genomics import GenomicsAdapter
 from modeling import ModelingAdapter
+from context_manager import ContextManagerAdapter
 from eav import EAVAdapter
 from ehr import EHR
 
@@ -72,6 +73,7 @@ class Proxy(ProxyCore):
     #-- setup adapters
     self.genomics = GenomicsAdapter(self)
     self.madpt = ModelingAdapter(self)
+    self.context = ContextManagerAdapter(self)
     self.eadpt = EAVAdapter(self)
     self.admin = Admin(self)
     self.events_sender = get_events_sender(self.logger)
