@@ -1,0 +1,19 @@
+# check if the omero.biobank vm is up
+# I talk to it using a local private network
+VM_IP=192.168.56.101
+
+VM_DOWN=`ping -c 1 ${VM_IP} | grep "100% packet loss"`
+if test -z "${VM_DOWN}"
+then 
+   OME_HOST=${VM_IP}
+   OME_USER=root
+   OME_PASSWD=romeo
+else
+   OME_HOST=biobank04.crs4.it
+   OME_USER=irgb
+   OME_PASSWD=1rgb
+fi
+CHECK_OME_VERSION=True
+
+export OME_HOST OME_USER OME_PASSWD CHECK_OME_VERSION=True
+

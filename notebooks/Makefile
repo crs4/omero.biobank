@@ -1,9 +1,11 @@
-# gnu makes  and bash rule!
+# gnu makes  and bash rules!
 #----------------------------------------------------------------
 
 IPYNBFILES := $(wildcard *.ipynb)
 RSTFILES := $(patsubst %.ipynb, %.rst, ${IPYNBFILES})
 RSTDIRS := $(patsubst %.ipynb, %_files, ${IPYNBFILES})
+
+BIOBANK_CONFIG=./.biobank
 
 all: rst
 
@@ -13,7 +15,8 @@ clean:
 	-rm -rf ${RSTFILES} ${RSTDIRS}
 
 startnb:
-	ipython notebook --pylab
+	if test -e ${BIOBANK_CONFIG}; then source ${BIOBANK_CONFIG}; fi; \
+        ipython notebook --pylab
 
 realclean: clean
 
