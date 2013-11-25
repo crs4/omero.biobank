@@ -116,7 +116,8 @@ class GraphManagerDaemon(object):
         self.logger.info('Saved new edge, assigned ID is %d' % eid)
 
     def create_collection_item(self, msg):
-        eid = self.graph_driver.save_collection_item(msg['item_node'],
+        eid = self.graph_driver.save_collection_item(msg['details'],
+                                                     msg['item_node'],
                                                      msg['collection_node'])
         self.logger.info('Saved new collection item edge, assigned ID is %d' % eid)
 
