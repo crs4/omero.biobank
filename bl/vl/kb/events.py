@@ -68,7 +68,11 @@ def build_event(event_cls, event_conf):
         return {
             'action': 'COLLECTION_ITEM_CREATE',
             'item_node': ome_hash(conf['item_obj'].ome_obj),
-            'collection_node': ome_hash(conf['coll_obj'].ome_obj)
+            'collection_node': ome_hash(conf['coll_obj'].ome_obj),
+            'details': {
+                'collection_hash': build_edge_id(ome_hash(conf['coll_obj'].ome_obj),
+                                                 ome_hash(conf['item_obj'].ome_obj))
+            },
         }
 
     get_data_map = {
@@ -241,6 +245,9 @@ class CollectionItemCreationEvent(BasicEvent):
                 'action': 'COLLECTION_ITEM_CREATE',
                 'item_node': int,
                 'collection_node': int,
+                'details': {
+                    'collection_hash': str,
+                }
             }
         )
         super(CollectionItemCreationEvent, self).validate(schema)

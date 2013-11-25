@@ -43,6 +43,8 @@ class OME_CollectionItem(Relationship):
 
     label = 'collected_in'
 
+    collection_hash = String(nullable=False)
+
     def __hash__(self):
         return self.eid
 
@@ -115,9 +117,14 @@ class Neo4JDriver(object):
         else:
             return edges
 
-    def __get_edge_by_id__(self, edge_id):
+    def __get_edge_by_id__(self, edge_id, edge_type='produces'):
         try:
-            edges = list(self.graph.produces.index.lookup(edge_id=edge_id))
+            if edge_type == 'produces':
+                edges = list(self.graph.produces.index.lookup(edge_id=edge_id))
+            elif edge_type == 'collection':
+                edges = list(self.graph.collected_in.index.lookup(collection_hash=edge_id))
+            else:
+                raise ValueError('Unknown edge type %s' % edge_type)
         except httplib2.socket.error:
             raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         except TypeError:
@@ -129,8 +136,9 @@ class Neo4JDriver(object):
         else:
             raise DependencyTreeError('Multiple edges with ID %s' % edge_id)
 
-    def __get_edge_by_nodes__(self, src_node_hash, dest_node_hash):
-        return self.__get_edge_by_id__(build_edge_id(src_node_hash, dest_node_hash))
+    def __get_edge_by_nodes__(self, src_node_hash, dest_node_hash, edge_type='produces'):
+        return self.__get_edge_by_id__(build_edge_id(src_node_hash, dest_node_hash),
+                                       edge_type=edge_type)
 
     def __encode_conf__(self, conf):
         for k, v in conf.iteritems():
@@ -174,20 +182,23 @@ class Neo4JDriver(object):
 
     def create_collection_item(self, item, collection):
         event = events.build_event(events.CollectionItemCreationEvent,
-                                   {'item_obj' : item, 'coll_obj': collection})
+                                   {'item_obj': item, 'coll_obj': collection})
         self.kb.events_sender.send_event(event)
 
-    def save_collection_item(self, item_hash, collection_hash):
-        item_node = self.__get_node_by_hash__(item_hash)
-        if not item_node:
-            raise MissingNodeError('No node with hash %s' % item_hash)
-        collection_node = self.__get_node_by_hash__(collection_hash)
-        if not collection_node:
-            raise MissingNodeError('No node with hash %s' % collection_hash)
-        try:
-            edge = self.graph.collected_in.create(item_node, collection_node)
-        except httplib2.socket.error:
-            raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
+    def save_collection_item(self, collection_conf, item_hash, collection_hash):
+        edge = self.__get_edge_by_nodes__(collection_hash, item_hash, edge_type='collection')
+        if not edge:
+            item_node = self.__get_node_by_hash__(item_hash)
+            if not item_node:
+                raise MissingNodeError('No node with hash %s' % item_hash)
+            collection_node = self.__get_node_by_hash__(collection_hash)
+            if not collection_node:
+                raise MissingNodeError('No node with hash %s' % collection_hash)
+            try:
+                edge = self.graph.collected_in.create(item_node, collection_node,
+                                                      self.__encode_conf__(collection_conf))
+            except httplib2.socket.error:
+                raise GraphConnectionError('Connection to Neo4j server ended unexpectedly')
         return edge.eid
 
     def destroy_node(self, obj):
