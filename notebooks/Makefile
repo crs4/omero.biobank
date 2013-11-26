@@ -1,5 +1,7 @@
 # gnu makes  and bash rules!
 #----------------------------------------------------------------
+SHELL := /bin/bash
+
 
 IPYNBFILES := $(wildcard *.ipynb)
 RSTFILES := $(patsubst %.ipynb, %.rst, ${IPYNBFILES})
