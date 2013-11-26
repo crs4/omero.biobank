@@ -57,7 +57,7 @@ class TestKB(KBObjectCreator):
   def test_plate_well(self):
     conf, p = self.create_titer_plate()
     self.kill_list.append(p.save())
-    conf, v = self.create_plate_well(p)
+    conf, v = self.create_plate_well(p, label='A01')
     self.kill_list.append(v.save())
     self.check_object(v, conf, self.kb.PlateWell)
 
@@ -72,6 +72,10 @@ class TestKB(KBObjectCreator):
     conf, v = self.create_plate_well(p, label='D3')
     self.kill_list.append(v.save())
     self.assertEqual(v.slot, 3*p.columns + 3)
+
+    conf, v = self.create_plate_well(p, row=2, column=3)
+    self.kill_list.append(v.save())
+    self.assertEqual(v.slot, p.columns + 3)
 
 
 def suite():
