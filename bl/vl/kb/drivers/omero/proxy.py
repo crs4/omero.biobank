@@ -27,6 +27,8 @@ import demographic
 import sequencing
 import snp_markers_set
 import variant_call_support
+import affymetrix_chips
+import illumina_chips
 
 #from genotyping import GenotypingAdapter
 from genomics import GenomicsAdapter
