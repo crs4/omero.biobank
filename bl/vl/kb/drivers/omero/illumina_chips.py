@@ -86,18 +86,14 @@ class IlluminaBeadChipArray(PlateWell):
     # to pacify Vessel constructor
     conf['initialVolume'] = 0.0
     conf['currentVolume'] = 0.0
-    rows, cols = conf['container'].rows, conf['container'].columns
-    if not 'slot' in conf:
-      conf['slot'] = self._ibca_slot_from_label(conf['label'], rows, cols)
-    else:
-      if 'label' in conf:
-        slot = self._ibca_slot_from_label(conf['label'], rows, cols)
-        if slot != conf['slot']:
-          raise ValueError('label [%s] inconsistent with slot [%d] conf: %r'
-                           % (conf['label'], conf['slot'], conf))
-    # normalize to a standard PlateWell label format
-    conf['label'] = super(IlluminaBeadChipArray, self)\
-                    ._label_from_slot(conf['slot'], rows, cols)
+    if 'label' in conf:
+      rows, cols = conf['container'].rows, conf['container'].columns
+      new_slot = self._ibca_slot_from_label(conf['label'], rows, cols)
+      if 'slot' in conf and conf['slot'] != new_slot:
+        raise ValueError('inconsistent label %s and slot %s' %
+                         (conf['label'], conf['slot']))
+      conf['slot'] = new_slot
+      conf.pop('label')
     return super(IlluminaBeadChipArray, self).__preprocess_conf__(conf)
 
   def __update_constraints__(self):
