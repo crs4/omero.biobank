@@ -50,6 +50,12 @@ class Tube(Vessel):
 
 
 class PlateWell(Vessel):
+  """
+  FIXME:
+
+  **NOTE:** Confusingly enough, everything is base 1.
+  
+  """
   
   OME_TABLE = 'PlateWell'
   __fields__ = [('label', wp.STRING, wp.REQUIRED),
@@ -79,6 +85,12 @@ class PlateWell(Vessel):
   def __preprocess_conf__(self, conf):
     super(PlateWell, self).__preprocess_conf__(conf)
     rows, cols = conf['container'].rows, conf['container'].columns
+    # label overrides everything
+    # row & column overrides slot (they are base zero!!!)
+    if 'row' in conf and 'column' in conf:
+      if not (1 <= conf['row'] <= rows) or not (1 <= conf['column'] <= cols):
+        raise ValueError('row [%s] or column [%s] out of range', (row, column))
+      conf['slot'] = (conf['row'] - 1) * cols + conf['column']
     if not 'slot' in conf:
       conf['slot'] = self._slot_from_label(conf['label'], rows, cols)
     else:
