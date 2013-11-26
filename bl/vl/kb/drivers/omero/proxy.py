@@ -242,7 +242,7 @@ class Proxy(ProxyCore):
     alabel = ('auto-created-action%f' % (time.time()))
     asetup = self.factory.create(
       self.ActionSetup, {'label': alabel, 'conf': json.dumps(options)}
-      )
+      ).save()
     acat = acat if acat else self.ActionCategory.IMPORT
     if not target:
       a_klass = self.Action
@@ -267,7 +267,7 @@ class Proxy(ProxyCore):
     device = device if device is not None\
                     else self.get_device(default_device_label)
     if device is None:
-      device = self.create_device('CRS4', default_device_label,
+      device = self.create_device(default_device_label, 'CRS4',
                                   'fake-device', 'create_an_action')
     conf = {
       'setup': asetup,
@@ -288,8 +288,7 @@ class Proxy(ProxyCore):
       'release' : release,
       'label' : label,
       }
-    device = self.factory.create(self.Device, conf).save()
-    return device
+    return self.factory.create(self.Device, conf).save()
 
   def get_individuals(self, group):
     """
