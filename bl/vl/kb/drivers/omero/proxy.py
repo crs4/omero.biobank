@@ -2,6 +2,7 @@
 # END_COPYRIGHT
 
 import hashlib, time, pwd, json, os
+import itertools as it
 from importlib import import_module
 
 # This is actually used in the metaclass magic
@@ -358,6 +359,26 @@ class Proxy(ProxyCore):
     '''
     wells = self.find_all_by_query(query, {'pl_vid' : plate.vid})
     return (w for w in wells)
+
+  def get_well_on_plate(self, plate, row, column):
+    """
+    Syntactic sugar to retrieve a specif PlateWell from a given TiterPlate.
+
+    :param plate: a known TiterPlate
+    :type plate: TiterPlate
+    
+    :param row: the required well row (base 0)
+    :type row: int
+
+    :param column: the required well column (base 0)
+    :type column: int
+
+    :type return: the required PlateWell object if found, None otherwise
+    """
+    slot = row * plate.columns + column
+    res = it.ifilter(lambda x: x.slot == slot, self.get_wells_by_plate(plate))
+    if res:
+      return res[0]
 
   def get_lanes_by_flowcell(self, flowcell):
     """
