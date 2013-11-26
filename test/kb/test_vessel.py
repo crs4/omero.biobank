@@ -61,6 +61,11 @@ class TestKB(KBObjectCreator):
     self.kill_list.append(v.save())
     self.check_object(v, conf, self.kb.PlateWell)
 
+    pw = self.kb.get_well_on_plate(p, 1, 1)
+    self.assertEqual(pw.label, 'A1')
+    pw = self.kb.get_well_on_plate(p, 2, 1)
+    self.assertEqual(pw, None)
+
     conf, v = self.create_plate_well(p, label='B01')
     self.kill_list.append(v.save())
     self.assertEqual(v.slot, p.columns+1)

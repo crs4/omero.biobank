@@ -2,7 +2,6 @@
 # END_COPYRIGHT
 
 import hashlib, time, pwd, json, os
-import itertools as it
 from importlib import import_module
 
 # This is actually used in the metaclass magic
@@ -377,10 +376,9 @@ class Proxy(ProxyCore):
 
     :type return: the required PlateWell object if found, None otherwise
     """
-    slot = row * plate.columns + column
-    res = it.ifilter(lambda x: x.slot == slot, self.get_wells_by_plate(plate))
-    if res:
-      return res[0]
+    slot = (row - 1) * plate.columns + column
+    res = filter(lambda x: x.slot == slot, self.get_wells_by_plate(plate))
+    return res[0] if res else None
 
   def get_lanes_by_flowcell(self, flowcell):
     """
