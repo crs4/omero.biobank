@@ -147,12 +147,12 @@ class GenomicsAdapter(object):
                                        query, pars)
         return None if result is None else self.kb.factory.wrap(result)
 
-    def get_markers_array_rows(self, marray, indices=None, 
+    def get_markers_array_rows(self, marray, indices=None, col_names=None,
                                batch_size=BATCH_SIZE):
         "FIXME"
         table_name = self._markers_array_table_name(MSET_TABLE_NAME, marray.id)
         return self.kb.get_table_rows_by_indices(table_name, indices,
-                                                 col_names=None,
+                                                 col_names=col_names,
                                                  batch_size=batch_size)
 
     def get_number_of_markers(self, marray):
