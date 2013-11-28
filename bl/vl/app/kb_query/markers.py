@@ -23,21 +23,26 @@ class Markers(Core):
                mset_label=None, operator='Alfred E. Neumann', logger=None):
     self.logger = logger
     super(Markers, self).__init__(host, user, passwd, keep_tokens=keep_tokens)
-    self.mset = self.kb.get_snp_markers_set(mset_label)
+    self.mset = self.kb.genomics.get_markers_array(mset_label)
     if not self.mset:
       raise ValueError('unknown marker set %s' % mset_label)
 
   def dump_definitions(self, ofile):
     self.logger.info('dumping marker definitions for %s' % self.mset.label)
-    self.mset.load_markers()
-    fieldnames = ['label', 'mask', 'index', 'allele_flip']
+    n_rows = self.kb.genomics.get_number_of_markers(self.mset)
+    self.logger.info('there are %s markers definitions' % n_rows)
+    rows = self.kb.genomics.get_markers_array_rows(self.mset)
+    fieldnames = ['label', 'mask', 'index', 'permutation']
     writer = csv.writer(ofile, **CSV_OPTS)
     writer.writerow(fieldnames)
-    for row in self.mset.markers:
-      writer.writerow([str(row[n]) for n in fieldnames])
+    for row in rows:
+      writer.writerow(map(str, row))
     self.logger.info('marker definitions dumped to %s' % ofile.name)
 
-  def dump_alignments(self, ofile, ref_genome):
+  def dump_alignments_broken(self, ofile, ref_genome):
+    self.logger.fatal('dumping marker is currently unavailable')
+
+  def dump_alignments_broken(self, ofile, ref_genome):
     self.logger.info('dumping marker alignments for %s' % self.mset.label)
     self.mset.load_alignments(ref_genome)
     fieldnames = [
