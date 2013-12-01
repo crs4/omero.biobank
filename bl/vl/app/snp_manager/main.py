@@ -25,6 +25,7 @@ SUBMOD_NAMES = [
   "patch_alignments",
   "build_index",
   "lookup_index",
+  "manage_db"
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 
