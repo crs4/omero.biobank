@@ -1,10 +1,14 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
+
 """
 Create a sqlite db from marker set importer files
 
 """
+
+# FIXME: the code below is a fast hack with no error catching and,
+# probably, an extremely inefficient use of sqlite.
 
 import os, sys, csv
 import logging, time
@@ -58,6 +62,7 @@ def dump_join_data(logger, cursor):
                             fieldnames=['label', 'mask', 'index',
                                         'permutation'],
                             delimiter='\t')
+    writer.writeheader()
     for i, r in enumerate(res):
         rec = {'label': r[0], 'mask': r[1], 'index': str(i),
                'permutation': r[2]}
@@ -86,12 +91,16 @@ def load_file(logger, db_name, fname):
     logger.info('done ingesting data from {}'.format(fname))
 
 def drop_temp_table(logger, cursor):
-    sql_stat = "DROP TABLE temp;"
-    cursor.execute(sql_stat)    
+    try:
+        sql_stat = "DROP TABLE temp;"
+        cursor.execute(sql_stat)
+    except sqlite3.OperationalError as e:
+        logger.debug('drop_table-> %s' % e)
 
 def dump_join(logger, db_name, join_file):
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
+    drop_temp_table(logger, cursor)    
     create_temp_table(logger, cursor)
     load_temp_table(logger, cursor, join_file)
     dump_join_data(logger, cursor)
