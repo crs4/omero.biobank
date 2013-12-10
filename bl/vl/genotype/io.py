@@ -182,6 +182,7 @@ class VCFWriter(object):
   respectively, samples NA01, NA02, NA03.
   """
   def __init__(self, mset, ref_genome, marker_selector=None):
+    raise NotImplemented()
     self.mset = mset
     self.ref_genome = ref_genome
     self.marker_selector = marker_selector
@@ -288,28 +289,28 @@ class PedWriter(object):
   def _extract_labels(self, origin, resolve_label):
     mvids = self.mvids
     labels = [':'.join([v, str(i)]) 
-              for v, i in it.izip(origin['vid'], origin['index'])]
+              for v, i in it.izip(origin['vid'], origin['vpos'])]
     if resolve_label:
       # FIXME this works because, up to now, we only have
       # SNPMarkersSet as possible position sources.
       msets = self.kb.get_by_field(self.kb.SNPMarkersSet,
                                    'markersSetVID', mvids)
-      for vid, mset in mvids.iteritems():
+      for vid, mset in msets.iteritems():
         sel = origin['vid'] == vid
-        indices = origin['index'][sel]
+        indices = origin['vpos'][sel]
         marray = self.kb.genomics.get_markers_array_rows(mset, indices)
         labels[sel] = marray['label']
     return labels
 
   def _extract_data_indices(self, origin):
     mvids = self.mvids    
-    # FIXME this works because, up to now, we only have
+    # FIXME this works because, thus far, we only have
     # SNPMarkersSet as possible position sources.
     indices_by_mvid = {}
     ilist = np.arange(len(origin), dtype=np.int32)
     for vid in mvids:
       sel = origin['vid'] == vid
-      indices_by_mvid[vid] = (ilist[sel], origin['index'][sel])
+      indices_by_mvid[vid] = (ilist[sel], origin['vpos'][sel])
     return indices_by_mvid
     
   def _extract_vcs_info(self, resolve_label):
@@ -343,18 +344,18 @@ class PedWriter(object):
   def _check_and_normalize_input(self, data_sample_by_id):
     normalized_data_sample_by_id = {}
     if data_sample_by_id is None:
-      return
+      return None
     if len(self.mvids) == 1:
       for k, v in data_sample_by_id.iteritems():
         if not isinstance(v, self.kb.GenotypeDataSample):
-          raise ValueError('bad tupe for data_sample_by_id[%s]' % k)
+          raise ValueError('bad type for data_sample_by_id[%s]' % k)
         if v.snpMarkersSet.id != list(self.mvids)[0]:
           raise ValueError('bad mset for data_sample_by_id[%s]' % k)          
         normalized_data_sample_by_id[k] = {v.snpMarkersSet.id : v}
     else:
       for k, v in data_sample_by_id.iteritems():
         if not isinstance(v, dict):
-          raise ValueError('bad tupe for data_sample_by_id[%s]' % k)
+          raise ValueError('bad type for data_sample_by_id[%s]' % k)
         for mid in self.mvids:
           if not v.has_key(mid):
             raise ValueError('no data for data_sample_by_id[%s][%s]' 
@@ -362,7 +363,8 @@ class PedWriter(object):
           if not isinstance(v[mid], self.kb.GenotypeDataSample):
             raise ValueError('bad type for data_sample_by_id[%s][%s]' 
                              % (k, mid))
-          if v[mid].mset != mid:
+          v[mid].reload()
+          if v[mid].snpMarkersSet.id != mid:
             raise ValueError('bad mset for data_sample_by_id[%s][%s]' 
                              % (k, mid))
       normalized_data_sample_by_id = data_sample_by_id
@@ -390,7 +392,7 @@ class PedWriter(object):
       of a PLINK ped file
     :type phenotype_by_id: dict
     """
-    self._check_and_normalize_input(data_sample_by_id)
+    normalized_ds_by_id = self._check_and_normalize_input(data_sample_by_id)
     if not phenotype_by_id:
       phenotype_by_id = {None: 0}
     allele_patterns = {0: 'A A', 1: 'B B', 2: 'A B', 3: '0 0'}
@@ -398,17 +400,14 @@ class PedWriter(object):
       if data_sample is None:
         probs = self.null_probs
       else:
-        if type(data_sample) is dict:
-          probs = np.zeros((2, len(self.vcs)), dtype=np.float32)
-          for mid, indices in self.mvids.iteritems():
-            probs, _ = data_sample[mid].resolve_to_data(indices[1])
-            probs[indices[0]] = pprobs
-        else:
-          probs, _ = data_sample.resolve_to_data()
+        # FIXME this is an overkill if there is only one mset.
+        probs = np.zeros((2, len(self.vcs)), dtype=np.float32)
+        for mid, indices in self.indices.iteritems():
+          pprobs, _ = data_sample[mid].resolve_to_data(indices[1])
+          probs[:,indices[0]] = pprobs
       fo.write('\t'.join([allele_patterns[x]
                           for x in project_to_discrete_genotype(probs, 
                                               threshold=self.threshold)]))
-      fo.write('\n')
     if self.ped_file is None:
       self.ped_file = open(self.base_path+'.ped', 'w')
     for i in family_members:
@@ -419,8 +418,9 @@ class PedWriter(object):
       pheno = phenotype_by_id.get(i.id, 0)
       self.ped_file.write('%s\t%s\t%s\t%s\t%s\t%s\t' %
                           (family_label, i.id, fat_id, mot_id, gender, pheno))
-      if data_sample_by_id:
-        dump_genotype(self.ped_file, data_sample_by_id.get(i.id))
+      if normalized_ds_by_id:
+        dump_genotype(self.ped_file, normalized_ds_by_id.get(i.id))
+      self.ped_file.write('\n')
 
   def close(self):
     if self.ped_file:
