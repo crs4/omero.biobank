@@ -9,7 +9,7 @@ from kb_object_creator import KBObjectCreator
 
 OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
-OME_PASS = os.getenv("OME_PASS", "romeo")
+OME_PASS = os.getenv("OME_PASSWD", "romeo")
 
 
 class TestKB(KBObjectCreator):
