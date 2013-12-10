@@ -111,14 +111,15 @@ class UTCommon(KBObjectCreator):
         n = self.kb.genomics.get_number_of_markers(data_sample.snpMarkersSet)
         probs, confs = self.make_fake_data(n, add_nan)
         do = self.kb.genomics.add_gdo_data_object(action, 
-                                                  data_sample, probs, confs)
+                                data_sample, probs, confs).save()
         return do, probs, confs
 
-    def create_variant_call_support(self, mset, reference_genome, action):
+    def create_variant_call_support(self, mset, reference_genome, action,
+                                    chromosome=1):
         VariantCallSupport = self.kb.VariantCallSupport
         N = self.kb.genomics.get_number_of_markers(mset)
         mset_vid = mset.id
-        nodes = np.array([(1, 10 * i) for i in xrange(N)], 
+        nodes = np.array([(chromosome, 10 * i) for i in xrange(N)], 
                          dtype=VariantCallSupport.NODES_DTYPE)
         field = np.array([(i, mset_vid, i) for i in range(len(nodes))],
                          dtype=VariantCallSupport.ATTR_ORIGIN_DTYPE)
@@ -130,5 +131,5 @@ class UTCommon(KBObjectCreator):
         vcs = self.kb.factory.create(VariantCallSupport, conf)
         vcs.define_support(nodes)
         vcs.define_field('origin', field)
-        register_vcs(self.kb, vcs, action)
+        vcs.save()
         return vcs
