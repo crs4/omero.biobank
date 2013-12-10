@@ -52,6 +52,10 @@ def extract_data(fi, mask_size, logger=None):
   warn_count = 0
   for i, (label, lflank, alleles, rflank) in enumerate(reader):
     alleles = alleles.split("/")
+    if len(alleles) != 2:
+      logger.warn("%s: ignored -- alleles; %s" % (label, alleles))
+      warn_count += 1
+      continue
     mask = build_mask(lflank, alleles, rflank, mask_size)
     mask, allele_flip, error = process_mask(mask, alleles[0], alleles[1])
     if error:

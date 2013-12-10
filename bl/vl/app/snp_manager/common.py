@@ -8,7 +8,7 @@ import bl.vl.utils.snp as snp_utils
 
 
 POSSIBLE_ALLELES = frozenset(['A', 'C', 'G', 'T'])
-MARKER_DEF_FIELDS = ("label", "mask", "index", "allele_flip")
+MARKER_DEF_FIELDS = ("label", "mask", "index", "permutation")
 MARKER_AL_FIELDS = ("marker_vid", "ref_genome", "chromosome", "pos", "strand",
                     "allele", "copies")
 DUMMY_AL_VALUES = {
@@ -89,7 +89,7 @@ def process_mask(mask, allele_a, allele_b):
   In biobank, the first and second allele are defined by the central
   part of the mask as stored in the marker set table (in top format,
   if possible). If the manufacturer provides alleles in reversed
-  order, we set the allele_flip flag to True, so that SNP calling
+  order, we set the permutation flag to True, so that SNP calling
   results can be correctly interpreted.
 
   Input: SNP mask, first and second allele as provided by the manufacturer
@@ -121,7 +121,7 @@ def build_index_key(seq):
 
 def write_mdef(stream, fo, header=True):
   """
-  Given a stream of [label, mask, index, allele_flip] rows, write a
+  Given a stream of [label, mask, index, permutation] rows, write a
   tsv file suitable for input to the marker set importer.
 
   If header is False, field names will not be written in the first row
