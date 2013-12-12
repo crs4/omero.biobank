@@ -42,7 +42,7 @@ def main(argv):
     else:
         logger.info('Object loaded')
 
-    gdo_iterator = kb.get_gdo_iterator(mset, dsamples[:args.fetch_size])
+    gdo_iterator = kb.genomics.get_gdo_iterator(mset, dsamples[:args.fetch_size])
     gdos = []
 
     logger.info('Loading GDOs')
