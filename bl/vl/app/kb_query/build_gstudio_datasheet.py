@@ -40,7 +40,7 @@ class BuildDatasheetApp(Core):
     def get_wells_inds_lookup(self, wells):
         wi_lookup = {}
         for w in wells:
-            inds = self.kb.dt.get_connected(w, 'Individual')
+            inds = self.kb.dt.get_connected(w, self.kb.Individual)
             wi_lookup[w] = set()
             for i in inds:
                 wi_lookup[w].add(i)
