@@ -56,7 +56,7 @@ summary_fields = "Chip_Type Date Sample_ID Sample_Plate Sample_Well Sample_Name 
 sentrix_fields = "SentrixBarcode_A Type Class Assay_Type Rows Cols".split()
 
 def normalize(label):
-    m = re.match('^([A-Z])(\d+)$', label.upper())
+    m = re.match('^([A-Z])(\d+)$', label.upper().strip())
     if not m:
       raise ValueError('label [%s] not in the form A1' % label)
     return '%s%d' % (m.groups()[0], int(m.groups()[1]))
