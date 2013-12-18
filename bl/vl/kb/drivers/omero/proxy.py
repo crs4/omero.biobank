@@ -29,7 +29,6 @@ import variant_call_support
 import affymetrix_chips
 import illumina_chips
 
-#from genotyping import GenotypingAdapter
 from genomics import GenomicsAdapter
 from modeling import ModelingAdapter
 from context_manager import ContextManagerAdapter
