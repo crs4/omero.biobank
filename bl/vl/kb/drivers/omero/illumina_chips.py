@@ -70,6 +70,10 @@ class IlluminaBeadChipArray(PlateWell):
   def _is_a_legal_label(self, label):
     return re.match('^R(\d{2})C(\d{2})$', label)
 
+  def _ibca_label_from_slot(self, slot, rows, cols):
+    row, col = 1 + (slot/cols), 1 + (slot%cols)
+    return "R%d02C%d02" % (row, col)
+
   def _ibca_slot_from_label(self, label, rows, cols):
     m = re.match('^R(\d{2})C(\d{2})$', label)
     if m:
@@ -100,6 +104,10 @@ class IlluminaBeadChipArray(PlateWell):
   def __update_constraints__(self):
     super(IlluminaBeadChipArray, self).__update_constraints__()
 
+  @property
+  def label(self):
+    return self._ibca_label_from_slot(self.slot, self.container.rows, self.container.cols)
+    
 
 class IlluminaBeadChipMeasure(MicroArrayMeasure):
 
