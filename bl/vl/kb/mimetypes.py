@@ -13,8 +13,9 @@ BCL_FILE = 'x-vl/illumina-bcl'
 ILLUMINA_RUN_FOLDER = 'x-vl/illumina-run-folder'
 GENERIC_PATHSET = 'x-vl/pathset'
 PDF_FILE='application/pdf'
+MANIFEST_FILE='x-vl/illumina-manifest'
 
 DATA_OBJECT_FILES = [SSC_FILE, CEL_FILE, SAM_FILE, BAM_FILE,
                      QSEQ_FILE, FASTQ_FILE, BCL_FILE,
                      ILLUMINA_RUN_FOLDER, GENERIC_PATHSET,
-                     PDF_FILE]
+                     PDF_FILE, MANIFEST_FILE]
