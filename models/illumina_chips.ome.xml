@@ -50,8 +50,8 @@ END_COPYRIGHT
     <entry name="IMMUNO_BEADCHIP_11419691_B"/>
     <entry name="LINKAGE_12"/>
     <entry name="HUMANEXOME_12V1_B"/>    
-    <entry name="HUMANEXOME-12V1-1_A"/>
-    <entry name="HUMANEXOME-12V1-2_A"/>
+    <entry name="HUMANEXOME_12V1_1_A"/>
+    <entry name="HUMANEXOME_12V1_2_A"/>
   </enum>
 
   <enum id="ome.model.vl.IlluminaArrayOfArraysType">
