@@ -33,6 +33,17 @@ For TITER PLATES objects the syntax can be the following::
 rows and columns values can be optional if these values are passed as
 input parameters, barcode column is optional.
 
+For ILLUMINA ARRAY OF ARRAYS objects the syntax can be the following
+
+  label        barcode    container_status   rows   columns   illumina_array_type   illumina_array_class   illumina_assay_type
+  A_ILLARRAY   XXYYZZ111  INSTOCK            4      2         BeadChip_12x1Q        Slide                  Infinium_HD
+  B_ILLARRAY   XXYYZZ112  INSTOCK            4      2         BeadChip_12x1Q        Slide                  Infinium_HD
+  C_ILLARRAY   XXYYZZ113  INSTOCK            4      2         BeadChip_12x1Q        Slide                  Infinium_HD
+
+rows, columns, illumina_array_type, illumina_array_class and illumina_assay_type
+can be optional if these values are passed as input parameters, barcode column
+is optional.
+
 For FLOW CELL objects the syntax can be the following::
 
   label       barcode     container_status  number_of_slots
@@ -63,6 +74,9 @@ import os, csv, copy, time
 from datetime import datetime
 
 from bl.vl.kb.drivers.omero.objects_collections import ContainerStatus
+from bl.vl.kb.drivers.omero.illumina_chips import IlluminaArrayOfArraysType, \
+    IlluminaArrayOfArraysClass, IlluminaArrayOfArraysAssayType, \
+    IlluminaArrayOfArrays
 from bl.vl.kb.drivers.omero.utils import make_unique_key
 
 import core
@@ -71,8 +85,11 @@ from version import version
 
 class Recorder(core.Core):
 
-  CONTAINER_TYPE_CHOICES = ['TiterPlate', 'FlowCell', 'Lane']
+  CONTAINER_TYPE_CHOICES = ['TiterPlate', 'FlowCell', 'Lane', 'IlluminaArrayOfArrays']
   STATUS_CHOICES = [x.enum_label() for x in ContainerStatus.__enums__]
+  ILL_ARRAY_TYPE_CHOICES = [x.enum_label() for x in IlluminaArrayOfArraysType.__enums__]
+  ILL_ARRAY_CLASS_CHOICES = [x.enum_label() for x in IlluminaArrayOfArraysClass.__enums__]
+  ILL_ASSAY_TYPE_CHOICES = [x.enum_label() for x in IlluminaArrayOfArraysAssayType.__enums__]
 
   def __init__(self, study_label=None,
                host=None, user=None, passwd=None, keep_tokens=1,
@@ -163,6 +180,9 @@ class Recorder(core.Core):
     elif self.container_klass == self.kb.Lane:
       good_recs, brecs = self.do_consistency_checks_lane(good_recs)
       bad_recs.extend(brecs)
+    elif self.container_klass == self.kb.IlluminaArrayOfArrays:
+        good_recs, brecs = self.do_consistency_checks_illumina_array(good_recs)
+        bad_recs.extend(brecs)
     self.logger.info('done consistency checks')
     return good_recs, bad_recs
 
@@ -251,6 +271,22 @@ class Recorder(core.Core):
           bad_rec['error'] = m
           bad_records.append(bad_rec)
           continue
+      good_records.append(r)
+    return good_records, bad_records
+
+  def do_consistency_checks_illumina_array(self, records):
+    good_records = []
+    records, bad_records = self.do_consistency_checks_titer_plate(records)
+    mandatory_fields = ['illumina_array_type', 'illumina_array_class', 'illumina_assay_type']
+    for i, r in enumerate(records):
+      reject = 'Rejecting import of line %d.' % i
+      if self.missing_fields(mandatory_fields, r):
+        m = 'missing mandatory field. '
+        self.logger.warning(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
+        continue
       good_records.append(r)
     return good_records, bad_records
 
@@ -364,6 +400,14 @@ class Recorder(core.Core):
         conf['barcode'] = r['barcode']
       if 'creation_date' in r and r['creation_date']:
         conf['creationDate'] = time.mktime(datetime.strptime(r['creation_date'], '%d/%m/%Y').timetuple())
+      if self.container_klass == IlluminaArrayOfArrays:
+        for label, field, enum_klass in [
+            ('illumina_array_type', 'type', IlluminaArrayOfArraysType),
+            ('illumina_array_class', 'arrayClass', IlluminaArrayOfArraysClass),
+            ('illumina_assay_type', 'assayType', IlluminaArrayOfArraysAssayType)
+        ]:
+          if label in r and r[label]:
+            conf[field] = getattr(enum_klass, r[label])
       containers.append(self.kb.factory.create(self.container_klass, conf))
     self.kb.save_array(containers)
     for c in containers:
@@ -410,6 +454,15 @@ def make_parser(parser):
   parser.add_argument('--number-of-slots', metavar="INT",
                       help="""overrides the number_of_slots column
                       when importing FlowCell type containers""")
+  parser.add_argument('--illumina-array-type', metavar="STRING",
+                      choices=Recorder.ILL_ARRAY_TYPE_CHOICES,
+                      help='Illumina ArrayOfArrays type (only used when importing IlluminaArrayOfArrays objects)')
+  parser.add_argument('--illumina-array-class', metavar="STRING",
+                      choices=Recorder.ILL_ARRAY_CLASS_CHOICES,
+                      help='Illumina ArrayOfArrays class (only used when importing IlluminaArrayOfArrays objects)')
+  parser.add_argument('--illumina-assay-type', metavar='STRING',
+                      choices=Recorder.ILL_ASSAY_TYPE_CHOICES,
+                      help='Illumina ArrayOfArrays assay type (only used when importing IlluminaArrayOfArrays objects)')
 
 
 def implementation(logger, host, user, passwd, args, close_handles):
@@ -438,6 +491,9 @@ def implementation(logger, host, user, passwd, args, close_handles):
       fields_to_canonize.extend(['rows', 'columns'])
     elif args.container_type == 'FlowCell':
       fields_to_canonize.append('number_of_slots')
+    elif args.container_type == 'IlluminaArrayOfArrays':
+      fields_to_canonize.extend(['illumina_array_type', 'illumina_array_class',
+                                 'illumina_assay_type'])
     canonizer = RecordCanonizer(fields_to_canonize, args)
     canonizer.canonize_list(records)
     o = csv.DictWriter(args.ofile,
