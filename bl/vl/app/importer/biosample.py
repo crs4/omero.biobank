@@ -43,6 +43,17 @@ same will happen if label, row and column are inconsistent. The well
 will be filled by current_volume material produced by removing
 used_volume material taken from the bio material contained in the
 vessel identified by source. row and column are base 1.
+
+If the sample is a IlluminaBeadChipArray the plate column used in the
+PlateWell case will become a illumina_array column and a new column, named
+bead_chip_assay_type, is required.
+
+  illumina_array  label   source   bead_chip_assay_type
+  V1351235        R01C01  V412441  HUMANEXOME_12V1_B
+  V1351235        R01C02  V351151  HUMANEXOME_12V1_B
+  V1351235        R02C01  V345115  HUMANEXOME_12V1_B
+
+
 """
 
 import os, csv, json, time, re, copy
@@ -51,6 +62,7 @@ from datetime import datetime
 
 from bl.vl.kb.drivers.omero.vessels import VesselContent, VesselStatus
 from bl.vl.kb.drivers.omero.utils import make_unique_key
+from bl.vl.kb.drivers.omero.illumina_chips import IlluminaBeadChipAssayType
 
 import core
 from version import version
@@ -58,10 +70,11 @@ from version import version
 
 class Recorder(core.Core):
 
-  VESSEL_TYPE_CHOICES=['Tube', 'PlateWell']
+  VESSEL_TYPE_CHOICES=['Tube', 'PlateWell', 'IlluminaBeadChipArray']
   SOURCE_TYPE_CHOICES=['Tube', 'Individual', 'PlateWell', 'NO_SOURCE']
   VESSEL_CONTENT_CHOICES=[x.enum_label() for x in VesselContent.__enums__]
   VESSEL_STATUS_CHOICES=[x.enum_label() for x in VesselStatus.__enums__]
+  ICHIP_ASSAY_TYPE_CHOICES=[x.enum_label() for x in IlluminaBeadChipAssayType.__enums__]
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                operator='Alfred E. Neumann', batch_size=10000,
@@ -89,7 +102,8 @@ class Recorder(core.Core):
     self.source_klass = self.find_source_klass(records)
     self.vessel_klass = self.find_vessel_klass(records)
     self.preload_sources()
-    if self.vessel_klass == self.kb.PlateWell:
+    if self.vessel_klass == self.kb.PlateWell or \
+      self.vessel_klass == self.kb.IlluminaBeadChipArray:
       self.preload_plates()
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
@@ -134,10 +148,12 @@ class Recorder(core.Core):
     self.logger.info('start consistency checks')
     if self.vessel_klass == self.kb.PlateWell:
       return self.do_consistency_checks_plate_well(records)
+    elif self.vessel_klass == self.kb.IlluminaBeadChipArray:
+      return self.do_consistency_checks_illumina_bead_chip(records)
     else:
       return self.do_consistency_checks_tube(records)
 
-  def do_consistency_checks_plate_well(self, records):
+  def do_consistency_checks_plate_well(self, records, container_label='plate'):
     def preload_vessels():
       self.logger.info('start preloading vessels')
       objs = self.kb.get_objects(self.vessel_klass)
@@ -145,14 +161,14 @@ class Recorder(core.Core):
         assert not o.containerSlotLabelUK in self.preloaded_vessels
         self.preloaded_vessels[o.containerSlotLabelUK] = o
       self.logger.info('done preloading vessels')
-    def build_key(r):
-      plate = self.preloaded_plates[r['plate']]
-      return make_unique_key(plate.label, r['label'])
+    def build_key(r, container_label):
+      container = self.preloaded_plates[r[container_label]]
+      return make_unique_key(container.label, r['label'])
     preload_vessels()
     good_records = []
     bad_records = []
     grecs_keys = {}
-    mandatory_fields = ['label', 'source', 'plate', 'row', 'column']
+    mandatory_fields = ['label', 'source', container_label, 'row', 'column']
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d: ' % i
       if self.missing_fields(mandatory_fields, r):
@@ -172,31 +188,31 @@ class Recorder(core.Core):
           bad_rec['error'] = f
           bad_records.append(bad_rec)
           continue
-      if r['source'] not in  self.preloaded_sources:
+      if r['source'] and r['source'] not in  self.preloaded_sources:
         f = 'no known source with ID %s' % r['source']
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
-      if r['plate'] not in  self.preloaded_plates:
-        f = 'no known plate with ID %s' % r['plate']
+      if r[container_label] not in self.preloaded_plates:
+        f = 'no known container with ID %s' % r[container_label]
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
-      key = build_key(r)
+      key = build_key(r, container_label)
       if key in self.preloaded_vessels:
-        f = 'there is a pre-existing vessel with label %s in plate %s' % (r['label'],
-                                                                          r['plate'])
+        f = 'there is a pre-existing vessel with label %s in container %s' % (r['label'],
+                                                                              r[container_label])
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
       if key in grecs_keys:
-        f = 'multiple records for label %s in plate %s' % (r['label'], r['plate'])
+        f = 'multiple records for label %s in container %s' % (r['label'], r[container_label])
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
@@ -205,6 +221,22 @@ class Recorder(core.Core):
       good_records.append(r)
       grecs_keys[key] = i
     self.logger.info('done consistency checks')
+    return good_records, bad_records
+
+  def do_consistency_checks_illumina_bead_chip(self, records):
+    good_records = []
+    records, bad_records = self.do_consistency_checks_plate_well(records, 'illumina_array')
+    mandatory_fields = ['bead_chip_assay_type']
+    for i, r in enumerate(records):
+      reject = 'Rejecting import of record %d.' % i
+      if self.missing_fields(mandatory_fields, r):
+        m = 'missing mandatory field. '
+        self.logger.warning(m + reject)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = m
+        bad_records.append(bad_rec)
+        continue
+      good_records.append(r)
     return good_records, bad_records
 
   def do_consistency_checks_tube(self, records):
@@ -288,7 +320,7 @@ class Recorder(core.Core):
       a.unload()
       current_volume = float(r['current_volume'])
       initial_volume = current_volume
-      content = (c if r['action_category'] == 'ALIQUOTING' else
+      content = (c if r['action_category'] == 'ALIQUOTING' and c else
                  getattr(self.kb.VesselContent, r['vessel_content'].upper()))
       conf = {
         'label': r['label'],
@@ -301,8 +333,14 @@ class Recorder(core.Core):
       if 'activation_date' in r:
         conf['activationDate'] = time.mktime(datetime.strptime(r['activation_date'],
                                                                '%d/%m/%Y').timetuple())
-      if self.vessel_klass == self.kb.PlateWell:
-        plate = self.preloaded_plates[r['plate']]
+      if self.vessel_klass == self.kb.PlateWell or \
+          self.vessel_klass == self.kb.IlluminaBeadChipArray:
+        if self.vessel_klass == self.kb.PlateWell:
+          plate = self.preloaded_plates[r['plate']]
+        else:
+          plate = self.preloaded_plates[r['illumina_array']]
+          conf['assayType'] = getattr(self.kb.IlluminaBeadChipAssayType,
+                                      r['bead_chip_assay_type'])
         row, column = r['row'], r['column']
         conf['container'] = plate
         conf['slot'] = (row - 1) * plate.columns + column
@@ -324,23 +362,34 @@ class Recorder(core.Core):
 class RecordCanonizer(core.RecordCanonizer):
 
   WCORDS_PATTERN = re.compile(r'([a-z]+)(\d+)', re.IGNORECASE)
+  ICHIPCORDS_PATTERN = re.compile(r'^r(\d{2})c(\d{2})$', re.IGNORECASE)
   
-  def build_well_label(self, row, column):  # row and column are BASE 1
-    return '%s%02d' % (chr(row+ord('A')-1), column)
+  def build_well_label(self, row, column, obj_klass):  # row and column are BASE 1
+    if obj_klass == 'PlateWell':
+      return '%s%02d' % (chr(row+ord('A')-1), column)
+    elif obj_klass == 'IlluminaBeadChipArray':
+      return 'R%02dC%02d' % (row, column)
 
-  def find_well_coords(self, label):
-    m = self.WCORDS_PATTERN.match(label)
-    if not m:
-      raise ValueError('%s is not a valid well label' % label)
-    row_label, col_label = m.groups()
-    column = int(col_label)
-    row = 0
-    base = 1
-    num_chars = ord('Z') - ord('A') + 1
-    for x in row_label[::-1]:
-      row += (ord(x)-ord('A')) * base
-      base *= num_chars
-    return row+1, column
+  def find_well_coords(self, label, obj_klass):
+    if obj_klass == 'PlateWell':
+      m = self.WCORDS_PATTERN.match(label)
+      if not m:
+        raise ValueError('%s is not a valid well label' % label)
+      row_label, col_label = m.groups()
+      column = int(col_label)
+      row = 0
+      base = 1
+      num_chars = ord('Z') - ord('A') + 1
+      for x in row_label[::-1]:
+        row += (ord(x)-ord('A')) * base
+        base *= num_chars
+      return row+1, column
+    elif obj_klass == 'IlluminaBeadChipArray':
+      m = self.ICHIPCORDS_PATTERN.match(label)
+      if not m:
+        raise ValueError('%s is not a valid illumina bead chip array label' % label)
+      row_label, col_label = m.groups()
+      return int(row_label), int(col_label)
 
   def canonize(self, r):
     super(RecordCanonizer, self).canonize(r)
@@ -349,12 +398,13 @@ class RecordCanonizer(core.RecordCanonizer):
       r.setdefault(k, 0.0)
     if r['source'] == 'None':
       r['source'] = None
-    if r['vessel_type'] == 'PlateWell':
+    if r['vessel_type'] == 'PlateWell' or r['vessel_type'] == 'IlluminaBeadChipArray':
       if 'row' in r and 'column' in r:
-        r['row'], r['column'] = map(int, [r['row'], r['column']])        
-        r.setdefault('label', self.build_well_label(r['row'], r['column']))
+        r['row'], r['column'] = map(int, [r['row'], r['column']])
+        r.setdefault('label', self.build_well_label(r['row'], r['column']),
+                     r['vessel_type'])
       elif 'label' in r:
-        r['row'], r['column'] = self.find_well_coords(r['label'])
+        r['row'], r['column'] = self.find_well_coords(r['label'], r['vessel_type'])
 
 
 def make_parser(parser):
@@ -382,6 +432,9 @@ def make_parser(parser):
   parser.add_argument('-N', '--batch-size', type=int, metavar="INT",
                       default=1000,
                       help="n. of objects to be processed at a time")
+  parser.add_argument('--bead-chip-assay-type', metavar="STRING",
+                      choices=Recorder.ICHIP_ASSAY_TYPE_CHOICES,
+                      help='Illumina chip assay type (only used when importing IlluminaBeadChipArray objects)')
 
 
 def implementation(logger, host, user, passwd, args, close_handles):
@@ -395,6 +448,8 @@ def implementation(logger, host, user, passwd, args, close_handles):
     'used_volume',
     'action_category',
     ]
+  if args.vessel_type == 'IlluminaBeadChipAssayType':
+    fields_to_canonize.append('bead_chip_assay_type')
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(host=host, user=user, passwd=passwd,
                       keep_tokens=args.keep_tokens,
