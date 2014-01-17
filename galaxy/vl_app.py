@@ -116,3 +116,35 @@ class UniverseApplication(OrigUniverseApplication):
       return [(d.id, d.label) for d in dev]
     else:
       return []
+
+  @property
+  def known_illumina_beadchip_assay_type(self):
+    ibca_types = self.kb.get_objects(self.kb.IlluminaBeadChipAssayType)
+    if ibca_types:
+      return [(ibcat.omero_id, ibcat.enum_label()) for ibcat in ibca_types]
+    else:
+      return []
+
+  @property
+  def known_illumina_array_of_arrays_type(self):
+    array_types = self.kb.get_objects(self.kb.IlluminaArrayOfArraysType)
+    if array_types:
+      return[(at.omero_id, at.enum_label()) for at in array_types]
+    else:
+      return []
+
+  @property
+  def known_illumina_array_of_arrays_class(self):
+    array_classes = self.kb.get_objects(self.kb.IlluminaArrayOfArraysClass)
+    if array_classes:
+      return[(at.omero_id, at.enum_label()) for at in array_classes]
+    else:
+      return []
+
+  @property
+  def known_illumina_array_of_arrays_assay_type(self):
+    assay_types = self.kb.get_objects(self.kb.IlluminaArrayOfArraysAssayType)
+    if assay_types:
+      return[(at.omero_id, at.enum_label()) for at in assay_types]
+    else:
+      return []
