@@ -94,13 +94,14 @@ class PlateWell(Vessel):
     if not 'slot' in conf:
       conf['slot'] = self._slot_from_label(conf['label'], rows, cols)
     else:
-      if 'label' in conf:
+      if 'label' in conf and type(self) == PlateWell:
         slot = self._slot_from_label(conf['label'], rows, cols)
         if slot != conf['slot']:
           raise ValueError('label [%s] inconsistent with slot [%d] conf: %r'
                            % (conf['label'], conf['slot'], conf))
     # normalize to a standard label format
-    conf['label'] = self._label_from_slot(conf['slot'], rows, cols)
+    if type(self) == PlateWell:
+      conf['label'] = self._label_from_slot(conf['slot'], rows, cols)
     if not 'containerSlotLabelUK' in conf:
       clabel = conf['container'].label
       label   = conf['label']

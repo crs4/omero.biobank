@@ -98,15 +98,12 @@ class IlluminaBeadChipArray(PlateWell):
         raise ValueError('inconsistent label %s and slot %s' %
                          (conf['label'], conf['slot']))
       conf['slot'] = new_slot
-      conf.pop('label')
+      conf['label'] = self._ibca_label_from_slot(conf['slot'], rows, cols)
+      # conf.pop('label')
     return super(IlluminaBeadChipArray, self).__preprocess_conf__(conf)
 
   def __update_constraints__(self):
     super(IlluminaBeadChipArray, self).__update_constraints__()
-
-  @property
-  def label(self):
-    return self._ibca_label_from_slot(self.slot, self.container.rows, self.container.cols)
     
 
 class IlluminaBeadChipMeasure(MicroArrayMeasure):
