@@ -26,7 +26,8 @@ class MapVIDApp(Core):
                             'Chip', 'DataSample', 'Scanner',
                             'SoftwareProgram', 'SNPMarkersSet',
                             'DataCollectionItem', 'Device',
-                            'FlowCell', 'Lane', 'SequencerOutput']
+                            'FlowCell', 'Lane', 'SequencerOutput',
+                            'IlluminaArrayOfArrays', 'IlluminaBeadChipArray']
 
   def __init__(self, host=None, user=None, passwd=None, keep_tokens=1,
                study_label=None, mset_label=None,
