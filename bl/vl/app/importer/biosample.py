@@ -448,7 +448,7 @@ def implementation(logger, host, user, passwd, args, close_handles):
     'used_volume',
     'action_category',
     ]
-  if args.vessel_type == 'IlluminaBeadChipAssayType':
+  if args.vessel_type == 'IlluminaBeadChipArray':
     fields_to_canonize.append('bead_chip_assay_type')
   action_setup_conf = Recorder.find_action_setup_conf(args)
   recorder = Recorder(host=host, user=user, passwd=passwd,
