@@ -28,7 +28,7 @@ class KBICObjectCreator(KBObjectCreator):
     conf = {
       'content'       : self.kb.VesselContent.DNA,
       'status'        : self.kb.VesselStatus.CONTENTUSABLE,
-      'assayType'     : self.kb.IlluminaBeadChipAssayType.HumanOmniExpress_12v1_C,
+      'assayType'     : self.kb.IlluminaBeadChipAssayType.HUMANOMNIEXPRESS_12V1_C,
       'action'        : action
       }
     return conf
