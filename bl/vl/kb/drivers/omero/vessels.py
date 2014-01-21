@@ -79,7 +79,7 @@ class PlateWell(Vessel):
 
   def _label_from_slot(self, slot, rows, cols):
     row, col = divmod(slot - 1, cols)
-    label = '%s%d' % (chr(ord('A') + row), col + 1)
+    label = '%s%02d' % (chr(ord('A') + row), col + 1)
     return label
 
   def __preprocess_conf__(self, conf):
