@@ -103,8 +103,17 @@ class IlluminaBeadChipArray(PlateWell):
     return super(IlluminaBeadChipArray, self).__preprocess_conf__(conf)
 
   def __update_constraints__(self):
-    super(IlluminaBeadChipArray, self).__update_constraints__()
-    
+    csl_uk = make_unique_key(self.container.label, self.label)
+    setattr(self.ome_obj, 'containerSlotLabelUK',
+            self.to_omero(super(IlluminaBeadChipArray, self).__fields__['containerSlotLabelUK'][0],
+                          csl_uk)
+    )
+    csi_uk = make_unique_key(self.container.label, '%04d' % self.slot)
+    setattr(self.ome_obj, 'containerSlotIndexUK',
+            self.to_omero(super(IlluminaBeadChipArray, self).__fields__['containerSlotIndexUK'][0],
+                          csi_uk)
+    )
+
 
 class IlluminaBeadChipMeasure(MicroArrayMeasure):
 
