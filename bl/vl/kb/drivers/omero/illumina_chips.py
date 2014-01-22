@@ -71,8 +71,8 @@ class IlluminaBeadChipArray(PlateWell):
     return re.match('^R(\d{2})C(\d{2})$', label)
 
   def _ibca_label_from_slot(self, slot, rows, cols):
-    row, col = 1 + (slot/cols), 1 + (slot%cols)
-    return "R%d02C%d02" % (row, col)
+    row, col = divmod(slot - 1, cols)
+    return "R%02dC%02d" % (row+1, col+1)
 
   def _ibca_slot_from_label(self, label, rows, cols):
     m = re.match('^R(\d{2})C(\d{2})$', label)
