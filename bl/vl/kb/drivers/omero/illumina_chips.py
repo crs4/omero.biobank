@@ -36,7 +36,7 @@ class IlluminaBeadChipAssayType(wp.OmeroWrapper):
 
 class IlluminaArrayOfArraysType(wp.OmeroWrapper):
   OME_TABLE = "IlluminaArrayOfArraysType"
-  __enums__ = ["BeadChip_12x1Q", "UNKNOWN"]
+  __enums__ = ["BeadChip_12x1Q", "UNKNOWN", "BeadChip_12x8"]
 
 
 class IlluminaArrayOfArraysClass(wp.OmeroWrapper):
@@ -46,7 +46,7 @@ class IlluminaArrayOfArraysClass(wp.OmeroWrapper):
 
 class IlluminaArrayOfArraysAssayType(wp.OmeroWrapper):
   OME_TABLE = "IlluminaArrayOfArraysAssayType"
-  __enums__ = ["Infinium_HD", "UNKNOWN"]
+  __enums__ = ["Infinium_HD", "UNKNOWN", "Infinium_NXT"]
 
 
 class IlluminaArrayOfArrays(TiterPlate):
