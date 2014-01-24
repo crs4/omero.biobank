@@ -57,6 +57,7 @@ END_COPYRIGHT
   <enum id="ome.model.vl.IlluminaArrayOfArraysType">
     <entry name="BeadChip_12x1Q"/>
     <entry name="UNKNOWN"/>
+    <entry name="BeadChip_12x8"/>
   </enum>
 
   <enum id="ome.model.vl.IlluminaArrayOfArraysClass">
@@ -67,6 +68,7 @@ END_COPYRIGHT
   <enum id="ome.model.vl.IlluminaArrayOfArraysAssayType">
     <entry name="Infinium_HD"/>
     <entry name="UNKNOWN"/>
+    <entry name="Infinium_NXT"/>
   </enum>
 
   <type id="ome.model.vl.IlluminaArrayOfArrays"
