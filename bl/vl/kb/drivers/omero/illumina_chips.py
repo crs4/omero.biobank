@@ -129,6 +129,9 @@ class IlluminaBeadChipMeasures(DataCollection):
   __fields__ = [('redChannel',   IlluminaBeadChipMeasure, wp.REQUIRED),
                 ('greenChannel', IlluminaBeadChipMeasure, wp.REQUIRED)]
 
-
+  def __dump_to_graph__(self, is_update):
+    super(IlluminaBeadChipMeasures, self).__dump_to_graph__(is_update)
+    self.proxy.dt.create_collection_item(self.redChannel, self)
+    self.proxy.dt.create_collection_item(self.greenChannel, self)
 
 
