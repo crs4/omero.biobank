@@ -135,7 +135,7 @@ class MapVIDApp(Core):
   def resolve_mapping(self, source_type, labels):
     if source_type == self.kb.Individual:
       return self.resolve_mapping_individual(labels)
-    elif source_type == self.kb.PlateWell:
+    elif source_type == self.kb.PlateWell or source_type == self.kb.IlluminaBeadChipArray:
       return self.resolve_mapping_plate_well(source_type, labels)
     elif source_type == self.kb.DataCollectionItem:
       return self.resolve_mapping_data_collection_item(source_type, labels)
