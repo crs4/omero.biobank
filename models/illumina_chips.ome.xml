@@ -92,7 +92,7 @@ END_COPYRIGHT
     <properties>
     </properties>
   </type>
-
+  <!-- FIXME super class should be ome.model.vl.MicroArrayMeasure -->
   <type id="ome.model.vl.IlluminaBeadChipMeasures"
 	superclass="ome.model.vl.DataCollection">
     <properties>
