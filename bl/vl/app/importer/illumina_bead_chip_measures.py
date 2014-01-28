@@ -54,8 +54,17 @@ class Recorder(core.Core):
         good_records = []
         bad_records = []
         seen = []
+        mandatory_fields = ['label', 'source', 'source_type', 'red_channel',
+                            'green_channel', 'study']
         for i, r in enumerate(records):
             reject = 'Rejecting import of record %d: ' % i
+            if self.missing_fields(mandatory_fields, r):
+                f = 'missing mandatory field'
+                self.logger.error(reject + f)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = f
+                bad_records.append(bad_rec)
+                continue
             if r['label'] in self.preloaded_data_collections:
                 f = 'an IlluminaBeadChipMeasures object with label %s alredy exists' % r['label']
                 self.logger.error(reject + f)
