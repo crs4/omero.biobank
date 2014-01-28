@@ -15,10 +15,18 @@ label column.
 
 import csv, time, os, copy, sys, json
 import itertools as it
+from bl.vl.kb.drivers.omero.action import ActionCategory
 
 import core
 from version import version
 
+SUPPORTED_SOURCE_TYPES=[
+    'IlluminaBeadChipArray'
+]
+
+SUPPORTED_ACTION_CATEGORIES = [
+    e.enum_label() for e in ActionCategory.__enums__
+]
 
 class Recorder(core.Core):
     def __init__(self, study_label=None, host=None, user=None, passwd=None,
@@ -55,7 +63,7 @@ class Recorder(core.Core):
         bad_records = []
         seen = []
         mandatory_fields = ['label', 'source', 'source_type', 'red_channel',
-                            'green_channel', 'study']
+                            'green_channel', 'study', 'action_category']
         for i, r in enumerate(records):
             reject = 'Rejecting import of record %d: ' % i
             if self.missing_fields(mandatory_fields, r):
@@ -193,8 +201,12 @@ class RecorderCanonizer(core.RecordCanonizer):
 def make_parser(parser):
     parser.add_argument('--study', metavar='STRING',
                         help='overrides the study column value')
-    parser.add_argument('--action-category', metavar='STRING',
-                        help='overrides the action_category column value')
+    parser.add_argument('--action_category', metavar='STRING',
+                        help='overrides the action_category column value',
+                        choices=SUPPORTED_ACTION_CATEGORIES)
+    parser.add_argument('--source_type', metavar='STRING',
+                        help='overrides the source_type column value',
+                        choices=SUPPORTED_SOURCE_TYPES)
 
 
 def implementation(logger, host, user, passwd, args, close_handles):
