@@ -55,6 +55,7 @@ SUPPORTED_SOURCES = [
   'DataSample',
   'Individual',
   'DataCollectionItem',
+  'IlluminaBeadChipArray'
   ]
 SUPPORTED_DEVICES = [
   'Device',
@@ -75,22 +76,6 @@ def conf_affymetrix_cel_6(kb, r, a, device, options, status_map):
   return kb.factory.create(kb.AffymetrixCel, conf)
 
 
-def conf_illumina_beadchip_1m_duo(kb, r, a, device, options, status_map):
-  conf = {'label' : r['label'],
-          'status' : status_map[r['status']],
-          'action' : a,
-          'assayType' : kb.IlluminaBeadChipAssayType.HUMAN1M_DUO}
-  return kb.factory.create(kb.IlluminaBeadChipAssay, conf)
-
-
-def conf_illumina_beadchip_immuno(kb, r, a, device, options, status_map):
-  conf = {'label' : r['label'],
-          'status' : status_map[r['status']],
-          'action' : a,
-          'assayType' : kb.IlluminaBeadChipAssayType.IMMUNOCHIP}
-  return kb.factory.create(kb.IlluminaBeadChip, conf)
-
-
 def conf_crs4_genotyper_by_device(kb, r, a, device, options, status_map):
   device.reload()
   conf = {'label' : r['label'],
@@ -107,6 +92,13 @@ def conf_crs4_genotyper_by_markers_set(kb, r, a, device, options, status_map):
           'snpMarkersSet' : r['markers_set']}
   return kb.factory.create(kb.GenotypeDataSample, conf)
 
+def conf_illumina_bead_chip_measure(kb, r, a, device, options, status_map):
+  conf = {
+    'label': r['label'],
+    'status': status_map[r['status']],
+    'action': a,
+  }
+  return kb.factory.create(kb.IlluminaBeadChipMeasure, conf)
 
 def get_status_map(kb):
   return {'UNKNOWN'   : kb.DataSampleStatus.UNKNOWN,
@@ -116,11 +108,10 @@ def get_status_map(kb):
 
 
 data_sample_configurator = {
-  ('Affymetrix', 'Genome-Wide Human SNP Array', '6.0') : conf_affymetrix_cel_6,
-  ('Illumina', 'BeadChip', 'HUMAN1M_DUO') : conf_illumina_beadchip_1m_duo,
-  ('Illumina', 'BeadChip', 'IMMUNOCHIP') : conf_illumina_beadchip_1m_duo,
-  ('CRS4', 'Genotyper', 'by_device') : conf_crs4_genotyper_by_device,
-  ('CRS4', 'Genotyper', 'by_markers_set') : conf_crs4_genotyper_by_markers_set,
+  ('Affymetrix', 'Genome-Wide Human SNP Array', '6.0'): conf_affymetrix_cel_6,
+  ('CRS4', 'Genotyper', 'by_device'): conf_crs4_genotyper_by_device,
+  ('CRS4', 'Genotyper', 'by_markers_set'): conf_crs4_genotyper_by_markers_set,
+  ('Illumina', 'generic_illumina_scanner', 'generic'): conf_illumina_bead_chip_measure,
   }
 
 
