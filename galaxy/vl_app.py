@@ -148,3 +148,11 @@ class UniverseApplication(OrigUniverseApplication):
       return[(at.omero_id, at.enum_label()) for at in assay_types]
     else:
       return []
+
+  @property
+  def known_action_categories(self):
+    action_categories = self.kb.get_objects(self.kb.ActionCategory)
+    if action_categories:
+      return [(a.omero_id, a.enum_label()) for a in action_categories]
+    else:
+      return []
