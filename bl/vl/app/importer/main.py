@@ -50,6 +50,7 @@ SUBMOD_NAMES = [
   "laneslot",
   "sequencing_data_sample",
   "agnostic",
+  "illumina_bead_chip_measures"
   ]
 SUBMODULES = [import_module("%s.%s" % (__package__, n)) for n in SUBMOD_NAMES]
 
