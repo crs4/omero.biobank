@@ -210,7 +210,7 @@ def make_parser(parser):
 
 
 def implementation(logger, host, user, passwd, args, close_handles):
-    fields_to_canonize = ['study', 'action_category']
+    fields_to_canonize = ['study', 'action_category', 'source_type']
     action_setup_conf = Recorder.find_action_setup_conf(args)
     recorder = Recorder(args.study, host=host, user=user, passwd=passwd,
                         operator=args.operator, action_setup_conf=action_setup_conf,
