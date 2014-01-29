@@ -55,7 +55,8 @@ SUPPORTED_SOURCES = [
   'DataSample',
   'Individual',
   'DataCollectionItem',
-  'IlluminaBeadChipArray'
+  'IlluminaBeadChipArray',
+  'IlluminaBeadChipMeasures',
   ]
 SUPPORTED_DEVICES = [
   'Device',
