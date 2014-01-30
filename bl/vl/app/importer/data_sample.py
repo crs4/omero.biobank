@@ -323,6 +323,9 @@ class Recorder(core.Core):
       elif issubclass(self.source_klass, self.kb.DataCollectionItem):
         a_klass = self.kb.ActionOnDataCollectionItem
         acat = self.kb.ActionCategory.PROCESSING
+      elif issubclass(self.source_klass, self.kb.VLCollection):
+        a_klass = self.kb.ActionOnCollection
+        acat = self.kb.ActionCategory.PROCESSING
       else:
         assert False
       conf = {'setup' : asetup,
