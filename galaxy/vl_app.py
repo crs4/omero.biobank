@@ -73,7 +73,7 @@ class UniverseApplication(OrigUniverseApplication):
   def known_titer_plates(self):
     plates = self.kb.get_objects(self.kb.TiterPlate)
     if plates:
-      return [(pl.barcode, pl.label) for pl in plates if pl.barcode]
+      return [(pl.barcode, pl.label) for pl in plates if (pl.barcode and (type(pl) == self.kb.TiterPlate))]
     else:
       return []
 
