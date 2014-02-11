@@ -117,6 +117,13 @@ class Core(object):
     self.__preload_items__('id', klass, preloaded)
     self.logger.info('done preloading %s' % name)
 
+  def is_known_object_id(self, obj_id, obj_klass):
+    try:
+      obj = self.kb.get_by_vid(obj_klass, obj_id)
+      return True
+    except ValueError:
+      return False
+
   def preload_studies(self, preloaded):
     self.logger.info('start preloading studies')
     self.__preload_items__('label', self.kb.Study, preloaded)
