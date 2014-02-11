@@ -84,8 +84,6 @@ class Recorder(core.Core):
     self.operator = operator
     self.batch_size = batch_size
     self.action_setup_conf = action_setup_conf
-    self.preloaded_sources = {}
-    self.preloaded_plates = {}
     self.preloaded_vessels = {}
 
   def record(self, records, otsv, rtsv, blocking_validation):
@@ -101,10 +99,6 @@ class Recorder(core.Core):
     study = self.find_study(records)
     self.source_klass = self.find_source_klass(records)
     self.vessel_klass = self.find_vessel_klass(records)
-    self.preload_sources()
-    if self.vessel_klass == self.kb.PlateWell or \
-      self.vessel_klass == self.kb.IlluminaBeadChipArray:
-      self.preload_plates()
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
@@ -137,13 +131,6 @@ class Recorder(core.Core):
   def find_vessel_klass(self, records):
     return self.find_klass('vessel_type', records)
 
-  def preload_sources(self):
-    if self.source_klass:
-      self.preload_by_type('sources', self.source_klass, self.preloaded_sources)
-
-  def preload_plates(self):
-    self.preload_by_type('plates', self.kb.TiterPlate, self.preloaded_plates)
-
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
     if self.vessel_klass == self.kb.PlateWell:
@@ -162,7 +149,8 @@ class Recorder(core.Core):
         self.preloaded_vessels[o.containerSlotLabelUK] = o
       self.logger.info('done preloading vessels')
     def build_key(r, container_label):
-      container = self.preloaded_plates[r[container_label]]
+      container = self.kb.get_by_vid(self.kb.TiterPlate,
+                                     r[container_label])
       return make_unique_key(container.label, r['label'])
     preload_vessels()
     good_records = []
@@ -188,14 +176,14 @@ class Recorder(core.Core):
           bad_rec['error'] = f
           bad_records.append(bad_rec)
           continue
-      if r['source'] and r['source'] not in  self.preloaded_sources:
+      if r['source'] and not self.is_known_object_id(r['source'], self.source_klass):
         f = 'no known source with ID %s' % r['source']
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
-      if r[container_label] not in self.preloaded_plates:
+      if not self.is_known_object_id(r[container_label], self.kb.TiterPlate):
         f = 'no known container with ID %s' % r[container_label]
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
@@ -270,7 +258,7 @@ class Recorder(core.Core):
           bad_rec['error'] = f
           bad_records.append(bad_rec)
           continue
-      if r['source'] and r['source'] not in self.preloaded_sources:
+      if r['source'] and not self.is_known_object_id(r['source'], self.source_klass):
         f = 'no known source with ID %s. ' + r['source']
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
@@ -306,7 +294,7 @@ class Recorder(core.Core):
         'context': study,
         }
       if r['source']:
-        target = self.preloaded_sources[r['source']]
+        target = self.kb.get_by_vid(self.source_klass, r['source'])
         conf['target'] = target
       else:
         target = None
@@ -336,9 +324,10 @@ class Recorder(core.Core):
       if self.vessel_klass == self.kb.PlateWell or \
           self.vessel_klass == self.kb.IlluminaBeadChipArray:
         if self.vessel_klass == self.kb.PlateWell:
-          plate = self.preloaded_plates[r['plate']]
+          plate = self.kb.get_by_vid(self.kb.TiterPlate, r['plate'])
         else:
-          plate = self.preloaded_plates[r['illumina_array']]
+          plate = self.kb.get_by_vid(self.kb.IlluminaArrayOfArrays,
+                                     r['illumina_array'])
           conf['assayType'] = getattr(self.kb.IlluminaBeadChipAssayType,
                                       r['bead_chip_assay_type'])
         row, column = r['row'], r['column']
