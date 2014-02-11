@@ -7,7 +7,7 @@ Will read a tsv file with the following columns::
   study   label           red_channel     green_channel     source         source_type
   ASTUDY  CHIP_01_R01C01  V1415151235513  V135135661356161  V351351351551  IlluminaBeadChipArray
   ASTUDY  CHIP_01_R01C02  V2346262462462  V112395151351623  V135113513223  IlluminaBeadChipArray
-  ASTUDY CHIP_01_R02C01   V1351362899135  V913977551235981  V100941215192  IlluminaBeadChipArray
+  ASTUDY  CHIP_01_R02C01  V1351362899135  V913977551235981  V100941215192  IlluminaBeadChipArray
 
 This will create new IlluminaBeadChipMeasures whose labels are defined in the
 label column.
