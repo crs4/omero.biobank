@@ -56,7 +56,7 @@ bead_chip_assay_type, is required.
 
 """
 
-import os, csv, json, time, re, copy
+import os, csv, json, time, re, copy, sys
 import itertools as it
 from datetime import datetime
 
@@ -96,8 +96,8 @@ class Recorder(core.Core):
         offset += batch_size
     if not records:
       msg = 'No records are going to be imported'
-      self.logger.critical(msg)
-      raise core.ImporterValidationError(msg)
+      self.logger.warning(msg)
+      sys.exit(0)
     study = self.find_study(records)
     self.source_klass = self.find_source_klass(records)
     self.vessel_klass = self.find_vessel_klass(records)
