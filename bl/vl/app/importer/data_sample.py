@@ -65,6 +65,10 @@ SUPPORTED_DEVICES = [
   'SoftwareProgram',
   'GenotypingProgram',
   ]
+SUPPORTED_DATA_SAMPLE_TYPES = [
+  'GenotypeDataSample',
+  'IlluminaBeadChipMeasure',
+]
 
 
 def conf_affymetrix_cel_6(kb, r, a, device, options, status_map):
@@ -382,7 +386,7 @@ def make_parser(parser):
   # something that checks that the required type is derived from
   # DataSample. Use this flag only if GenotypeDataSample is needed.
   parser.add_argument('--data-sample-type', metavar="STRING",
-                      choices=['GenotypeDataSample'],
+                      choices=SUPPORTED_DATA_SAMPLE_TYPES,
                       help="overrides the data_sample_type column value")
   parser.add_argument('--device-type', metavar="STRING",
                       choices=SUPPORTED_DEVICES,
