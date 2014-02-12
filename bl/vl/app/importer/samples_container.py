@@ -114,12 +114,12 @@ class Recorder(core.Core):
     if self.container_klass == self.kb.Lane:
       self.preload_flowcells()
     records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      rtsv.writerow(br)
     if len(records) == 0:
       if not blocking_validation:  # with blocking val it will break later
         self.logger.error('None of the records passed validation checks')
         return
-    for br in bad_records:
-      rtsv.writerow(br)
     if blocking_validation and len(bad_records) >= 1:
       raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     study = self.find_study(records)
