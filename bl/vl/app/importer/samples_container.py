@@ -70,7 +70,7 @@ will automatically calculate the labels for each imported object.
 
 """
 
-import os, csv, copy, time
+import os, csv, copy, time, sys
 from datetime import datetime
 
 from bl.vl.kb.drivers.omero.objects_collections import ContainerStatus
@@ -485,8 +485,8 @@ def implementation(logger, host, user, passwd, args, close_handles):
   try:
     if len(records) == 0:
       msg = 'No records are going to be imported'
-      logger.critical(msg)
-      raise core.ImporterValidationError(msg)
+      logger.warning(msg)
+      sys.exit(0)
     if args.container_type == 'TiterPlate':
       fields_to_canonize.extend(['rows', 'columns'])
     elif args.container_type == 'FlowCell':
