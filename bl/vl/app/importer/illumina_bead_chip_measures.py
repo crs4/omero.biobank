@@ -48,16 +48,6 @@ class Recorder(core.Core):
                          len(self.preloaded_data_collections))
 
     def do_consistency_checks(self, records):
-        def is_valid_data_sample_id(dsample_id):
-            return is_valid_object_id(dsample_id, 'IlluminaBeadChipMeasure')
-
-        def is_valid_object_id(obj_id, obj_klass):
-            try:
-                self.kb.get_by_vid(getattr(self.kb, obj_klass), obj_id)
-            except ValueError:
-                return False
-            return True
-
         self.logger.info('start consistency checks')
         good_records = []
         bad_records = []
@@ -88,14 +78,16 @@ class Recorder(core.Core):
                 bad_records.append(bad_rec)
                 continue
             for channel in ['red_channel', 'green_channel']:
-                if not is_valid_data_sample_id(r[channel]):
+                if not self.is_known_object_id(self.kb.IlluminaBeadChipMeasure,
+                                               r[channel]):
                     f = 'unknown data sample with ID %s in column %s' % (r[channel], channel)
                     self.logger.error(reject + f)
                     bad_rec = copy.deepcopy(r)
                     bad_rec['error'] = f
                     bad_records.append(bad_rec)
                     continue
-            if not is_valid_object_id(r['source'], r['source_type']):
+            if not self.is_known_object_id(getattr(self.kb, r['source_type']),
+                                           r['source']):
                 f = 'unknown %s with ID %s' % (r['source_type'], r['source'])
                 self.logger.error(reject + f)
                 bad_rec = copy.deepcopy(r)

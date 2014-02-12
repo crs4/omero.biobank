@@ -70,7 +70,7 @@ will automatically calculate the labels for each imported object.
 
 """
 
-import os, csv, copy, time
+import os, csv, copy, time, sys
 from datetime import datetime
 
 from bl.vl.kb.drivers.omero.objects_collections import ContainerStatus
@@ -114,12 +114,12 @@ class Recorder(core.Core):
     if self.container_klass == self.kb.Lane:
       self.preload_flowcells()
     records, bad_records = self.do_consistency_checks(records)
+    for br in bad_records:
+      rtsv.writerow(br)
     if len(records) == 0:
       if not blocking_validation:  # with blocking val it will break later
         self.logger.error('None of the records passed validation checks')
         return
-    for br in bad_records:
-      rtsv.writerow(br)
     if blocking_validation and len(bad_records) >= 1:
       raise core.ImporterValidationError('%d invalid records' % len(bad_records))
     study = self.find_study(records)
@@ -485,8 +485,8 @@ def implementation(logger, host, user, passwd, args, close_handles):
   try:
     if len(records) == 0:
       msg = 'No records are going to be imported'
-      logger.critical(msg)
-      raise core.ImporterValidationError(msg)
+      logger.warning(msg)
+      sys.exit(0)
     if args.container_type == 'TiterPlate':
       fields_to_canonize.extend(['rows', 'columns'])
     elif args.container_type == 'FlowCell':
@@ -506,7 +506,11 @@ def implementation(logger, host, user, passwd, args, close_handles):
                             delimiter='\t', lineterminator=os.linesep,
                             extrasaction='ignore')
     report.writeheader()
-    recorder.record(records, o, report, args.blocking_validator)
+    # Group records by study
+    records_map = Recorder.map_by_column(records, 'study')
+    for study_label, records in records_map.iteritems():
+      logger.info('Dumping %d records with study %s as reference', len(records), study_label)
+      recorder.record(records, o, report, args.blocking_validator)
   except core.ImporterValidationError as ve:
     logger.critical(ve.message)
     raise

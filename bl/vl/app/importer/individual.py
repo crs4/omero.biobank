@@ -24,7 +24,7 @@ loaded study.
 kinship.
 """
 
-import os, time, json, csv, copy
+import os, time, json, csv, copy, sys
 import itertools as it
 
 from bl.vl.individual.pedigree import import_pedigree
@@ -103,7 +103,7 @@ class Recorder(core.Core):
 
   def retrieve_enrollment(self, identifier):
     study_label, label = identifier
-    self.logger.info('importing (%s, %s)' % (study_label, label))
+    self.logger.debug('importing (%s, %s)' % (study_label, label))
     assert study_label == self.default_study.label
     study = self.default_study or self.known_studies.setdefault(
       study_label, self.get_study(study_label)
@@ -243,38 +243,42 @@ def implementation(logger, host, user, passwd, args, close_handles):
   action_setup_conf = Recorder.find_action_setup_conf(args)
   f = csv.DictReader(args.ifile, delimiter='\t')
   records = [r for r in f]
-  try:
-    if len(records) == 0:
-      msg = 'No records are going to be imported'
-      logger.critical(msg)
-      raise core.ImporterValidationError(msg)
-    canonizer = core.RecordCanonizer(['study'], args)
-    canonizer.canonize_list(records)
-    study_label = records[0]['study']
-    o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
-                       delimiter='\t', lineterminator=os.linesep)
-    recorder = Recorder(o, study_label, host, user, passwd,
-                        args.keep_tokens, args.batch_size,
-                        operator=args.operator,
-                        action_setup_conf=action_setup_conf, logger=logger)
-    report_fnames = copy.deepcopy(f.fieldnames)
-    report_fnames.append('error')
-    report = csv.DictWriter(args.report_file, report_fnames,
-                            delimiter='\t', lineterminator=os.linesep,
-                            extrasaction='ignore')
-    report.writeheader()
-    records, bad_records = recorder.do_consistency_checks(records)
-    for br in bad_records:
-      report.writerow(br)
-    if args.blocking_validator and len(bad_records) >= 1:
-      msg = '%d invalid records' % len(bad_records)
-      recorder.logger.critical(msg)
-      raise core.ImporterValidationError(msg)
-    by_label = make_ind_by_label(records)
-    import_pedigree(recorder, by_label.itervalues())
-    recorder.clean_up()
-  finally:
-    close_handles(args)
+  canonizer = core.RecordCanonizer(['study'], args)
+  canonizer.canonize_list(records)
+  records_map = Recorder.map_by_column(records, 'study')
+  for study_label, records in records_map.iteritems():
+    logger.info('Dumping %d records with study %s as reference', len(records), study_label)
+    try:
+      if len(records) == 0:
+        msg = 'No records are going to be imported'
+        logger.warning(msg)
+        sys.exit(0)
+      o = csv.DictWriter(args.ofile, fieldnames=['study', 'label', 'type', 'vid'],
+                         delimiter='\t', lineterminator=os.linesep)
+      recorder = Recorder(o, study_label, host, user, passwd,
+                          args.keep_tokens, args.batch_size,
+                          operator=args.operator,
+                          action_setup_conf=action_setup_conf, logger=logger)
+      report_fnames = copy.deepcopy(f.fieldnames)
+      report_fnames.append('error')
+      report = csv.DictWriter(args.report_file, report_fnames,
+                              delimiter='\t', lineterminator=os.linesep,
+                              extrasaction='ignore')
+      report.writeheader()
+      records, bad_records = recorder.do_consistency_checks(records)
+      for br in bad_records:
+        report.writerow(br)
+      if args.blocking_validator and len(bad_records) >= 1:
+        msg = '%d invalid records' % len(bad_records)
+        recorder.logger.critical(msg)
+        raise core.ImporterValidationError(msg)
+      by_label = make_ind_by_label(records)
+      import_pedigree(recorder, by_label.itervalues())
+      recorder.clean_up()
+    except Exception, e:
+      close_handles(args)
+      raise e
+  close_handles(args)
   logger.info('done processing file %s' % args.ifile.name)
 
 

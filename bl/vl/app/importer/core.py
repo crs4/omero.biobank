@@ -97,6 +97,13 @@ class Core(object):
         raise ValueError(m)
     return self.get_study(study_label)
 
+  @staticmethod
+  def map_by_column(records, grouper_column):
+    records_map = {}
+    for rec in records:
+      records_map.setdefault(rec[grouper_column], []).append(rec)
+    return records_map
+
   def find_klass(self, col_name, records):
     o_type = records[0][col_name]
     for r in records:
@@ -116,6 +123,13 @@ class Core(object):
     self.logger.info('start preloading %s' % name)
     self.__preload_items__('id', klass, preloaded)
     self.logger.info('done preloading %s' % name)
+
+  def is_known_object_id(self, obj_id, obj_klass):
+    try:
+      obj = self.kb.get_by_vid(obj_klass, obj_id)
+      return True
+    except ValueError:
+      return False
 
   def preload_studies(self, preloaded):
     self.logger.info('start preloading studies')
