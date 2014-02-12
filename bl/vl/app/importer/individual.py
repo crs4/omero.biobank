@@ -103,7 +103,7 @@ class Recorder(core.Core):
 
   def retrieve_enrollment(self, identifier):
     study_label, label = identifier
-    self.logger.info('importing (%s, %s)' % (study_label, label))
+    self.logger.debug('importing (%s, %s)' % (study_label, label))
     assert study_label == self.default_study.label
     study = self.default_study or self.known_studies.setdefault(
       study_label, self.get_study(study_label)
