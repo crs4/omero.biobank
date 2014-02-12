@@ -322,8 +322,8 @@ class Recorder(core.Core):
       self.logger.info('start preloading lanes')
       lanes = self.kb.get_objects(self.kb.Lane)
       for l in lanes:
-        assert not l.laneUK in self.preloaded_lanes
-        self.preloaded_lanes[l.laneUK] = l
+        if not l.laneUK in self.preloaded_lanes:
+          self.preloaded_lanes[l.laneUK] = l
       self.logger.info('done preloading lanes')
     good_records = []
     bad_records = []

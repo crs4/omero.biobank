@@ -145,8 +145,9 @@ class Recorder(core.Core):
       self.logger.info('start preloading vessels')
       objs = self.kb.get_objects(self.vessel_klass)
       for o in objs:
-        assert not o.containerSlotLabelUK in self.preloaded_vessels
-        self.preloaded_vessels[o.containerSlotLabelUK] = o
+        # The import can now run multiple times, add only new records to preloaded_vessels
+        if not o.containerSlotLabelUK in self.preloaded_vessels:
+            self.preloaded_vessels[o.containerSlotLabelUK] = o
       self.logger.info('done preloading vessels')
     def build_key(r, container_label):
       container = self.kb.get_by_vid(self.kb.TiterPlate,
@@ -467,9 +468,9 @@ def implementation(logger, host, user, passwd, args, close_handles):
                       args.blocking_validator)
     except core.ImporterValidationError as ve:
       recorder.logger.critical(ve.message)
-      raise
-    finally:
       close_handles(args)
+      raise ve
+  close_handles(args)
   recorder.logger.info('done processing file %s' % args.ifile.name)
 
 
