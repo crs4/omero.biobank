@@ -97,6 +97,13 @@ class Core(object):
         raise ValueError(m)
     return self.get_study(study_label)
 
+  @staticmethod
+  def map_by_column(records, grouper_column):
+    records_map = {}
+    for rec in records:
+      records_map.setdefault(rec[grouper_column], []).append(rec)
+    return records_map
+
   def find_klass(self, col_name, records):
     o_type = records[0][col_name]
     for r in records:

@@ -459,14 +459,17 @@ def implementation(logger, host, user, passwd, args, close_handles):
                           delimiter='\t', lineterminator=os.linesep,
                           extrasaction='ignore')
   report.writeheader()
-  try:
-    recorder.record(records, o, report,
-                    args.blocking_validator)
-  except core.ImporterValidationError as ve:
-    recorder.logger.critical(ve.message)
-    raise
-  finally:
-    close_handles(args)
+  records_map = Recorder.map_by_column(records, 'study')
+  for study_label, records in records_map.iteritems():
+    try:
+      logger.info('Dumping %d records with study %s as reference', len(records), study_label)
+      recorder.record(records, o, report,
+                      args.blocking_validator)
+    except core.ImporterValidationError as ve:
+      recorder.logger.critical(ve.message)
+      raise
+    finally:
+      close_handles(args)
   recorder.logger.info('done processing file %s' % args.ifile.name)
 
 
