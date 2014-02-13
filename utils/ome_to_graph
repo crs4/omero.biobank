@@ -31,6 +31,7 @@ class GraphDumper(object):
             kb.PlateWell,
             kb.Lane,
             kb.LaneSlot,
+            kb.IlluminaBeadChipMeasures,
         ]
 
     def __get_nodes__(self):
@@ -66,15 +67,30 @@ class GraphDumper(object):
 
     def __get_collection_info__(self, item):
         if issubclass(type(item), self.kb.DataCollectionItem):
-            return {'item': item.dataSample, 'collection': item.dataCollection}
+            return [
+                {'item': item.dataSample, 'collection': item.dataCollection}
+            ]
         elif issubclass(type(item), self.kb.VesselsCollectionItem):
-            return {'item': item.vessel, 'collection': item.vesselsCollection}
+            return [
+                {'item': item.vessel, 'collection': item.vesselsCollection}
+            ]
         elif issubclass(type(item), self.kb.PlateWell):
-            return {'item': item, 'collection': item.container}
+            return [
+                {'item': item, 'collection': item.container}
+            ]
         elif issubclass(type(item), self.kb.Lane):
-            return {'item': item, 'collection': item.flowCell}
+            return [
+                {'item': item, 'collection': item.flowCell}
+            ]
         elif issubclass(type(item), self.kb.LaneSlot):
-            return {'item': item, 'collection': item.lane}
+            return [
+                {'item': item, 'collection': item.lane}
+            ]
+        elif issubclass(type(item), self.kb.IlluminaBeadChipMeasures):
+            return [
+                {'item': item.redChannel, 'collection': item},
+                {'item': item.greenChannel, 'collection': item}
+            ]
         else:
             msg = "Item %s is not a collection" % type(item)
             raise ValueError(msg)
@@ -85,7 +101,8 @@ class GraphDumper(object):
             self.logger.info('Loading collections for %s and subclasses', cc.__name__)
             objs = self.kb.get_objects(cc)
             self.logger.info('Loaded %d objects', len(objs))
-            collections.extend([self.__get_collection_info__(ci) for ci in objs])
+            for ci in objs:
+                collections.extend(self.__get_collection_info__(ci))
         return collections
 
     def __save_node__(self, node):
