@@ -4,6 +4,12 @@ from bioblend.galaxy import GalaxyInstance
 
 from items import SequencerOutputItem, SeqDataSampleItem
 
+# dataset states corresponding to a 'pending' condition
+_PENDING_DS_STATES = set(
+    ["new", "upload", "queued", "running", "setting_metadata"]
+    )
+POLLING_INTERVAL = 10
+
 class GalaxyWrapper(object):
     
     # In order to work config has to be a dictionary loaded from a YAML
@@ -211,18 +217,24 @@ class GalaxyWrapper(object):
                                     'sha1'        : d.sha1})
         return ds_tmp, do_tmp
 
-    def __wait(self, history_id, sleep_interval = 5):
+    def __wait(self, history_id, sleep_interval = POLLING_INTERVAL):
+        self.logger.debug('Waiting for history %s', history_id)
         while True:
-            self.logger.debug('Checking workflow status')
-            status_info = self.gi.histories.get_status(history_id)['state']
-            if status_info not in ('queued', 'running'):
-                self.logger.debug('Workflow done with status %s' % status_info)
-                return status_info
-            else:
-                self.logger.debug('Workflow not completed (status: %s). Wait %d seconds.' % (status_info,
-                                                                                             sleep_interval))
-                time.sleep(sleep_interval)
-        return status_info
+            state_details = self.gi.histories.get_status(history_id)['state_details']
+            non_zero = set(state for state, count in state_details.iteritems() if count > 0)
+            # With newer versions of Galayx the history state remains as
+            # 'queued' even if individual datasets are in an error state
+            if 'error' in non_zero:
+                self.logger.error("History %s failed to execute. state_details: %s",
+                        history_id, state_details)
+                return 'error'
+            if len(_PENDING_DS_STATES & non_zero) == 0:
+                # no pending datasets
+                self.logger.debug('Workflow done with statuses %s', non_zero)
+                return 'ok'
+            self.logger.debug('Workflow not completed (statuses: %s). Wait %d seconds.',
+                    non_zero, sleep_interval)
+            time.sleep(sleep_interval)
 
     def __dump_config_params(self, study_label, namespace = None):
         conf_dict = {'config_parameters': {'study_label' : study_label}}
