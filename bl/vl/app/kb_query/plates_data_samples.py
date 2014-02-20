@@ -194,7 +194,7 @@ class BuildPlateDataSamplesDetails(Core):
         field_names = ['PLATE_barcode', 'PLATE_label', 'WELL_label', 'WELL_status',
                        'DATA_SAMPLE_label']
         if map_study:
-            field_names.extend(['STUDY_label', 'ENROLLMENT_code'])
+            field_names.extend(['INDIVIDUAL_study_code'])
         field_names.extend(['INDIVIDUAL_gender', 'T1D_affection', 'MS_affection',
                             'NEFRO_affection'])
         writer = csv.DictWriter(out_file, delimiter='\t', restval = 'X',
@@ -222,8 +222,8 @@ class BuildPlateDataSamplesDetails(Core):
                 record['INDIVIDUAL_gender'] = ind.gender.enum_label()
                 if map_study:
                     try:
-                        record['STUDY_label'] = study_map[ind].study.label
-                        record['ENROLLMENT_code'] = study_map[ind].studyCode
+                        record['INDIVIDUAL_study_code'] = "{}:{}".format(study_map[ind].study.label,
+                                                                         study_map[ind].studyCode)
                     except KeyError, ke:
                         self.logger.debug('Individual %s has no enrollment in %s' % (ind.id,
                                                                                      map_study))
