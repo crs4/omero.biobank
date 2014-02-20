@@ -78,16 +78,14 @@ class Recorder(core.Core):
                 bad_records.append(bad_rec)
                 continue
             for channel in ['red_channel', 'green_channel']:
-                if not self.is_known_object_id(self.kb.IlluminaBeadChipMeasure,
-                                               r[channel]):
+                if not self.is_known_object_id(r[channel], self.kb.IlluminaBeadChipMeasure):
                     f = 'unknown data sample with ID %s in column %s' % (r[channel], channel)
                     self.logger.error(reject + f)
                     bad_rec = copy.deepcopy(r)
                     bad_rec['error'] = f
                     bad_records.append(bad_rec)
                     continue
-            if not self.is_known_object_id(getattr(self.kb, r['source_type']),
-                                           r['source']):
+            if not self.is_known_object_id(r['source'], getattr(self.kb, r['source_type'])):
                 f = 'unknown %s with ID %s' % (r['source_type'], r['source'])
                 self.logger.error(reject + f)
                 bad_rec = copy.deepcopy(r)
