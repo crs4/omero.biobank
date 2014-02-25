@@ -27,6 +27,9 @@ def KnowledgeBase(driver):
 class KBError(Exception):
   pass
 
+class KBPermissionError(Exception):
+  pass
+
 
 class Study(object):
   def __init__(self):
