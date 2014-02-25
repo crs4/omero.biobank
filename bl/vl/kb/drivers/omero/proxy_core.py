@@ -439,8 +439,9 @@ class ProxyCore(object):
           yield Z[k]
         i = j
       # self.disconnect()  # this closes the connect() below
-    s = self.connect()
-    t = self._get_table(s, table_name)
+    if not self.current_session:
+        self.connect()
+    t = self._get_table(self.current_session, table_name)
     col_objs = t.getHeaders()
     return iter_on_rows(t, len(col_objs))
 
@@ -577,10 +578,11 @@ class ProxyCore(object):
 
   def __extend_table(self, table_name, batch_loader, records_stream,
                      batch_size=BATCH_SIZE):
-    s = self.connect()
+    if not self.current_session:
+        self.connect()
     indices = []
     # try:
-    t = self._get_table(s, table_name)
+    t = self._get_table(self.current_session, table_name)
     col_objs = t.getHeaders()
     batch = batch_loader(records_stream, col_objs, batch_size)
     # First index of the new batch of rows is the number of rows
@@ -608,9 +610,10 @@ class ProxyCore(object):
     return col_objs
 
   def update_table_row(self, table_name, selector, row):
-    s = self.connect()
+    if not self.current_session:
+        self.connect()
     # try:
-    t = self._get_table(s, table_name)
+    t = self._get_table(self.current_session, table_name)
     idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
     self.logger.debug('\tselector %s results in %s' % (selector, idxs))
     if not len(idxs) == 1:
@@ -623,9 +626,10 @@ class ProxyCore(object):
     #   self.disconnect()
 
   def update_table_rows(self, table_name, selector, update_items):
-    s = self.connect()
+    if not self.current_session:
+        self.connect()
     # try:
-    t = self._get_table(s, table_name)
+    t = self._get_table(self.current_session, table_name)
     idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
     self.logger.debug('\tselector %s results in %s' % (selector, idxs))
     if len(idxs) == 0:
