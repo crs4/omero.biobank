@@ -1,6 +1,8 @@
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
+from bl.vl.kb import KBPermissionError
+
 class Admin(object):
 
   def __init__(self, kb):
@@ -13,12 +15,12 @@ class Admin(object):
        kb = KB(driver='omero')('localhost', 'root', 'ROOT_PASSWD')
        kb.admin.set_group_owner('group_name', 'foouser')
     """
-    c = self.kb.connect()
-    a = c.getAdminService()
+    if not self.kb.current_session:
+      self.kb.connect()
+    a = self.kb.current_session.getAdminService()
     ouser = a.lookupExperimenter(user)
     ogroup = a.lookupGroup(group)
     a.setGroupOwner(ogroup, ouser)
-    # self.kb.disconnect()
 
   def move_to_common_space(self, objs):
     """
@@ -28,6 +30,11 @@ class Admin(object):
        studies = kb.get_objects(kb.Study)
        kb.admin.move_to_common_space(studies)
     """
-    c = self.kb.connect()
-    a = c.getAdminService()
-    a.moveToCommonSpace([o.ome_obj for o in objs])
+    if not self.kb.current_session:
+      self.kb.connect()
+    a = self.kb.current_session.getAdminService()
+    if self.kb.is_group_leader():
+      a.moveToCommonSpace([o.ome_obj for o in objs])
+    else:
+      raise KBPermissionError('User %s is not leader of group %s, can\'t move objects to common space' %
+                              (self.kb.user, self.kb.get_current_group()[0]))
