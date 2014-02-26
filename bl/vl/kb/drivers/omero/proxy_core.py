@@ -179,18 +179,20 @@ class ProxyCore(object):
     else:
       a = self.current_session.getAdminService()
       ev_context = a.getEventContext()
-      return ev_context.groupName, a.lookupGroup(ev_context.groupName)
+      return ev_context.groupName, self._get_group(ev_context.groupName)
 
-  def _get_group_id(self, group_name):
+  def _get_group(self, group_name):
     if not self.current_session:
       raise kb.KBError('Connection to OMERO server is closed')
     else:
       a = self.current_session.getAdminService()
       try:
-        return a.lookupGroup(group_name).id._val
+        return a.lookupGroup(group_name)
       except omero.ApiUsageException:
         raise kb.KBError('There is not group with name %s' % group_name)
 
+  def _get_group_id(self, group_name):
+    return self._get_group(group_name).id._val
 
   def is_group_leader(self, group_name=None):
     """

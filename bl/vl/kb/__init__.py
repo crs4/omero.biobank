@@ -27,6 +27,7 @@ def KnowledgeBase(driver):
 class KBError(Exception):
   pass
 
+
 class KBPermissionError(Exception):
   pass
 
