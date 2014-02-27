@@ -144,21 +144,89 @@ class ProxyCore(object):
     self.context_managers.pop()
 
   def change_group(self, group_name):
-    self.group_name = group_name
-    self.transaction_tokens = 0
-    # self.disconnect()
+    if not self.current_session:
+      self.connect()
+    a = self.current_session.getAdminService()
+    try:
+      g = a.lookupGroup(group_name)
+      self.current_session.setSecurityContext(g)
+    except omero.ApiUsageException:
+      raise kb.KBError('%s is not a valid group name' % group_name)
+    except omero.SecurityViolation:
+      raise kb.KBPermissionError('user %s is not a member of group %s' %
+                                 (self.user, group_name))
+
+  def change_to_user_default_group(self):
+    if not self.current_session:
+      self.connect()
+    a = self.current_session.getAdminService()
+    exp = a.lookupExperimenter(self.user)
+    self.current_session.setSecurityContext(a.getDefaultGroup(exp.id._val))
+
+  def change_to_session_default_group(self):
+    if self.group_name:
+      self.change_group(self.group_name)
+    else:
+      self.change_to_user_default_group()
+
+  def get_current_group(self):
+    """
+    Return the group's name and the group's object related to the group currently
+    connected to the user. If a connection is not opened yet, return None, None
+    """
+    if not self.current_session:
+      return None, None
+    else:
+      a = self.current_session.getAdminService()
+      ev_context = a.getEventContext()
+      return ev_context.groupName, self._get_group(ev_context.groupName)
+
+  def _get_group(self, group_name):
+    if not self.current_session:
+      raise kb.KBError('Connection to OMERO server is closed')
+    else:
+      a = self.current_session.getAdminService()
+      try:
+        return a.lookupGroup(group_name)
+      except omero.ApiUsageException:
+        raise kb.KBError('There is not group with name %s' % group_name)
+
+  def _get_group_id(self, group_name):
+    return self._get_group(group_name).id._val
+
+  def is_group_leader(self, group_name=None):
+    """
+    Check if the current user is leader of the group labeled group_name, if no
+    group_name is provided, check against the group in which the user is currently
+    logged in
+    """
+    if not self.current_session:
+      raise kb.KBError('Connection to OMERO server is closed')
+    else:
+      a = self.current_session.getAdminService()
+      ev_context = a.getEventContext()
+      if not group_name:
+        group_id = ev_context.groupId
+      else:
+        group_id = self._get_group_id(group_name)
+      return group_id in ev_context.leaderOfGroups
+
+  def is_member_of_group(self, group_name):
+    if not self.current_session:
+      raise kb.KBError('Connection to OMERO server is closed')
+    else:
+      a = self.current_session.getAdminService()
+      ev_context = a.getEventContext()
+      group_id = self._get_group_id(group_name)
+      return (group_id in ev_context.leaderOfGroups) or \
+             (group_id in ev_context.memberOfGroups)
 
   def connect(self):
     if not self.current_session:
       self.current_session = self.client.createSession(self.user, self.passwd)
       self.transaction_tokens = self.session_keep_tokens
       if self.group_name:
-        a = self.current_session.getAdminService()
-        try:
-          g = a.lookupGroup(self.group_name)
-          self.current_session.setSecurityContext(g)
-        except omero.ApiUsageException, aue:
-          raise ValueError(aue.message)
+        self.change_group(self.group_name)
     self.transaction_tokens -= 1
     return self.current_session
 
@@ -439,8 +507,9 @@ class ProxyCore(object):
           yield Z[k]
         i = j
       # self.disconnect()  # this closes the connect() below
-    s = self.connect()
-    t = self._get_table(s, table_name)
+    if not self.current_session:
+        self.connect()
+    t = self._get_table(self.current_session, table_name)
     col_objs = t.getHeaders()
     return iter_on_rows(t, len(col_objs))
 
@@ -577,10 +646,11 @@ class ProxyCore(object):
 
   def __extend_table(self, table_name, batch_loader, records_stream,
                      batch_size=BATCH_SIZE):
-    s = self.connect()
+    if not self.current_session:
+        self.connect()
     indices = []
     # try:
-    t = self._get_table(s, table_name)
+    t = self._get_table(self.current_session, table_name)
     col_objs = t.getHeaders()
     batch = batch_loader(records_stream, col_objs, batch_size)
     # First index of the new batch of rows is the number of rows
@@ -608,9 +678,10 @@ class ProxyCore(object):
     return col_objs
 
   def update_table_row(self, table_name, selector, row):
-    s = self.connect()
+    if not self.current_session:
+        self.connect()
     # try:
-    t = self._get_table(s, table_name)
+    t = self._get_table(self.current_session, table_name)
     idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
     self.logger.debug('\tselector %s results in %s' % (selector, idxs))
     if not len(idxs) == 1:
@@ -623,9 +694,10 @@ class ProxyCore(object):
     #   self.disconnect()
 
   def update_table_rows(self, table_name, selector, update_items):
-    s = self.connect()
+    if not self.current_session:
+        self.connect()
     # try:
-    t = self._get_table(s, table_name)
+    t = self._get_table(self.current_session, table_name)
     idxs = t.getWhereList(selector, {}, 0, t.getNumberOfRows(), 1)
     self.logger.debug('\tselector %s results in %s' % (selector, idxs))
     if len(idxs) == 0:
