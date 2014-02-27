@@ -301,7 +301,7 @@ class GalaxyWrapper(object):
             status = self.__wait(hist_details['history'])
             if status == 'ok':
                 self.logger.info('Run completed')
-                return hist_details
+                return hist_details, lib_id
             else:
                 msg = 'Error occurred while processing data'
                 self.logger.error(msg)
@@ -333,7 +333,7 @@ class GalaxyWrapper(object):
             status = self.__wait(hist_details['history'])
             if status == 'ok':
                 self.logger.info('Run completed')
-                return hist_details
+                return hist_details, lib_id
             else:
                 msg = 'Error occurred while processing data'
                 self.logger.error(msg)
@@ -343,4 +343,8 @@ class GalaxyWrapper(object):
         self.logger.info('Deleting history with ID %s' % history_id)
         self.gi.histories.delete_history(history_id, purge_history)
         self.logger.info('History deleted')
-        
+
+    def delete_library(self, library_id):
+        self.logger.info('Deleting library with ID %s', library_id)
+        self.gi.libraries.delete_library(library_id)
+        self.logger.info('Library deleted')

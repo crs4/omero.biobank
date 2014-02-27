@@ -22,10 +22,11 @@ def run_datasets_import(history, items, action_context, no_dataobjects=False,
             raise ValueError(msg)
     if driver == 'galaxy':
         gw = GalaxyWrapper(conf, logger)
-        history_details = gw.run_datasets_import(history, items, action_context,
-                                                 no_dataobjects, async)
+        history_details, library_id = gw.run_datasets_import(history, items, action_context,
+                                                             no_dataobjects, async)
         if delete_history and not async:
             gw.delete_history(history_details['history'], purge_history)
+            gw.delete_library(library_id)
     else:
         msg = 'Driver %s not supported' % driver
         logger.error(msg)
@@ -41,10 +42,11 @@ def run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
         logger = get_logger("flowcell_import", level='INFO')
     if driver == 'galaxy':
         gw = GalaxyWrapper(conf, logger)
-        history_details = gw.run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
-                                                                  namespace, async)
+        history_details, library_id = gw.run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
+                                                                              namespace, async)
         if delete_history and not async:
             gw.delete_history(history_details['history'], purge_history)
+            gw.delete_library(library_id)
     else:
         msg = 'Driver %s not supported' % driver
         logger.error(msg)
