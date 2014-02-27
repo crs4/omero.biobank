@@ -5,6 +5,7 @@ import time, warnings
 from datetime import datetime
 
 import bl.vl.utils as vlu
+from bl.vl.kb import KBPermissionError
 
 VID_SIZE = vlu.DEFAULT_VID_LEN
 
@@ -105,7 +106,16 @@ class EAVAdapter(object):
       else:
         warnings.warn("NOT replacing %s (already exists)" % self.EAV_EHR_TABLE)
         return
-    self.kb.create_table(self.EAV_EHR_TABLE, self.EAV_STORAGE_COLS)
+    # EHR table must be published in the common space
+    if self.kb.is_group_leader():
+      self.kb.create_table(self.EAV_EHR_TABLE, self.EAV_STORAGE_COLS)
+      # ofiles = self.kb._list_table_copies(self.EAV_EHR_TABLE)
+      ofiles = self.kb.find_all_by_query('SELECT ofile FROM OriginalFile ofile WHERE ofile.path = :ehr_table',
+          {'ehr_table': self.EAV_EHR_TABLE})
+      self.kb.admin.move_to_common_space(ofiles)
+    else:
+      raise KBPermissionError('User %s has no privileges to move the EHR table to common space, aborting creation' %
+                              self.kb.user)
 
   def add_eav_record_row(self, row):
     self.encode_field_value(row)
