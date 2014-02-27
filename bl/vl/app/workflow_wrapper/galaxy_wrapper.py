@@ -245,6 +245,9 @@ class GalaxyWrapper(object):
     def __dump_to_yaml(self, config_dict):
         return yaml.dump(config_dict, default_flow_style=False)
 
+    def __get_library_name(self, lname_prefix):
+        return '%s-%s' % (lname_prefix, datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
+
     # Import DataSamples and DataObjects within OMERO.biobank,
     # automatically selects proper workflow by checking object type
     # of 'items' elements
@@ -254,12 +257,12 @@ class GalaxyWrapper(object):
         history_dataset = self.__dump_history_details(history)
         dsamples_dataset, dobjects_dataset = self.__dump_ds_do_datasets(items,
                                                                         action_context)
-        lib_id = self.__get_or_create_library('import_datasets')
+        lib_id = self.__get_or_create_library(self.__get_library_name('import_datasets'))
         folder_id = self.__create_folder('dataset_import', lib_id)
         hdset_id = self.__upload_to_library(history_dataset, lib_id, folder_id)
         dsset_id = self.__upload_to_library(dsamples_dataset, lib_id, folder_id)
         if not no_dataobjects:
-          doset_id = self.__upload_to_library(dobjects_dataset, lib_id, folder_id)
+            doset_id = self.__upload_to_library(dobjects_dataset, lib_id, folder_id)
         else:
           doset_id = None
         if type(items[0]) == SequencerOutputItem:
@@ -309,7 +312,7 @@ class GalaxyWrapper(object):
                              async = False):
         self.logger.info('Running flowcell samplesheet import')
         conf_params = self.__dump_config_params(action_context, namespace)
-        lib_id = self.__get_or_create_library('import_datasets')
+        lib_id = self.__get_or_create_library(self.__get_library_name('import_flowcell'))
         folder_id = self.__create_folder('flowcell_from_samplesheet', lib_id)
         samplesheet_id = self.__upload_to_library(samplesheet_data, lib_id, folder_id)
         conf_file_id = self.__upload_to_library(conf_params, lib_id, folder_id)
