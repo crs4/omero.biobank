@@ -148,7 +148,7 @@ class BuildDatasheetApp(Core):
                       'AMP_Plate' : 0,
                       'Sample_Well' : well.label,
                       'SentrixPosition_A' : self.calculate_sentrix_position(last_slot),
-                      'Gender' : list(wells_lookup[well])[0].gender.enum_label().upper()}
+                      'Gender' : list(wells_lookup[well])[0].gender.enum_label().capitalize()}
             writer.writerow(record)
             last_slot = slot
         #Fill empty slots at the end of the plate
