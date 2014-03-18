@@ -53,10 +53,16 @@ class MapVIDApp(Core):
     labels = check_labels(labels)
     if len(labels) == 0:
       return mapping
-    known_studies = set([lab.split(':')[0] for lab in labels])
+    known_studies = dict()
+    for lab in labels:
+      known_studies.setdefault(lab.split(':')[0], []).append(lab.split(':')[1])
     known_enrollments = []
-    for kst in known_studies:
-      known_enrollments.extend(self.kb.get_enrolled(self.kb.get_study(kst)))
+    for kst, labs in known_studies.iteritems():
+      st = self.kb.get_study(kst)
+      for l in labs:
+        e = self.kb.get_enrollment(st, l)
+        if e:
+          known_enrollments.append(e)
       self.logger.debug('Loaded enrollments for study %s' % kst)
     for e in known_enrollments:
       enroll_label = '%s:%s' % (e.study.label, e.studyCode)
@@ -76,46 +82,53 @@ class MapVIDApp(Core):
     back_to_label = dict(it.izip(slot_labels, labels))
     mapping = {}
     self.logger.info('start selecting %s' % source_type.get_ome_table())
-    # FIXME this is not going to scale
-    objs = self.kb.get_objects(source_type)
-    for o in objs:
-      if o.containerSlotLabelUK in slot_labels:
-        mapping[back_to_label[o.containerSlotLabelUK]] = o.id
+    for label in slot_labels:
+      res = self.kb.get_by_field(self.kb.PlateWell, 'containerSlotLabelUK', [label])
+      for k, v in res.iteritems():
+        mapping[back_to_label[k]] = v.id
     self.logger.info('done selecting %s' % source_type.get_ome_table())
     return mapping
 
   def resolve_mapping_data_collection_item(self, source_type, labels):
     self.logger.info('start selecting %s' % source_type.get_ome_table())
+    dcol_labels = set()
+    dsam_labels = set()
+    for l in labels:
+      dc, ds = l.split(':')
+      dcol_labels.add(dc)
+      dsam_labels.add(ds)
+    dcols = dict()
     self.logger.debug('retrieving data collections')
-    dcols = self.kb.get_objects(self.kb.DataCollection)
-    self.logger.debug('%d data collections loaded' % len(dcols))
-    dcols_map = {}
-    for dc in dcols:
-      self.logger.debug('loading items for data collection %s' % dc.label)
-      dc_items = self.kb.get_data_collection_items(dc)
-      self.logger.debug('%d data collection items loaded' % len(dc_items))
-      for dci in dc_items:
-        dcols_map.setdefault(dc.label, {})[dci.dataSample.label] = dci
-    self.logger.info('done selection %s' % source_type.get_ome_table())
+    for l in dcol_labels:
+      dc = self.kb.get_by_label(self.kb.DataCollection, l)
+      if dc:
+        dcols[dc.label] = dc
+    self.logger.debug('%d data collections loaded', len(dcols))
+    self.logger.debug('retrieving data samples')
+    dsams = dict()
+    for l in dsam_labels:
+      ds = self.kb.get_by_label(self.kb.DataSample, l)
+      if ds:
+        dsams[ds.label] = ds
+    self.logger.debug('%d data samples loaded', len(dsams))
     mapping = {}
     for l in labels:
-      try:
-        mapping[l] = dcols_map[l.split(':')[0]][l.split(':')[1]].id
-      except KeyError as ke:
-        self.logger.error('Cannot map label %s' % l)
-        self.logger.debug('invalid key %s' % ke)
+      dc, ds = l.split(':')
+      dc_uk = make_unique_key(dcols[dc].id, dsams[ds].id)
+      res = self.kb.get_by_field(self.kb.DataCollectionItem,
+                                 'dataCollectionItemUK', [dc_uk])
+      for k, v in res.iteritems():
+        mapping[l] = v.id
     return mapping
 
   def resolve_mapping_object(self, source_type, labels):
     mapping = {}
     self.logger.info('start selecting %s' % source_type.get_ome_table())
-    # FIXME this is not going to scale
     self.logger.debug('\tlabels: %s' % labels)
-    objs = self.kb.get_objects(source_type)
-    for o in objs:
-      self.logger.debug('\t-> %s' % o.label)
-      if o.label in labels:
-        mapping[o.label] = o.id
+    for l in labels:
+      obj = self.kb.get_by_label(source_type, l)
+      if obj:
+        mapping[obj.label] = obj.id
     self.logger.info('done selecting %s' % source_type.get_ome_table())
     self.logger.debug('mapping: %s' % mapping)
     return mapping

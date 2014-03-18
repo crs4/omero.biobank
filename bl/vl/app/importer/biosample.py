@@ -84,7 +84,6 @@ class Recorder(core.Core):
     self.operator = operator
     self.batch_size = batch_size
     self.action_setup_conf = action_setup_conf
-    self.preloaded_vessels = {}
 
   def record(self, records, otsv, rtsv, blocking_validation):
     def records_by_chunk(batch_size, records):
@@ -141,19 +140,10 @@ class Recorder(core.Core):
       return self.do_consistency_checks_tube(records)
 
   def do_consistency_checks_plate_well(self, records, container_label='plate'):
-    def preload_vessels():
-      self.logger.info('start preloading vessels')
-      objs = self.kb.get_objects(self.vessel_klass)
-      for o in objs:
-        # The import can now run multiple times, add only new records to preloaded_vessels
-        if not o.containerSlotLabelUK in self.preloaded_vessels:
-            self.preloaded_vessels[o.containerSlotLabelUK] = o
-      self.logger.info('done preloading vessels')
     def build_key(r, container_label):
       container = self.kb.get_by_vid(self.kb.TiterPlate,
                                      r[container_label])
       return make_unique_key(container.label, r['label'])
-    preload_vessels()
     good_records = []
     bad_records = []
     grecs_keys = {}
@@ -192,7 +182,7 @@ class Recorder(core.Core):
         bad_records.append(bad_rec)
         continue
       key = build_key(r, container_label)
-      if key in self.preloaded_vessels:
+      if self.is_known_object_key(self.vessel_klass, 'containerSlotLabelUK', key):
         f = 'there is a pre-existing vessel with label %s in container %s' % (r['label'],
                                                                               r[container_label])
         self.logger.error(reject + f)
@@ -229,20 +219,12 @@ class Recorder(core.Core):
     return good_records, bad_records
 
   def do_consistency_checks_tube(self, records):
-    def preload_vessels():
-      self.logger.info('start preloading vessels')
-      objs = self.kb.get_objects(self.vessel_klass)
-      for o in objs:
-        assert not o.label in self.preloaded_vessels
-        self.preloaded_vessels[o.label] = o
-      self.logger.info('done preloading vessels')
-    preload_vessels()
     good_records = []
     bad_records = []
     grecs_labels = {}
     for i, r in enumerate(records):
       reject = 'Rejecting import of record %d.' % i
-      if r['label'] in self.preloaded_vessels:
+      if self.is_known_object_label(r['label'], self.vessel_klass):
         f = 'there is a pre-existing vessel with label %s' % r['label']
         self.logger.warn(reject + f)
         bad_rec = copy.deepcopy(r)
@@ -267,7 +249,7 @@ class Recorder(core.Core):
         bad_records.append(bad_rec)
         continue
       if r['label'] in grecs_labels:
-        f = 'there is a pre-existing vessel with label %s' % r['label']
+        f = 'there is another vessel with label %s in this batch' % r['label']
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f

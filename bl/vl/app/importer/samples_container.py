@@ -100,8 +100,6 @@ class Recorder(core.Core):
     self.batch_size = batch_size
     self.operator = operator
     self.action_setup_conf = action_setup_conf
-    self.preloaded_flowcells = {}
-    self.preloaded_lanes = {}
 
   def record(self, records, otsv, rtsv, blocking_validation):
     def records_by_chunk(batch_size, records):
@@ -110,9 +108,6 @@ class Recorder(core.Core):
         yield records[offset:offset+batch_size]
         offset += batch_size
     self.container_klass = self.find_container_klass(records)
-    self.preload_containers()
-    if self.container_klass == self.kb.Lane:
-      self.preload_flowcells()
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
@@ -152,21 +147,6 @@ class Recorder(core.Core):
 
   def find_container_klass(self, records):
     return self.find_klass('container_type', records)
-
-  def preload_flowcells(self):
-    self.preload_by_type('flowcells', self.kb.FlowCell, self.preloaded_flowcells)
-
-  def preload_containers(self):
-    self.logger.info('start prefetching containers')
-    self.known_containers = {}
-    self.known_barcodes = []
-    containers = self.kb.get_objects(self.kb.Container)
-    for c in containers:
-      self.known_containers[c.label] = c
-      if hasattr(c, 'barcode') and c.barcode is not None:
-        self.known_barcodes.append(c.barcode)
-    self.logger.info('there are %d objects in the kb' %
-                     (len(self.known_containers)))
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
@@ -219,14 +199,14 @@ class Recorder(core.Core):
         bad_rec['error'] = m
         bad_records.append(bad_rec)
         continue
-      if r['barcode'] and r['barcode'] in self.known_barcodes:
+      if r['barcode'] and self.is_known_barcode(r['barcode'], self.kb.Container):
         m = 'there is a pre-existing object with barcode %s. ' % r['barcode']
         self.logger.warn(m + reject)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = m
         bad_records.append(bad_rec)
         continue
-      if 'label' in r and self.known_containers.has_key(r['label']):
+      if 'label' in r and self.is_known_object_label(r['label'], self.kb.Container):
         m = 'there is a pre-existing object with label %s. ' % r['label']
         self.logger.warn(m + reject)
         bad_rec = copy.deepcopy(r)
@@ -316,20 +296,12 @@ class Recorder(core.Core):
 
   def do_consistency_checks_lane(self, records):
     def build_key(r):
-      flow_cell = self.preloaded_flowcells[r['flow_cell']]
+      flow_cell = self.kb.get_by_vid(self.kb.FlowCell, r['flow_cell'])
       return make_unique_key(flow_cell.label, r['slot'])
-    def preload_lanes():
-      self.logger.info('start preloading lanes')
-      lanes = self.kb.get_objects(self.kb.Lane)
-      for l in lanes:
-        if not l.laneUK in self.preloaded_lanes:
-          self.preloaded_lanes[l.laneUK] = l
-      self.logger.info('done preloading lanes')
     good_records = []
     bad_records = []
     good_slots = {}
     mandatory_fields = ['flow_cell', 'slot']
-    preload_lanes()
     for i, r in enumerate(records):
       reject = 'Rejecting import of line %d.' % i
       if self.missing_fields(mandatory_fields, r):
@@ -346,7 +318,7 @@ class Recorder(core.Core):
         bad_rec['error'] = m
         bad_records.append(bad_rec)
         continue
-      if r['flow_cell'] not in self.preloaded_flowcells:
+      if not self.is_known_object_id(r['flow_cell'], self.kb.FlowCell):
         m = '%s is not a know flow cell.' % r['flow_cell']
         self.logger.warning(m + reject)
         bad_rec = copy.deepcopy(r)
@@ -354,7 +326,7 @@ class Recorder(core.Core):
         bad_records.append(bad_rec)
         continue
       key = build_key(r)
-      if key in self.preloaded_lanes:
+      if self.is_known_object_key('laneUK', key, self.kb.Lane):
         m = 'slot %s already assigned to flow cell %s.' % (r['slot'], r['flow_cell'])
         self.logger.warning(m + reject)
         bad_rec = copy.deepcopy(r)
@@ -368,7 +340,8 @@ class Recorder(core.Core):
         bad_rec['error'] = m
         bad_records.append(bad_rec)
         continue
-      if int(r['slot']) <= 0 or int(r['slot']) > self.preloaded_flowcells[r['flow_cell']].numberOfSlots:
+      if int(r['slot']) <= 0 or \
+         int(r['slot']) > self.kb.get_by_vid(self.kb.FlowCell, r['flow_cell']).numberOfSlots:
         m = 'value for the slot column is out of range.'
         self.logger.warning(m + reject)
         bad_rec = copy.deepcopy(r)
@@ -393,7 +366,7 @@ class Recorder(core.Core):
       if 'label' in r:
         conf['label'] = r['label']
       if 'flow_cell' in r and r['flow_cell']:
-        conf['flowCell'] = self.preloaded_flowcells[r['flow_cell']]
+        conf['flowCell'] = self.kb.get_by_vid(self.kb.FlowCell, r['flow_cell'])
       if 'number_of_slots' in r and r['number_of_slots']:
         conf['numberOfSlots'] = int(r['number_of_slots'])
       if 'barcode' in r and r['barcode']:

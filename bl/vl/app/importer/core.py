@@ -131,6 +131,18 @@ class Core(object):
     except ValueError:
       return False
 
+  def is_known_object_label(self, obj_label, obj_klass):
+    obj = self.kb.get_by_label(obj_klass, obj_label)
+    return not obj is None
+
+  def is_known_object_key(self, obj_key_label, obj_key_value, obj_klass):
+    res = self.kb.get_by_field(obj_klass, obj_key_label, [obj_key_value])
+    return obj_key_value in res
+
+  def is_known_barcode(self, obj_barcode, obj_klass):
+    res = self.kb.get_by_field(obj_klass, 'barcode', [obj_barcode])
+    return obj_barcode in res
+
   def preload_studies(self, preloaded):
     self.logger.info('start preloading studies')
     self.__preload_items__('label', self.kb.Study, preloaded)

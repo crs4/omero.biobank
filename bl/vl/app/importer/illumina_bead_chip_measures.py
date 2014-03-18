@@ -37,15 +37,6 @@ class Recorder(core.Core):
         self.batch_size = batch_size
         self.operator = operator
         self.action_setup_conf = action_setup_conf
-        self.preloaded_data_collections = {}
-
-    def preload_data_collections(self):
-        self.logger.info('start preloading illumina bead chip measures collections')
-        ds = self.kb.get_objects(self.kb.IlluminaBeadChipMeasures)
-        for d in ds:
-            self.preloaded_data_collections[d.label] = d
-        self.logger.info('there are %d IlluminaBeadChipMeasure(s) in the KB',
-                         len(self.preloaded_data_collections))
 
     def do_consistency_checks(self, records):
         self.logger.info('start consistency checks')
@@ -63,7 +54,7 @@ class Recorder(core.Core):
                 bad_rec['error'] = f
                 bad_records.append(bad_rec)
                 continue
-            if r['label'] in self.preloaded_data_collections:
+            if self.is_known_object_label(r['label'], self.kb.DataCollection):
                 f = 'an IlluminaBeadChipMeasures object with label %s alredy exists' % r['label']
                 self.logger.error(reject + f)
                 bad_rec = copy.deepcopy(r)
@@ -120,7 +111,6 @@ class Recorder(core.Core):
             self.logger.critical(msg)
             raise core.ImporterValidationError(msg)
         study = self.find_study(records)
-        self.preload_data_collections()
         asetup = self.get_action_setup('importer.illumina_bead_chip_measures-%f' % time.time(),
                                        json.dumps(self.action_setup_conf))
         device = self.get_device('importer-%s.illumina_bead_chip_measures' % version,

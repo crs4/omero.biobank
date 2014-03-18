@@ -130,11 +130,6 @@ class Recorder(core.Core):
     self.batch_size = batch_size
     self.action_setup_conf = action_setup_conf
     self.operator = operator
-    self.preloaded_devices  = {}
-    self.preloaded_scanners = {}
-    self.preloaded_sources  = {}
-    self.preloaded_data_samples = {}
-    self.preloaded_markers_sets = {}
 
   def record(self, records, otsv, rtsv, blocking_validation):
     def records_by_chunk(batch_size, records):
@@ -149,11 +144,6 @@ class Recorder(core.Core):
     study = self.find_study(records)
     self.source_klass = self.find_source_klass(records)
     self.device_klass = self.find_device_klass(records)
-    self.preload_scanners()
-    self.preload_devices()
-    self.preload_sources()
-    self.preload_markers_sets()
-    self.preload_data_samples()
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
@@ -169,27 +159,6 @@ class Recorder(core.Core):
 
   def find_device_klass(self, records):
     return self.find_klass('device_type', records)
-
-  def preload_devices(self):
-    self.preload_by_type('devices', self.device_klass, self.preloaded_devices)
-
-  def preload_scanners(self):
-    self.preload_by_type('scanners', self.kb.Scanner, self.preloaded_scanners)
-
-  def preload_markers_sets(self):
-    self.preload_by_type('markers_sets', self.kb.SNPMarkersSet,
-                         self.preloaded_markers_sets)
-
-  def preload_sources(self):
-    self.preload_by_type('sources', self.source_klass, self.preloaded_sources)
-
-  def preload_data_samples(self):
-    self.logger.info('start preloading data_samples')
-    objs = self.kb.get_objects(self.kb.DataSample)
-    for o in objs:
-      assert not o.label in self.preloaded_data_samples
-      self.preloaded_data_samples[o.label] = o
-    self.logger.info('done preloading data_samples')
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
@@ -214,7 +183,7 @@ class Recorder(core.Core):
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
-      if r['label'] in self.preloaded_data_samples:
+      if self.is_known_object_label(r['label'], self.kb.DataSample):
         f = 'there is a pre-existing DataSample with label %s' % r['label']
         self.logger.warn(reject + f)
         bad_rec = copy.deepcopy(r)
@@ -228,21 +197,21 @@ class Recorder(core.Core):
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
-      if r['source'] not in self.preloaded_sources:
+      if not self.is_known_object_id(r['source'], self.source_klass):
         f = 'there is no known source with ID %s' % r['source']
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
-      if r['device'] not in self.preloaded_devices:
+      if not self.is_known_object_id(r['device'], self.device_klass):
         f = 'there is no known device with ID %s' % r['device']
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
         bad_rec['error'] = f
         bad_records.append(bad_rec)
         continue
-      if r['scanner'] and r['scanner'] not in self.preloaded_scanners:
+      if r['scanner'] and not self.is_known_object_id(r['scanner'], self.kb.Scanner):
         f = 'there is no known scanner with ID %s' % r['scanner']
         self.logger.error(reject + f)
         bad_rec = copy.deepcopy(r)
@@ -251,7 +220,7 @@ class Recorder(core.Core):
         continue
       if (r['data_sample_type']
           and r['data_sample_type'] == 'GenotypeDataSample'):
-        device = self.preloaded_devices[r['device']]
+        device = self.kb.get_by_vid(self.kb.Device, r['device'])
         if not isinstance(device, self.kb.GenotypingProgram):
           if not r['markers_set']:
             f = 'no markers set specified for data sample %s' % r['label']
@@ -260,7 +229,7 @@ class Recorder(core.Core):
             bad_rec['error'] = f
             bad_records.append(bad_rec)
             continue
-          elif not r['markers_set'] in self.preloaded_markers_sets:
+          elif not self.is_known_object_id(r['markers_set'], self.kb.SNPMarkersSet):
             f = 'there is no known markers set with ID %s' % r['markers_set']
             self.logger.error(reject + f)
             bad_rec = copy.deepcopy(r)
@@ -296,11 +265,11 @@ class Recorder(core.Core):
     data_samples_status_map = get_status_map(self.kb)
     actions = []
     for r in chunk:
-      target = self.preloaded_sources[r['source']]
-      device = self.preloaded_devices[r['device']]
+      target = self.kb.get_by_vid(self.source_klass, r['source'])
+      device = self.kb.get_by_vid(self.kb.Device, r['device'])
       options = get_options(r)
       if isinstance(device, self.kb.Chip) and r['scanner']:
-        options['scanner_label'] = self.preloaded_scanners[r['scanner']].label
+        options['scanner_label'] = self.kb.get_by_vid(self.kb.Scanner, r['scanner']).label
 
       # FIXME: the following is a hack. In principle, it should not
       # be possible to reload the same data_sample twice, therefore
@@ -346,7 +315,7 @@ class Recorder(core.Core):
       if isinstance(device, self.kb.GenotypingProgram):
         k = ('CRS4', 'Genotyper', 'by_device')
       elif 'markers_set' in r:
-        r['markers_set'] = self.preloaded_markers_sets[r['markers_set']]
+        r['markers_set'] = self.kb.get_by_vid(self.kb.SNPMarkersSet, r['markers_set'])
         k = ('CRS4', 'Genotyper', 'by_markers_set')
       else:
         k = (device.maker, device.model, device.release)
