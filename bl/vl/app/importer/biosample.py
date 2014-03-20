@@ -182,7 +182,7 @@ class Recorder(core.Core):
         bad_records.append(bad_rec)
         continue
       key = build_key(r, container_label)
-      if self.is_known_object_key(self.vessel_klass, 'containerSlotLabelUK', key):
+      if self.is_known_object_key('containerSlotLabelUK', key, self.vessel_klass):
         f = 'there is a pre-existing vessel with label %s in container %s' % (r['label'],
                                                                               r[container_label])
         self.logger.error(reject + f)
