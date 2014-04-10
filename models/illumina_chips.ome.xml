@@ -52,6 +52,7 @@ END_COPYRIGHT
     <entry name="HUMANEXOME_12V1_B"/>    
     <entry name="HUMANEXOME_12V1_1_A"/>
     <entry name="HUMANEXOME_12V1_2_A"/>
+    <entry name="HUMANOMNIEXPRESS_24V1_0_A"/>
   </enum>
 
   <enum id="ome.model.vl.IlluminaArrayOfArraysType">

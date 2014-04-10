@@ -31,7 +31,7 @@ class IlluminaBeadChipAssayType(wp.OmeroWrapper):
         "HUMANOMNI2_5S", "HUMANOMNI2_5_8", "HUMANOMNI1S", "HUMANOMNI1_QUAD",
         "HUMANOMNIEXPRESS", "HUMANCYTOSNP_12", "METABOCHIP",
         "IMMUNOCHIP", "HUMANEXOME_12V1_B", "HUMANEXOME_12V1_1_A",
-        "HUMANEXOME_12V1_2_A"]
+        "HUMANEXOME_12V1_2_A", "HUMANOMNIEXPRESS_24V1_0_A"]
 
 
 class IlluminaArrayOfArraysType(wp.OmeroWrapper):
