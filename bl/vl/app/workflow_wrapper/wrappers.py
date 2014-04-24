@@ -22,11 +22,17 @@ def run_datasets_import(history, items, action_context, no_dataobjects=False,
             raise ValueError(msg)
     if driver == 'galaxy':
         gw = GalaxyWrapper(conf, logger)
+        logger.info('Start import of dataset')
         history_details, library_id = gw.run_datasets_import(history, items, action_context,
                                                              no_dataobjects, async)
+        logger.info('Import completed. HISTORY_ID: %s --- LIBRARY_ID: %s', history_details['history'],
+                    library_id)
+        logger.info('DELETE_HISTORY: %s --- ASYNC: %s', delete_history, async)
         if delete_history and not async:
+            logger.info('Deleting history and library')
             gw.delete_history(history_details['history'], purge_history)
             gw.delete_library(library_id)
+            logger.info('Deletion completed')
     else:
         msg = 'Driver %s not supported' % driver
         logger.error(msg)
@@ -42,11 +48,17 @@ def run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
         logger = get_logger("flowcell_import", level='INFO')
     if driver == 'galaxy':
         gw = GalaxyWrapper(conf, logger)
+        logger.info('Start import of flowcell')
         history_details, library_id = gw.run_flowcell_from_samplesheet_import(samplesheet_data, action_context,
                                                                               namespace, async)
+        logger.info('Import completed. HISTORY_ID: %s --- LIBRARY_ID: %s', history_details['history'],
+                    library_id)
+        logger.info('DELETE_HISTORY: %s --- ASYNC: %s', delete_history, async)
         if delete_history and not async:
+            logger.info('Deleting history and library')
             gw.delete_history(history_details['history'], purge_history)
             gw.delete_library(library_id)
+            logger.info('Deletion completed')
     else:
         msg = 'Driver %s not supported' % driver
         logger.error(msg)
