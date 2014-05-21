@@ -21,7 +21,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   installation
+   installation/index
    genotyping
    usage/index
    api_tour/index
