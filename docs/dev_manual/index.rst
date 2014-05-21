@@ -8,3 +8,4 @@ Contents:
 
    omero
    api_ref
+   modelling
