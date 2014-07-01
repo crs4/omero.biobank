@@ -99,23 +99,22 @@ class EAVAdapter(object):
   def __init__(self, kb):
     self.kb = kb
 
-  def create_ehr_table(self, destructive=False):
+  def create_ehr_table(self, destructive=False, move_to_common_space=False):
     if self.kb.table_exists(self.EAV_EHR_TABLE):
       if destructive:
         self.kb.delete_table(self.EAV_EHR_TABLE)
       else:
         warnings.warn("NOT replacing %s (already exists)" % self.EAV_EHR_TABLE)
         return
-    # EHR table must be published in the common space
-    if self.kb.is_group_leader():
-      self.kb.create_table(self.EAV_EHR_TABLE, self.EAV_STORAGE_COLS)
-      # ofiles = self.kb._list_table_copies(self.EAV_EHR_TABLE)
-      ofiles = self.kb.find_all_by_query('SELECT ofile FROM OriginalFile ofile WHERE ofile.path = :ehr_table',
-          {'ehr_table': self.EAV_EHR_TABLE})
-      self.kb.admin.move_to_common_space(ofiles)
-    else:
+    if move_to_common_space and not self.kb.is_group_leader():
       raise KBPermissionError('User %s has no privileges to move the EHR table to common space, aborting creation' %
                               self.kb.user)
+    self.kb.create_table(self.EAV_EHR_TABLE, self.EAV_STORAGE_COLS)
+    # ofiles = self.kb._list_table_copies(self.EAV_EHR_TABLE)
+    ofiles = self.kb.find_all_by_query('SELECT ofile FROM OriginalFile ofile WHERE ofile.path = :ehr_table',
+        {'ehr_table': self.EAV_EHR_TABLE})
+    if move_to_common_space:
+      self.kb.admin.move_to_common_space(ofiles)
 
   def add_eav_record_row(self, row):
     self.encode_field_value(row)
