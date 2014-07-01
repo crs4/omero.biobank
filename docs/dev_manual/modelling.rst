@@ -119,7 +119,7 @@ key a new field must be introduced in the model like
 the **containerSlotLabelUK** and **containerSlotIndexUK** are two unique
 keys for the PlateWell object, each one is used to combine two different
 fields. In order to make easier to understand which field the key will
-combine, we add a comment with the used fields and the oderder used to
+combine, we add a comment with the used fields and the order used to
 combine fields values in order to obtain the key.
 
 Properties’ types
@@ -142,17 +142,18 @@ OMERO’s hibernate engine.
 OMERO.biobank modelling conventions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Each model, except for the enumarations, must have a VID attribute.
-The VID is a secondary ID for the object automatically assigned by the
-biobank API that is used as a substitute of the automatically assigned
-OMERO ID.
+* Each model, except for the enumerations, must have a VID attribute.
+  The VID is a secondary ID for the object automatically assigned by
+  the biobank API that is used as a substitute of the automatically
+  assigned OMERO ID.
+
 * Each object that must appear in the “chain of custody system” must
-have an “action” field and a “lastUpdate” field. The action field is use
-to track the object’s source (if the object has not a source the action
-field is used to register that the object as been imported without a
-parent object), the lastUpdate object is used to keep trace of all
-updates occurred to the object itself in order to keep trace of the
-object’s history.
+  have an “action” field and a “lastUpdate” field. The action field is
+  use to track the object’s source (if the object has not a source the
+  action field is used to register that the object as been imported
+  without a parent object), the lastUpdate object is used to keep
+  trace of all updates occurred to the object itself in order to keep
+  trace of the object’s history.
 
 OMERO.biobank models wrapping
 -----------------------------
@@ -177,10 +178,11 @@ To wrap the above VesselContent enumeration
 where
 
 * OME\_TABLE is the id of the model without the namespace specified
-in the XML file
-* *enums* is the list of the strings contained in the enumeration
-that has been wrapped; it is important that the strings of the list
-match the cases of the strings specified in the XML model.
+  in the XML file
+
+* *enums* is the list of the strings contained in the enumeration that
+  has been wrapped; it is important that the strings of the list match
+  the cases of the strings specified in the XML model.
 
 To wrap the Vessel model above
 
@@ -257,7 +259,8 @@ The syntax for element of the list is is
 where
 
 * field\_label is the string specified in the “name” attribute of the
-field in the XML file
+  field in the XML file
+
 * field\_type can be:
 
   * wp.VID for the VID field
@@ -272,7 +275,7 @@ field in the XML file
 
 associate another model to the field
 
-* field\_contstraint can be:
+* field\_constraint can be:
 
   * wp.REQUIRED for required fields
   * wp.OPTIONAL for optional fields
@@ -281,18 +284,22 @@ OmeroWrapper also defines some functions that are automatically called
 when managing objects that wrap OMERO models:
 
 * def ``__preprocess_conf__``\ (self, conf): called when an object is
-created; it is used to automatically assign fields like a timestamp or a
-VID if the field is not specified in the object’s configuration or it
-can be used to validate object’s configuration.
-* def ``__update_constraints__``\ (self): called everytime an
-object’s field has been updated; it is used to automatically recalculate
-unique keys constraints.
-* def ``__cleanup__``\ (self): it is called after an objects has
-been deleted; it is used to cleanup OMERO’s database or the graph after
-an object has been sucessfully deleted. PAY ATTENTION when overriding
-this function because this is the only one with an implementation in the
-OmeroWrapper class and it is used to remove nodes and edges from the
-graph engine when an object or an action has been deleted from OMERO.
+  created; it is used to automatically assign fields like a timestamp
+  or a VID if the field is not specified in the object’s configuration
+  or it can be used to validate object’s configuration.
+
+* def ``__update_constraints__``\ (self): called every time an
+  object’s field has been updated; it is used to automatically
+  recalculate unique keys constraints.
+
+* def ``__cleanup__``\ (self): it is called after an objects has been
+  deleted; it is used to cleanup OMERO’s database or the graph after
+  an object has been successfully deleted. PAY ATTENTION when
+  overriding this function because this is the only one with an
+  implementation in the OmeroWrapper class and it is used to remove
+  nodes and edges from the graph engine when an object or an action
+  has been deleted from OMERO.
+
 
 Unique keys creation
 ~~~~~~~~~~~~~~~~~~~~

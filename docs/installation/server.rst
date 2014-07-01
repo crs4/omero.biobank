@@ -234,7 +234,7 @@ In this case, open ``${OME_HOME}/build.py`` with a text editor and
 increase the the value for ``-Djavac.maxmem.default`` in
 ``calculate_memory_args``. For instance:
 
-.. code:: python
+.. code-block:: python
 
     def calculate_memory_args():
         return "-Xmx600M -Djavac.maxmem.default=1024M -Djavadoc.maxmem.default=750M -XX:MaxPermSize=256m".split(" ")
