@@ -1,6 +1,7 @@
-import unittest, time, os, random, uuid
+# pylint: disable=E1101
+
+import time
 import itertools as it
-import tempfile
 import numpy as np
 
 from bl.core.io import MessageStreamWriter
@@ -10,7 +11,6 @@ import bl.vl.utils as vlu
 from kb_object_creator import KBObjectCreator
 from bl.vl.kb.drivers.omero.proxy_core import convert_from_numpy
 
-from bl.vl.kb.drivers.omero.variant_call_support import register_vcs
 from bl.vl.kb.drivers.omero.genomics import MARKER_LABEL_SIZE, MARKER_MASK_SIZE
 PAYLOAD_MSG_TYPE = 'core.gt.messages.SampleSnpCall'
 
@@ -20,10 +20,6 @@ MSET_TABLE_COLS_DTYPE  = [('label', '|S%d' % MARKER_LABEL_SIZE),
                           ('permutation', '?')]
 
 class UTCommon(KBObjectCreator):
-
-    @staticmethod
-    def make_random_str():
-        return uuid.uuid4().hex
     
     def create_markers_set_from_stream(self, N):
         label = 'ams-%f' % time.time()
@@ -53,10 +49,10 @@ class UTCommon(KBObjectCreator):
 
     def create_reference_genome(self, action):
         conf = {'nChroms' : 10, 
-                'maker': self.make_random_str(),
-                'model': self.make_random_str(),
-                'release' : self.make_random_str(),
-                'label': self.make_random_str(),
+                'maker': vlu.make_random_str(),
+                'model': vlu.make_random_str(),
+                'release' : vlu.make_random_str(),
+                'label': vlu.make_random_str(),
                 'status' : self.kb.DataSampleStatus.USABLE,
                 'action': action}
         reference_genome = self.kb.factory.create(self.kb.ReferenceGenome,
@@ -123,7 +119,7 @@ class UTCommon(KBObjectCreator):
                          dtype=VariantCallSupport.NODES_DTYPE)
         field = np.array([(i, mset_vid, i) for i in range(len(nodes))],
                          dtype=VariantCallSupport.ATTR_ORIGIN_DTYPE)
-        label = self.make_random_str()
+        label = vlu.make_random_str()
         conf = {'referenceGenome' : reference_genome,
                 'label' : label,
                 'status' : self.kb.DataSampleStatus.USABLE,

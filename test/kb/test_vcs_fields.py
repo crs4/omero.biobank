@@ -1,7 +1,9 @@
+# pylint: disable=E1103
+
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import os, unittest, logging, uuid
+import os, unittest, logging
 import numpy as np
 logging.basicConfig(level=logging.ERROR)
 
@@ -16,9 +18,6 @@ OME_HOST = os.getenv("OME_HOST", "localhost")
 OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
-def make_random_str():
-    return uuid.uuid4().hex
-
 
 class TestVCS(KBObjectCreator):
 
@@ -28,10 +27,10 @@ class TestVCS(KBObjectCreator):
 
     def create_reference_genome(self, action):
         conf = {'nChroms' : 10, 
-                'maker': make_random_str(),
-                'model': make_random_str(),
-                'release' : make_random_str(),
-                'label': make_random_str(),
+                'maker': vlu.make_random_str(),
+                'model': vlu.make_random_str(),
+                'release' : vlu.make_random_str(),
+                'label': vlu.make_random_str(),
                 'status' : self.kb.DataSampleStatus.USABLE,
                 'action': action}
         reference_genome = self.kb.factory.create(self.kb.ReferenceGenome,
@@ -77,7 +76,7 @@ class TestVCS(KBObjectCreator):
         action = self.create_action()
         reference_genome = self.create_reference_genome(action)
         conf = {'referenceGenome' : reference_genome,
-                'label' : make_random_str(),
+                'label' : vlu.make_random_str(),
                 'status' : self.kb.DataSampleStatus.USABLE,
                 'action': action}  
         vcs = self.kb.factory.create(VariantCallSupport, conf)
@@ -94,12 +93,12 @@ class TestVCS(KBObjectCreator):
         
         VariantCallSupport = self.kb.VariantCallSupport
         conf = {'referenceGenome' : reference_genome,
-                'label' : make_random_str(),
+                'label' : vlu.make_random_str(),
                 'status' : self.kb.DataSampleStatus.USABLE,
                 'action': action}
         vcs1 = self.kb.factory.create(VariantCallSupport, conf)
 
-        conf['label'] = make_random_str()
+        conf['label'] = vlu.make_random_str()
         vcs2 = self.kb.factory.create(VariantCallSupport, conf)
         
         nodes1 = np.array([(1, 1), (1, 2), (1, 3), (2, 1), (2, 3), (2,4)], 
@@ -143,11 +142,11 @@ class TestVCS(KBObjectCreator):
         reference_genome = self.create_reference_genome(action)
         VariantCallSupport = self.kb.VariantCallSupport
         conf = {'referenceGenome' : reference_genome,
-                'label' : make_random_str(),
+                'label' : vlu.make_random_str(),
                 'status' : self.kb.DataSampleStatus.USABLE,
                 'action': action}
         vcs1 = self.kb.factory.create(VariantCallSupport, conf)
-        conf['label'] = make_random_str()
+        conf['label'] = vlu.make_random_str()
         vcs2 = self.kb.factory.create(VariantCallSupport, conf)
         nodes1 = np.array([(1, 1), (1, 2), (1, 3), (2, 1), (2, 3), 
                     (2,4), (3,5)], dtype=VariantCallSupport.NODES_DTYPE)
@@ -187,11 +186,11 @@ class TestVCS(KBObjectCreator):
         reference_genome = self.create_reference_genome(action)
         VariantCallSupport = self.kb.VariantCallSupport
         conf = {'referenceGenome' : reference_genome,
-                'label' : make_random_str(),
+                'label' : vlu.make_random_str(),
                 'status' : self.kb.DataSampleStatus.USABLE,
                 'action': action}
         vcs1 = self.kb.factory.create(VariantCallSupport, conf)
-        conf['label'] = make_random_str()
+        conf['label'] = vlu.make_random_str()
         vcs2 = self.kb.factory.create(VariantCallSupport, conf)
         nodes1 = np.array([(1, 1), (1, 2), (1, 3), (2, 1), (2, 3), 
                     (2,4), (3,5)], dtype=VariantCallSupport.NODES_DTYPE)

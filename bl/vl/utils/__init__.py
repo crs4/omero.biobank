@@ -95,3 +95,7 @@ def _get_env_variable(name):
             return os.environ[name]
     except KeyError:
         raise ValueError('Cant\'t find environment variable %s', name)
+
+
+def make_random_str(prefix='', postfix=''):
+  return "%s%s%s" % (prefix, uuid.uuid4().hex, postfix)

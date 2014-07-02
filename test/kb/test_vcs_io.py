@@ -1,7 +1,9 @@
+# pylint: disable=E1103
+
 # BEGIN_COPYRIGHT
 # END_COPYRIGHT
 
-import os, unittest, logging, uuid
+import os, unittest, logging
 import itertools as it
 import numpy as np
 logging.basicConfig(level=logging.ERROR)
@@ -18,8 +20,6 @@ OME_USER = os.getenv("OME_USER", "root")
 OME_PASS = os.getenv("OME_PASS", "romeo")
 
 
-def make_random_str():
-    return uuid.uuid4().hex
 
 
 class TestVCS(KBObjectCreator):
@@ -30,10 +30,10 @@ class TestVCS(KBObjectCreator):
 
     def create_reference_genome(self, action):
         conf = {'nChroms' : 10, 
-                'maker': make_random_str(),
-                'model': make_random_str(),
-                'release' : make_random_str(),
-                'label': make_random_str(),
+                'maker': vlu.make_random_str(),
+                'model': vlu.make_random_str(),
+                'release' : vlu.make_random_str(),
+                'label': vlu.make_random_str(),
                 'status' : self.kb.DataSampleStatus.USABLE,
                 'action': action}
         reference_genome = self.kb.factory.create(self.kb.ReferenceGenome,
@@ -63,7 +63,7 @@ class TestVCS(KBObjectCreator):
                                 ('source', '|S%d' % VID_SIZE), ('pos', '<i4')])
         action = self.create_action()
         reference_genome = self.create_reference_genome(action)
-        label = make_random_str()
+        label = vlu.make_random_str()
         conf = {'referenceGenome' : reference_genome,
                 'label' : label,
                 'status' : self.kb.DataSampleStatus.USABLE,
