@@ -21,21 +21,24 @@ class GalaxyMenusService(object):
     def _success(self, body, return_code=200):
         response.content_type = 'application/json'
         response.status = return_code
-        return json.dumps(body)
+        return json.dumps({'result': body})
 
     def wrap_results_label(f):
         @wraps(f)
         def wrapper(inst, *args, **kwargs):
             res = f(inst, *args, **kwargs)
-            response_body = [
-                {
-                    'value': r.label,
-                    'label': r.label,
-                    'selected': False
-                } for r in res
-            ]
-            response_body[0]['selected'] = True
-            return inst._success(response_body)
+            if len(res) == 0:
+                return None
+            else:
+                response_body = [
+                    {
+                        'value': r.label,
+                        'label': r.label,
+                        'selected': False
+                    } for r in res
+                ]
+                response_body[0]['selected'] = True
+                return inst._success(response_body)
         return wrapper
 
     def test_server(self):
