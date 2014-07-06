@@ -49,14 +49,19 @@ def write_csv(logger, filename, csv_header, records_map):
     return
 
 
-def generate_tubes_map(study, inds_map):
-    prefix = "_".join([study, 'tube'])
+def generate_tubes_map(study_label, inds_map):
+    prefix = "_".join([study_label, 'tube'])
     i = 0
     tubes_map = {}
     for _  in inds_map:
         i += 1
-        tubes_map[i] = {'label' : "_".join([prefix, "{0:04d}".format(i)]),
-                        'source': _['individual_id']}
+        tubes_map[i] = {'study'         : study_label,
+                        'label'         : "_".join([prefix, "{0:04d}".format(i)]),
+                        'vessel_type'   : 'Tube',
+                        'vessel_content': 'DNA',
+                        'vessel_status' : 'UNKNOWN',
+                        'source'        : _['individual_id'],
+                        'source_type'   : 'Individual'})
     return tubes_map
 
 
