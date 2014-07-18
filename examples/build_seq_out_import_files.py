@@ -47,37 +47,46 @@ def write_csv(logger, filename, csv_header, records):
 
 
 
-def get_BGI_device_label(kb):
+def get_BGI_device(kb):
     BGI_device = kb.get_by_label(kb.Device, 'generic_BGI_scanner')
-    return BGI_device.label
+    return BGI_device.id
 
 def get_flowcells(kb):
     return [x.label for x in kb.get_objects(kb.FlowCell)]
 
 
-def generate_seqout(study_label, device_label, fcs_list):
+def generate_seqout(study_label, device_id, fcs_list):
     '''produce a SequencerOutput for each flowcell'''
     seqout_dict = {}
     for f in fcs_list:
+        run_dir = '_'.join(['BGI_000', f])
         seqout_dict[f] = {'study': study_label,
-                              'label': '_'.join(['BGI_000', f]),
+                              'label': run_dir,
                               'source': f,
                               'source_type': 'FlowCell',
                               'seq_dsample_type': 'SequencerOutput',
                               'status': 'USABLE',
-                              'device': device_label}
+                              'device': device_id}
     seqout_header = ['study', 'label', 'source', 'source_type', 
                      'seq_dsample_type', 'status', 'device']
     return seqout_header, seqout_dict
 
-def generate_dsample():
-
-    return
 
 
-def generate_dataobjects():
-
-    return
+def generate_dataobjects(study_label, fcs_list):
+    dobjs_dict = {}
+    for f in fcs_list:
+        run_dir = '_'.join(['BGI_000', f])
+        path = "file:///SHARE/USERFS/els7/users/sequencing_data/completed/{}/raw".format(run_dir)
+        dobjs_dict[f] = {'study': study_label,
+                         'path': path,
+                         'data_sample': run_dir,
+                         'mimetype': 'x-vl/pathset',
+                         'size': '-1',
+                         'sha1': 'N.A.'}
+    dobjs_header = ['study', 'path', 'data_sample', 'mimetype', 'size', 
+                    'sha1']
+    return dobjs_header, dobjs_dict
 
 
 def main(argv):
@@ -102,12 +111,20 @@ def main(argv):
 
     study_label = conf['config_parameters']['ome_study_label']
 
-    # create SequencerOutput import files
+    # create SequencerOutput import file
     seqout_file = conf['config_parameters']['seqout_ofile']
     seqout_header, seqout_dict = generate_seqout(study_label,
-                                                 get_BGI_device_label(kb),
+                                                 get_BGI_device(kb),
                                                  get_flowcells(kb))
     write_csv(logger, seqout_file, seqout_header, seqout_dict)
+
+    # create dataobjects import file
+    dobjects_file = conf['config_parameters']['dobjects_ofile']
+    dobjs_header, dobjs_dict = generate_dataobjects(study_label, 
+                                                    get_flowcells(kb))
+    write_csv(logger, dobjects_file, dobjs_header, dobjs_dict)
+
+
 
 
 if __name__ == '__main__':
