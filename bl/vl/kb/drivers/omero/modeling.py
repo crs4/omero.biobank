@@ -244,3 +244,16 @@ class ModelingAdapter(object):
     result = self.kb.ome_operation("getQueryService", "findByQuery",
                                    query, pars)
     return None if result is None else self.kb.factory.wrap(result)
+
+  def get_seq_data_samples_by_tube(self, tube):
+    assert isinstance(tube, self.kb.Tube)
+    query = '''
+    SELECT sds
+    FROM SeqDataSample sds
+    JOIN sds.sample AS s
+    WHERE s.label = :sample_label
+    '''
+    pars = self.kb.ome_query_params({'sample_label': wp.ome_wrap(tube.label)})
+    result = self.kb.ome_operation('getQueryService', 'findByQuery',
+                                   query, pars)
+    return None if result is None else self.kb.factory.wrap(result)

@@ -217,6 +217,9 @@ class Proxy(ProxyCore):
   def get_data_objects(self, sample):
     return self.madpt.get_data_objects(sample)
 
+  def get_seq_data_samples_by_tube(self, tube):
+      return self.madpt.get_seq_data_samples_by_tube(tube)
+
 
   # Syntactic sugar functions built as a composition of the above
   # =============================================================
