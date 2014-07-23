@@ -254,6 +254,6 @@ class ModelingAdapter(object):
     WHERE s.label = :sample_label
     '''
     pars = self.kb.ome_query_params({'sample_label': wp.ome_wrap(tube.label)})
-    result = self.kb.ome_operation('getQueryService', 'findByQuery',
+    results = self.kb.ome_operation('getQueryService', 'findAllByQuery',
                                    query, pars)
-    return None if result is None else self.kb.factory.wrap(result)
+    return None if results is None else  [self.kb.factory.wrap(v) for v in results]
