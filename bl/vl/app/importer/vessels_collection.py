@@ -123,8 +123,8 @@ class Recorder(core.Core):
       self.logger.info('start preloading vessels collection items')
       objs = self.kb.get_objects(self.kb.VesselsCollectionItem)
       for o in objs:
-        assert not o.vesselsCollectionItemUK in self.preloaded_items
-        self.preloaded_items[o.vesselsCollectionItemUK] = o
+        if not o.vesselsCollectionItemUK in self.preloaded_items:
+          self.preloaded_items[o.vesselsCollectionItemUK] = o
       self.logger.info('done preloading vessels collection items')
     self.logger.info('start consistency checks on %s' % vessels_collection.label)
     def build_key(vc, r):
