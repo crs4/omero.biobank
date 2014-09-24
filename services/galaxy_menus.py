@@ -17,6 +17,7 @@ class GalaxyMenusService(object):
         post('/galaxy/get/vessels_collections')(self.get_vessels_collections)
         post('/galaxy/get/titer_plates')(self.get_titer_plates)
         post('/galaxy/get/vessel_status')(self.get_vessel_status)
+        post('/galaxy/get/vessel_content')(self.get_vessel_content)
         post('/galaxy/get/data_sample_status')(self.get_data_sample_status)
         post('/galaxy/get/hardware_devices')(self.get_hardware_devices)
         post('/galaxy/get/software_devices')(self.get_software_devices)
@@ -182,6 +183,12 @@ class GalaxyMenusService(object):
         params = request.forms
         kb = self._get_knowledge_base(params)
         return kb.get_objects(kb.VesselStatus)
+
+    @wrap_enum
+    def get_vessel_content(self):
+        params = request.forms
+        kb = self._get_knowledge_base(params)
+        return kb.get_objects(kb.VesselContent)
 
     @wrap_enum
     def get_data_sample_status(self):
