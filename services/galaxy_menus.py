@@ -1,4 +1,4 @@
-import sys, argparse, json, os
+import sys, argparse, json, os, daemon
 from functools import wraps
 from itertools import izip
 
@@ -244,8 +244,10 @@ class GalaxyMenusService(object):
         kb = self._get_knowledge_base(params)
         return kb.get_objects(kb.ActionCategory)
 
-    def start_service(self, host, port, debug=False):
-        run(host=host, port=port, debug=debug)
+    def start_service(self, host, port, logfile, debug=False):
+        log = open(logfile, 'a')
+        with daemon.DaemonContext(stderr=log):
+            run(host=host, port=port, debug=debug)
 
 
 def get_parser():
@@ -258,6 +260,9 @@ def get_parser():
                         help='Enable web server DEBUG mode')
     parser.add_argument('--pid-file', type=str, 
                         help='PID file for the dbservice daemon')
+    parser.add_argument('--log-file', type=str, 
+                        help='log file for the dbservice daemon',
+                        default='/tmp/galaxy_menus_service.log')
     return parser
 
 
@@ -284,7 +289,7 @@ def main(argv):
         print "qui"
         check_pid(args.pid_file)
         create_pid(args.pid_file)
-    gms.start_service(args.host, args.port, args.debug)
+    gms.start_service(args.host, args.port, args.log_file, args.debug)
     if args.pid_file:
         destroy_pid(args.pid_file)
 
