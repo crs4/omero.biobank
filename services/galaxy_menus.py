@@ -256,8 +256,8 @@ def get_parser():
                         help='web service binding port')
     parser.add_argument('--debug', action='store_true',
                         help='Enable web server DEBUG mode')
-    parser.add_argument('--pid-file', type=str, help='PID file for the dbservice daemon',
-                        default='/tmp/galaxy_menus_service.pid')
+    parser.add_argument('--pid-file', type=str, 
+                        help='PID file for the dbservice daemon')
     return parser
 
 
@@ -280,10 +280,13 @@ def main(argv):
     parser = get_parser()
     args = parser.parse_args(argv)
     gms = GalaxyMenusService()
-    check_pid(args.pid_file)
-    create_pid(args.pid_file)
+    if args.pid_file:
+        print "qui"
+        check_pid(args.pid_file)
+        create_pid(args.pid_file)
     gms.start_service(args.host, args.port, args.debug)
-    destroy_pid(args.pid_file)
+    if args.pid_file:
+        destroy_pid(args.pid_file)
 
 
 if __name__ == '__main__':
