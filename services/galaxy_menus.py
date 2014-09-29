@@ -1,4 +1,6 @@
-import sys, argparse, json, os, daemon
+#!/usr/bin/env python
+
+import argparse, daemon, json, os, sys
 from functools import wraps
 from itertools import izip
 
