@@ -258,7 +258,7 @@ class GalaxyMenusService(object):
     def get_container_status(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.ContainerStatus.__enums__)
+        return kb.get_objects(kb.ContainerStatus)
 
     def start_service(self, host, port, logfile, debug=False):
         log = open(logfile, 'a')
