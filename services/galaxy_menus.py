@@ -30,6 +30,7 @@ class GalaxyMenusService(object):
         post('/galaxy/get/illumina_array_of_arrays_assay_types')(self.get_illumina_array_of_arrays_assay_types)
         post('/galaxy/get/action_categories')(self.get_action_categories)
         post('/galaxy/get/scanners')(self.get_scanners)
+        post('/galaxy/get/container_status')(self.get_container_status)
         # check status
         post('/check/status')(self.test_server)
         get('/check/status')(self.test_server)
@@ -252,6 +253,12 @@ class GalaxyMenusService(object):
         params = request.forms
         kb = self._get_knowledge_base(params)
         return kb.get_objects(kb.Scanner)
+
+    @wrap_enum
+    def get_container_status(self):
+        params = request.forms
+        kb = self._get_knowledge_base(params)
+        return kb.get_objects(kb.ContainerStatus.__enums__)
 
     def start_service(self, host, port, logfile, debug=False):
         log = open(logfile, 'a')
