@@ -11,7 +11,7 @@ _PENDING_DS_STATES = set(
 POLLING_INTERVAL = 10
 
 class GalaxyWrapper(object):
-    
+
     # In order to work config has to be a dictionary loaded from a YAML
     # configuration file containing the following sections:
     #
@@ -37,7 +37,7 @@ class GalaxyWrapper(object):
     #    label: workflow_label
     #    samplesheet_dataset_label: label_into_the_workflow
     #    config_parameters_file_label: label_into_the_workflow
-    
+
     def __init__(self, config, logger):
         self.logger = logger
         if GalaxyWrapper.validate_configuration(config):
@@ -85,7 +85,7 @@ class GalaxyWrapper(object):
 
     def __get_or_create_library(self, name):
         self.logger.debug('Loading library with name %s', name)
-        lib_details = self.gi.libraries.get_libraries(name = name)
+        lib_details = self.gi.libraries.get_libraries(name=name)
         if len(lib_details) == 0:
             self.logger.debug('Unable to load library, creating a new one')
             lib_details = [self.gi.libraries.create_library(name)]
@@ -104,7 +104,7 @@ class GalaxyWrapper(object):
     def __drop_library(self, library_id):
         raise NotImplementedError()
 
-    def __upload_to_library(self, data_stream, library_id, folder_id = None):
+    def __upload_to_library(self, data_stream, library_id, folder_id=None):
         self.logger.debug('Uploading data to library %s', library_id)
         if type(data_stream) == str:
             data = data_stream
@@ -115,7 +115,7 @@ class GalaxyWrapper(object):
             self.logger.error(msg)
             raise RuntimeError(msg)
         dset_details = self.gi.libraries.upload_file_contents(library_id, data,
-                                                              folder_id = folder_id)
+                                                              folder_id=folder_id)
         self.logger.debug('Data uploaded, dataset ID is %s', dset_details[0]['id'])
         return dset_details[0]['id']
 
@@ -148,8 +148,8 @@ class GalaxyWrapper(object):
             new_dataset_map[w_in_mappings[k]] = v
         history_name = '%s_%s' % (history_name_prefix, now.strftime('%Y-%m-%d_%H:%M:%S'))
         history_details = self.gi.workflows.run_workflow(workflow_id, new_dataset_map,
-                                                         history_name = history_name,
-                                                         import_inputs_to_history = False)
+                                                         history_name=history_name,
+                                                         import_inputs_to_history=False)
         self.logger.debug('Workflow running on history: %r', history_details)
         return history_details
 
@@ -178,8 +178,8 @@ class GalaxyWrapper(object):
                          'size', 'sha1']
         ds_tmp = StringIO.StringIO()
         do_tmp = StringIO.StringIO()
-        ds_writer = csv.DictWriter(ds_tmp, ds_csv_header, delimiter = '\t')
-        do_writer = csv.DictWriter(do_tmp, do_csv_header, delimiter = '\t')
+        ds_writer = csv.DictWriter(ds_tmp, ds_csv_header, delimiter='\t')
+        do_writer = csv.DictWriter(do_tmp, do_csv_header, delimiter='\t')
         try:
             ds_writer.writeheader()
             do_writer.writeheader()
@@ -217,7 +217,7 @@ class GalaxyWrapper(object):
                                     'sha1'        : d.sha1})
         return ds_tmp, do_tmp
 
-    def __wait(self, history_id, sleep_interval = POLLING_INTERVAL):
+    def __wait(self, history_id, sleep_interval=POLLING_INTERVAL):
         self.logger.debug('Waiting for history %s', history_id)
         while True:
             state_details = self.gi.histories.get_status(history_id)['state_details']
@@ -236,7 +236,7 @@ class GalaxyWrapper(object):
                     non_zero, sleep_interval)
             time.sleep(sleep_interval)
 
-    def __dump_config_params(self, study_label, namespace = None):
+    def __dump_config_params(self, study_label, namespace=None):
         conf_dict = {'config_parameters': {'study_label' : study_label}}
         if namespace:
             conf_dict['config_parameters']['namespace'] = namespace
@@ -308,8 +308,8 @@ class GalaxyWrapper(object):
                 raise RuntimeError(msg)
 
     # Import a flowcell samplesheet produced by a Galaxy NGLIMS within OMERO.biobank
-    def run_flowcell_from_samplesheet_import(self, samplesheet_data, action_context, namespace = None,
-                             async = False):
+    def run_flowcell_from_samplesheet_import(self, samplesheet_data, action_context, namespace=None,
+                             async=False):
         self.logger.info('Running flowcell samplesheet import')
         conf_params = self.__dump_config_params(action_context, namespace)
         lib_id = self.__get_or_create_library(self.__get_library_name('import_flowcell'))
@@ -339,7 +339,7 @@ class GalaxyWrapper(object):
                 self.logger.error(msg)
                 raise RuntimeError(msg)
 
-    def delete_history(self, history_id, purge_history = False):
+    def delete_history(self, history_id, purge_history=False):
         self.logger.info('Deleting history with ID %s', history_id)
         self.gi.histories.delete_history(history_id, purge_history)
         self.logger.info('History deleted')
