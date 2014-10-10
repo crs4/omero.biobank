@@ -93,7 +93,7 @@ class GalaxyWrapper(object):
         return lib_details[0]['id']
 
     def __create_folder(self, folder_name_prefix, library_id):
-        folder_name = '%s-%r' % (folder_name_prefix, uuid.uuid4().hex)
+        folder_name = '%s-%s' % (folder_name_prefix, uuid.uuid4().hex)
         self.logger.debug('Creating folder %s in library %s' % (folder_name,
                                                                 library_id))
         folder_details = self.gi.libraries.create_folder(library_id,
