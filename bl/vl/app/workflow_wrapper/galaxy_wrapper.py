@@ -84,28 +84,28 @@ class GalaxyWrapper(object):
         return True
 
     def __get_or_create_library(self, name):
-        self.logger.debug('Loading library with name %s' % name)
+        self.logger.debug('Loading library with name %s', name)
         lib_details = self.gi.libraries.get_libraries(name = name)
         if len(lib_details) == 0:
             self.logger.debug('Unable to load library, creating a new one')
             lib_details = [self.gi.libraries.create_library(name)]
-        self.logger.debug('Library ID %s' % lib_details[0]['id'])
+        self.logger.debug('Library ID %s', lib_details[0]['id'])
         return lib_details[0]['id']
 
     def __create_folder(self, folder_name_prefix, library_id):
         folder_name = '%s-%s' % (folder_name_prefix, uuid.uuid4().hex)
-        self.logger.debug('Creating folder %s in library %s' % (folder_name,
-                                                                library_id))
+        self.logger.debug('Creating folder %s in library %s', folder_name,
+                                                                library_id)
         folder_details = self.gi.libraries.create_folder(library_id,
                                                          folder_name)
-        self.logger.debug('Folder created with ID %s' % folder_details[0]['id'])
+        self.logger.debug('Folder created with ID %s', folder_details[0]['id'])
         return folder_details[0]['id']
 
     def __drop_library(self, library_id):
         raise NotImplementedError()
 
     def __upload_to_library(self, data_stream, library_id, folder_id = None):
-        self.logger.debug('Uploading data to library %s' % library_id)
+        self.logger.debug('Uploading data to library %s', library_id)
         if type(data_stream) == str:
             data = data_stream
         elif hasattr(data_stream, 'getvalue'):
@@ -116,17 +116,17 @@ class GalaxyWrapper(object):
             raise RuntimeError(msg)
         dset_details = self.gi.libraries.upload_file_contents(library_id, data,
                                                               folder_id = folder_id)
-        self.logger.debug('Data uploaded, dataset ID is %s' % dset_details[0]['id'])
+        self.logger.debug('Data uploaded, dataset ID is %s', dset_details[0]['id'])
         return dset_details[0]['id']
 
     def __get_workflow_id(self, workflow_label):
-        self.logger.debug('Retrieving workflow %s' % workflow_label)
+        self.logger.debug('Retrieving workflow %s', workflow_label)
         workflow_mappings = {}
         for wf in self.gi.workflows.get_workflows():
             workflow_mappings.setdefault(wf['name'], []).append(wf['id'])
         if workflow_mappings.has_key(workflow_label):
             if len(workflow_mappings[workflow_label]) == 1:
-                self.logger.debug('Workflow details: %r' % workflow_mappings[workflow_label][0])
+                self.logger.debug('Workflow details: %r', workflow_mappings[workflow_label][0])
                 return workflow_mappings[workflow_label][0]
             else:
                 msg = 'Multiple workflow with label "%s", unable to resolve ID' % workflow_label
@@ -138,7 +138,7 @@ class GalaxyWrapper(object):
             raise ValueError(msg)
 
     def __run_workflow(self, workflow_id, dataset_map, history_name_prefix):
-        self.logger.debug('Running workflow %s' % workflow_id)
+        self.logger.debug('Running workflow %s', workflow_id)
         now = datetime.now()
         w_in_mappings = {}
         for k, v in self.gi.workflows.show_workflow(workflow_id)['inputs'].iteritems():
@@ -150,7 +150,7 @@ class GalaxyWrapper(object):
         history_details = self.gi.workflows.run_workflow(workflow_id, new_dataset_map,
                                                          history_name = history_name,
                                                          import_inputs_to_history = False)
-        self.logger.debug('Workflow running on history: %r' % history_details)
+        self.logger.debug('Workflow running on history: %r', history_details)
         return history_details
 
     def __dump_history_details(self, history):
@@ -340,7 +340,7 @@ class GalaxyWrapper(object):
                 raise RuntimeError(msg)
 
     def delete_history(self, history_id, purge_history = False):
-        self.logger.info('Deleting history with ID %s' % history_id)
+        self.logger.info('Deleting history with ID %s', history_id)
         self.gi.histories.delete_history(history_id, purge_history)
         self.logger.info('History deleted')
 
