@@ -31,7 +31,7 @@ class GalaxyMenusService(object):
         post('/galaxy/get/action_categories')(self.get_action_categories)
         post('/galaxy/get/scanners')(self.get_scanners)
         post('/galaxy/get/container_status')(self.get_container_status)
-        post('/galaxy/get/studies')(self.get_studies)
+        post('/galaxy/get/tubes')(self.get_tubes)
 
         # check status
         post('/check/status')(self.test_server)
