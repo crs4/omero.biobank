@@ -31,6 +31,8 @@ class GalaxyMenusService(object):
         post('/galaxy/get/action_categories')(self.get_action_categories)
         post('/galaxy/get/scanners')(self.get_scanners)
         post('/galaxy/get/container_status')(self.get_container_status)
+        post('/galaxy/get/studies')(self.get_studies)
+
         # check status
         post('/check/status')(self.test_server)
         get('/check/status')(self.test_server)
@@ -63,6 +65,20 @@ class GalaxyMenusService(object):
             else:
                 values = (('{0}', r.label) for r in res)
                 labels = (('{0}', r.label) for r in res)
+                response_body = inst._build_response_body(values, labels)
+                response_body[0]['selected'] = True
+                return inst._success(response_body)
+        return wrapper
+
+    def wrap_label_(f):
+        @wraps(f)
+        def wrapper(inst, *args, **kwargs):
+            res = f(inst, *args, **kwargs)
+            if len(res) == 0:
+                return None
+            else:
+                values = (('{0}', r.label.split('_',1)[-1]) for r in res)
+                labels = (('{0}', r.label.split('_',1)[-1]) for r in res)
                 response_body = inst._build_response_body(values, labels)
                 response_body[0]['selected'] = True
                 return inst._success(response_body)
@@ -259,6 +275,12 @@ class GalaxyMenusService(object):
         params = request.forms
         kb = self._get_knowledge_base(params)
         return kb.get_objects(kb.ContainerStatus)
+
+    @wrap_label_with_unique_constraint
+    def get_tubes(self):
+        params = request.forms
+        kb = self._get_knowledge_base(params)
+        return kb.get_objects(kb.Tube)
 
     def start_service(self, host, port, logfile, debug=False):
         log = open(logfile, 'a')
