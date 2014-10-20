@@ -70,7 +70,7 @@ class GalaxyMenusService(object):
                 return inst._success(response_body)
         return wrapper
 
-    def wrap_label_(f):
+    def wrap_label_with_unique_constraint(f):
         @wraps(f)
         def wrapper(inst, *args, **kwargs):
             res = f(inst, *args, **kwargs)
