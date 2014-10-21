@@ -162,7 +162,7 @@ class GalaxyMenusService(object):
             if len(res) == 0:
                 return None
             else:
-                labels = (("{0} # {1} # {2} # {3}", r.sample.sample.label,r.sample.sample.action.context.label,r.mimetype,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S')) for r in res)
+                labels = (("{0} [{1}] - {2} ", r.sample.sample.label,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S'),r.mimetype) for r in res)
                 values = (('{0}', r.omero_id) for r in res)
                 response_body = inst._build_response_body(values, labels)
                 response_body[0]['selected'] = True
@@ -313,7 +313,7 @@ class GalaxyMenusService(object):
                 except:
                     data_objects = list()
                 for dobj in data_objects:
-                    result.append(dobj)
+                    if not dobj.mimetype.endswith('pdf'): result.append(dobj)
         return result
 
     def start_service(self, host, port, logfile, debug=False):
