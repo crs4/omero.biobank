@@ -32,7 +32,7 @@ class GalaxyMenusService(object):
         post('/galaxy/get/scanners')(self.get_scanners)
         post('/galaxy/get/container_status')(self.get_container_status)
         post('/galaxy/get/tubes')(self.get_tubes)
-
+        post('/galaxy/get/data_objects')(self.get_data_objects)
         # check status
         post('/check/status')(self.test_server)
         get('/check/status')(self.test_server)
@@ -149,6 +149,21 @@ class GalaxyMenusService(object):
                 return None
             else:
                 labels = (('{0}', r.enum_label()) for r in res)
+                values = (('{0}', r.omero_id) for r in res)
+                response_body = inst._build_response_body(values, labels)
+                response_body[0]['selected'] = True
+                return inst._success(response_body)
+        return wrapper
+
+    def wrap_data_objects(f):
+        @wraps(f)
+        def wrapper(inst, *args, **kwargs):
+            res = f(inst, *args, **kwargs)
+            if len(res) == 0:
+                return None
+            else:
+                import datetime
+                labels = (("{0} # {1} # {2} # {3}", res.sample.sample.label,res.sample.sample.action.context.label,res.mimetype,datetime.datetime.fromtimestamp(int(res.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S')) for r in res)
                 values = (('{0}', r.omero_id) for r in res)
                 response_body = inst._build_response_body(values, labels)
                 response_body[0]['selected'] = True
@@ -281,6 +296,20 @@ class GalaxyMenusService(object):
         params = request.forms
         kb = self._get_knowledge_base(params)
         return kb.get_objects(kb.Tube)
+
+    @wrap_data_objects
+    def get_data_objects(self):
+        params = request.forms
+        kb = self._get_knowledge_base(params)
+        result = []
+        tubes = kb.get_objects(kb.Tube)
+        for tube in tubes:
+            datasamples = kb.get_seq_data_samples_by_tube(tube)
+            for data_sample in datasamples:
+                data_objects = kb_user.get_data_objects(data_sample)
+                for dobj in data_objects:
+                    result.append(dobj)
+        return result
 
     def start_service(self, host, port, logfile, debug=False):
         log = open(logfile, 'a')
