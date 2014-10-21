@@ -306,7 +306,7 @@ class GalaxyMenusService(object):
         for tube in tubes:
             datasamples = kb.get_seq_data_samples_by_tube(tube)
             for data_sample in datasamples:
-                data_objects = kb_user.get_data_objects(data_sample)
+                data_objects = kb.get_data_objects(data_sample)
                 for dobj in data_objects:
                     result.append(dobj)
         return result
