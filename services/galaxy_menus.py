@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse, daemon, json, os, sys
+import argparse, daemon, json, os, sys, datetime
 from functools import wraps
 from itertools import izip
 
@@ -162,8 +162,7 @@ class GalaxyMenusService(object):
             if len(res) == 0:
                 return None
             else:
-                import datetime
-                labels = (("{0} # {1} # {2} # {3}", res.sample.sample.label,res.sample.sample.action.context.label,res.mimetype,datetime.datetime.fromtimestamp(int(res.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S')) for r in res)
+                labels = (("{0} # {1} # {2} # {3}", r.sample.sample.label,r.sample.sample.action.context.label,r.mimetype,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S')) for r in res)
                 values = (('{0}', r.omero_id) for r in res)
                 response_body = inst._build_response_body(values, labels)
                 response_body[0]['selected'] = True
@@ -301,12 +300,18 @@ class GalaxyMenusService(object):
     def get_data_objects(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        result = []
+        result = list()
         tubes = kb.get_objects(kb.Tube)
         for tube in tubes:
-            datasamples = kb.get_seq_data_samples_by_tube(tube)
+            try:
+                datasamples = kb.get_seq_data_samples_by_tube(tube)
+            except:
+                datasamples = list()
             for data_sample in datasamples:
-                data_objects = kb.get_data_objects(data_sample)
+                try:
+                    data_objects = kb.get_data_objects(data_sample)
+                except:
+                    data_objects = list()
                 for dobj in data_objects:
                     result.append(dobj)
         return result
