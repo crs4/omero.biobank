@@ -292,6 +292,25 @@ class Proxy(ProxyCore):
       }
     return self.factory.create(self.Device, conf).save()
 
+  def get_actions(self, target):
+    """
+    Get all Actions that have the *target* object as target
+    """
+    query = "SELECT act FROM %s act JOIN act.target AS trg WHERE trg.vid = :target_id"
+    # select the proper action class
+    act = ''
+    if isinstance(target, self.Vessel):
+      act = 'ActionOnVessel'
+    elif isinstance(target, self.DataSample):
+      act = 'ActionOnDataSample'
+    elif isinstance(target, self.Individual):
+      act = 'ActionOnIndividual'
+    elif isinstance(target, self.VLCollection):
+      act = 'ActionOnCollection'
+    else:
+      raise ValueError('Target %s has no a specific Action' % type(target))
+    return self.find_all_by_query(query % act, {'target_id': target.id})
+
   def get_individuals(self, group):
     """
     Syntactic sugar to simplify the looping on individuals contained
