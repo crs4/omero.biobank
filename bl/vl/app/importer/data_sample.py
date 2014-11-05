@@ -68,6 +68,7 @@ SUPPORTED_DEVICES = [
 SUPPORTED_DATA_SAMPLE_TYPES = [
   'GenotypeDataSample',
   'IlluminaBeadChipMeasure',
+  'GenomeVariationsDataSample'
 ]
 
 
@@ -97,6 +98,13 @@ def conf_crs4_genotyper_by_markers_set(kb, r, a, device, options, status_map):
           'snpMarkersSet' : r['markers_set']}
   return kb.factory.create(kb.GenotypeDataSample, conf)
 
+def conf_genome_variant_data_sample(kb, r, a, device, options, status_map):
+  conf = {'label' : r['label'],
+          'status' : status_map[r['status']],
+          'action' : a,
+          'referenceGenome' : r['reference_genome']}
+  return kb.factory.create(kb.GenomeVariantDataSample, conf)
+
 def conf_illumina_bead_chip_measure(kb, r, a, device, options, status_map):
   conf = {
     'label': r['label'],
@@ -117,6 +125,7 @@ data_sample_configurator = {
   ('CRS4', 'Genotyper', 'by_device'): conf_crs4_genotyper_by_device,
   ('CRS4', 'Genotyper', 'by_markers_set'): conf_crs4_genotyper_by_markers_set,
   ('Illumina', 'generic_illumina_scanner', 'generic'): conf_illumina_bead_chip_measure,
+  ('GenomeVariantDataSample'): conf_genome_variant_data_sample,
   }
 
 
@@ -144,6 +153,7 @@ class Recorder(core.Core):
     study = self.find_study(records)
     self.source_klass = self.find_source_klass(records)
     self.device_klass = self.find_device_klass(records)
+    self.data_sample_klass = self.find_device_klass(records)
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
@@ -159,6 +169,9 @@ class Recorder(core.Core):
 
   def find_device_klass(self, records):
     return self.find_klass('device_type', records)
+
+  def find_data_sample_klass(self, records):
+    return self.find_klass('data_sample_type', records)
 
   def do_consistency_checks(self, records):
     self.logger.info('start consistency checks')
@@ -236,6 +249,17 @@ class Recorder(core.Core):
             bad_rec['error'] = f
             bad_records.append(bad_rec)
             continue
+
+      if (r['data_sample_type'] and r['data_sample_type'] == 'GenomeVariantDataSample'):
+          if r['reference_genome'] and not self.is_known_object_id(r['reference_genome'], self.kb.GenomeVariantDataSample):
+                m = 'unknown reference genome with ID %s. ' % r['reference_genome']
+                self.logger.warning(m + reject)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = m
+                bad_records.append(bad_rec)
+                continue
+          continue
+
       if r['options'] :
         try:
           kvs = r['options'].split(',')
@@ -319,6 +343,9 @@ class Recorder(core.Core):
         k = ('CRS4', 'Genotyper', 'by_markers_set')
       else:
         k = (device.maker, device.model, device.release)
+
+      if self.data_sample_klass == self.kb.GenomeVariantDataSample:
+          k = ('GenomeVariantDataSample')
       a.unload()  # FIXME we need to do this, or the next save will choke
       d = data_sample_configurator[k](self.kb, r, a, device, get_options(r),
                                       data_samples_status_map)

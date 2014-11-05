@@ -50,6 +50,7 @@ SUPPORTED_DATA_SAMPLE_TYPES = [
     'SequencerOutput',
     'RawSeqDataSample',
     'SeqDataSample'
+    'AlignedSeqDataSample'
     ]
 
 class Recorder(core.Core):
@@ -69,6 +70,7 @@ class Recorder(core.Core):
         self.preloaded_data_samples = {}
         self.preloaded_lanes = {}
         self.preloaded_tubes = {}
+        self.preloaded_references = {}
         self.history = history
         self.status_map = dict((st.enum_label(), st) for st in
                                self.kb.get_objects(self.kb.DataSampleStatus))
@@ -92,6 +94,10 @@ class Recorder(core.Core):
             self.preload_lanes()
         if self.seq_sample_klass == self.kb.SeqDataSample:
             self.preload_tubes()
+        if self.seq_sample_klass == self.kb.AlignedSeqDataSample:
+            self.preload_tubes()
+            self.preload_references()
+
         records, bad_records = self.do_consistency_checks(records)
         for br in bad_records:
             rtsv.writerow(br)
@@ -161,6 +167,10 @@ class Recorder(core.Core):
         self.preload_by_type('devices', self.kb.Device,
                              self.preloaded_devices)
 
+    def preload_references(self):
+        self.preload_by_type('tubes', self.kb.ReferenceGenome,
+                             self.preloaded_references)
+
     def do_consistency_checks(self, records):
         self.logger.info('start consistency checks')
         good_recs, bad_recs = self.do_consistency_checks_common_fields(records)
@@ -169,6 +179,9 @@ class Recorder(core.Core):
             bad_recs.extend(brecs)
         if self.seq_sample_klass == self.kb.SeqDataSample:
             good_recs, brecs = self.do_consistency_checks_seq_data_sample(good_recs)
+            bad_recs.extend(brecs)
+        if self.seq_sample_klass == self.kb.AlignedSeqDataSample:
+            good_recs, brecs = self.do_consistency_checks_aligned_seq_data_sample(good_recs)
             bad_recs.extend(brecs)
         self.logger.info('done consistency checks')
         return good_recs, bad_recs
@@ -255,6 +268,29 @@ class Recorder(core.Core):
         self.logger.info('done SeqDataSample specific consistency checks')
         return good_records, bad_records
 
+    def do_consistency_checks_aligned_seq_data_sample(self, records):
+        good_records = []
+        bad_records = []
+        for i, r in enumerate(records):
+            reject = 'Rejecting import of line %d.' % i
+            if r['sample'] and r['sample'] not in self.preloaded_tubes:
+                m = 'unknown sample with ID %s. ' % r['sample']
+                self.logger.warning(m + reject)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = m
+                bad_records.append(bad_rec)
+                continue
+            if r['reference_genome'] and r['reference_genome'] not in self.preloaded_references:
+                m = 'unknown reference genome with ID %s. ' % r['reference_genome']
+                self.logger.warning(m + reject)
+                bad_rec = copy.deepcopy(r)
+                bad_rec['error'] = m
+                bad_records.append(bad_rec)
+                continue
+            good_records.append(r)
+        self.logger.info('done AlignedSeqDataSample specific consistency checks')
+        return good_records, bad_records
+
     def process_chunk(self, otsv, chunk, actions, study):
         seq_data_samples = []
         for r in chunk:
@@ -267,6 +303,8 @@ class Recorder(core.Core):
                 seq_data_samples.append(self.conf_raw_seq_data_sample(r, a))
             elif self.seq_sample_klass == self.kb.SeqDataSample:
                 seq_data_samples.append(self.conf_seq_data_sample(r, a))
+            elif self.seq_sample_klass == self.kb.AlignedSeqDataSample:
+                seq_data_samples.append(self.conf_aligned_seq_data_sample(r, a))
             else:
                 self.logger.error('Unmanaged data sample type %r' % self.seq_sample_klass)
                 sys.exit('Unmanaged data sample type %r' % self.seq_sample_klass)
@@ -298,7 +336,18 @@ class Recorder(core.Core):
                 'action' : a}
         if r['sample']:
             conf['sample'] = self.preloaded_tubes[r['sample']]
+
         return self.kb.factory.create(self.kb.SeqDataSample, conf)
+
+    def conf_aligned_seq_data_sample(self, r, a):
+        conf = {'label' : r['label'],
+                'status' : self.status_map[r['status']],
+                'action' : a}
+        if r['sample']:
+            conf['sample'] = self.preloaded_tubes[r['sample']]
+        if r['reference_genome']:
+            conf['referenceGenome'] = self.preloaded_references[r['reference_genome']]
+        return self.kb.factory.create(self.kb.AlignedSeqDataSample, conf)
             
             
 class RecordCanonizer(core.RecordCanonizer):
