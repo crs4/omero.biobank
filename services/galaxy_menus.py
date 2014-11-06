@@ -309,10 +309,10 @@ class GalaxyMenusService(object):
                     if not dobj.mimetype.endswith('pdf'): result.append(dobj)
         return result
 
-    def start_service(self, host, port, logfile, debug=False):
+    def start_service(self, host, port, logfile, server, debug=False):
         log = open(logfile, 'a')
         with daemon.DaemonContext(stderr=log):
-            run(host=host, port=port, debug=debug)
+            run(host=host, port=port, server=server, debug=debug)
 
 
 def get_parser():
@@ -321,6 +321,8 @@ def get_parser():
                         help='web service binding host')
     parser.add_argument('--port', type=int, default='8080',
                         help='web service binding port')
+    parser.add_argument('--server', type=str, default='wsgiref',
+                        help='server library (use paste for multi-threaded backend)')
     parser.add_argument('--debug', action='store_true',
                         help='Enable web server DEBUG mode')
     parser.add_argument('--pid-file', type=str, 
@@ -351,10 +353,10 @@ def main(argv):
     args = parser.parse_args(argv)
     gms = GalaxyMenusService()
     if args.pid_file:
-        print "qui"
         check_pid(args.pid_file)
         create_pid(args.pid_file)
-    gms.start_service(args.host, args.port, args.log_file, args.debug)
+    gms.start_service(args.host, args.port, args.log_file, args.server,
+                      args.debug)
     if args.pid_file:
         destroy_pid(args.pid_file)
 
