@@ -301,17 +301,10 @@ class GalaxyMenusService(object):
         params = request.forms
         kb = self._get_knowledge_base(params)
         result = list()
-        tubes = kb.get_objects(kb.Tube)
-        for tube in tubes:
-            try:
-                datasamples = kb.get_seq_data_samples_by_tube(tube)
-            except:
-                datasamples = list()
-            for data_sample in datasamples:
-                try:
-                    data_objects = kb.get_data_objects(data_sample)
-                except:
-                    data_objects = list()
+        datasamples = kb.get_objects(kb.SeqDataSample)
+        for ds in datasamples:
+            if isinstance(ds.sample, kb.Tube):
+                data_objects = kb.get_data_objects(ds)
                 for dobj in data_objects:
                     if not dobj.mimetype.endswith('pdf'): result.append(dobj)
         return result
