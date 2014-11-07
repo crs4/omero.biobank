@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import argparse, daemon, json, os, sys, datetime
+import argparse, daemon, json, sys, datetime
+import daemon.pidlockfile
 from functools import wraps
 from itertools import izip
 
@@ -309,9 +310,10 @@ class GalaxyMenusService(object):
                     if not dobj.mimetype.endswith('pdf'): result.append(dobj)
         return result
 
-    def start_service(self, host, port, logfile, server, debug=False):
+    def start_service(self, host, port, logfile, pidfile, server, debug=False):
         log = open(logfile, 'a')
-        with daemon.DaemonContext(stderr=log):
+        pid = daemon.pidlockfile.PIDLockFile(pidfile)
+        with daemon.DaemonContext(stderr=log, pidfile=pid):
             run(host=host, port=port, server=server, debug=debug)
 
 
@@ -326,40 +328,22 @@ def get_parser():
     parser.add_argument('--debug', action='store_true',
                         help='Enable web server DEBUG mode')
     parser.add_argument('--pid-file', type=str, 
-                        help='PID file for the dbservice daemon')
+                        help='PID file for the service daemon',
+                        default='/tmp/galaxy_menus_service.pid')
     parser.add_argument('--log-file', type=str, 
-                        help='log file for the dbservice daemon',
+                        help='log file for the service daemon',
                         default='/tmp/galaxy_menus_service.log')
     return parser
-
-
-def check_pid(pid_file):
-    if os.path.isfile(pid_file):
-        sys.exit(0)
-
-
-def create_pid(pid_file):
-    pid = str(os.getpid())
-    with open(pid_file, 'w') as ofile:
-        ofile.write(pid)
-
-
-def destroy_pid(pid_file):
-    os.remove(pid_file)
 
 
 def main(argv):
     parser = get_parser()
     args = parser.parse_args(argv)
     gms = GalaxyMenusService()
-    if args.pid_file:
-        check_pid(args.pid_file)
-        create_pid(args.pid_file)
-    gms.start_service(args.host, args.port, args.log_file, args.server,
-                      args.debug)
-    if args.pid_file:
-        destroy_pid(args.pid_file)
-
+   
+    gms.start_service(args.host, args.port, args.log_file, args.pid_file, 
+                      args.server, args.debug)
+   
 
 if __name__ == '__main__':
     main(sys.argv[1:])
