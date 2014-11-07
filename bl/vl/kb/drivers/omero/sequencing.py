@@ -39,6 +39,8 @@ class ReferenceGenome(DataSample):
     key = make_unique_key(self.maker, self.model, self.release)
     setattr(self.ome_obj, 'referenceGenomeUK',
             self.to_omero(self.__fields__['referenceGenomeUK'][0], key))
+    super(ReferenceGenome, self).__update_constraints__()
+
 
 class AlignedSeqDataSample(SeqDataSample):  
   OME_TABLE = 'AlignedSeqDataSample'

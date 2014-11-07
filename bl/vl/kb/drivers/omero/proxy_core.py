@@ -324,6 +324,8 @@ class ProxyCore(object):
       # check if we are saving a new object or if we are updating an
       # existing one
       obj_update = obj.is_mapped()
+      # make sure to apply the proper namespace to object's unique keys
+      obj.__update_constraints__()
       result = self.ome_operation("getUpdateService", "saveAndReturnObject",
                                   obj.ome_obj)
     except omero.ValidationException, e:

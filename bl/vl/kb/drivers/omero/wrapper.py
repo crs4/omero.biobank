@@ -197,7 +197,15 @@ class CoreOmeroWrapper(object):
   def omero_id(self):
     return self.ome_obj._id._val
     
-    
+  def get_namespace(self):
+    close_connection = False
+    if not self.proxy.current_session:
+      self.proxy.connect()
+      close_connection = True
+    namespace, _ = self.proxy.get_current_group()
+    if close_connection:
+      self.proxy.disconnect()
+    return namespace
 
 
 class MetaWrapper(type):

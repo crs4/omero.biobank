@@ -4,7 +4,7 @@
 import omero.model as om
 import omero.rtypes as ort
 
-from utils import assign_vid_and_timestamp, assign_vid
+from utils import assign_vid_and_timestamp, assign_vid, make_unique_key
 import wrapper as wp
 from snp_markers_set import SNPMarkersSet
 from bl.vl.utils.graph import graph_driver
@@ -28,10 +28,19 @@ class Study(wp.OmeroWrapper):
                 ('label', wp.STRING, wp.REQUIRED),
                 ('startDate', wp.TIMESTAMP, wp.REQUIRED),
                 ('endDate', wp.TIMESTAMP, wp.OPTIONAL),
-                ('description', wp.STRING, wp.OPTIONAL)]
+                ('description', wp.STRING, wp.OPTIONAL),
+                ('labelUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['labelUK']
 
   def __preprocess_conf__(self, conf):
+    if not 'labelUK' in conf:
+      conf['labelUK'] = make_unique_key(self.get_namespace(), conf['label'])
     return assign_vid_and_timestamp(conf, time_stamp_field='startDate')
+
+  def __update_constraints__(self):
+    label_uk = make_unique_key(self.get_namespace(), self.label)
+    setattr(self.ome_obj, 'labelUK',
+            self.to_omero(self.__fields__['labelUK'][0], label_uk))
 
 
 class Device(wp.OmeroWrapper):
@@ -41,10 +50,19 @@ class Device(wp.OmeroWrapper):
                 ('label', wp.STRING, wp.REQUIRED),
                 ('maker', wp.STRING, wp.REQUIRED),
                 ('model', wp.STRING, wp.REQUIRED),
-                ('release', wp.STRING, wp.REQUIRED)]
+                ('release', wp.STRING, wp.REQUIRED),
+                ('labelUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['labelUK']
 
   def __preprocess_conf__(self, conf):
+    if not 'labelUK' in conf:
+      conf['labelUK'] = make_unique_key(self.get_namespace(), conf['label'])
     return assign_vid(conf)
+
+  def __update_constraints__(self):
+    label_uk = make_unique_key(self.get_namespace(), self.label)
+    setattr(self.ome_obj, 'labelUK',
+            self.to_omero(self.__fields__['labelUK'][0], label_uk))
 
 
 class SoftwareProgram(Device):
@@ -63,7 +81,21 @@ class HardwareDevice(Device):
   
   OME_TABLE = 'HardwareDevice'
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
-                ('physicalLocation', wp.STRING, wp.OPTIONAL)]
+                ('physicalLocation', wp.STRING, wp.OPTIONAL),
+                ('barcodeUK', wp.STRING, wp.OPTIONAL)]
+  __do_not_serialize__ = ['barcodeUK']
+
+  def __preprocess_conf__(self, conf):
+    if not 'barcodeUK' in conf and conf.get('barcode'):
+      conf['barcodeUK'] = make_unique_key(self.get_namespace(), conf['barcode'])
+    return super(HardwareDevice, self).__preprocess_conf__(conf)
+
+  def __update_constraints__(self):
+    if self.barcode:
+      b_uk = make_unique_key(self.get_namespace(), self.barcode)
+      setattr(self.ome_obj, 'barcodeUK',
+              self.to_omero(self.__field__['barcodeUK'][0], b_uk))
+    super(HardwareDevice, self).__update_constraints__()
 
 
 class Scanner(HardwareDevice):
@@ -75,7 +107,21 @@ class Scanner(HardwareDevice):
 class Chip(Device):
   
   OME_TABLE = 'Chip'
-  __fields__ = [('barcode', wp.STRING, wp.OPTIONAL)]
+  __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
+                ('barcodeUK', wp.STRING, wp.OPTIONAL)]
+  __do_not_serialize__ = ['barcodeUK']
+
+  def __preprocess_conf__(self, conf):
+    if not 'barcodeUK' in conf and conf.get('barcode'):
+      conf['barcodeUK'] = make_unique_key(self.get_namespace(), conf['barcode'])
+    return super(Chip, self).__preprocess_conf__(conf)
+
+  def __update_constraints__(self):
+    if self.barcode:
+      b_uk = make_unique_key(self.get_namespace(), self.barcode)
+      setattr(self.ome_obj, 'barcodeUK',
+              self.to_omero(self.__fields__['barcodeUK'][0], b_uk))
+    super(Chip, self).__update_constraints__()
 
 
 class AnnotatedChip(Chip):
@@ -97,10 +143,19 @@ class ActionSetup(wp.OmeroWrapper):
   OME_TABLE = 'ActionSetup'
   __fields__ = [('vid', wp.VID, wp.REQUIRED),
                 ('label', wp.STRING, wp.REQUIRED),
-                ('conf', wp.STRING, wp.REQUIRED)]
+                ('conf', wp.STRING, wp.REQUIRED),
+                ('labelUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['labelUK']
 
   def __preprocess_conf__(self, conf):
+    if not 'labelUK' in conf:
+      conf['labelUK'] = make_unique_key(self.get_namespace(), conf['label'])
     return assign_vid(conf)
+
+  def __update_constraints__(self):
+    l_uk = make_unique_key(self.get_namespace(), self.label)
+    setattr(self.omero_obj, 'labelUK',
+            self.to_omero(self.__fields__['labelUK'][0], l_uk))
 
 
 class Action(wp.OmeroWrapper):

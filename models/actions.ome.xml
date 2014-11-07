@@ -10,54 +10,56 @@ END_COPYRIGHT
   <type id="ome.model.vl.Study">
     <properties>
       <required name="vid" type="string" unique="true"/>
-      <required name="label" type="string" unique="true"/>
+      <required name="label" type="string"/>
       <required name="startDate" type="timestamp"/>
       <optional name="endDate" type="timestamp"/>
       <optional name="description" type="string"/>
+      <!-- unique keys  with namespace -->
+      <required name="labelUK" type="string" unique="true"/>
     </properties>
   </type>
 
   <type id="ome.model.vl.Device">
     <properties>
       <required name="vid" type="string" unique="true"/>
-      <required name="label" type="string" unique="true"/>
+      <required name="label" type="string"/>
       <required name="maker" type="string"/>
       <required name="model" type="string"/>
       <required name="release" type="string"/>
+      <!-- unique keys with namespace -->
+      <required name="labelUK" type="string" unique="true"/>
     </properties>
   </type>
 
-  <type id="ome.model.vl.SoftwareProgram"
-	superclass="ome.model.vl.Device">
+  <type id="ome.model.vl.SoftwareProgram" superclass="ome.model.vl.Device">
   </type>
 
-  <type id="ome.model.vl.GenotypingProgram"
-	superclass="ome.model.vl.SoftwareProgram">
+  <type id="ome.model.vl.GenotypingProgram" superclass="ome.model.vl.SoftwareProgram">
     <properties>
       <required name="snpMarkersSet"  type="ome.model.vl.SNPMarkersSet" />
     </properties>
   </type>
 
-  <type id="ome.model.vl.Chip"
-	superclass="ome.model.vl.Device">
+  <type id="ome.model.vl.Chip" superclass="ome.model.vl.Device">
     <properties>
-      <optional name="barcode" type="string" unique="true"/>
+      <optional name="barcode" type="string"/>
+      <!-- unique keys with namespace -->
+      <optional name="barcodeUK" type="string" unique="true"/>
     </properties>
   </type>
 
-  <type id="ome.model.vl.AnnotatedChip"
-	superclass="ome.model.vl.Chip">
+  <type id="ome.model.vl.AnnotatedChip" superclass="ome.model.vl.Chip">
     <properties>
-      <required name="annotationFile" type="ome.model.core.OriginalFile" 
-		unique="true"/>
+      <required name="annotationFile" type="ome.model.core.OriginalFile" unique="true"/>
     </properties>
   </type>
 
-  <type id="ome.model.vl.HardwareDevice"
-	superclass="ome.model.vl.Device">
+  <type id="ome.model.vl.HardwareDevice" superclass="ome.model.vl.Device">
     <properties>
-      <optional name="barcode" type="string" unique="true"/>
+      <optional name="barcode" type="string"/>
       <optional name="physicalLocation" type="string"/>
+      <!-- unique keys with namespace -->
+      <optional name="barcodeUK" type="string" unique="true"/>
     </properties>
   </type>
 
@@ -68,9 +70,11 @@ END_COPYRIGHT
   <type id="ome.model.vl.ActionSetup">
     <properties>
       <required name="vid" type="string" unique="true"/>
-      <required name="label" type="string" unique="true"/>
+      <required name="label" type="string"/>
       <!-- conf field must be a JSON configuration string -->
       <required name="conf" type="text"/>
+      <!-- unique keys with namespace -->
+      <required name="labelUK" type="string" unique="true"/>
     </properties>
   </type>
 

@@ -14,10 +14,19 @@ class VLCollection(wp.OmeroWrapper):
                 ('label', wp.STRING, wp.REQUIRED),
                 ('creationDate', wp.TIMESTAMP, wp.REQUIRED),
                 ('action', Action, wp.REQUIRED),
-                ('lastUpdate', Action, wp.OPTIONAL)]
+                ('lastUpdate', Action, wp.OPTIONAL),
+                ('labelUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['labelUK']
 
   def __preprocess_conf__(self, conf):
+    if not 'labelUK' in conf:
+      conf['labelUK'] = make_unique_key(self.get_namespace(), conf['label'])
     return assign_vid_and_timestamp(conf, time_stamp_field='creationDate')
+
+  def __update_constraints__(self):
+    l_uk = make_unique_key(self.get_namespace(), self.label)
+    setattr(self.ome_obj, 'labelUK',
+            self.to_omero(self.__fields__['labelUK'][0], l_uk))
 
 
 class ContainerStatus(wp.OmeroWrapper):
@@ -31,8 +40,21 @@ class Container(VLCollection):
 
   OME_TABLE = 'Container'
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
-                ('status',  ContainerStatus, wp.REQUIRED)
-                ]
+                ('status',  ContainerStatus, wp.REQUIRED),
+                ('barcodeUK', wp.STRING, wp.OPTIONAL)]
+  __do_not_serialize__ = ['barcodeUK']
+
+  def __preprocess_conf__(self, conf):
+    if not 'barcodeUK' in conf and conf.get('barcode'):
+      conf['barcodeUK'] = make_unique_key(self.get_namespace(), conf['barcode'])
+    return super(Container, self).__preprocess_conf__(conf)
+
+  def __update_constraints__(self):
+    if self.barcode:
+      b_uk = make_unique_key(self.get_namespace(), self.barcode)
+      setattr(self.ome_obj, 'barcodeUK',
+              self.to_omero(self.__fields__['barcodeUK'][0], b_uk))
+    super(Container, self).__update_constraints__()
 
 
 class SlottedContainer(Container):
@@ -104,11 +126,13 @@ class DataCollectionItem(wp.OmeroWrapper):
     if not 'dataCollectionItemUK' in conf:
       dc_vid = conf['dataCollection'].id
       ds_vid = conf['dataSample'].id
-      conf['dataCollectionItemUK'] = make_unique_key(dc_vid, ds_vid)
+      conf['dataCollectionItemUK'] = make_unique_key(self.get_namespace(),
+                                                     dc_vid, ds_vid)
     return assign_vid(conf)
 
   def __update_constraints__(self):
-    dci_uk = make_unique_key(self.dataCollection.id, self.dataSample.id)
+    dci_uk = make_unique_key(self.get_namespace(), self.dataCollection.id,
+                             self.dataSample.id)
     setattr(self.ome_obj, 'dataCollectionItemUK',
             self.to_omero(self.__fields__['dataCollectionItemUK'][0], dci_uk))
 
