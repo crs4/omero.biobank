@@ -221,6 +221,20 @@ class ProxyCore(object):
       return (group_id in ev_context.leaderOfGroups) or \
              (group_id in ev_context.memberOfGroups)
 
+  def get_object_owner(self, obj):
+    if not self.current_session:
+      raise kb.KBError('Connection to OMERO server is closed')
+    else:
+      a = self.current_session.getAdminService()
+      return a.getExperimenter(obj.ome_obj.details.owner.id._val)._omeName._val
+
+  def get_object_group(self, obj):
+    if not self.current_session:
+      raise kb.KBError('Connection to OMERO server is closed')
+    else:
+      a = self.current_session.getAdminService()
+      return a.getGroup(obj.ome_obj.details.group.id._val)._name._val
+
   def connect(self):
     if not self.current_session:
       self.current_session = self.client.createSession(self.user, self.passwd)

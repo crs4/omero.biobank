@@ -377,3 +377,9 @@ class OmeroWrapper(CoreOmeroWrapper):
     conf = {}
     self.__to_conf__(self.ome_obj, conf)
     return conf
+
+  def get_owner(self):
+    return self.proxy.get_object_owner(self)
+
+  def get_group(self):
+    return self.proxy.get_object_group(self)
