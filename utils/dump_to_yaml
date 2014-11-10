@@ -58,10 +58,12 @@ def to_yaml(outfile, objects, kb, logger):
     # Fetch Actions and their ActionSetup in order to speedup serialization
     act_cache = kb.get_objects(kb.Action)
     acts_cache = kb.get_objects(kb.ActionSetup)
+    current_group, _ = kb.get_current_group()
     with open(outfile, 'w') as f:
         serializer = YamlSerializer(f, logger)
         for o in objects:
-            o.serialize(serializer)
+            if kb.get_object_group(o) == current_group:
+                o.serialize(serializer)
     logger.info('Objects serialization completed')
 
 
