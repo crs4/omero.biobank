@@ -154,7 +154,7 @@ class ActionSetup(wp.OmeroWrapper):
 
   def __update_constraints__(self):
     l_uk = make_unique_key(self.get_namespace(), self.label)
-    setattr(self.omero_obj, 'labelUK',
+    setattr(self.ome_obj, 'labelUK',
             self.to_omero(self.__fields__['labelUK'][0], l_uk))
 
 
