@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, gc, os
+import sys, gc, os, csv
 from yaml import CBaseLoader
 from argparse import ArgumentError, ArgumentParser
 
@@ -24,6 +24,8 @@ def make_parser():
     parser.add_argument('--yaml-file', '-Y', type=str, help='YAML input file')
     parser.add_argument('--chunks-directory', '-D', type=str,
                         help='directory containing YAML chunks produced using the split_yaml_dump tool')
+    parser.add_argument('--public-objects-file', '-p', type=str,
+                        help='a TSV file containing the list of the objects that will be moved to the public pool at the end of the restore process')
     return parser
 
 
@@ -111,6 +113,17 @@ def dump_chunks(kb, chunks_folder, logger):
             os.remove(os.path.join(chunks_folder, f))
 
 
+def move_to_common_space(kb, public_objects_file, logger):
+    with open(public_objects_file) as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        records = [r for r in reader]
+    logger.debug('Fount %d public objects', len(records))
+    for rec in records:
+        obj = kb.get_by_vid(getattr(kb, rec['class']), rec['id'])
+        if obj:
+            kb.admin.move_to_common_space(obj)
+
+
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
@@ -128,6 +141,9 @@ def main(argv):
         dump_file(kb, args.yaml_file, logger)
     if args.chunks_directory:
         dump_chunks(kb, args.chunks_directory, logger)
+
+    if args.public_objects_file:
+        move_to_common_space(kb, args.public_objects_file, logger)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
