@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse, sys
+import argparse, sys, csv
 
 from bl.vl.kb import KnowledgeBase as KB
 from bl.vl.kb.mimetypes import GDO_TABLE
@@ -21,6 +21,8 @@ def make_parser():
                         required=True)
     parser.add_argument('--out-file', '-O', type=str, help='YAML output file',
                         required=True)
+    parser.add_argument('--dependencies-file', '-D', type=str, required=True,
+                        help='TSV file used to store dependencies (objects in the public pool not owned by the current user)')
     parser.add_argument('--exclude-types', type=str, default='',
                         help='A list of comma separated types that will be exclude from the dump process')
     parser.add_argument('--exclude-gdos', action='store_true',
@@ -53,17 +55,26 @@ def get_all_objects(kb, exclude_gdos, excluded_types, logger):
     return objects
 
 
-def to_yaml(outfile, objects, kb, logger):
+def to_yaml(outfile, deps_file, objects, kb, logger):
     logger.info('Serializing %d objects to %s', len(objects), outfile)
     # Fetch Actions and their ActionSetup in order to speedup serialization
     act_cache = kb.get_objects(kb.Action)
     acts_cache = kb.get_objects(kb.ActionSetup)
     current_group, _ = kb.get_current_group()
-    with open(outfile, 'w') as f:
+    with open(outfile, 'w') as f, open(deps_file, 'w') as df:
+        writer = csv.DictWriter(df, ['class', 'id', 'owner', 'group'], delimiter='\t')
+        writer.writeheader()
         serializer = YamlSerializer(f, logger)
         for o in objects:
             if kb.get_object_group(o) == current_group:
                 o.serialize(serializer)
+            else:
+                writer.writerow({
+                    'class': o.OME_TABLE,
+                    'id': o.id,
+                    'owner': kb.get_object_owner(o),
+                    'group': kb.get_object_group(o)
+                })
     logger.info('Objects serialization completed')
 
 
@@ -76,7 +87,7 @@ def main(argv):
 
     objects = get_all_objects(kb, args.exclude_gdos, args.exclude_types.split(','),
                               logger)
-    to_yaml(args.out_file, objects, kb, logger)
+    to_yaml(args.out_file, args.dependencies_file, objects, kb, logger)
 
 
 if __name__ == '__main__':
