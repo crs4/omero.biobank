@@ -78,7 +78,7 @@ def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
         pub_writer.writeheader()
         serializer = YamlSerializer(f, logger)
         for o in objects:
-            if kb.get_object_owner == kb.user or kb.get_object_group(o) == current_group:
+            if kb.get_object_owner(o) == kb.user or kb.get_object_group(o) == current_group:
                 o.serialize(serializer)
                 if kb.get_object_group(o) == 'user':
                     pub_writer.writerow({
@@ -86,7 +86,7 @@ def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
                         'id': o.id
                     })
             else:
-                save_dependency(dep_writer, kb, o)
+                save_dependency(dep_writer, o, kb)
     logger.info('Objects serialization completed')
 
 
