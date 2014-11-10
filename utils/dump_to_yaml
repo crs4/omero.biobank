@@ -23,6 +23,8 @@ def make_parser():
                         required=True)
     parser.add_argument('--dependencies-file', '-D', type=str, required=True,
                         help='TSV file used to store dependencies (objects in the public pool not owned by the current user)')
+    parser.add_argument('--public-objects-file', '-p', type=str, required=True,
+                        help='TSV file with a list of the objects of the current user that are stored in the public pool')
     parser.add_argument('--exclude-types', type=str, default='',
                         help='A list of comma separated types that will be exclude from the dump process')
     parser.add_argument('--exclude-gdos', action='store_true',
@@ -55,26 +57,36 @@ def get_all_objects(kb, exclude_gdos, excluded_types, logger):
     return objects
 
 
-def to_yaml(outfile, deps_file, objects, kb, logger):
+def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
+    def save_dependency(writer, obj, kb):
+        writer.writerow({
+            'class': obj.OME_TABLE,
+            'id': obj.id,
+            'owner': kb.get_object_owner(obj),
+            'group': kb.get_object_group(obj)
+        })
+
     logger.info('Serializing %d objects to %s', len(objects), outfile)
     # Fetch Actions and their ActionSetup in order to speedup serialization
     act_cache = kb.get_objects(kb.Action)
     acts_cache = kb.get_objects(kb.ActionSetup)
     current_group, _ = kb.get_current_group()
-    with open(outfile, 'w') as f, open(deps_file, 'w') as df:
-        writer = csv.DictWriter(df, ['class', 'id', 'owner', 'group'], delimiter='\t')
-        writer.writeheader()
+    with open(outfile, 'w') as f, open(deps_file, 'w') as df, open(public_objs_file, 'w') as pf:
+        dep_writer = csv.DictWriter(df, ['class', 'id', 'owner', 'group'], delimiter='\t')
+        dep_writer.writeheader()
+        pub_writer = csv.DictWriter(pf, ['class', 'id'], delimiter='\t')
+        pub_writer.writeheader()
         serializer = YamlSerializer(f, logger)
         for o in objects:
-            if kb.get_object_group(o) == current_group:
+            if kb.get_object_owner == kb.user or kb.get_object_group(o) == current_group:
                 o.serialize(serializer)
+                if kb.get_object_group(o) == 'user':
+                    pub_writer.writerow({
+                        'class': o.OME_TABLE,
+                        'id': o.id
+                    })
             else:
-                writer.writerow({
-                    'class': o.OME_TABLE,
-                    'id': o.id,
-                    'owner': kb.get_object_owner(o),
-                    'group': kb.get_object_group(o)
-                })
+                save_dependency(dep_writer, kb, o)
     logger.info('Objects serialization completed')
 
 
@@ -87,7 +99,8 @@ def main(argv):
 
     objects = get_all_objects(kb, args.exclude_gdos, args.exclude_types.split(','),
                               logger)
-    to_yaml(args.out_file, args.dependencies_file, objects, kb, logger)
+    to_yaml(args.out_file, args.dependencies_file, args.public_objects_file,
+            objects, kb, logger)
 
 
 if __name__ == '__main__':
