@@ -11,7 +11,7 @@ from bl.vl.kb.serialize.utils import is_a_kb_object, dewrap, sort_by_dependency
 from bl.vl.kb.serialize.utils import get_attribute, get_field_descriptor
 from bl.vl.kb.serialize.utils import UnknownKey, UnresolvedDependency
 from bl.vl.kb.drivers.omero.data_samples import DataObject
-from bl.vl.kb.drivers.omero.genotyping import SNPMarkersSet
+from bl.vl.kb.drivers.omero.snp_markers_set import SNPMarkersSet
 
 from pygraph.classes.digraph import digraph
 
