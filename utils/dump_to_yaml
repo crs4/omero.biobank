@@ -86,6 +86,7 @@ def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
                         'id': o.id
                     })
             else:
+                o.serialize(serializer, shallow=True)
                 save_dependency(dep_writer, o, kb)
     logger.info('Objects serialization completed')
 

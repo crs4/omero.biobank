@@ -117,5 +117,3 @@ def write_action_pack(ostream, oid, target=None, target_class=None, vid=None):
                    by_ref(astudy_label),
                    target=target, target_class=target_class,
                    vid=vid)
-
-    
