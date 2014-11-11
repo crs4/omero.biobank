@@ -137,6 +137,12 @@ def main(argv):
     if args.yaml_file and args.chunks_directory:
         raise Exception('Provide only one between YAML file and chunks directory')
 
+    # if public objects files has been passed as input parameter, check if the current user
+    # is owner of its default group
+    g, _ = kb.get_current_group()
+    if not kb.is_group_leader(g):
+        raise KBError('User is no leader of group %s and is unable to move objects to common space. Stopping job.' % g)
+
     if args.yaml_file:
         dump_file(kb, args.yaml_file, logger)
     if args.chunks_directory:
