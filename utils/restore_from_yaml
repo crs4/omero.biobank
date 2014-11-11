@@ -31,7 +31,7 @@ def make_parser():
     return parser
 
 
-def objects_from_yaml(kb, yaml_file, dependencies_map, logger):
+def objects_from_yaml(kb, yaml_file, logger):
     logger.info('Loading objects from %s', yaml_file)
     limbo = ObjectsLimbo(kb, logger)
     with open(yaml_file) as f:
@@ -39,8 +39,7 @@ def objects_from_yaml(kb, yaml_file, dependencies_map, logger):
         yaml_data = loader.get_data()
         loader.dispose()
         for ref, conf in yaml_data.iteritems():
-            if not ref in dependencies_map[conf['type']]:
-                limbo.add_object(ref, conf)
+            limbo.add_object(ref, conf)
         del yaml_data
         gc.collect()
     return limbo
@@ -74,7 +73,14 @@ def save_shared_objects(kb, objects, logger):
     kb.disconnect()
 
 
-def to_biobank(kb, objects_limbo, logger):
+def remove_dependencies(objects_list, dependencies):
+    if dependencies:
+        return [o for o in objects_list if o.id not in dependencies]
+    else:
+        return objects_list
+
+
+def to_biobank(kb, objects_limbo, dependencies_map, logger):
     def get_base_klass(objtype):
         import omero
         import omero.model
@@ -90,6 +96,7 @@ def to_biobank(kb, objects_limbo, logger):
     for objtype, objects in objects_limbo.groupbytype():
         logger.info('Saving type %s', objtype)
         bb_objs = [o[1] for o in objects]
+        bb_objs = remove_dependencies(bb_objs, dependencies_map.get(objtype))
         if get_base_klass(objtype) in shared_objects_type:
             save_shared_objects(kb, bb_objs, logger)
         else:
@@ -99,8 +106,8 @@ def to_biobank(kb, objects_limbo, logger):
 
 def dump_file(kb, file_path, dependencies_map, logger):
     try:
-        objects_limbo = objects_from_yaml(kb, file_path, dependencies_map, logger)
-        to_biobank(kb, objects_limbo, logger)
+        objects_limbo = objects_from_yaml(kb, file_path, logger)
+        to_biobank(kb, objects_limbo, dependencies_map, logger)
         return True
     except Exception, e:
         logger.critical(e.message)
