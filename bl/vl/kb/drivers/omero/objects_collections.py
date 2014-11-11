@@ -42,7 +42,7 @@ class Container(VLCollection):
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
                 ('status',  ContainerStatus, wp.REQUIRED),
                 ('barcodeUK', wp.STRING, wp.OPTIONAL)]
-  __do_not_serialize__ = ['barcodeUK']
+  __do_not_serialize__ = ['barcodeUK'] + VLCollection.__do_not_serialize__
 
   def __preprocess_conf__(self, conf):
     if not 'barcodeUK' in conf and conf.get('barcode'):
@@ -50,6 +50,7 @@ class Container(VLCollection):
     return super(Container, self).__preprocess_conf__(conf)
 
   def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(Container, self).__fields__['labelUK']
     if self.barcode:
       b_uk = make_unique_key(self.get_namespace(), self.barcode)
       setattr(self.ome_obj, 'barcodeUK',
@@ -60,8 +61,11 @@ class Container(VLCollection):
 class SlottedContainer(Container):
 
   OME_TABLE = 'SlottedContainer'
-  __fields__ = [('numberOfSlots', wp.INT, wp.REQUIRED),
-                ('barcode', wp.STRING, wp.OPTIONAL)]
+  __fields__ = [('numberOfSlots', wp.INT, wp.REQUIRED)]
+
+  def __update_constraints__(self):
+    self.__fields__['barcodeUK'] = super(SlottedContainer, self).__fields__['barcodeUK']
+    super(SlottedContainer, self).__update_constraints__()
 
 
 class TiterPlate(SlottedContainer):
@@ -98,9 +102,11 @@ class Lane(Container):
     return super(Lane, self).__preprocess_conf__(conf)
 
   def __update_constraints__(self):
+    self.__fields__['barcodeUK'] = super(Lane, self).__fields__['barcodeUK']
     l_uk = make_unique_key(self.flowCell.label, self.slot)
     setattr(self.ome_obj, 'laneUK',
             self.to_omero(self.__fields__['laneUK'][0], l_uk))
+    super(Lane, self).__update_constraints__()
 
   def __dump_to_graph__(self, is_update):
     super(Lane, self).__dump_to_graph__(is_update)
@@ -111,6 +117,10 @@ class DataCollection(VLCollection):
 
   OME_TABLE = 'DataCollection'
   __fields__ = []
+
+  def __update_constraints__(self):
+    self__fields__['labelUK'] = super(DataCollection, self).__fields__['labelUK']
+    super(DataCollection, self).__update_constraints__()
 
 
 class DataCollectionItem(wp.OmeroWrapper):
@@ -146,3 +156,8 @@ class TaggedDataCollectionItem(DataCollectionItem):
 
   OME_TABLE = "TaggedDataCollectionItem"
   __fields__ = [('role', wp.STRING, wp.REQUIRED)]
+
+  def __update_constraints__(self):
+    self.__fields__['dataCollectionItemUK'] = super(TaggedDataCollectionItem,
+                                                    self).__fields__['dataCollectionItemUK']
+    super(TaggedDataCollectionItem, self).__update_constraints__()

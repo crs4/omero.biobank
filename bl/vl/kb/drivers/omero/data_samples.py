@@ -23,6 +23,7 @@ class DataSample(wp.OmeroWrapper):
                 ('status', DataSampleStatus, wp.REQUIRED),
                 ('action', Action, wp.REQUIRED),
                 ('labelUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['labelUK']
 
   def __preprocess_conf__(self, conf):
     if not 'labelUK' in conf:

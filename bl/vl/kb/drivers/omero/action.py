@@ -70,6 +70,10 @@ class SoftwareProgram(Device):
   OME_TABLE = 'SoftwareProgram'
   __fields__ = []
 
+  def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(SoftwareProgram, self).__fields__['labelUK']
+    super(SoftwareProgram, self).__update_constraints__()
+
 
 class GenotypingProgram(SoftwareProgram):
   
@@ -83,7 +87,7 @@ class HardwareDevice(Device):
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
                 ('physicalLocation', wp.STRING, wp.OPTIONAL),
                 ('barcodeUK', wp.STRING, wp.OPTIONAL)]
-  __do_not_serialize__ = ['barcodeUK']
+  __do_not_serialize__ = ['barcodeUK'] + Device.__do_not_serialize__
 
   def __preprocess_conf__(self, conf):
     if not 'barcodeUK' in conf and conf.get('barcode'):
@@ -91,6 +95,7 @@ class HardwareDevice(Device):
     return super(HardwareDevice, self).__preprocess_conf__(conf)
 
   def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(HardwareDevice, self).__fields__['labelUK']
     if self.barcode:
       b_uk = make_unique_key(self.get_namespace(), self.barcode)
       setattr(self.ome_obj, 'barcodeUK',
@@ -103,13 +108,17 @@ class Scanner(HardwareDevice):
   OME_TABLE = 'Scanner'
   __fields__ = []
 
+  def __update_constraints__(self):
+    self.__fields__['barcodeUK'] = super(Scanner, self).__fields__['barcodeUK']
+    super(Scanner, self).__update_constraints__()
+
 
 class Chip(Device):
   
   OME_TABLE = 'Chip'
   __fields__ = [('barcode', wp.STRING, wp.OPTIONAL),
                 ('barcodeUK', wp.STRING, wp.OPTIONAL)]
-  __do_not_serialize__ = ['barcodeUK']
+  __do_not_serialize__ = ['barcodeUK'] + Device.__do_not_serialize__
 
   def __preprocess_conf__(self, conf):
     if not 'barcodeUK' in conf and conf.get('barcode'):
@@ -117,6 +126,7 @@ class Chip(Device):
     return super(Chip, self).__preprocess_conf__(conf)
 
   def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(Chip, self).__fields__['labelUK']
     if self.barcode:
       b_uk = make_unique_key(self.get_namespace(), self.barcode)
       setattr(self.ome_obj, 'barcodeUK',

@@ -156,6 +156,10 @@ class VesselsCollection(VLCollection):
   OME_TABLE = 'VesselsCollection'
   __fields__ = []
 
+  def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(VesselsCollection, self).__fields__['labelUK']
+    super(VesselsCollection, self).__update_constraints__()
+
 
 class VesselsCollectionItem(wp.OmeroWrapper):
 
