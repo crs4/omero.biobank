@@ -139,6 +139,7 @@ def main(argv):
 
     # if public objects files has been passed as input parameter, check if the current user
     # is owner of its default group
+    kb.connect()
     g, _ = kb.get_current_group()
     if not kb.is_group_leader(g):
         raise KBError('User is no leader of group %s and is unable to move objects to common space. Stopping job.' % g)
