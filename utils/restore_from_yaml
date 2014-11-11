@@ -129,10 +129,14 @@ def move_to_common_space(kb, public_objects_file, logger):
         reader = csv.DictReader(f, delimiter='\t')
         records = [r for r in reader]
     logger.debug('Fount %d public objects', len(records))
+    public_objects = []
     for rec in records:
-        obj = kb.get_by_vid(getattr(kb, rec['class']), rec['id'])
-        if obj:
-            kb.admin.move_to_common_space(obj)
+        try:
+            obj = kb.get_by_vid(getattr(kb, rec['class']), rec['id'])
+            public_objects.append(obj)
+        except ValueError:
+            pass
+    kb.admin.move_to_common_space(public_objects)
 
 
 def load_dependencies_map(deps_file):
