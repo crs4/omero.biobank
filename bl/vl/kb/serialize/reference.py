@@ -46,6 +46,8 @@ class Reference(object):
                 continue
             for otype, ovalues in srtd.iteritems():
                 known_objs = get_by_field(otype, k[3:], ovalues.keys())
+                for o in known_objs.values():
+                    o.unload()
                 for i, ref in ovalues.iteritems():
                     ref.object = known_objs.get(i, None)
 
@@ -67,22 +69,3 @@ class Reference(object):
     def is_resolved(self):
         """Is this reference resolved to an actual KB object? """
         return not self.object is None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

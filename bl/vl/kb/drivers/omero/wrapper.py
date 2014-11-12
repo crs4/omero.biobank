@@ -153,6 +153,13 @@ class CoreOmeroWrapper(object):
   def save(self):
     return self.proxy.save(self)
 
+  def is_serializable(self):
+    if not self.is_loaded():
+        self.reload()
+    current_group = self.proxy.get_current_group()
+    return self.proxy.get_object_owner(self) == self.proxy.user or \
+        self.proxy.get_object_group(self) == current_group
+
   def serialize(self, engine, shallow=False):
     if not isinstance(engine, Serializer):
         raise ValueError('%s is not a Serializer' % engine)
@@ -174,8 +181,11 @@ class CoreOmeroWrapper(object):
                 if shallow:
                     conf[k] = engine.by_vid(conf[k].id)
                 else:
-                    conf[k].serialize(engine)                
-                    conf[k] = engine.by_ref(conf[k].id)
+                    if conf[k].is_serializable():
+                        conf[k].serialize(engine)                
+                        conf[k] = engine.by_ref(conf[k].id)
+                    else:
+                        conf[k] = engine.by_vid(conf[k].id)
     engine.serialize(self.id, self.get_ome_table(), conf, vid=self.vid)
     engine.register(self.id)
   

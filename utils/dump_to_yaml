@@ -70,7 +70,6 @@ def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
     # Fetch Actions and their ActionSetup in order to speedup serialization
     act_cache = kb.get_objects(kb.Action)
     acts_cache = kb.get_objects(kb.ActionSetup)
-    current_group, _ = kb.get_current_group()
     with open(outfile, 'w') as f, open(deps_file, 'w') as df, open(public_objs_file, 'w') as pf:
         dep_writer = csv.DictWriter(df, ['class', 'id', 'owner', 'group'], delimiter='\t')
         dep_writer.writeheader()
@@ -78,7 +77,7 @@ def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
         pub_writer.writeheader()
         serializer = YamlSerializer(f, logger)
         for o in objects:
-            if kb.get_object_owner(o) == kb.user or kb.get_object_group(o) == current_group:
+            if o.is_serializable():
                 o.serialize(serializer)
                 if kb.get_object_group(o) == 'user':
                     pub_writer.writerow({
@@ -86,7 +85,6 @@ def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
                         'id': o.id
                     })
             else:
-                o.serialize(serializer, shallow=True)
                 save_dependency(dep_writer, o, kb)
     logger.info('Objects serialization completed')
 
