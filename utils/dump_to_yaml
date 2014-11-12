@@ -77,7 +77,7 @@ def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
         pub_writer.writeheader()
         serializer = YamlSerializer(f, logger)
         for o in objects:
-            if o.is_serializable():
+            if o.in_current_sandbox():
                 o.serialize(serializer)
                 if kb.get_object_group(o) == 'user':
                     pub_writer.writerow({

@@ -153,7 +153,7 @@ class CoreOmeroWrapper(object):
   def save(self):
     return self.proxy.save(self)
 
-  def is_serializable(self):
+  def in_current_sandbox(self):
     if not self.is_loaded():
         self.reload()
     current_group = self.proxy.get_current_group()
@@ -181,7 +181,7 @@ class CoreOmeroWrapper(object):
                 if shallow:
                     conf[k] = engine.by_vid(conf[k].id)
                 else:
-                    if conf[k].is_serializable():
+                    if conf[k].in_current_sandbox():
                         conf[k].serialize(engine)                
                         conf[k] = engine.by_ref(conf[k].id)
                     else:
