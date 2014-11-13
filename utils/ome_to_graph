@@ -10,9 +10,10 @@ from bl.vl.kb import KnowledgeBase as KB
 
 
 class GraphDumper(object):
-    def __init__(self, kb, logger):
+    def __init__(self, kb, logger, user):
         self.kb = kb
         self.logger = logger
+        self.user = user
         self.node_classes = [
             kb.Individual,
             kb.Vessel,
@@ -34,11 +35,19 @@ class GraphDumper(object):
             kb.IlluminaBeadChipMeasures,
         ]
 
+    def __get_objects(self, node_class):
+        objs = self.kb.get_objects(node_class)
+        objs_len = len(objs)
+        objs = [o for o in objs if self.kb.get_object_owner(o) == self.user]
+        self.logger.debug('Removed {} objects'.format(objs_len - len(objs)))
+        return objs            
+
+
     def __get_nodes__(self):
         nodes = []
         for nc in self.node_classes:
             self.logger.info('Loading %s objects and subclasses',  nc.__name__)
-            objs = self.kb.get_objects(nc)
+            objs = self.__get_objects(nc)
             self.logger.info('Loaded %d objects', len(objs))
             nodes.extend(objs)
         return nodes
@@ -47,7 +56,7 @@ class GraphDumper(object):
         edges = []
         self.logger.info('Loading actions')
         try:
-            acts = self.kb.get_objects(self.kb.Action)
+            acts = self.__get_objects(self.kb.Action)
         except Exception:
             # Ice memory error
             self.kb.disconnect()
@@ -99,7 +108,7 @@ class GraphDumper(object):
         collections = []
         for cc in self.collection_classes:
             self.logger.info('Loading collections for %s and subclasses', cc.__name__)
-            objs = self.kb.get_objects(cc)
+            objs = self.__get_objects(cc)
             self.logger.info('Loaded %d objects', len(objs))
             for ci in objs:
                 collections.extend(self.__get_collection_info__(ci))
@@ -172,7 +181,7 @@ def main():
 
     kb = KB(driver='omero')(args.host, args.user, args.passwd)
 
-    dumper = GraphDumper(kb, logger)
+    dumper = GraphDumper(kb, logger, args.user)
     dumper.dump()
 
 
