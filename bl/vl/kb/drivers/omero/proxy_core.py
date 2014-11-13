@@ -200,40 +200,32 @@ class ProxyCore(object):
     group_name is provided, check against the group in which the user is currently
     logged in
     """
-    if not self.current_session:
-      raise kb.KBError('Connection to OMERO server is closed')
+    self.connect()
+    a = self.current_session.getAdminService()
+    ev_context = a.getEventContext()
+    if not group_name:
+      group_id = ev_context.groupId
     else:
-      a = self.current_session.getAdminService()
-      ev_context = a.getEventContext()
-      if not group_name:
-        group_id = ev_context.groupId
-      else:
-        group_id = self._get_group_id(group_name)
-      return group_id in ev_context.leaderOfGroups
+      group_id = self._get_group_id(group_name)
+    return group_id in ev_context.leaderOfGroups
 
   def is_member_of_group(self, group_name):
-    if not self.current_session:
-      raise kb.KBError('Connection to OMERO server is closed')
-    else:
-      a = self.current_session.getAdminService()
-      ev_context = a.getEventContext()
-      group_id = self._get_group_id(group_name)
-      return (group_id in ev_context.leaderOfGroups) or \
-             (group_id in ev_context.memberOfGroups)
+    self.connect()
+    a = self.current_session.getAdminService()
+    ev_context = a.getEventContext()
+    group_id = self._get_group_id(group_name)
+    return (group_id in ev_context.leaderOfGroups) or \
+         (group_id in ev_context.memberOfGroups)
 
   def get_object_owner(self, obj):
-    if not self.current_session:
-      raise kb.KBError('Connection to OMERO server is closed')
-    else:
-      a = self.current_session.getAdminService()
-      return a.getExperimenter(obj.ome_obj.details.owner.id._val)._omeName._val
+    self.connect()
+    a = self.current_session.getAdminService()
+    return a.getExperimenter(obj.ome_obj.details.owner.id._val)._omeName._val
 
   def get_object_group(self, obj):
-    if not self.current_session:
-      raise kb.KBError('Connection to OMERO server is closed')
-    else:
-      a = self.current_session.getAdminService()
-      return a.getGroup(obj.ome_obj.details.group.id._val)._name._val
+    self.connect()
+    a = self.current_session.getAdminService()
+    return a.getGroup(obj.ome_obj.details.group.id._val)._name._val
 
   def connect(self):
     if not self.current_session:
@@ -275,8 +267,6 @@ class ProxyCore(object):
     except AttributeError:
       raise kb.KBError("%r kb action not supported on operation %r" %
                        (action, operation))
-    # finally:
-    #   self.disconnect()
     return result
 
   def find_all_by_query(self, query, params, factory):
