@@ -88,7 +88,8 @@ class ActionCategory(wp.OmeroWrapper):
   
   OME_TABLE = 'ActionCategory'
   __enums__ = ['IMPORT', 'CREATION', 'EXTRACTION', 'UPDATE',
-               'ALIQUOTING', 'MEASUREMENT', 'PROCESSING']
+               'ALIQUOTING', 'MEASUREMENT', 'PROCESSING',
+               'OBJECT_CLONING']
 
 
 class ActionSetup(wp.OmeroWrapper):

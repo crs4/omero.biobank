@@ -12,6 +12,7 @@ import bl.vl.kb.config as blconf
 from bl.vl.kb.messages import get_events_sender
 from bl.vl.kb.dependency import DependencyTree
 from bl.vl.kb import mimetypes
+from bl.vl.kb import KBPermissionError, KBError
 
 from proxy_core import ProxyCore
 from wrapper import ObjectFactory, MetaWrapper
@@ -100,6 +101,60 @@ class Proxy(ProxyCore):
 
   # High level ops
   # ==============
+  def _get_action_klass_by_target(self, target=None):
+    if not target:
+      a_klass = self.Action
+    elif isinstance(target, self.Vessel):
+      a_klass = self.ActionOnVessel
+    elif isinstance(target, self.DataSample):
+      a_klass = self.ActionOnDataSample
+    elif isinstance(target, self.Individual):
+      a_klass = self.ActionOnIndividual
+    elif isinstance(target, self.VLCollection):
+      a_klass = self.ActionOnCollection
+    else:
+      assert False
+    return a_klass
+
+  def clone(self, kb_obj, study):
+    """
+    Clone a KB object. Use the given *kb_obj* to create a copy (with different *VID* and no *lastUpdate* action)
+    and save it within the KB. Cloned object will be linked to the original one using an Action with given *study*
+    as context and *OBJECT_CLONING* as actionCategory.
+    Only objects in different sandboxes can be cloned, this method was designed to clone objects stored in the
+    common space to user's sandbox.
+    """
+    if kb_obj.in_current_sandbox():
+        raise KBPermissionError('Objects can\'t be cloned in their original sandbox')
+    kb_obj_conf = kb_obj.to_conf()
+    # create the cloning action
+    try:
+      a_klass = self._get_action_klass_by_target(kb_obj)
+    except AssertionError:
+      raise KBError('Cloning operation not supported for object type %s' % kb_obj.OME_TABLE)
+    kb_obj_reload = kb_obj.is_loaded()
+    if kb_obj_reload:
+      kb_obj.unload()
+    clone_act = self.factory.create(
+        a_klass,
+        {
+            'target': kb_obj,
+            'actionCategory': self.ActionCategory.OBJECT_CLONING,
+            'context': study,
+            'operator': self.user,
+        }
+    )
+    for field in kb_obj.__do_not_serialize__:
+      kb_obj_conf.pop(field)
+    kb_obj_conf.pop('vid')
+    if 'lastUpdate' in kb_obj_conf:
+      kb_obj_conf.pop('lastUpdate')
+    kb_obj_conf['action'] = clone_act
+    cloned_obj = self.factory.create(getattr(self, kb_obj.OME_TABLE), kb_obj_conf).save()
+    if kb_obj_reload:
+      kb_obj.reload()
+    return cloned_obj
+
   def find_all_by_query(self, query, params):
     return super(Proxy, self).find_all_by_query(query, params, self.factory)
 
@@ -246,18 +301,7 @@ class Proxy(ProxyCore):
       self.ActionSetup, {'label': alabel, 'conf': json.dumps(options)}
       ).save()
     acat = acat if acat else self.ActionCategory.IMPORT
-    if not target:
-      a_klass = self.Action
-    elif isinstance(target, self.Vessel):
-      a_klass = self.ActionOnVessel
-    elif isinstance(target, self.DataSample):
-      a_klass = self.ActionOnDataSample
-    elif isinstance(target, self.Individual):
-      a_klass = self.ActionOnIndividual
-    elif isinstance(target, self.VLCollection):
-        a_klass = self.ActionOnCollection
-    else:
-      assert False
+    a_klass = self._get_action_klass_by_target(target)
 
     operator = operator if operator is not None\
                         else pwd.getpwuid(os.geteuid())[0]

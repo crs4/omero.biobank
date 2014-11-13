@@ -83,6 +83,7 @@ END_COPYRIGHT
                                      to another -->
     <entry name="MEASUREMENT"/> <!-- e.g., genotype measure -->
     <entry name="PROCESSING"/>  <!-- e.g., genotype call -->
+    <entry name="OBJECT_CLONING"/> <!-- e.g., object cloned from the common space to a specific sandbox -->
   </enum>
 
   <type id="ome.model.vl.Action">
