@@ -150,8 +150,8 @@ class CoreOmeroWrapper(object):
   def unload(self):
     self.ome_obj.unload()
 
-  def save(self):
-    return self.proxy.save(self)
+  def save(self, move_to_common_space=False):
+    return self.proxy.save(self, move_to_common_space)
 
   def in_current_sandbox(self):
     if not self.is_loaded():

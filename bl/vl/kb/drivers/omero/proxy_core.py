@@ -305,10 +305,14 @@ class ProxyCore(object):
     o.ome_obj = res
     o.proxy = self
 
-  def save(self, obj):
+  def save(self, obj, move_to_common_space=False):
     """
-    Save and return a KB object.
+    Save and return a KB object. If *move_to_common_space* is True, automatically move the saved
+    objects in the public data pool.
     """
+    if move_to_common_space and not self.is_group_leader():
+      raise kb.KBPermissionError('User %s is not group owner and cannot move saved object to common space, aborting save'
+                                 % self.user)
     try:
       # check if we are saving a new object or if we are updating an
       # existing one
@@ -325,6 +329,8 @@ class ProxyCore(object):
     obj.__dump_to_graph__(obj_update)
     if self.context_managers:
       self.context_managers[-1].register(obj)
+    if move_to_common_space:
+      self.admin.move_to_common_space([obj])
     return obj
 
   def save_array(self, array):
