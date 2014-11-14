@@ -345,7 +345,7 @@ class Recorder(core.Core):
         k = (device.maker, device.model, device.release)
 
       #if self.data_sample_klass == self.kb.GenomeVariationsDataSample:
-      if (r['data_sample_type'] and r['data_sample_type'] == 'GenomeVariationsDataSample'):
+      if ('data_sample_type' in r and r['data_sample_type'] == 'GenomeVariationsDataSample'):
           k = ('GenomeVariationsDataSample')
       a.unload()  # FIXME we need to do this, or the next save will choke
       d = data_sample_configurator[k](self.kb, r, a, device, get_options(r),
