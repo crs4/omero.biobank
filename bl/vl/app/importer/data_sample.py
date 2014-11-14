@@ -103,7 +103,7 @@ def conf_genome_variant_data_sample(kb, r, a, device, options, status_map):
           'status' : status_map[r['status']],
           'action' : a,
           'referenceGenome' : r['reference_genome']}
-  return kb.factory.create(kb.GenomeVariantDataSample, conf)
+  return kb.factory.create(kb.GenomeVariationsDataSample, conf)
 
 def conf_illumina_bead_chip_measure(kb, r, a, device, options, status_map):
   conf = {
@@ -125,7 +125,7 @@ data_sample_configurator = {
   ('CRS4', 'Genotyper', 'by_device'): conf_crs4_genotyper_by_device,
   ('CRS4', 'Genotyper', 'by_markers_set'): conf_crs4_genotyper_by_markers_set,
   ('Illumina', 'generic_illumina_scanner', 'generic'): conf_illumina_bead_chip_measure,
-  ('GenomeVariantDataSample'): conf_genome_variant_data_sample,
+  ('GenomeVariationsDataSample'): conf_genome_variant_data_sample,
   }
 
 
@@ -250,8 +250,8 @@ class Recorder(core.Core):
             bad_records.append(bad_rec)
             continue
 
-      if (r['data_sample_type'] and r['data_sample_type'] == 'GenomeVariantDataSample'):
-          if r['reference_genome'] and not self.is_known_object_id(r['reference_genome'], self.kb.GenomeVariantDataSample):
+      if (r['data_sample_type'] and r['data_sample_type'] == 'GenomeVariationsDataSample'):
+          if r['reference_genome'] and not self.is_known_object_id(r['reference_genome'], self.kb.GenomeVariationsDataSample):
                 m = 'unknown reference genome with ID %s. ' % r['reference_genome']
                 self.logger.warning(m + reject)
                 bad_rec = copy.deepcopy(r)
@@ -344,8 +344,8 @@ class Recorder(core.Core):
       else:
         k = (device.maker, device.model, device.release)
 
-      if self.data_sample_klass == self.kb.GenomeVariantDataSample:
-          k = ('GenomeVariantDataSample')
+      if self.data_sample_klass == self.kb.GenomeVariationsDataSample:
+          k = ('GenomeVariationsDataSample')
       a.unload()  # FIXME we need to do this, or the next save will choke
       d = data_sample_configurator[k](self.kb, r, a, device, get_options(r),
                                       data_samples_status_map)
