@@ -251,7 +251,7 @@ class Recorder(core.Core):
             continue
 
       if (r['data_sample_type'] and r['data_sample_type'] == 'GenomeVariationsDataSample'):
-          if r['genome_reference'] and not self.is_known_object_id(r['genome_reference'], self.kb.GenomeVariationsDataSample):
+          if r['genome_reference'] and not self.is_known_object_id(r['genome_reference'], self.kb.GenomeReference):
                 m = 'unknown reference genome with ID %s. ' % r['genome_reference']
                 self.logger.warning(m + reject)
                 bad_rec = copy.deepcopy(r)
