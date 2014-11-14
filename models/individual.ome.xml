@@ -67,8 +67,6 @@ END_COPYRIGHT
       <!-- Multi-field unique keys -->
       <!-- stCodeUK = STUDY-VID_STUDYCODE -->
       <required name="stCodeUK" type="string" unique="true"/>
-      <!-- stIndUK = STUDY-VID_INDIVIDUAL-VID -->
-      <required name="stIndUK" type="string" unique="true"/>
     </properties>
   </type>
 

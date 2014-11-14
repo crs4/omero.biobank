@@ -57,24 +57,17 @@ class Enrollment(wp.OmeroWrapper):
                 #  Multi-field unique keys
                 #  stCodeUK = STUDY-VID_STUDYCODE
                 ('stCodeUK', wp.STRING, wp.REQUIRED),
-                # stIndUK = STUDY-VID_INDIVIDUAL-VID
-                ('stIndUK',  wp.STRING, wp.REQUIRED)]
-  __do_not_serialize__ = ['stCodeUK', 'stIndUK']
+  __do_not_serialize__ = ['stCodeUK']
 
   def __preprocess_conf__(self, conf):
     if not 'stCodeUK' in conf:
       svid = conf['study'].vid
-      conf['stCodeUK'] = make_unique_key(svid, conf['studyCode'])
-    if not 'stIndUK' in conf:
-      svid = conf['study'].vid
-      ivid = conf['individual'].vid
-      conf['stIndUK'] = make_unique_key(svid, ivid)
+      conf['stCodeUK'] = make_unique_key(self.get_namespace(),
+                                         svid, conf['studyCode'])
     return assign_vid(conf)
 
   def __update_constraints__(self):
-    st_code_uk = make_unique_key(self.study.id, self.studyCode)
+    st_code_uk = make_unique_key(self.get_namespace(),
+                                 self.study.id, self.studyCode)
     setattr(self.ome_obj, 'stCodeUK',
             self.to_omero(self.__fields__['stCodeUK'][0], st_code_uk))
-    st_ind_uk = make_unique_key(self.study.id, self.individual.id)
-    setattr(self.ome_obj, 'stIndUK',
-            self.to_omero(self.__fields__['stIndUK'][0], st_ind_uk))
