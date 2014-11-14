@@ -100,7 +100,7 @@ class GraphDumper(object):
         collections = []
         for cc in self.collection_classes:
             self.logger.info('Loading collections for %s and subclasses', cc.__name__)
-            objs = self.kb.get_objects(cc)
+            objs = [o for o in self.kb.get_objects(cc) if o.in_current_sandbox()]
             self.logger.info('Loaded %d objects', len(objs))
             for ci in objs:
                 collections.extend(self.__get_collection_info__(ci))
