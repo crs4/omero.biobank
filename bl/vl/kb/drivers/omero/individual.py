@@ -8,6 +8,7 @@ import wrapper as wp
 from action import Study, Action
 from actions_on_target import ActionOnAction
 from utils import assign_vid, make_unique_key
+from bl.vl.kb import KBError
 
 
 class Gender(wp.OmeroWrapper):
@@ -30,6 +31,14 @@ class Individual(wp.OmeroWrapper):
 
   def __preprocess_conf__(self, conf):
     return assign_vid(conf)
+
+  def __update_constraints__(self):
+    if self.father and self.father == self:
+      self.reload()
+      raise KBError('CONFIGURATION ERROR: individual set as its own father')
+    if self.mother and self.mother == self:
+      self.reload()
+      raise KBError('CONFIGURATION ERROR: individual set as its own mother')
 
 
 class ActionOnIndividual(Action):
