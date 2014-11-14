@@ -154,11 +154,7 @@ class CoreOmeroWrapper(object):
     return self.proxy.save(self, move_to_common_space)
 
   def in_current_sandbox(self):
-    if not self.is_loaded():
-        self.reload()
-    current_group = self.proxy.get_current_group()
-    return self.proxy.get_object_owner(self) == self.proxy.user or \
-        self.proxy.get_object_group(self) == current_group
+    return self.proxy.in_current_sandbox(self)
 
   def serialize(self, engine, shallow=False):
     if not isinstance(engine, Serializer):

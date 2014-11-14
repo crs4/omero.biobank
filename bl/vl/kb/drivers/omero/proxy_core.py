@@ -227,6 +227,13 @@ class ProxyCore(object):
     a = self.current_session.getAdminService()
     return a.getGroup(obj.ome_obj.details.group.id._val)._name._val
 
+  def in_current_sandbox(self, obj):
+    if not obj.is_loaded():
+      obj.reload()
+    current_group = self.get_current_group()
+    return self.get_object_owner(obj) == self.user or \
+      self.get_object_group(obj) == current_group
+
   def connect(self):
     if not self.current_session:
       self.current_session = self.client.createSession(self.user, self.passwd)
