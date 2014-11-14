@@ -310,6 +310,7 @@ class GalaxyMenusService(object):
                     if not dobj.mimetype.endswith('pdf'): result.append(dobj)
         return result
 
+
     def start_service(self, host, port, logfile, pidfile, server, debug=False):
         log = open(logfile, 'a')
         pid = daemon.pidlockfile.PIDLockFile(pidfile)

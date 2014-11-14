@@ -102,7 +102,7 @@ def conf_genome_variant_data_sample(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
           'status' : status_map[r['status']],
           'action' : a,
-          'referenceGenome' : r['reference_genome']}
+          'referenceGenome' : r['genome_reference']}
   return kb.factory.create(kb.GenomeVariationsDataSample, conf)
 
 def conf_illumina_bead_chip_measure(kb, r, a, device, options, status_map):
@@ -251,8 +251,8 @@ class Recorder(core.Core):
             continue
 
       if (r['data_sample_type'] and r['data_sample_type'] == 'GenomeVariationsDataSample'):
-          if r['reference_genome'] and not self.is_known_object_id(r['reference_genome'], self.kb.GenomeVariationsDataSample):
-                m = 'unknown reference genome with ID %s. ' % r['reference_genome']
+          if r['reference_genome'] and not self.is_known_object_id(r['genome_reference'], self.kb.GenomeVariationsDataSample):
+                m = 'unknown reference genome with ID %s. ' % r['genome_reference']
                 self.logger.warning(m + reject)
                 bad_rec = copy.deepcopy(r)
                 bad_rec['error'] = m
