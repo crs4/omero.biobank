@@ -67,9 +67,13 @@ def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
         })
 
     logger.info('Serializing %d objects to %s', len(objects), outfile)
-    # Fetch Actions and their ActionSetup in order to speedup serialization
-    act_cache = kb.get_objects(kb.Action)
-    acts_cache = kb.get_objects(kb.ActionSetup)
+    # Fetch Actions and their ActionSetup in order to speedup serialization.
+    # If a memory error occurs (Ice::MemoryLimitExcpetion) stop loading the cache.
+    try:
+        act_cache = kb.get_objects(kb.Action)
+        acts_cache = kb.get_objects(kb.ActionSetup)
+    except:
+        pass
     with open(outfile, 'w') as f, open(deps_file, 'w') as df, open(public_objs_file, 'w') as pf:
         dep_writer = csv.DictWriter(df, ['class', 'id', 'owner', 'group'], delimiter='\t')
         dep_writer.writeheader()
