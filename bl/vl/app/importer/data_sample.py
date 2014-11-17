@@ -102,7 +102,8 @@ def conf_genome_variant_data_sample(kb, r, a, device, options, status_map):
   conf = {'label' : r['label'],
           'status' : status_map[r['status']],
           'action' : a,
-          'referenceGenome' : r['genome_reference']}
+          'referenceGenome' :  kb.get_by_vid(self.kb.ReferenceGenome, r['genome_reference']),
+    }
   return kb.factory.create(kb.GenomeVariationsDataSample, conf)
 
 def conf_illumina_bead_chip_measure(kb, r, a, device, options, status_map):
