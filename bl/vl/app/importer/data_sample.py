@@ -153,7 +153,7 @@ class Recorder(core.Core):
     study = self.find_study(records)
     self.source_klass = self.find_source_klass(records)
     self.device_klass = self.find_device_klass(records)
-    self.data_sample_klass = self.data_sample_klass(records)
+    self.data_sample_klass = self.find_data_sample_klass(records)
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
