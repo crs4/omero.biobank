@@ -319,7 +319,7 @@ class GalaxyMenusService(object):
             elif isinstance(ds, kb.GenomeVariationsDataSample):
                 if isinstance(ds.referenceGenome, kb.ReferenceGenome):
                     data_objects = kb.get_data_objects(ds)
-	                for dobj in data_objects:
+                    for dobj in data_objects:
                         result.append(dobj)
 	    return result
 
