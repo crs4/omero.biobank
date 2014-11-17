@@ -153,7 +153,7 @@ class Recorder(core.Core):
     study = self.find_study(records)
     self.source_klass = self.find_source_klass(records)
     self.device_klass = self.find_device_klass(records)
-    self.data_sample_klass = self.find_device_klass(records)
+    self.data_sample_klass = self.data_sample_klass(records)
     records, bad_records = self.do_consistency_checks(records)
     for br in bad_records:
       rtsv.writerow(br)
@@ -258,7 +258,7 @@ class Recorder(core.Core):
                 bad_rec['error'] = m
                 bad_records.append(bad_rec)
                 continue
-          continue
+          #continue
 
       if r['options'] :
         try:
@@ -345,7 +345,7 @@ class Recorder(core.Core):
         k = (device.maker, device.model, device.release)
 
       #if self.data_sample_klass == self.kb.GenomeVariationsDataSample:
-      if ('data_sample_type' in r and r['data_sample_type'] == 'GenomeVariationsDataSample'):
+      if 'data_sample_type' in r and r['data_sample_type'] == 'GenomeVariationsDataSample':
           k = ('GenomeVariationsDataSample')
       a.unload()  # FIXME we need to do this, or the next save will choke
       d = data_sample_configurator[k](self.kb, r, a, device, get_options(r),
