@@ -163,8 +163,15 @@ class GalaxyMenusService(object):
             if len(res) == 0:
                 return None
             else:
-                labels = (("{0} [{1}] - {2}\t", r.sample.sample.label,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S'),r.mimetype) for r in res)
-                values = (('{0}', r.omero_id) for r in res)
+                labels = list()
+                values = list()
+                for r in res:
+                    if hasattr(r.sample,'sample'):
+                        labels.append(("{0} [{1}] - {2}",r.sample.sample.label,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S'),r.mimetype))
+                        values.append(('{0}',r.omero_id))
+                    elif hasattr(r.sample,'referenceGenome'):
+                        labels.append(("{0} [{1}] - {2}",r.sample.label,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S'),r.mimetype))
+                        values.append(('{0}',r.omero_id))
                 response_body = inst._build_response_body(values, labels)
                 response_body[0]['selected'] = True
                 return inst._success(response_body)
@@ -301,14 +308,20 @@ class GalaxyMenusService(object):
     def get_data_objects(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        result = list()
-        datasamples = kb.get_objects(kb.SeqDataSample)
+	    result = list()
+        datasamples = kb.get_objects(kb.DataSample)
         for ds in datasamples:
-            if isinstance(ds.sample, kb.Tube):
-                data_objects = kb.get_data_objects(ds)
-                for dobj in data_objects:
-                    if not dobj.mimetype.endswith('pdf'): result.append(dobj)
-        return result
+            if isinstance(ds, kb.SeqDataSample):
+                if isinstance(ds.sample, kb.Tube):
+                    data_objects = kb.get_data_objects(ds)
+                    for dobj in data_objects:
+                        if not dobj.mimetype.endswith('pdf'): result.append(dobj)
+            elif isinstance(ds, kb.GenomeVariationsDataSample):
+                if isinstance(ds.referenceGenome, kb.ReferenceGenome):
+                    data_objects = kb.get_data_objects(ds)
+	                for dobj in data_objects:
+                        result.append(dobj)
+	    return result
 
 
     def start_service(self, host, port, logfile, pidfile, server, debug=False):
