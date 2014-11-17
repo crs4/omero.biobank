@@ -169,7 +169,7 @@ class GalaxyMenusService(object):
                     if hasattr(r.sample,'sample'):
                         labels.append(("{0} [{1}] - {2}",r.sample.sample.label,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S'),r.mimetype))
                         values.append(('{0}',r.omero_id))
-                    elif hasattr(r.sample,'referenceGenome'):
+                    if hasattr(r.sample,'referenceGenome'):
                         labels.append(("{0} [{1}] - {2}",r.sample.label,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S'),r.mimetype))
                         values.append(('{0}',r.omero_id))
                 response_body = inst._build_response_body(values, labels)
@@ -316,7 +316,7 @@ class GalaxyMenusService(object):
                     data_objects = kb.get_data_objects(ds)
                     for dobj in data_objects:
                         if not dobj.mimetype.endswith('pdf'): result.append(dobj)
-            elif isinstance(ds, kb.GenomeVariationsDataSample):
+            if isinstance(ds, kb.GenomeVariationsDataSample):
                 if isinstance(ds.referenceGenome, kb.ReferenceGenome):
                     data_objects = kb.get_data_objects(ds)
                     for dobj in data_objects:
