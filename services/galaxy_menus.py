@@ -308,7 +308,7 @@ class GalaxyMenusService(object):
     def get_data_objects(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-	    result = list()
+        result = list()
         datasamples = kb.get_objects(kb.DataSample)
         for ds in datasamples:
             if isinstance(ds, kb.SeqDataSample):
