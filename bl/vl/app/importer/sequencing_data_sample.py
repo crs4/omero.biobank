@@ -44,6 +44,7 @@ SUPPORTED_SOURCES = [
     'FlowCell',
     'SequencerOutput',
     'RawSeqDataSample',
+    'Tube',
     ]
 
 SUPPORTED_DATA_SAMPLE_TYPES = [
