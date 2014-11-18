@@ -167,7 +167,11 @@ class GalaxyMenusService(object):
                 values = list()
                 for r in res:
                     if hasattr(r.sample,'sample'):
-                        labels.append(("{0} [{1}] - {2}",r.sample.sample.label,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S'),r.mimetype))
+                        if r.sample.sample.label == 'TRAINING_tube_1' : label = 'FATHER'
+                        elif r.sample.sample.label == 'TRAINING_tube_2' : label = 'PROBAND'
+                        elif r.sample.sample.label == 'TRAINING_tube_3' : label = 'MOTHER'
+                        else : continue
+                        labels.append(("{0} [{1}] - {2}",label,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S'),r.mimetype))
                         values.append(('{0}',r.omero_id))
                     if hasattr(r.sample,'referenceGenome'):
                         labels.append(("{0} [{1}] - {2}",r.sample.label,datetime.datetime.fromtimestamp(int(r.sample.creationDate)).strftime('%Y-%m-%d %H:%M:%S'),r.mimetype))
@@ -318,6 +322,11 @@ class GalaxyMenusService(object):
                         if not dobj.mimetype.endswith('pdf'): result.append(dobj)
             if isinstance(ds, kb.GenomeVariationsDataSample):
                 if isinstance(ds.referenceGenome, kb.ReferenceGenome):
+                    data_objects = kb.get_data_objects(ds)
+                    for dobj in data_objects:
+                        result.append(dobj)
+            if isinstance(ds, kb.AlignedSeqDataSample):
+                if isinstance(ds.referenceGenome, kb.ReferenceGenome) and isinstance(ds.sample, kb.Tube):
                     data_objects = kb.get_data_objects(ds)
                     for dobj in data_objects:
                         result.append(dobj)
