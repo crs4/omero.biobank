@@ -49,7 +49,7 @@ SUPPORTED_SOURCES = [
 SUPPORTED_DATA_SAMPLE_TYPES = [
     'SequencerOutput',
     'RawSeqDataSample',
-    'SeqDataSample'
+    'SeqDataSample',
     'AlignedSeqDataSample'
     ]
 
