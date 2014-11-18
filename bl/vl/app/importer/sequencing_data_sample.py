@@ -280,8 +280,8 @@ class Recorder(core.Core):
                 bad_rec['error'] = m
                 bad_records.append(bad_rec)
                 continue
-            if r['reference_genome'] and r['reference_genome'] not in self.preloaded_references:
-                m = 'unknown reference genome with ID %s. ' % r['reference_genome']
+            if r['genome_reference'] and r['genome_reference'] not in self.preloaded_references:
+                m = 'unknown reference genome with ID %s. ' % r['genome_reference']
                 self.logger.warning(m + reject)
                 bad_rec = copy.deepcopy(r)
                 bad_rec['error'] = m
@@ -345,8 +345,8 @@ class Recorder(core.Core):
                 'action' : a}
         if r['sample']:
             conf['sample'] = self.preloaded_tubes[r['sample']]
-        if r['reference_genome']:
-            conf['referenceGenome'] = self.preloaded_references[r['reference_genome']]
+        if r['genome_reference']:
+            conf['referenceGenome'] = self.preloaded_references[r['genome_reference']]
         return self.kb.factory.create(self.kb.AlignedSeqDataSample, conf)
             
             
