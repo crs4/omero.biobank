@@ -1,5 +1,18 @@
 #!/usr/bin/env python
 
+#=======================================================================
+# The build_configuration.py tool is used to build the configuration
+# details used by the KB to interact with the Graph engine.
+# The tool requires to connect to a properly configured OMERO server
+# to retrieve all the information needed to build the proper
+# configuration.
+# If the tool is launched without the OMERO server configuration
+# parameters the produced configuration file will use the neo4j
+# driver but no URI will be recorded and the KB will raise a
+# GraphEngineConfigurationError as soon as a Proxy object will be
+# created. To fix this, generate a proper configuration file.
+#=======================================================================
+
 import argparse, sys, os
 
 import omero
@@ -22,7 +35,7 @@ CONFIG_VALUES = [
         'ome_config_value': 'omero.biobank.graph.engine',
         'kb_config_value': 'GRAPH_ENGINE_DRIVER',
         'type': str,
-        'default': "pygraph",
+        'default': "neo4j",
         },
     {
         'ome_config_value': 'omero.biobank.graph.uri',
