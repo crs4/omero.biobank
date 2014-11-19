@@ -20,3 +20,7 @@ class GraphOutOfSyncError(Exception):
 
 class GraphAuthenticationError(Exception):
     pass
+
+
+class GraphEngineConfigurationError(Exception):
+    pass

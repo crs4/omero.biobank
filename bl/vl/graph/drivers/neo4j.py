@@ -10,7 +10,7 @@ from bl.vl.utils.graph import build_edge_id
 import bl.vl.kb.events as events
 from bl.vl.graph.errors import DependencyTreeError, MissingEdgeError,\
     MissingNodeError, GraphOutOfSyncError, GraphAuthenticationError, \
-    GraphConnectionError
+    GraphConnectionError, GraphEngineConfigurationError
 
 
 class OME_Object(Node):
@@ -65,7 +65,10 @@ class Neo4JDriver(object):
     DIRECTION_BOTH = 3
 
     def __init__(self, uri, username=None, password=None, kb=None):
-        graph_conf = Config(uri, username, password)
+        try:
+            graph_conf = Config(uri, username, password)
+        except AssertionError:
+            raise GraphEngineConfigurationError('No URI provided, check your configuration')
         try:
             self.graph = Graph(graph_conf)
             for h in bulbs_log.root.handlers:
@@ -74,6 +77,8 @@ class Neo4JDriver(object):
             raise GraphConnectionError('Unable to find Neo4j server at %s' % uri)
         except httplib2.socket.error:
             raise GraphConnectionError('Connection refused by Neo4j server')
+        except httplib2.RelativeURIError:
+            raise GraphEngineConfigurationError('"%s" is not a valid URI, check your configuration' % uri)
         except TypeError:
             # Using plugin from https://github.com/neo4j-contrib/authentication-extension to manage authentication
             # will produce a TypeError if no username and password are given or if given authentication credentials
