@@ -56,7 +56,7 @@ class Enrollment(wp.OmeroWrapper):
                 ('studyCode', wp.STRING, wp.REQUIRED),
                 #  Multi-field unique keys
                 #  stCodeUK = STUDY-VID_STUDYCODE
-                ('stCodeUK', wp.STRING, wp.REQUIRED),
+                ('stCodeUK', wp.STRING, wp.REQUIRED)]
   __do_not_serialize__ = ['stCodeUK']
 
   def __preprocess_conf__(self, conf):
