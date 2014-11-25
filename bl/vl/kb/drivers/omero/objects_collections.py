@@ -119,7 +119,7 @@ class DataCollection(VLCollection):
   __fields__ = []
 
   def __update_constraints__(self):
-    self__fields__['labelUK'] = super(DataCollection, self).__fields__['labelUK']
+    self.__fields__['labelUK'] = super(DataCollection, self).__fields__['labelUK']
     super(DataCollection, self).__update_constraints__()
 
 
