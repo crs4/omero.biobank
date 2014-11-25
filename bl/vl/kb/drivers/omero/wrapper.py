@@ -270,6 +270,8 @@ class MetaWrapper(type):
   def make_getter(cls, base, fields):
     def getter(self, k):
       if k in fields:
+        if not self.is_loaded() and self.is_mapped():
+          self.reload()
         v = getattr(self.ome_obj, k)
         if v is None:
           return None
