@@ -59,11 +59,19 @@ class MicroArrayMeasure(DataSample):
   OME_TABLE = 'MicroArrayMeasure'
   __fields__ = []
 
+  def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(MicroArrayMeasure, self).__fields__['labelUK']
+    super(MicroArrayMeasure, self).__update_constraints__()
+
 
 class GenotypeDataSample(DataSample):
 
   OME_TABLE = 'GenotypeDataSample'
   __fields__ = [('snpMarkersSet', SNPMarkersSet, wp.REQUIRED)]
+
+  def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(GenotypeDataSample, self).__fields__['labelUK']
+    super(GenotypeDataSample, self).__update_constraints__()
 
   def resolve_to_data(self, indices=None):
     dos = self.proxy.get_data_objects(self)
