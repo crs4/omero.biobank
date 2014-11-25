@@ -99,7 +99,7 @@ class HardwareDevice(Device):
     if self.barcode:
       b_uk = make_unique_key(self.get_namespace(), self.barcode)
       setattr(self.ome_obj, 'barcodeUK',
-              self.to_omero(self.__field__['barcodeUK'][0], b_uk))
+              self.to_omero(self.__fields__['barcodeUK'][0], b_uk))
     super(HardwareDevice, self).__update_constraints__()
 
 
