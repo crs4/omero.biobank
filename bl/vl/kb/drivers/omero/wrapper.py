@@ -68,10 +68,18 @@ class CoreOmeroWrapper(object):
   def __eq__(self, obj):
     if type(obj) != self.__class__:
       return False
-    if not self.is_mapped() or not obj.is_mapped():
-      raise KBError("non-persistent objects are not comparable")
-    return ((self.ome_obj.__class__.__name__, self.ome_obj.id._val) ==
-            (obj.ome_obj.__class__.__name__, obj.ome_obj.id._val))
+    # if objects have a VID field we can compare them even if they are not mapped
+    if hasattr(self, 'id'):
+      self_id = self.id
+      obj_id = obj.id
+    # otherwise we need the ID field of the ome_obj and objects must be mapped
+    else:
+      if not self.is_mapped() or not obj.is_mapped():
+        raise KBError("non-persistent objects without VID field are not comparable")
+      self_id = self.ome_obj.id._val
+      obj_id = self.ome_obj.id._val
+    return ((self.ome_obj.__class__.__name__, self_id) ==
+            (obj.ome_obj.__class__.__name__, obj_id))
 
   def __ne__(self, obj):
     return not self.__eq__(obj)
