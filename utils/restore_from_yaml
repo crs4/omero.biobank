@@ -104,7 +104,7 @@ def dump_file(kb, file_path, logger):
         to_biobank(kb, objects_limbo, logger)
         return True
     except Exception, e:
-        logger.critical(e.message)
+        logger.exception(e.message)
         return False
 
 
@@ -126,10 +126,16 @@ def move_to_common_space(kb, public_objects_file, logger):
     for rec in records:
         try:
             obj = kb.get_by_vid(getattr(kb, rec['class']), rec['id'])
-            public_objects.append(obj)
+            # only append objects that are not yet in the common space
+            if kb.get_object_group(obj) != 'user':
+                public_objects.append(obj)
         except ValueError:
             pass
-    kb.admin.move_to_common_space(public_objects)
+    if len(public_objects) > 0:
+        logger.info('Moving %d objects to common space', len(public_objects))
+        kb.admin.move_to_common_space(public_objects)
+    else:
+        logger.info('There are no objects that need to be moved to common space')
 
 
 def main(argv):
