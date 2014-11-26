@@ -139,6 +139,8 @@ def move_to_common_space(kb, public_objects_file, logger):
     for rec in records:
         try:
             obj = kb.get_by_vid(getattr(kb, rec['class']), rec['id'])
+            # reload if object was stored in cache and unloaded in a previous cycle
+            obj.reload()
             # only append objects that are not yet in the common space
             if kb.get_object_group(obj) != 'user':
                 public_objects.append(obj)
