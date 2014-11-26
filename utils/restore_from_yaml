@@ -50,18 +50,30 @@ def records_by_chunk(records, batch_size=500):
         offset += batch_size
 
 
-def save_objects(kb, objects, logger):
+def save_objects(kb, objects, logger, rollback_enabled=False):
     kb.connect()
     logger.info('Saving %d records', len(objects))
+    saved_records = []
     for chunk, records in enumerate(records_by_chunk(objects)):
-        logger.debug('Saving chunk %d', chunk)
-        kb.save_array(records)
-        # unload saved objects, this will prevent SecurityViolation errors when dealing
-        # with object shared in the public space by other users
-        for r in records:
-            r.unload()
+        try:
+            logger.debug('Saving chunk %d', chunk)
+            saved_records.extend(kb.save_array(records))
+            # unload saved objects, this will prevent SecurityViolation errors when dealing
+            # with object shared in the public space by other users
+            for r in records:
+                r.unload()
+        except Exception, e:
+            logger.exception('An error occurred while saving chunk %d, do a rollback', chunk)
+            if rollback_enabled:
+                # delete saved objects if an error occurs and exit
+                rollback(kb, saved_records)
+            raise e
     kb.disconnect()
 
+
+def rollback(kb, objects):
+    for o in objects:
+        kb.delete(o)
 
 # Some objects like Studies and Devices can be shared in the biobank, handle them properly
 def save_shared_objects(kb, objects, logger):
@@ -75,7 +87,7 @@ def save_shared_objects(kb, objects, logger):
     kb.disconnect()
 
 
-def to_biobank(kb, objects_limbo, logger):
+def to_biobank(kb, objects_limbo, logger, rollback_enabled=False):
     def get_base_klass(objtype):
         import omero
         import omero.model
@@ -94,14 +106,14 @@ def to_biobank(kb, objects_limbo, logger):
         if get_base_klass(objtype) in shared_objects_type:
             save_shared_objects(kb, bb_objs, logger)
         else:
-            save_objects(kb, bb_objs, logger)
+            save_objects(kb, bb_objs, logger, rollback_enabled)
     logger.info('Objects restoring completed')
 
 
-def dump_file(kb, file_path, logger):
+def dump_file(kb, file_path, logger, rollback_enabled=False):
     try:
         objects_limbo = objects_from_yaml(kb, file_path, logger)
-        to_biobank(kb, objects_limbo, logger)
+        to_biobank(kb, objects_limbo, logger, rollback_enabled)
         return True
     except Exception, e:
         logger.exception(e.message)
@@ -112,7 +124,8 @@ def dump_chunks(kb, chunks_folder, logger):
     files = os.listdir(chunks_folder)
     files.sort()
     for f in files:
-        dumped = dump_file(kb, os.path.join(chunks_folder, f), logger)
+        dumped = dump_file(kb, os.path.join(chunks_folder, f), logger,
+                           rollback_enabled=True)
         if dumped:
             os.remove(os.path.join(chunks_folder, f))
 
