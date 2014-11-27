@@ -229,7 +229,13 @@ class ProxyCore(object):
 
   def in_current_sandbox(self, obj):
     if not obj.is_loaded():
-      obj.reload()
+      try:
+        obj.reload()
+      except omero.SecurityViolation:
+        # unable to reload an object due to a security violation, it means that the
+        # object is in another sandbox (usually it happens with objects, like actions,
+        # connected to other objects that were moved in the common space)
+        return False
     current_group = self.get_current_group()
     return self.get_object_owner(obj) == self.user or \
       self.get_object_group(obj) == current_group
