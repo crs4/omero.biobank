@@ -29,6 +29,8 @@ def make_parser():
                         help='A list of comma separated types that will be exclude from the dump process')
     parser.add_argument('--exclude-gdos', action='store_true',
                         help='exclude GDOs serialized as OMERO.table rows')
+    parser.add_argument('--export-omero-tables', action='store_true',
+                        help='export OMERO.tables definitions')
     return parser
 
 
@@ -40,6 +42,13 @@ def get_data_objects(kb, logger, exclude_gdos):
     else:
         logger.info('Retrieving DataObjects')
         return kb.get_objects(kb.DataObject)
+
+
+def get_omero_tables(kb, logger):
+    query = 'SELECT ofile FROM OriginalFile ofile WHERE ofile.mimetype = :tables_mtype'
+    tables = kb.find_all_by_query(query, {'tables_mtype': 'OMERO.tables'})
+    logger.info('Retrieved %d OMERO.tables', len(tables))
+    return tables
 
 
 def get_all_objects(kb, exclude_gdos, excluded_types, logger):
@@ -93,6 +102,16 @@ def to_yaml(outfile, deps_file, public_objs_file, objects, kb, logger):
     logger.info('Objects serialization completed')
 
 
+def dump_tables_description(outfile, kb, logger):
+    logger.info('Dumping OMERO.tables details')
+    with open(outfile, 'w') as ofile:
+        tables_writer = csv.DictWriter(ofile, ['table_name', 'old_id'], delimiter='\t')
+        tables_writer.writeheader()
+        tables = get_omero_tables(kb, logger)
+        for t in tables:
+            tables_writer.writerow({'table_name': t.name, 'old_id': t.omero_id})
+
+
 def main(argv):
     parser = make_parser()
     args = parser.parse_args(argv)
@@ -104,6 +123,9 @@ def main(argv):
                               logger)
     to_yaml(args.out_file, args.dependencies_file, args.public_objects_file,
             objects, kb, logger)
+    if args.export_omero_tables:
+        tables_fname = '%s.tables' % args.out_file
+        dump_tables_description(tables_fname, kb, logger)
 
 
 if __name__ == '__main__':
