@@ -59,6 +59,7 @@ END_COPYRIGHT
     <entry name="BeadChip_12x1Q"/>
     <entry name="UNKNOWN"/>
     <entry name="BeadChip_12x8"/>
+    <entry name="BeadChip_24x1x4"/>
   </enum>
 
   <enum id="ome.model.vl.IlluminaArrayOfArraysClass">
@@ -70,6 +71,7 @@ END_COPYRIGHT
     <entry name="Infinium_HD"/>
     <entry name="UNKNOWN"/>
     <entry name="Infinium_NXT"/>
+    <entry name="Infinium_LCG"/>
   </enum>
 
   <type id="ome.model.vl.IlluminaArrayOfArrays"
@@ -93,7 +95,7 @@ END_COPYRIGHT
     <properties>
     </properties>
   </type>
-  <!-- FIXME super class should be ome.model.vl.MicroArrayMeasure -->
+
   <type id="ome.model.vl.IlluminaBeadChipMeasures"
 	superclass="ome.model.vl.DataCollection">
     <properties>
