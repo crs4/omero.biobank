@@ -218,8 +218,9 @@ class Proxy(ProxyCore):
                          (klass, label))
     return res[label]
 
-  def create_global_tables(self, destructive=False):
-    self.eadpt.create_ehr_table(destructive=destructive)
+  def create_global_tables(self, destructive=False, move_to_common_space=True):
+    self.eadpt.create_ehr_table(destructive=destructive,
+                                move_to_common_space=move_to_common_space)
 
   # Modeling-related utility functions
   # ==================================
