@@ -111,6 +111,13 @@ class Recorder(core.Core):
         bad_rec['error'] = msg
         bad_records.append(bad_rec)
         continue
+      if r['label'] in self.preloaded_enrollments:
+        f = 'there is a pre-existing Enrollment with label %s' % r['label']
+        self.logger.error(reject + f)
+        bad_rec = copy.deepcopy(r)
+        bad_rec['error'] = f
+        bad_records.append(bad_rec)
+        continue
       if r['label'] in k_map:
         f = 'duplicate label %s in this batch' % r['label']
         self.logger.error(reject + f)
