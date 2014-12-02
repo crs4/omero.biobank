@@ -92,7 +92,7 @@ def do_preemptive_cleanup(kb, ids, obj_type, logger):
     objs_map = {}
     for id in ids:
         try:
-            objs_map[id] = kb.get_by_vid(obj_type, id)
+            objs_map[id] = kb.get_by_vid(getattr(kb, obj_type), id)
         except ValueError:
             logger.debug('%s:%s not found', obj_type, id)
     logger.info('Found %d objects, deleting them', len(objs_map))
