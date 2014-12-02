@@ -87,7 +87,21 @@ def save_shared_objects(kb, objects, logger):
     kb.disconnect()
 
 
-def to_biobank(kb, objects_limbo, logger, rollback_enabled=False):
+def do_preemptive_cleanup(kb, ids, obj_type, logger):
+    logger.info('Start preemptive cleanup')
+    objs_map = {}
+    for id in ids:
+        try:
+            objs_map[id] = kb.get_by_vid(obj_type, id)
+        except ValueError:
+            logger.debug('%s:%s not found', obj_type, id)
+    logger.info('Found %d objects, deleting them', len(objs_map))
+    for o in objs_map.values():
+        kb.delete(o)
+
+
+def to_biobank(kb, objects_limbo, logger, rollback_enabled=False,
+               preemptive_cleanup=False):
     def get_base_klass(objtype):
         import omero
         import omero.model
@@ -103,6 +117,9 @@ def to_biobank(kb, objects_limbo, logger, rollback_enabled=False):
     for objtype, objects in objects_limbo.groupbytype():
         logger.info('Saving type %s', objtype)
         bb_objs = [o[1] for o in objects]
+        if preemptive_cleanup:
+            ids = [o.id for o in bb_objs]
+            do_preemptive_cleanup(kb, ids, objtype, logger)
         if get_base_klass(objtype) in shared_objects_type:
             save_shared_objects(kb, bb_objs, logger)
         else:
@@ -110,10 +127,12 @@ def to_biobank(kb, objects_limbo, logger, rollback_enabled=False):
     logger.info('Objects restoring completed')
 
 
-def dump_file(kb, file_path, logger, rollback_enabled=False):
+def dump_file(kb, file_path, logger, rollback_enabled=False,
+              preemptive_cleanup=False):
     try:
         objects_limbo = objects_from_yaml(kb, file_path, logger)
-        to_biobank(kb, objects_limbo, logger, rollback_enabled)
+        to_biobank(kb, objects_limbo, logger, rollback_enabled,
+                   preemptive_cleanup)
         return True
     except Exception, e:
         logger.exception(e.message)
@@ -125,7 +144,7 @@ def dump_chunks(kb, chunks_folder, logger):
     files.sort()
     for f in files:
         dumped = dump_file(kb, os.path.join(chunks_folder, f), logger,
-                           rollback_enabled=True)
+                           rollback_enabled=True, preemptive_cleanup=True)
         if dumped:
             os.remove(os.path.join(chunks_folder, f))
 
