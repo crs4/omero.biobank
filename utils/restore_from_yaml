@@ -122,7 +122,10 @@ def to_biobank(kb, objects_limbo, logger, rollback_enabled=False,
     for objtype, objects in objects_limbo.groupbytype():
         logger.info('Saving type %s', objtype)
         bb_objs = [o[1] for o in objects]
-        if preemptive_cleanup:
+        # preemptive cleanup can't be performed when import DataObjects because
+        # there is no unique identifier that can be used to match the objects
+        # that will be cleaned
+        if preemptive_cleanup and objtype != 'DataObject':
             ids = [o.id for o in bb_objs]
             do_preemptive_cleanup(kb, ids, objtype, logger)
         if get_base_klass(objtype) in shared_objects_type:
