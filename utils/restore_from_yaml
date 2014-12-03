@@ -97,6 +97,11 @@ def do_preemptive_cleanup(kb, ids, obj_type, logger):
             logger.debug('%s:%s not found', obj_type, id)
     logger.info('Found %d objects, deleting them', len(objs_map))
     for o in objs_map.values():
+        # create a node in the graph in order to prevent hanging NODE_DELETE
+        # events in rabbit's queue when deleting the record (usually caused
+        # by pika's exceptions when saving objects within OMERO)
+        if not obj_type.startswith('Action'):
+            kb.dt.create_node(o)
         kb.delete(o)
 
 
