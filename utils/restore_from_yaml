@@ -50,18 +50,30 @@ def records_by_chunk(records, batch_size=500):
         offset += batch_size
 
 
-def save_objects(kb, objects, logger):
+def save_objects(kb, objects, logger, rollback_enabled=False):
     kb.connect()
     logger.info('Saving %d records', len(objects))
+    saved_records = []
     for chunk, records in enumerate(records_by_chunk(objects)):
-        logger.debug('Saving chunk %d', chunk)
-        kb.save_array(records)
-        # unload saved objects, this will prevent SecurityViolation errors when dealing
-        # with object shared in the public space by other users
-        for r in records:
-            r.unload()
+        try:
+            logger.debug('Saving chunk %d', chunk)
+            saved_records.extend(kb.save_array(records))
+            # unload saved objects, this will prevent SecurityViolation errors when dealing
+            # with object shared in the public space by other users
+            for r in records:
+                r.unload()
+        except Exception, e:
+            logger.exception('An error occurred while saving chunk %d, do a rollback', chunk)
+            if rollback_enabled:
+                # delete saved objects if an error occurs and exit
+                rollback(kb, saved_records)
+            raise e
     kb.disconnect()
 
+
+def rollback(kb, objects):
+    for o in objects:
+        kb.delete(o)
 
 # Some objects like Studies and Devices can be shared in the biobank, handle them properly
 def save_shared_objects(kb, objects, logger):
@@ -75,7 +87,26 @@ def save_shared_objects(kb, objects, logger):
     kb.disconnect()
 
 
-def to_biobank(kb, objects_limbo, logger):
+def do_preemptive_cleanup(kb, ids, obj_type, logger):
+    logger.info('Start preemptive cleanup')
+    objs_map = {}
+    for id in ids:
+        try:
+            objs_map[id] = kb.get_by_vid(getattr(kb, obj_type), id)
+        except ValueError:
+            logger.debug('%s:%s not found', obj_type, id)
+    logger.info('Found %d objects, deleting them', len(objs_map))
+    for o in objs_map.values():
+        # create a node in the graph in order to prevent hanging NODE_DELETE
+        # events in rabbit's queue when deleting the record (usually caused
+        # by pika's exceptions when saving objects within OMERO)
+        if not obj_type.startswith('Action'):
+            kb.dt.create_node(o)
+        kb.delete(o)
+
+
+def to_biobank(kb, objects_limbo, logger, rollback_enabled=False,
+               preemptive_cleanup=False):
     def get_base_klass(objtype):
         import omero
         import omero.model
@@ -91,20 +122,28 @@ def to_biobank(kb, objects_limbo, logger):
     for objtype, objects in objects_limbo.groupbytype():
         logger.info('Saving type %s', objtype)
         bb_objs = [o[1] for o in objects]
+        # preemptive cleanup can't be performed when import DataObjects because
+        # there is no unique identifier that can be used to match the objects
+        # that will be cleaned
+        if preemptive_cleanup and objtype != 'DataObject':
+            ids = [o.id for o in bb_objs]
+            do_preemptive_cleanup(kb, ids, objtype, logger)
         if get_base_klass(objtype) in shared_objects_type:
             save_shared_objects(kb, bb_objs, logger)
         else:
-            save_objects(kb, bb_objs, logger)
+            save_objects(kb, bb_objs, logger, rollback_enabled)
     logger.info('Objects restoring completed')
 
 
-def dump_file(kb, file_path, logger):
+def dump_file(kb, file_path, logger, rollback_enabled=False,
+              preemptive_cleanup=False):
     try:
         objects_limbo = objects_from_yaml(kb, file_path, logger)
-        to_biobank(kb, objects_limbo, logger)
+        to_biobank(kb, objects_limbo, logger, rollback_enabled,
+                   preemptive_cleanup)
         return True
     except Exception, e:
-        logger.critical(e.message)
+        logger.exception(e.message)
         return False
 
 
@@ -112,7 +151,8 @@ def dump_chunks(kb, chunks_folder, logger):
     files = os.listdir(chunks_folder)
     files.sort()
     for f in files:
-        dumped = dump_file(kb, os.path.join(chunks_folder, f), logger)
+        dumped = dump_file(kb, os.path.join(chunks_folder, f), logger,
+                           rollback_enabled=True, preemptive_cleanup=True)
         if dumped:
             os.remove(os.path.join(chunks_folder, f))
 
@@ -126,10 +166,18 @@ def move_to_common_space(kb, public_objects_file, logger):
     for rec in records:
         try:
             obj = kb.get_by_vid(getattr(kb, rec['class']), rec['id'])
-            public_objects.append(obj)
+            # reload if object was stored in cache and unloaded in a previous cycle
+            obj.reload()
+            # only append objects that are not yet in the common space
+            if kb.get_object_group(obj) != 'user':
+                public_objects.append(obj)
         except ValueError:
             pass
-    kb.admin.move_to_common_space(public_objects)
+    if len(public_objects) > 0:
+        logger.info('Moving %d objects to common space', len(public_objects))
+        kb.admin.move_to_common_space(public_objects)
+    else:
+        logger.info('There are no objects that need to be moved to common space')
 
 
 def main(argv):

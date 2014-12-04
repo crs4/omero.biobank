@@ -48,8 +48,11 @@ def delete(kb, objects, actions, logger):
     undeleted_objs = []
     for i, o in enumerate(objects):
         try:
-            kb.delete(o)
-            logger.debug('Deleted object %d of %d', i, len(objects))
+            if o.in_current_sandbox():
+                kb.delete(o)
+                logger.debug('Deleted object %d of %d', i, len(objects))
+            else:
+                logger.debug('Object %d of %d not in user sandbox, skipping', i, len(objects))
         except KBError:
             undeleted_objs.append(o)
             logger.debug('Object %d of %d deletion failed, retry during next wave',
@@ -59,15 +62,18 @@ def delete(kb, objects, actions, logger):
     undeleted_acts = []
     for i, a in enumerate(actions):
         try:
-            if a.setup:
+            if a.setup and a.setup.in_current_sandbox():
                 kb.delete(a.setup)
                 logger.debug('Deleted action %d of %d setup', i, len(actions))
         except KBError:
             # different actions can have the same configuration objects, ignore if can't delete
             pass
         try:
-            kb.delete(a)
-            logger.debug('Deleted action %d of %d', i, len(actions))
+            if a.in_current_sandbox():
+                kb.delete(a)
+                logger.debug('Deleted action %d of %d', i, len(actions))
+            else:
+                logger.debug('Action %d of %d not in user sandbox, skipping', i, len(actions))
         except KBError:
             undeleted_acts.append(a)
             logger.debug('Action %d of %d deletion failed, retry during next wave',

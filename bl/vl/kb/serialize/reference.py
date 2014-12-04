@@ -4,6 +4,7 @@ A simple smart pointer object.
 """
 
 from bl.vl.kb.serialize.utils import DuplicateKey
+from bl.vl.kb.drivers.omero.snp_markers_set import SNPMarkersSet
 
 class Reference(object):
     "A simple, but very specialized, pointer like object"
@@ -29,7 +30,7 @@ class Reference(object):
     @classmethod
     def resolve_internal_reference(cls, oid, obj):
         if cls.known_references['by_ref'].has_key(oid):
-            cls.known_references['by_ref'][oid].object =  obj
+            cls.known_references['by_ref'][oid].object = obj
 
     @classmethod
     def resolve_external_references(cls, get_by_field):
@@ -45,7 +46,10 @@ class Reference(object):
             if not srtd:
                 continue
             for otype, ovalues in srtd.iteritems():
-                known_objs = get_by_field(otype, k[3:], ovalues.keys())
+                if otype == SNPMarkersSet and k == 'by_vid':
+                    known_objs = get_by_field(otype, 'markersSetVID', ovalues.keys())
+                else:
+                    known_objs = get_by_field(otype, k[3:], ovalues.keys())
                 for o in known_objs.values():
                     o.unload()
                 for i, ref in ovalues.iteritems():

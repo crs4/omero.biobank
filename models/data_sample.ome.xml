@@ -17,15 +17,16 @@ END_COPYRIGHT
   <type id="ome.model.vl.DataSample">
     <properties>
       <required name="vid" type="string" unique="true"/>
-      <required name="label" type="string" unique="true"/>
+      <required name="label" type="string"/>
       <required name="creationDate" type="timestamp"/>
       <required name="status" type="ome.model.vl.DataSampleStatus"/>
       <required name="action" type="ome.model.vl.Action"/>
+      <!-- unique keys with namespace -->
+      <required name="labelUK" type="string" unique="true"/>
     </properties>
   </type>
 
-  <type id="ome.model.vl.DataObject" 
-	superclass="ome.model.core.OriginalFile">
+  <type id="ome.model.vl.DataObject" superclass="ome.model.core.OriginalFile">
     <properties>
       <required name="sample" type="ome.model.vl.DataSample"/>
     </properties>
@@ -46,13 +47,15 @@ END_COPYRIGHT
 	convenience. Strictly speaking, it is not needed.
     -->
     <properties>
-      <required name="label"    type="string" unique="true"/>
-      <required name="maker"    type="string"/>
-      <required name="model"    type="string"/>
-      <required name="release"  type="string"/>
+      <required name="label" type="string"/>
+      <required name="maker" type="string"/>
+      <required name="model" type="string"/>
+      <required name="release" type="string"/>
       <!-- FIXME It could be better to explicitly point to a
            DataObject that refers to the set -->
-      <required name="markersSetVID"  type="string" unique="true"/>
+      <required name="markersSetVID" type="string" unique="true"/>
+      <!-- unique keys with namespace -->
+      <required name="labelUK" type="string" unique="true"/>
       <!-- maker model release -->
       <required name="snpMarkersSetUK" type="string" unique="true"/>
     </properties>
@@ -61,7 +64,7 @@ END_COPYRIGHT
   <type id="ome.model.vl.GenotypeDataSample" 
 	superclass="ome.model.vl.DataSample">
     <properties>
-      <required name="snpMarkersSet"  type="ome.model.vl.SNPMarkersSet" />
+      <required name="snpMarkersSet" type="ome.model.vl.SNPMarkersSet" />
     </properties>
   </type>
 

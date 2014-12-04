@@ -68,10 +68,18 @@ class CoreOmeroWrapper(object):
   def __eq__(self, obj):
     if type(obj) != self.__class__:
       return False
-    if not self.is_mapped() or not obj.is_mapped():
-      raise KBError("non-persistent objects are not comparable")
-    return ((self.ome_obj.__class__.__name__, self.ome_obj.id._val) ==
-            (obj.ome_obj.__class__.__name__, obj.ome_obj.id._val))
+    # if objects have a VID field we can compare them even if they are not mapped
+    if hasattr(self, 'id'):
+      self_id = self.id
+      obj_id = obj.id
+    # otherwise we need the ID field of the ome_obj and objects must be mapped
+    else:
+      if not self.is_mapped() or not obj.is_mapped():
+        raise KBError("non-persistent objects without VID field are not comparable")
+      self_id = self.ome_obj.id._val
+      obj_id = self.ome_obj.id._val
+    return ((self.ome_obj.__class__.__name__, self_id) ==
+            (obj.ome_obj.__class__.__name__, obj_id))
 
   def __ne__(self, obj):
     return not self.__eq__(obj)
@@ -197,7 +205,15 @@ class CoreOmeroWrapper(object):
   def omero_id(self):
     return self.ome_obj._id._val
     
-    
+  def get_namespace(self):
+    close_connection = False
+    if not self.proxy.current_session:
+      self.proxy.connect()
+      close_connection = True
+    namespace, _ = self.proxy.get_current_group()
+    if close_connection:
+      self.proxy.disconnect()
+    return namespace
 
 
 class MetaWrapper(type):
@@ -254,6 +270,8 @@ class MetaWrapper(type):
   def make_getter(cls, base, fields):
     def getter(self, k):
       if k in fields:
+        if not self.is_loaded() and self.is_mapped():
+          self.reload()
         v = getattr(self.ome_obj, k)
         if v is None:
           return None

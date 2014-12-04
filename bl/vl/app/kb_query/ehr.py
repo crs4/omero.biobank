@@ -96,9 +96,9 @@ def make_parser(parser):
                       help="choose all the fields listed in this set")
 
 
-def implementation(args):
-  ehr = EHR(host=args.host, user=args.user, passwd=args.passwd,
-            keep_tokens=args.keep_tokens)
+def implementation(logger, host, user, passwd, args):
+  ehr = EHR(host=host, user=user, passwd=passwd,
+            keep_tokens=args.keep_tokens, logger=logger)
   ehr.dump(args.study_label, args.fields_set, args.ofile)
 
 

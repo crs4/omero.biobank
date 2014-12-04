@@ -10,11 +10,12 @@ END_COPYRIGHT
   <type id="ome.model.vl.VLCollection">
     <properties>
       <required name="vid" type="string" unique="true"/>
-      <required name="label" type="string" unique="true"/>
+      <required name="label" type="string"/>
       <required name="creationDate" type="timestamp"/>
       <!-- -->
       <required name="action" type="ome.model.vl.Action"/>
       <optional name="lastUpdate" type="ome.model.vl.Action"/>
+      <required name="labelUK" type="string" unique="true"/>
     </properties>
   </type>
 
@@ -30,8 +31,10 @@ END_COPYRIGHT
 
   <type id="ome.model.vl.Container" superclass="ome.model.vl.VLCollection">
     <properties>
-      <optional name="barcode" type="string" unique="true"/>
+      <optional name="barcode" type="string"/>
       <required name="status" type="ome.model.vl.ContainerStatus"/>
+      <!-- unique keys with namespace -->
+      <optional name="barcodeUK" type="string" unique="true"/>
     </properties>
   </type>
 
@@ -58,6 +61,7 @@ END_COPYRIGHT
       <required name="vid" type="string" unique="true"/>
       <required name="dataSample" type="ome.model.vl.DataSample"/>      
       <required name="dataCollection" type="ome.model.vl.DataCollection"/>
+      <!-- unique keys with namespace -->
       <!-- dataCollection.vid, dataSample.vid -->
       <required name="dataCollectionItemUK" type="string" unique="true"/>
     </properties>
@@ -80,6 +84,7 @@ END_COPYRIGHT
       <required name="vid" type="string" unique="true"/>
       <required name="vessel" type="ome.model.vl.Vessel"/>
       <required name="vesselsCollection" type="ome.model.vl.VesselsCollection"/>
+      <!-- unique keys with namespace -->
       <!-- vesselsCollection.vid, vessel.vid -->
       <required name="vesselsCollectionItemUK" type="string" unique="true"/>
     </properties>

@@ -51,9 +51,12 @@ the amount and type of fluid they contain and of its usability.
 
   <type id="ome.model.vl.Tube" superclass="ome.model.vl.Vessel">
     <properties>
-      <required name="label" type="string" unique="true"/>
+      <required name="label" type="string"/>
       <!-- there can be a tube with NO BARCODE -->
-      <optional name="barcode" type="string" unique="true"/>
+      <optional name="barcode" type="string"/>
+      <!-- unique keys with namespace -->
+      <required name="labelUK" type="string" unique="true"/>
+      <optional name="barcodeUK" type="string" unique="true"/>
     </properties>
   </type>
 
@@ -67,6 +70,7 @@ the amount and type of fluid they contain and of its usability.
            historical reasons. -->
       <required name="slot" type="int"/>
       <required name="container" type="ome.model.vl.TiterPlate"/>
+      <!-- unique keys with namespace -->
       <!-- container.label, label -->
       <required name="containerSlotLabelUK" type="string" unique="true"/>
       <!-- container.label, slot -->

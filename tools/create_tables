@@ -32,6 +32,8 @@ def make_parser():
                       help='OMERO password', default=OME_PASSWD)
   parser.add_argument('-d', '--destructive', action='store_true',
                       help='destroy existing tables if present')
+  parser.add_argument('-p', '--private', action='store_false',
+                      help='don\'t move global tables to common space')
   return parser
 
 
@@ -40,7 +42,8 @@ def main():
   args = parser.parse_args()
   p = Proxy(args.host, args.user, args.passwd)
   print 'creating global tables in %s' % args.host
-  p.create_global_tables(destructive=args.destructive)
+  p.create_global_tables(destructive=args.destructive,
+                         move_to_common_space=args.private)
 
 
 if __name__ == "__main__":

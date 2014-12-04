@@ -46,7 +46,26 @@ class Tube(Vessel):
   
   OME_TABLE = 'Tube'
   __fields__ = [('label', wp.STRING, wp.REQUIRED),
-                ('barcode', wp.STRING, wp.OPTIONAL)]
+                ('barcode', wp.STRING, wp.OPTIONAL),
+                ('labelUK', wp.STRING, wp.REQUIRED),
+                ('barcodeUK', wp.STRING, wp.OPTIONAL)]
+  __do_not_serialize__ = ['labelUK', 'barcodeUK']
+
+  def __preprocess_conf__(self, conf):
+    if not 'labelUK' in conf:
+      conf['labelUK'] = make_unique_key(self.get_namespace(), conf['label'])
+    if not 'barcodeUK' in conf and conf.get('barcode'):
+      conf['barcodeUK'] = make_unique_key(self.get_namespace(), conf['barcode'])
+    return super(Tube, self).__preprocess_conf__(conf)
+
+  def __update_constraints__(self):
+    l_uk = make_unique_key(self.get_namespace(), self.label)
+    setattr(self.ome_obj, 'labelUK',
+            self.to_omero(self.__fields__['labelUK'][0], l_uk))
+    if self.barcode:
+      b_uk = make_unique_key(self.get_namespace(), self.barcode)
+      setattr(self.ome_obj, 'barcodeUK',
+              self.to_omero(self.__fields__['barcodeUK'][0], b_uk))
 
 
 class PlateWell(Vessel):
@@ -105,20 +124,25 @@ class PlateWell(Vessel):
     if not 'containerSlotLabelUK' in conf:
       clabel = conf['container'].label
       label   = conf['label']
-      conf['containerSlotLabelUK'] = make_unique_key(clabel, label)
+      conf['containerSlotLabelUK'] = make_unique_key(self.get_namespace(),
+                                                     clabel, label)
     if not 'containerSlotIndexUK' in conf:
       clabel = conf['container'].label
       slot   = conf['slot']
-      conf['containerSlotIndexUK'] = make_unique_key(clabel, '%04d' % slot)
+      conf['containerSlotIndexUK'] = make_unique_key(self.get_namespace(),
+                                                     clabel, '%04d' % slot)
     return conf
 
   def __update_constraints__(self):
-    csl_uk = make_unique_key(self.container.label, self.label)
+    csl_uk = make_unique_key(self.get_namespace(),
+                             self.container.label, self.label)
     setattr(self.ome_obj, 'containerSlotLabelUK',
             self.to_omero(self.__fields__['containerSlotLabelUK'][0], csl_uk))
-    csi_uk = make_unique_key(self.container.label, '%04d' % self.slot)
+    csi_uk = make_unique_key(self.get_namespace(),
+                             self.container.label, '%04d' % self.slot)
     setattr(self.ome_obj, 'containerSlotIndexUK',
             self.to_omero(self.__fields__['containerSlotIndexUK'][0], csi_uk))
+    super(PlateWell, self).__update_constraints__()
 
   def __dump_to_graph__(self, is_update):
     super(PlateWell, self).__dump_to_graph__(is_update)
@@ -131,6 +155,10 @@ class VesselsCollection(VLCollection):
   
   OME_TABLE = 'VesselsCollection'
   __fields__ = []
+
+  def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(VesselsCollection, self).__fields__['labelUK']
+    super(VesselsCollection, self).__update_constraints__()
 
 
 class VesselsCollectionItem(wp.OmeroWrapper):
@@ -146,11 +174,13 @@ class VesselsCollectionItem(wp.OmeroWrapper):
     if not 'vesselsCollectionItemUK' in conf:
       v_vid = conf['vessel'].id
       vc_vid = conf['vesselsCollection'].id
-      conf['vesselsCollectionItemUK'] = make_unique_key(vc_vid, v_vid)
+      conf['vesselsCollectionItemUK'] = make_unique_key(self.get_namespace(),
+                                                        vc_vid, v_vid)
     return assign_vid(conf)
 
-  def __update_contraints__(self):
-    vci_uk = make_unique_key(self.vesselsCollection.id, self.vessel.id)
+  def __update_constraints__(self):
+    vci_uk = make_unique_key(self.get_namespace(), self.vesselsCollection.id,
+                             self.vessel.id)
     setattr(self.ome_obj, 'vesselsCollectionItemUK',
             self.to_omero(self.__fields__['vesselsCollectionItemUK'][0], vci_uk))
 
@@ -174,18 +204,19 @@ class LaneSlot(wp.OmeroWrapper):
   def __preprocess_conf__(self, conf):
     if not 'laneSlotUK' in conf:
       if 'tag' in conf:
-        conf['laneSlotUK'] = make_unique_key(conf['tag'], conf['lane'].label)
+        conf['laneSlotUK'] = make_unique_key(self.get_namespace(),
+                                             conf['tag'], conf['lane'].label)
       else:
-        conf['laneSlotUK'] = make_unique_key(conf['lane'].label)
+        conf['laneSlotUK'] = make_unique_key(self.get_namespace(), conf['lane'].label)
     return assign_vid(conf)
 
   def __update_constraints__(self):
     if self.tag:
-      ls_uk = make_unique_key(self.tag, self.lane.label)
+      ls_uk = make_unique_key(self.get_namespace(), self.tag, self.lane.label)
       setattr(self.ome_obj, 'laneSlotUK',
               self.to_omero(self.__fields__['laneSlotUK'][0], ls_uk))
     else:
-      ls_uk = make_unique_key(self.lane.label)
+      ls_uk = make_unique_key(self.get_namespace(), self.lane.label)
       setattr(self.ome_obj, 'laneSlotUK',
               self.to_omero(self.__fields__['laneSlotUK'][0], ls_uk))
 

@@ -5,7 +5,7 @@ from bl.vl.kb import mimetypes
 import wrapper as wp
 from action import Action, OriginalFile
 from snp_markers_set import SNPMarkersSet
-from utils import assign_vid_and_timestamp
+from utils import assign_vid_and_timestamp, make_unique_key
 
 
 class DataSampleStatus(wp.OmeroWrapper):
@@ -21,10 +21,19 @@ class DataSample(wp.OmeroWrapper):
                 ('label', wp.STRING, wp.REQUIRED),
                 ('creationDate', wp.TIMESTAMP, wp.REQUIRED),
                 ('status', DataSampleStatus, wp.REQUIRED),
-                ('action', Action, wp.REQUIRED)]
+                ('action', Action, wp.REQUIRED),
+                ('labelUK', wp.STRING, wp.REQUIRED)]
+  __do_not_serialize__ = ['labelUK']
 
   def __preprocess_conf__(self, conf):
+    if not 'labelUK' in conf:
+      conf['labelUK'] = make_unique_key(self.get_namespace(), conf['label'])
     return assign_vid_and_timestamp(conf, time_stamp_field='creationDate')
+
+  def __update_constraints__(self):
+    l_uk = make_unique_key(self.get_namespace(), self.label)
+    setattr(self.ome_obj, 'labelUK',
+            self.to_omero(self.__fields__['labelUK'][0], l_uk))
 
 
 class DataObject(OriginalFile):
@@ -50,11 +59,19 @@ class MicroArrayMeasure(DataSample):
   OME_TABLE = 'MicroArrayMeasure'
   __fields__ = []
 
+  def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(MicroArrayMeasure, self).__fields__['labelUK']
+    super(MicroArrayMeasure, self).__update_constraints__()
+
 
 class GenotypeDataSample(DataSample):
 
   OME_TABLE = 'GenotypeDataSample'
   __fields__ = [('snpMarkersSet', SNPMarkersSet, wp.REQUIRED)]
+
+  def __update_constraints__(self):
+    self.__fields__['labelUK'] = super(GenotypeDataSample, self).__fields__['labelUK']
+    super(GenotypeDataSample, self).__update_constraints__()
 
   def resolve_to_data(self, indices=None):
     dos = self.proxy.get_data_objects(self)
