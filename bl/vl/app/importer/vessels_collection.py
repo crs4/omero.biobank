@@ -69,8 +69,10 @@ class Recorder(core.Core):
     self.preload_vessels_collections()
     asetup = self.get_action_setup('importer.vessels_collection-%f' % time.time(),
                                    json.dumps(self.action_setup_conf))
+    asetup.unload()
     device = self.get_device('importer-%s.vessels_collection' % version,
                              'CRS4', 'IMPORT', version)
+    device.unload()
     conf = {
       'setup': asetup,
       'device': device,
@@ -167,8 +169,13 @@ class Recorder(core.Core):
   def process_chunk(self, otsv, study, vc, chunk):
     items = []
     for r in chunk:
+      vessel = self.preloaded_vessels[r['vessel']]
+      if vessel.is_mapped:
+        vessel.unload()
+      if vc.is_mapped:
+        vc.unload()
       conf = {
-        'vessel': self.preloaded_vessels[r['vessel']],
+        'vessel': vessel,
         'vesselsCollection': vc,
         }
       items.append(self.kb.factory.create(self.kb.VesselsCollectionItem, conf))
