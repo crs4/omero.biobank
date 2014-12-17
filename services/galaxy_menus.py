@@ -188,7 +188,9 @@ class GalaxyMenusService(object):
     def get_studies(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.Study)
+        res = kb.get_objects(kb.Study)
+        kb.disconnect()
+        return res
 
     @wrap_value
     def get_map_vid_sources(self):
@@ -203,110 +205,146 @@ class GalaxyMenusService(object):
     def get_marker_sets(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.SNPMarkersSet)
+        res = kb.get_objects(kb.SNPMarkersSet)
+        kb.disconnect()
+        return res
 
     @wrap_record_id
     def get_data_collections(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.DataCollection)
+        res = kb.get_objects(kb.DataCollection)
+        kb.disconnect()
+        return res
 
     @wrap_record_id
     def get_vessels_collections(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.VesselsCollection)
+        res = kb.get_objects(kb.VesselsCollection)
+        kb.disconnect()
+        return res
 
     @wrap_barcode
     def get_titer_plates(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
         plates = kb.get_objects(kb.TiterPlate)
-        return [pl for pl in plates if pl.barcode and type(pl) == kb.TiterPlate]
+        res = [pl for pl in plates if pl.barcode and type(pl) == kb.TiterPlate]
+        kb.disconnect()
+        return res
 
     @wrap_enum
     def get_vessel_status(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.VesselStatus)
+        res = kb.get_objects(kb.VesselStatus)
+        kb.disconnect()
+        return res
 
     @wrap_enum
     def get_vessel_content(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.VesselContent)
+        res = kb.get_objects(kb.VesselContent)
+        kb.disconnect()
+        return res
 
     @wrap_enum
     def get_data_sample_status(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.DataSampleStatus)
+        res = kb.get_objects(kb.DataSampleStatus)
+        kb.disconnect()
+        return res
 
     @wrap_record_id
     def get_hardware_devices(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.HardwareDevice)
+        res = kb.get_objects(kb.HardwareDevice)
+        kb.disconnect()
+        return res
 
     @wrap_record_id
     def get_software_devices(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.SoftwareProgram)
+        res = kb.get_objects(kb.SoftwareProgram)
+        kb.disconnect()
+        return res
 
     @wrap_record_id
     def get_devices(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.Device)
+        res = kb.get_objects(kb.Device)
+        kb.disconnect()
+        return res
 
     @wrap_enum
     def get_illumina_bead_chip_assay_types(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.IlluminaBeadChipAssayType)
+        res = kb.get_objects(kb.IlluminaBeadChipAssayType)
+        kb.disconnect()
+        return res
 
     @wrap_enum
     def get_illumina_array_of_arrays_types(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.IlluminaArrayOfArraysType)
+        res = kb.get_objects(kb.IlluminaArrayOfArraysType)
+        kb.disconnect()
+        return res
 
     @wrap_enum
     def get_illumina_array_of_arrays_classes(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.IlluminaArrayOfArraysClass)
+        res = kb.get_objects(kb.IlluminaArrayOfArraysClass)
+        kb.disconnect()
+        return res
 
     @wrap_enum
     def get_illumina_array_of_arrays_assay_types(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.IlluminaArrayOfArraysAssayType)
+        res = kb.get_objects(kb.IlluminaArrayOfArraysAssayType)
+        kb.disconnect()
+        return res
 
     @wrap_enum
     def get_action_categories(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.ActionCategory)
+        res = kb.get_objects(kb.ActionCategory)
+        kb.disconnect()
+        return res
 
     @wrap_record_id
     def get_scanners(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.Scanner)
+        res = kb.get_objects(kb.Scanner)
+        kb.disconnect()
+        return res
 
     @wrap_enum
     def get_container_status(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.ContainerStatus)
+        res = kb.get_objects(kb.ContainerStatus)
+        kb.disconnect()
+        return res
 
     @wrap_label_with_unique_constraint
     def get_tubes(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        return kb.get_objects(kb.Tube)
+        res = kb.get_objects(kb.Tube)
+        kb.disconnect()
+        return res
 
     @wrap_data_objects
     def get_data_objects(self):
@@ -330,7 +368,8 @@ class GalaxyMenusService(object):
                     data_objects = kb.get_data_objects(ds)
                     for dobj in data_objects:
                         result.append(dobj)
-	    return result
+            kb.disconnect()
+            return result
 
 
     def start_service(self, host, port, logfile, pidfile, server, debug=False):
