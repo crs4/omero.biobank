@@ -170,9 +170,9 @@ class Recorder(core.Core):
     items = []
     for r in chunk:
       vessel = self.preloaded_vessels[r['vessel']]
-      if vessel.is_mapped:
+      if vessel.is_mapped():
         vessel.unload()
-      if vc.is_mapped:
+      if vc.is_mapped():
         vc.unload()
       conf = {
         'vessel': vessel,
