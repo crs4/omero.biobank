@@ -129,6 +129,8 @@ class Recorder(core.Core):
       father.reload()
     if mother:
       mother.reload()
+    if self.action.is_mapped():
+      self.action.unload()
     i_conf = {
       'gender': gender_map[gender.upper()],
       'action': self.action,
