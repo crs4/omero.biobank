@@ -53,8 +53,10 @@ class Recorder(core.Core):
     self.known_studies = {}
     device = self.get_device('importer-%s.individual' % version,
                              'CRS4', 'IMPORT', version)
+    device.unload()
     asetup = self.get_action_setup('import-prog-%f' % time.time(),
                                    json.dumps(self.action_setup_conf))
+    asetup.unload()
     acat = self.kb.ActionCategory.IMPORT
     operator = 'Alfred E. Neumann'
     conf = {

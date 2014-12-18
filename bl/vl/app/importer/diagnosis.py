@@ -58,8 +58,10 @@ class Recorder(core.Core):
     device_label = 'importer.ehr.diagnosis-%s' %  (version)
     device = self.get_device(label=device_label,
                              maker='CRS4', model='importer', release=version)
+    device.unload()
     asetup = self.get_action_setup('importer.diagnosis-%f' % time.time(),
                                    json.dumps(self.action_setup_conf))
+    asetup.unload()
     for i, c in enumerate(records_by_chunk(self.batch_size, records)):
       self.logger.info('start processing chunk %d' % i)
       self.process_chunk(c, study, asetup, device)
