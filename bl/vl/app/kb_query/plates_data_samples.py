@@ -214,9 +214,10 @@ class BuildPlateDataSamplesDetails(Core):
                           'WELL_label' : well.label,
                           'WELL_status' : well.status.enum_label()}
                 dsamples = self.get_connected_data_samples(well, gds_lookup)
-                self.logger.info('Retrieved %d data samples for well %s' % (len(dsamples),
-                                                                            well.label))
+                
                 if len(dsamples) > 0:
+                    self.logger.info('Retrieved %d data samples for well %s' % (len(dsamples),
+                                                                                well.label))
                     record['DATA_SAMPLE_label'] = dsamples[0].label
                 ind = self.get_individual(well)
                 record['INDIVIDUAL_gender'] = ind.gender.enum_label()
