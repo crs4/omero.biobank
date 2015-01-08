@@ -172,7 +172,7 @@ class BuildPlateDataSamplesDetails(Core):
         self.logger.info('Loading plates')
         if fetch_all:
             plates = [pl for pl in self.kb.get_objects(self.kb.TiterPlate) \
-                          if pl.barcode and type(pl) == kb.TiterPlate]
+                          if pl.barcode and type(pl) == self.kb.TiterPlate]
         else:
             plates = []
             for bc in plate_barcodes.split(','):
