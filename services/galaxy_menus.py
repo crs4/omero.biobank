@@ -234,11 +234,11 @@ class GalaxyMenusService(object):
         kb.disconnect()
         return res
 
-    @wrap_enum
+    @wrap_value
     def get_vessel_status(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
-        res = kb.get_objects(kb.VesselStatus)
+        res = [vs.enum_label() for vs in kb.get_objects(kb.VesselStatus)]
         kb.disconnect()
         return res
 
