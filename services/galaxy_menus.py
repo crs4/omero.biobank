@@ -34,7 +34,8 @@ class GalaxyMenusService(object):
         post('/galaxy/get/container_status')(self.get_container_status)
         post('/galaxy/get/tubes')(self.get_tubes)
         post('/galaxy/get/data_objects')(self.get_data_objects)
-        post('/galaxy/get/api_check_if_sample_exists')(self.api_check_if_sample_exists)
+        # api
+        post('/galaxy/api/check_if_sample_exists')(self.check_if_sample_exists)
         # check status
         post('/check/status')(self.test_server)
         get('/check/status')(self.test_server)
@@ -383,12 +384,12 @@ class GalaxyMenusService(object):
             return result
 
     @wrap_api
-    def api_check_if_sample_exists(self):
+    def check_if_sample_exists(self):
         params = request.forms
         kb = self._get_knowledge_base(params)
         result = list()
 
-        tube = kb.get_by_label(kb.Tube,params['sample_label'])
+        tube = kb.get_by_label(kb.Tube,params.get('sample_label'))
         seq_data_samples = kb.get_seq_data_samples_by_tube(tube)
         for ds in seq_data_samples:
             data_objects = kb.get_data_objects(ds)
