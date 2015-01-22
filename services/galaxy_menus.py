@@ -34,6 +34,7 @@ class GalaxyMenusService(object):
         post('/galaxy/get/container_status')(self.get_container_status)
         post('/galaxy/get/tubes')(self.get_tubes)
         post('/galaxy/get/data_objects')(self.get_data_objects)
+        post('/galaxy/get/api_check_if_sample_exists')(self.api_check_if_sample_exists)
         # check status
         post('/check/status')(self.test_server)
         get('/check/status')(self.test_server)
@@ -179,6 +180,16 @@ class GalaxyMenusService(object):
                 response_body = inst._build_response_body(values, labels)
                 response_body[0]['selected'] = True
                 return inst._success(response_body)
+        return wrapper
+
+    def wrap_api(f):
+        @wraps(f)
+        def wrapper(inst, *args, **kwargs):
+            res = f(inst, *args, **kwargs)
+            if len(res) == 0:
+                return None
+            else:
+                return inst._success(res)
         return wrapper
 
     def test_server(self):
@@ -371,6 +382,21 @@ class GalaxyMenusService(object):
             kb.disconnect()
             return result
 
+    @wrap_api
+    def api_check_if_sample_exists(self):
+        params = request.forms
+        kb = self._get_knowledge_base(params)
+        result = list()
+
+        tube = kb.get_by_label(kb.Tube,params['sample_label'])
+        seq_data_samples = kb.get_seq_data_samples_by_tube(tube)
+        for ds in seq_data_samples:
+            data_objects = kb.get_data_objects(ds)
+            for dobj in data_objects:
+                if not dobj.mimetype.endswith('pdf'):
+                    result.append({'size': dobj.size, 'path': dobj.path})
+
+        return result
 
     def start_service(self, host, port, logfile, pidfile, server, debug=False):
         log = open(logfile, 'a')
