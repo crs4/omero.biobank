@@ -98,12 +98,12 @@ class Lane(Container):
     if not 'label' in conf:
       conf['label'] = '%s:%s' % (conf['flowCell'].label, conf['slot'])
     if not 'laneUK' in conf:
-      conf['laneUK'] = make_unique_key(conf['flowCell'].label, conf['slot'])
+      conf['laneUK'] = make_unique_key(self.get_namespace(), conf['flowCell'].label, conf['slot'])
     return super(Lane, self).__preprocess_conf__(conf)
 
   def __update_constraints__(self):
     self.__fields__['barcodeUK'] = super(Lane, self).__fields__['barcodeUK']
-    l_uk = make_unique_key(self.flowCell.label, self.slot)
+    l_uk = make_unique_key(self.get_namespace(), self.flowCell.label, self.slot)
     setattr(self.ome_obj, 'laneUK',
             self.to_omero(self.__fields__['laneUK'][0], l_uk))
     super(Lane, self).__update_constraints__()
