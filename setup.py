@@ -24,7 +24,7 @@ import build_configuration
 CURRENT_YEAR = datetime.datetime.now().year
 DESCRIPTION, LONG_DESCRIPTION = __doc__.strip().split("\n", 1)
 LONG_DESCRIPTION = LONG_DESCRIPTION.strip()
-URL = "http://biobank.sourceforge.net"
+URL = "https://github.com/crs4/omero.biobank"
 # DOWNLOAD_URL = ""
 LICENSE = 'GPL'
 CLASSIFIERS = [
