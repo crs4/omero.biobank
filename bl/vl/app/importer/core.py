@@ -133,7 +133,7 @@ class Core(object):
 
   def is_known_object_label(self, obj_label, obj_klass):
     obj = self.kb.get_by_label(obj_klass, obj_label)
-    return not obj is None
+    return obj is not None
 
   def is_known_object_key(self, obj_key_label, obj_key_value, obj_klass):
     res = self.kb.get_by_field(obj_klass, obj_key_label, [obj_key_value])
