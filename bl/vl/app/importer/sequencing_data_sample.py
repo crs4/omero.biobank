@@ -38,7 +38,7 @@ format.
 import os, csv, json, time, copy, sys
 
 import core
-from version import version
+
 
 SUPPORTED_SOURCES = [
     'FlowCell',
@@ -66,8 +66,6 @@ class Recorder(core.Core):
         self.batch_size = batch_size
         self.action_setup_conf = action_setup_conf
         self.operator = operator
-        self.preloaded_devices = {}
-        self.preloaded_sources = {}
         self.preloaded_data_samples = {}
         self.preloaded_lanes = {}
         self.preloaded_tubes = {}
@@ -89,8 +87,6 @@ class Recorder(core.Core):
         study = self.find_study(records)
         self.source_klass = self.find_source_klass(records)
         self.seq_sample_klass = self.find_seq_sample_klass(records)
-        self.preload_sources()
-        self.preload_devices()
         if self.seq_sample_klass == self.kb.RawSeqDataSample:
             self.preload_lanes()
         if self.seq_sample_klass == self.kb.SeqDataSample:
@@ -117,6 +113,7 @@ class Recorder(core.Core):
                               'conf' : acts[2]}
             act_setup = self.kb.save(self.kb.factory.create(self.kb.ActionSetup, 
                                                             act_setup_conf))
+            act_setup.unload()
             if issubclass(self.source_klass, self.kb.FlowCell):
                 act_klass = self.kb.ActionOnCollection
                 act_category = self.kb.ActionCategory.MEASUREMENT
@@ -130,9 +127,9 @@ class Recorder(core.Core):
                         'actionCategory' : act_category,
                         'operator' : self.operator,
                         'context' : study,
-                        'target' : self.preloaded_sources[acts[0]]}
+                        'target' : self.kb.get_by_vid(self.source_klass, acts[0])}
             if acts[1]:
-                act_conf['device'] = self.preloaded_devices[acts[1]]
+                act_conf['device'] = self.kb.get_by_vid(self.kb.Device, acts[1])
             action = self.kb.factory.create(act_klass, act_conf)
             action = self.kb.save(action)
             # Unload the action object or it will cause a bug when
@@ -152,10 +149,6 @@ class Recorder(core.Core):
     def find_seq_sample_klass(self, records):
         return self.find_klass('seq_dsample_type', records)
 
-    def preload_sources(self):
-        self.preload_by_type('sources', self.source_klass,
-                             self.preloaded_sources)
-
     def preload_lanes(self):
         self.preload_by_type('lanes', self.kb.Lane,
                              self.preloaded_lanes)
@@ -163,10 +156,6 @@ class Recorder(core.Core):
     def preload_tubes(self):
         self.preload_by_type('tubes', self.kb.Tube,
                              self.preloaded_tubes)
-
-    def preload_devices(self):
-        self.preload_by_type('devices', self.kb.Device,
-                             self.preloaded_devices)
 
     def preload_references(self):
         self.preload_by_type('tubes', self.kb.ReferenceGenome,
@@ -227,14 +216,16 @@ class Recorder(core.Core):
                 bad_rec['error'] = m
                 bad_records.append(bad_rec)
                 continue
-            if r['source'] not in self.preloaded_sources:
+            if r['source'] and not self.is_known_object_id(r['source'],
+                                                           self.source_klass):
                 m = 'unknown source with ID %s. ' % r['source']
                 self.logger.warning(m + reject)
                 bad_rec = copy.deepcopy(r)
                 bad_rec['error'] = m
                 bad_records.append(bad_rec)
                 continue
-            if 'device' in r and r['device'] and r['device'] not in self.preloaded_devices:
+            if 'device' in r and r['device'] and not self.is_known_object_id(
+                r['device'], self.kb.Device):
                 m = 'unknown device with ID %s. ' % r['device']
                 self.logger.warning(m + reject)
                 bad_rec = copy.deepcopy(r)
