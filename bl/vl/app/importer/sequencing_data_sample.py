@@ -71,6 +71,8 @@ class Recorder(core.Core):
         self.history = history
         self.status_map = dict((st.enum_label(), st) for st in
                                self.kb.get_objects(self.kb.DataSampleStatus))
+        for v in self.status_map.values():
+            v.unload()
 
     def record(self, records, otsv, rtsv, blocking_validation):
         def records_by_chunk(batch_size, records):
@@ -84,6 +86,7 @@ class Recorder(core.Core):
             self.logger.critical(msg)
             raise core.ImporterValidationError(msg)
         study = self.find_study(records)
+        study.unload()
         self.source_klass = self.find_source_klass(records)
         self.seq_sample_klass = self.find_seq_sample_klass(records)
 
@@ -118,16 +121,19 @@ class Recorder(core.Core):
                 self.logger.error(
                     'Unmanaged source type %r' % self.source_klass)
                 sys.exit('Unmanaged source type %r' % self.source_klass)
+            target =  self.kb.get_by_vid(self.source_klass, acts[0])
+            target.unload()
             act_conf = {'setup': act_setup,
                         'actionCategory': act_category,
                         'operator': self.operator,
                         'context': study,
-                        'target': self.kb.get_by_vid(self.source_klass,
-                                                     acts[0])}
+                        'target': target}
             if acts[1]:
-                act_conf['device'] = self.kb.get_by_vid(self.kb.Device, acts[1])
+                device = self.kb.get_by_vid(self.kb.Device, acts[1])
+                device.unload()
+                act_conf['device'] = device
             action = self.kb.factory.create(act_klass, act_conf)
-            action = self.kb.save(action)
+            action.save()
             # Unload the action object or it will cause a bug when
             # saving objects that references to ActionOnDataSample
             # records, too many inheritance steps
@@ -214,7 +220,7 @@ class Recorder(core.Core):
                 bad_records.append(bad_rec)
                 continue
             if r['status'] not in self.status_map:
-                m = 'unkown status %s. ' % r['status']
+                m = 'unknown status %s. ' % r['status']
                 self.logger.warning(m + reject)
                 bad_rec = copy.deepcopy(r)
                 bad_rec['error'] = m
@@ -299,6 +305,7 @@ class Recorder(core.Core):
                            'vid': d.id})
 
     def conf_sequencer_output_data_sample(self, r, a):
+        a.unload()
         conf = {'label': r['label'],
                 'status': self.status_map[r['status']],
                 'action': a}
