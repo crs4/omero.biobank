@@ -12,6 +12,7 @@ class SequencerOutput(DataSample):
 
   def __update_constraints__(self):
     self.__fields__['labelUK'] = super(SequencerOutput, self).__fields__['labelUK']
+    super(SequencerOutput, self).__update_constraints__()
 
 
 class RawSeqDataSample(DataSample):  
@@ -20,6 +21,7 @@ class RawSeqDataSample(DataSample):
 
   def __update_constraints__(self):
     self.__fields__['labelUK'] = super(RawSeqDataSample, self).__fields__['labelUK']
+    super(RawSeqDataSample, self).__update_constraints__()
 
 
 class SeqDataSample(DataSample):  
@@ -28,6 +30,7 @@ class SeqDataSample(DataSample):
 
   def __update_constraints__(self):
     self.__fields__['labelUK'] = super(SeqDataSample, self).__fields__['labelUK']
+    super(SeqDataSample, self).__update_constraints__()
 
 
 class ReferenceGenome(DataSample):
