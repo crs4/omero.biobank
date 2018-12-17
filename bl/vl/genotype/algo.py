@@ -111,7 +111,7 @@ hwe_vector = np.vectorize(hwe_scalar, [np.float32])
 def hwe(it, counts=None):
   """
   Implement Hardy-Weinberg exact calculation using the method described in
-  `Wigginton et al. <http://dx.doi.org/10.1086/429864>`_.
+  `Wigginton et al. <https://doi.org/10.1086/429864>`_.
 
   It returns an array with the probabilities that the distribution of
   alleles seen for each marker is compatible with the Hardy-Weinberg
